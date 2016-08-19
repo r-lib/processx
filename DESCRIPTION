@@ -1,0 +1,14 @@
+Package: exec
+Title: Execute and Control System Processes
+Version: 1.0.0
+Author: Gábor Csárdi
+Maintainer: Gábor Csárdi <csardi.gabor@gmail.com>
+Description: Portable tools to run system processes, get their process identifier, cancel
+  and restart them.
+License: MIT + file LICENSE
+LazyData: true
+URL: https://github.com/gaborcsardi/exec
+BugReports: https://github.com/gaborcsardi/exec/issues
+RoxygenNote: 5.0.1
+Suggests: 
+    testthat
