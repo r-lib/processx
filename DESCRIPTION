@@ -12,4 +12,8 @@ BugReports: https://github.com/gaborcsardi/exec/issues
 RoxygenNote: 5.0.1
 Suggests: 
     testthat
+Imports:
+    R6,
+    tools
 Encoding: UTF-8
+OS_type: unix
