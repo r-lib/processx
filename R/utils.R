@@ -18,12 +18,30 @@ get_pid <- function(name) {
 
   pid <- scan(text = res$stdout, what = 1, quiet = TRUE)
 
-  if (length(pid) == 1) {
-    pid
+  ## Looks like system2() sometimes starts two shells, i.e. the first
+  ## starts the second, with the same command line. We just take the
+  ## last process in this case.
+
+  if (length(pid) >= 1) {
+    tail(sort(pid), 1)
   } else if (length(pid) == 0) {
     NULL
-  } else {
-    warning("Multiple processes found, internal error?")
-    pid[1]
   }
+}
+
+isFALSE <- function(x) {
+  identical(FALSE, x)
+}
+
+is_closed <- function(x) {
+  if (!inherits(x, "connection")) stop("Not a connection")
+  ! x %in% getAllConnections()
+}
+
+## We do not call `isOpen`, because it fails on a closed
+## connection. (!) close(x), however seems to work just fine
+## on a closed connection.
+
+close_if_needed <- function(x) {
+  if (inherits(x, "connection") && is_closed(x)) close(x)
 }

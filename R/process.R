@@ -59,8 +59,9 @@ process <- R6Class(
   "process",
   public = list(
 
-    initialize = function(command, args = character())
-      process_initialize(self, private, command, args),
+    initialize = function(command, args = character(),
+      stdout = FALSE, stderr = FALSE)
+      process_initialize(self, private, command, args, stdout, stderr),
 
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
@@ -69,14 +70,34 @@ process <- R6Class(
       process_is_alive(self, private),
 
     restart = function()
-      process_restart(self, private)
+      process_restart(self, private),
+
+    wait = function()
+      process_wait(self, private),
+
+    ## Output
+
+    read_output_lines = function(...)
+      process_read_output_lines(self, private, ...),
+
+    read_error_lines = function(...)
+      process_read_error_lines(self, private, ...),
+
+    get_output_connection = function()
+      process_get_output_connection(self, private),
+
+    get_error_connection = function()
+      process_get_error_connection(self, private)
+
   ),
 
   private = list(
     pid = NULL,
     command = NULL,
     args = NULL,
-    name = NULL
+    name = NULL,
+    stdout = NULL,
+    stderr = NULL
   )
 )
 
@@ -112,10 +133,13 @@ process <- R6Class(
 #'
 #' @keywords internal
 
-process_initialize <- function(self, private, command, args) {
+process_initialize <- function(self, private, command, args,
+                               stdout, stderr) {
 
   assert_string(command)
   assert_character(args)
+  assert_flag_or_string(stdout)
+  assert_flag_or_string(stderr)
 
   private$command <- command
   private$args <- args
@@ -130,17 +154,33 @@ process_initialize <- function(self, private, command, args) {
   ## Make it executable
   Sys.chmod(cmdfile, "700")
 
+  if (isTRUE(stdout)) stdout <- tempfile()
+  if (isTRUE(stderr)) stderr <- tempfile()
+
   ## Start
-  system(
-    shQuote(cmdfile),
+  system2(
+    cmdfile,
     wait = FALSE,
-    ignore.stdout = TRUE,
-    ignore.stderr = TRUE
+    stdout = stdout,
+    stderr = stderr
   )
 
   ## pid of the newborn, will be NULL if finished already
   private$name <- basename(cmdfile)
   private$pid <- get_pid(private$name)
+
+  ## Store the output and error files, we'll open them later if needed
+  private$stdout <- stdout
+  private$stderr <- stderr
+
+  ## Close the connections on gc
+  reg.finalizer(
+    self,
+    function(me) {
+      close_if_needed(stdout)
+      close_if_needed(stderr)
+    }
+  )
 
   invisible(self)
 }
