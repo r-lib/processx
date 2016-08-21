@@ -8,14 +8,14 @@ knitr::opts_chunk$set(
   fig.height = 8)
 ```
 
-# exec
+# process
 
 > Execute and Control System Processes
 
-[![Linux Build Status](https://travis-ci.org/gaborcsardi/exec.svg?branch=master)](https://travis-ci.org/gaborcsardi/exec)
-[![Windows Build status](https://ci.appveyor.com/api/projects/status/github/gaborcsardi/exec?svg=true)](https://ci.appveyor.com/project/gaborcsardi/exec)
-[![](http://www.r-pkg.org/badges/version/exec)](http://www.r-pkg.org/pkg/exec)
-[![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/exec)](http://www.r-pkg.org/pkg/exec)
+[![Linux Build Status](https://travis-ci.org/gaborcsardi/process.svg?branch=master)](https://travis-ci.org/gaborcsardi/process)
+[![Windows Build status](https://ci.appveyor.com/api/projects/status/github/gaborcsardi/process?svg=true)](https://ci.appveyor.com/project/gaborcsardi/process)
+[![](http://www.r-pkg.org/badges/version/process)](http://www.r-pkg.org/pkg/process)
+[![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/process)](http://www.r-pkg.org/pkg/process)
 
 
 Portable tools to run system processes, get their process identifier,
@@ -24,13 +24,13 @@ cancel and restart them.
 ## Installation
 
 ```{r eval = FALSE}
-source("https://install-github.me/gaborcsardi/exec")
+source("https://install-github.me/gaborcsardi/process")
 ```
 
 ## Usage
 
 ```{r}
-library(exec)
+library(process)
 ```
 
 ## License

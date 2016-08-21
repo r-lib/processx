@@ -1,4 +1,4 @@
 library(testthat)
-library(exec)
+library(process)
 
-test_check("exec")
+test_check("process")

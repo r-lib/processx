@@ -13,7 +13,7 @@ get_pid <- function(name) {
   ## 2   Syntax error in the command line
   ## 3   Internal error
   if (res$status > 1) {
-    stop("Could not run 'pgrep'. 'exec' needs 'pgrep' on this platform")
+    stop("Could not run 'pgrep'. 'process' needs 'pgrep' on this platform")
   }
 
   pid <- scan(text = res$stdout, what = 1, quiet = TRUE)

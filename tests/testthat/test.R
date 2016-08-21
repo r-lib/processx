@@ -1,7 +1,7 @@
 
-context("exec")
+context("process")
 
-test_that("exec works", {
+test_that("process works", {
 
   expect_true(TRUE)
 
