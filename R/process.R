@@ -199,7 +199,7 @@ process_initialize <- function(self, private, command, args,
   cmd <- if (!is.null(command)) {
     shQuote(command)
   } else {
-    paste("(", commandline, ")")
+    paste0("(", commandline, ")")
   }
 
   fullcmd <- paste(
