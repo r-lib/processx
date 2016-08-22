@@ -7,7 +7,7 @@ Description: Portable tools to run system processes in the background,
     read their standard output and error, kill and restart them.
 License: MIT + file LICENSE
 LazyData: true
-URL: https://github.com/gaborcsardi/process
+URL: https://github.com/gaborcsardi/process#readme
 BugReports: https://github.com/gaborcsardi/process/issues
 RoxygenNote: 5.0.1
 Suggests: 
