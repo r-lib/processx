@@ -126,17 +126,6 @@ process_initialize <- function(self, private, command, args,
 
   private$command <- command
   private$args <- args
-
-  ## Destructor. This will be easier once https://github.com/wch/R6/pull/93
-  ## is merged and published on CRAN.
-  reg.finalizer(
-    self,
-    function(me) {
-      me$kill()
-      files <- me$.__enclos_env__$private$cleanup
-      if (length(files)) suppressWarnings(file.remove())
-    }
-  )
   private$closed <- FALSE
 
   if (isTRUE(stdout)) {
