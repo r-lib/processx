@@ -233,38 +233,6 @@ process_initialize <- function(self, private, command, args,
   invisible(self)
 }
 
-#' Kill a process
-#'
-#' @param self this
-#' @param private this.private
-#' @param grace Numeric scalar, grace period between sending a TERM
-#'   and a KILL signal, in seconds.
-#'
-#' The process might not be running any more, but \code{tools::pskill}
-#' does not seem to care about whether it could actually kill the
-#' process or not. To be sure, that this workds on all platforms,
-#' we put it in a `tryCatch()`
-#'
-#' A killed process can be restarted.
-#'
-#' @keywords internal
-#' @importFrom tools pskill SIGKILL SIGTERM
-
-process_kill <- function(self, private, grace) {
-  if (! is.null(private$pid)) {
-    safe_system("pkill", c("-15", "-P", private$pid))
-    Sys.sleep(grace)
-    safe_system("pkill", c("-9", "-P", private$pid))
-    pskill(as.integer(private$pid), SIGTERM)
-    Sys.sleep(grace)
-    pskill(as.integer(private$pid), SIGTERM)
-  }
-
-  private$pid <- get_pid(private$name)
-
-  invisible(self)
-}
-
 process_is_alive <- function(self, private) {
   private$pid <- get_pid(private$name)
   ! is.null(private$pid)
