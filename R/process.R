@@ -131,6 +131,7 @@ process_initialize <- function(self, private, command, args,
   assert_character(args)
   assert_flag_or_string(stdout)
   assert_flag_or_string(stderr)
+  assert_string_or_null(commandline)
 
   if (is.null(command) + is.null(commandline) != 1) {
     stop("Need exactly one of 'command' and 'commandline")
