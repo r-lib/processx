@@ -69,6 +69,9 @@ process <- R6Class(
     is_alive = function()
       process_is_alive(self, private),
 
+    wait = function()
+      process_wait(self, private),
+
     restart = function()
       process_restart(self, private),
 
@@ -96,7 +99,9 @@ process <- R6Class(
     name = NULL,          # Name of the temporary file
     stdout = NULL,        # stdout argument or stream
     stderr = NULL,        # stderr argument or stream
-    cleanup = NULL        # which temp stdout/stderr file(s) to clean up
+    cleanup = NULL,       # which temp stdout/stderr file(s) to clean up
+    closed = NULL,        # Was the pipe closed already
+    status = NULL         # Exit status of the process
   )
 )
 
@@ -132,6 +137,7 @@ process_initialize <- function(self, private, command, args,
       if (length(files)) suppressWarnings(file.remove())
     }
   )
+  private$closed <- FALSE
 
   if (isTRUE(stdout)) {
     private$cleanup <- c(private$cleanup, stdout <- tempfile())
@@ -214,4 +220,11 @@ process_restart <- function(self, private) {
   process_initialize(self, private, private$command, private$args)
 
   invisible(self)
+}
+
+process_wait <- function(self, private) {
+  if (!private$closed) {
+    private$status <- close(private$pipe)
+  }
+  invisible(private$status)
 }
