@@ -48,9 +48,8 @@ kill_children_windows <- function(pids, signal) {
 }
 
 kill_children_unix <- function(pids, signal) {
-  signal <- match.arg(signal)
   safe_system(
     "pkill",
-    c(paste0("-", signal), "-P", private$pid)
+    c(paste0("-", signal), "-P", pids)
   )
 }
