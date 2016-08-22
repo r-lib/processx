@@ -257,6 +257,7 @@ process_restart <- function(self, private) {
 process_wait <- function(self, private) {
   if (!private$closed) {
     private$status <- close(private$pipe)
+    private$closed <- TRUE
   }
   invisible(self)
 }
