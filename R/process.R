@@ -9,7 +9,7 @@
 #'
 #' @section Usage:
 #' \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
-#'                  stdout = FALSE, stderr = FALSE)
+#'                  stdout = TRUE, stderr = TRUE)
 #'
 #' p$is_alive()
 #' p$kill(grace = 0.1)
@@ -102,7 +102,7 @@ process <- R6Class(
   public = list(
 
     initialize = function(command = NULL, args = character(),
-      commandline = NULL, stdout = FALSE, stderr = FALSE)
+      commandline = NULL, stdout = TRUE, stderr = TRUE)
       process_initialize(self, private, command, args, commandline,
                          stdout, stderr),
 

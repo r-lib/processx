@@ -13,7 +13,7 @@ streams. The process id is then used to manage the process.
 \section{Usage}{
 
 \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
-                 stdout = FALSE, stderr = FALSE)
+                 stdout = TRUE, stderr = TRUE)
 
 p$is_alive()
 p$kill(grace = 0.1)
