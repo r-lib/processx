@@ -160,8 +160,8 @@ p$get_exit_status()
 
 ### Errors
 
-Errors are typically via non-zero exits statuses. `process` currently
-has no special behavior to handle errors.
+Errors are typically signalled via non-zero exits statuses. `process`
+currently has no special behavior to handle errors.
 
 If you want to make sure that the process has started successfully,
 check that it is running via `is_alive()`, and if it is not, then check
