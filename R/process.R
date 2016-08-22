@@ -267,6 +267,8 @@ process_restart <- function(self, private) {
 
 process_wait <- function(self, private) {
   if (!private$closed) {
+    ## windows does not wait on close (!), but it does on readLines
+    readLines(private$pipe)
     private$status <- close(private$pipe)
     private$closed <- TRUE
   }
