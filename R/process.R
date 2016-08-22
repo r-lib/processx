@@ -209,7 +209,7 @@ process_initialize <- function(self, private, command, args,
   )
 
   ## Create temporary file to run
-  cmdfile <- tempfile(fileext = ".sh")
+  cmdfile <- tempfile(fileext = ".bat")
   on.exit(unlink(cmdfile), add = TRUE)
 
   ## Add command to it, make it executable
