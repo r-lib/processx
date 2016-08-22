@@ -213,7 +213,7 @@ process_initialize <- function(self, private, command, args,
   on.exit(unlink(cmdfile), add = TRUE)
 
   ## Add command to it, make it executable
-  cat(fullcmd, shQuote(args), "\n", file = cmdfile)
+  cat(fullcmd, if (length(args)) shQuote(args), "\n", file = cmdfile)
   Sys.chmod(cmdfile, "700")
 
   ## Start, we drop the output from the shell itself, for now
