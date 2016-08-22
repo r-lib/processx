@@ -12,7 +12,7 @@ test_that("We can get the output", {
   cat("foo", file = file.path(tmp, "foo"))
   cat("bar", file = file.path(tmp, "bar"))
 
-  p <- process$new("ls", shQuote(tmp), stdout = TRUE)
+  p <- process$new("ls", tmp, stdout = TRUE)
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   p$wait()
