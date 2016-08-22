@@ -3,8 +3,8 @@ Title: Execute and Control System Processes
 Version: 1.0.0
 Author: Gábor Csárdi
 Maintainer: Gábor Csárdi <csardi.gabor@gmail.com>
-Description: Portable tools to run system processes, get their process
-    identifier, cancel and restart them.
+Description: Portable tools to run system processes in the background,
+    read their standard output and error, kill and restart them.
 License: MIT + file LICENSE
 LazyData: true
 URL: https://github.com/gaborcsardi/process
