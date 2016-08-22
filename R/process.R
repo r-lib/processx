@@ -149,8 +149,11 @@ process_initialize <- function(self, private, command, args,
   cat(commandline, args, "\n", file = cmdfile)
   Sys.chmod(cmdfile, "700")
 
-  ## Start
-  private$pipe <- pipe(shQuote(cmdfile), open = "r")
+  ## Start, we drop the output from the shell itself, for now
+  private$pipe <- pipe(
+    paste(shQuote(cmdfile), ">", null_file(), "2>", null_file()),
+    open = "r"
+  )
 
   ## pid of the newborn, will be NULL if finished already
   private$name <- basename(cmdfile)
