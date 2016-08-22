@@ -104,6 +104,8 @@ process <- R6Class(
     name = NULL,          # Name of the temporary file
     stdout = NULL,        # stdout argument or stream
     stderr = NULL,        # stderr argument or stream
+    pstdout = NULL,       # the original stdout argument
+    pstderr = NULL,       # the original stderr argument
     cleanup = NULL,       # which temp stdout/stderr file(s) to clean up
     closed = NULL,        # Was the pipe closed already
     status = NULL         # Exit status of the process
@@ -141,6 +143,8 @@ process_initialize <- function(self, private, command, args,
   private$args <- args
   private$commandline <- commandline
   private$closed <- FALSE
+  private$pstdout <- stdout
+  private$pstderr <- stderr
 
   if (isTRUE(stdout)) {
     private$cleanup <- c(private$cleanup, stdout <- tempfile())
@@ -227,14 +231,24 @@ process_restart <- function(self, private) {
 
   ## Suicide if still alive
   if (self$is_alive()) self$kill()
+
+  ## Wipe out state, to be sure
   private$pid <- NULL
+  private$pipe <- NULL
+  private$pid <- NULL
+  private$name <- NULL
+  private$cleanup <- NULL
+  private$closed <- NULL
+  private$status <- NULL
 
   process_initialize(
     self,
     private,
     private$command,
     private$args,
-    private$commandline
+    private$commandline,
+    private$pstdout,
+    private$pstderr
   )
 
   invisible(self)
