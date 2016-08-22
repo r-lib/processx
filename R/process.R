@@ -72,6 +72,9 @@ process <- R6Class(
     wait = function()
       process_wait(self, private),
 
+    get_exit_status = function()
+      process_get_exit_status(self, private),
+
     restart = function()
       process_restart(self, private),
 
@@ -218,5 +221,9 @@ process_wait <- function(self, private) {
   if (!private$closed) {
     private$status <- close(private$pipe)
   }
-  invisible(private$status)
+  invisible(self)
+}
+
+process_get_exit_status <- function(self, private) {
+  private$status
 }
