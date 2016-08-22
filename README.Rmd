@@ -17,9 +17,8 @@ knitr::opts_chunk$set(
 [![](http://www.r-pkg.org/badges/version/process)](http://www.r-pkg.org/pkg/process)
 [![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/process)](http://www.r-pkg.org/pkg/process)
 
-
-Portable tools to run system processes, get their process identifier,
-cancel and restart them.
+Portable tools to run system processes in the background,
+read their standard output and error, kill and restart them.
 
 ## Installation
 
@@ -29,8 +28,153 @@ source("https://install-github.me/gaborcsardi/process")
 
 ## Usage
 
+Note: the following external commands are usually present in macOS and
+Linux systems, but not necessarily on Windows.
+
 ```{r}
 library(process)
+```
+
+### Starting processes
+
+`process` provides two ways to start processes. The first one
+requires a single command, and a character vector of arguments.
+Both the command and the arguments will be shell quoted, so it is safe
+to include spaces and other special characters:
+
+```{r}
+p1 <- process$new("sleep", "20")
+```
+
+The other way is to supply a full shell command line via the
+`commandline` argument:
+
+```{r}
+p2 <- process$new(commandline = "sleep 20")
+```
+
+Both methods will run the specified command or command line via the
+`pipe` base R function, which currently uses a shell to start them.
+
+### Killing and restarting a process
+
+A process can be killed via the `kill` method. This also kills
+all child processes.
+
+```{r}
+p1$is_alive()
+p2$is_alive()
+p1$kill()
+p2$kill()
+p1$is_alive()
+p2$is_alive()
+```
+
+A process can be restarted via `restart`. This works if the process
+has been killed, if it has finished regularly, or even if it is running
+currently. If it is running, then it will be killed first.
+
+```{r}
+p1$restart()
+p1$is_alive()
+```
+
+### Standard output and error
+
+By default the standard output and error of the processes are lost,
+but the `stdout` and `stderr` constructor arguments will keep them.
+These can be set to a string pointing to a file name, or just to `TRUE`,
+in which case temporary files are used to hold the output.
+
+The `read_output_lines` and `read_error_lines` methods can be used
+to read the standard output or error. They work the same way as the
+`readLines` base function.
+
+Note that the connections used for reading the output and error streams
+are non-blocking text connections, so the read functions will return
+immediately, even if there is no text to read from them.
+
+```{r}
+p <- process$new(
+  commandline = "echo foo; >&2 echo bar; echo foobar",
+  stdout = TRUE, stderr = TRUE
+)
+p$read_output_lines()
+p$read_error_lines()
+```
+
+### End of output
+
+TODO
+
+
+### Waiting on a process
+
+As seen before, `is_alive` checks if a process is running. The `wait`
+method can be used to wait until it has finished. E.g. in the following
+code `wait` needs to wait about 2 seconds for the `sleep` shell command
+to finish.
+
+```{r}
+p <- process$new(commandline = "sleep 2")
+p$is_alive()
+Sys.time()
+p$wait()
+Sys.time()
+```
+
+It is safe to call `wait` multiple times:
+
+```{r}
+p$wait() # already finished!
+```
+
+### Exit statuses
+
+After a process has finished, its exit status can be queried via the
+`get_exit_status` method. If the process is still running, then this
+method returns `NULL`.
+
+```{r}
+p <- process$new(commandline = "sleep 2")
+p$get_exit_status()
+p$wait()
+p$get_exit_status()
+```
+
+Note that even if the process has finished, `get_exit_status` might report
+`NULL` if `wait` was not called. If you know that the process has finished,
+call `wait` first, and only then `get_exit_status`.
+
+```{r}
+p <- process$new(commandline = "true")
+
+# wait until it surely finishes
+Sys.sleep(1)
+p$is_alive()
+p$get_exit_status()
+
+p$wait()
+p$get_exit_status()
+```
+
+### Errors
+
+Errors are typically via non-zero exits statuses. `process` currently
+has no special behavior to handle errors.
+
+If you want to make sure that the process has started successfully,
+check that it is running via `is_alive()`, and if it is not, then check
+its exit status (after calling `wait`).
+
+```{r, error = TRUE}
+p <- process$new("nonexistant-command-for-sure")
+if (!p$is_alive()) {
+  p$wait()
+  if (p$get_exit_status() != 0) {
+    stop("nonexistant-command-for-sure failed")
+  }
+}
 ```
 
 ## License
