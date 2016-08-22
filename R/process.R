@@ -59,9 +59,10 @@ process <- R6Class(
   "process",
   public = list(
 
-    initialize = function(command, args = character(),
-      stdout = FALSE, stderr = FALSE)
-      process_initialize(self, private, command, args, stdout, stderr),
+    initialize = function(command = NULL, args = character(),
+      commandline = NULL, stdout = FALSE, stderr = FALSE)
+      process_initialize(self, private, command, args, commandline,
+                         stdout, stderr),
 
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
@@ -99,6 +100,7 @@ process <- R6Class(
     pid = NULL,           # The pid(s) of the child(ren) created by pipe()
     command = NULL,       # Save 'command' argument here
     args = NULL,          # Save 'args' argument here
+    commandline = NULL,   # The full command line
     name = NULL,          # Name of the temporary file
     stdout = NULL,        # stdout argument or stream
     stderr = NULL,        # stderr argument or stream
@@ -114,21 +116,30 @@ process <- R6Class(
 #' @param private this$private
 #' @param command Command to run, string scalar.
 #' @param args Command arguments, character vector.
+#' @param commandline Alternative to command + args.
 #' @param stdout Standard output, FALSE to ignore, TRUE for temp file.
 #' @param stderr Standard error, FALSE to ignore, TRUE for temp file.
 #'
 #' @keywords internal
 
 process_initialize <- function(self, private, command, args,
-                               stdout, stderr) {
+                               commandline, stdout, stderr) {
 
-  assert_string(command)
+  assert_string_or_null(command)
   assert_character(args)
   assert_flag_or_string(stdout)
   assert_flag_or_string(stderr)
 
+  if (is.null(command) + is.null(commandline) != 1) {
+    stop("Need exactly one of 'command' and 'commandline")
+  }
+  if (!is.null(commandline) && ! identical(args, character())) {
+    stop("Omit 'args' when 'commandline' is specified")
+  }
+
   private$command <- command
   private$args <- args
+  private$commandline <- commandline
   private$closed <- FALSE
 
   if (isTRUE(stdout)) {
@@ -138,8 +149,14 @@ process_initialize <- function(self, private, command, args,
     private$cleanup <- c(private$cleanup, stderr <- tempfile())
   }
 
-  commandline <- paste(
-    shQuote(command),
+  cmd <- if (!is.null(command)) {
+    shQuote(command)
+  } else {
+    paste("(", commandline, ")")
+  }
+
+  fullcmd <- paste(
+    cmd,
     ">",  if (isFALSE(stdout)) null_file() else shQuote(stdout),
     "2>", if (isFALSE(stderr)) null_file() else shQuote(stderr)
   )
@@ -149,7 +166,7 @@ process_initialize <- function(self, private, command, args,
   on.exit(unlink(cmdfile), add = TRUE)
 
   ## Add command to it, make it executable
-  cat(commandline, args, "\n", file = cmdfile)
+  cat(fullcmd, args, "\n", file = cmdfile)
   Sys.chmod(cmdfile, "700")
 
   ## Start, we drop the output from the shell itself, for now
@@ -212,7 +229,13 @@ process_restart <- function(self, private) {
   if (self$is_alive()) self$kill()
   private$pid <- NULL
 
-  process_initialize(self, private, private$command, private$args)
+  process_initialize(
+    self,
+    private,
+    private$command,
+    private$args,
+    private$commandline
+  )
 
   invisible(self)
 }

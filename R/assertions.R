@@ -9,6 +9,10 @@ assert_string <- function(x) {
   stopifnot(is_string(x))
 }
 
+assert_string_or_null <- function(x) {
+  stopifnot(is.null(x) || is_string(x))
+}
+
 assert_character <- function(x) {
   stopifnot(
     is.character(x)
