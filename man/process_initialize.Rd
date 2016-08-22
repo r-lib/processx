@@ -4,7 +4,7 @@
 \alias{process_initialize}
 \title{Start a process}
 \usage{
-process_initialize(self, private, command, args, stdout, stderr)
+process_initialize(self, private, command, args, commandline, stdout, stderr)
 }
 \arguments{
 \item{self}{this}
@@ -14,35 +14,15 @@ process_initialize(self, private, command, args, stdout, stderr)
 \item{command}{Command to run, string scalar.}
 
 \item{args}{Command arguments, character vector.}
+
+\item{commandline}{Alternative to command + args.}
+
+\item{stdout}{Standard output, FALSE to ignore, TRUE for temp file.}
+
+\item{stderr}{Standard error, FALSE to ignore, TRUE for temp file.}
 }
 \description{
 Start a process
-}
-\section{Unix}{
-
-
-On Unix, getting the pid of a child is rather tricky.
-R uses the \code{system} system call to start the process,
-which in turn starts a shell. The shell then starsts the
-command. If the command is started in the background (default for us),
-then the shell quits immediantely after starting its child, which
-will become an orphan process, and its parent pid will be 1 (init or
-launchd, or similar).
-
-So we create a temporary file, and its random name will serve as
-an id for the process. We put the command invocation in this
-temporary file, and then start this file from R. Then we just
-search for this id in the names (command lines) of the running
-processes.
-
-If the command fails immediately, or finishes very quickly, we
-will not see it in the process table at all.
-}
-
-\section{Windows}{
-
-
-TODO
 }
 \keyword{internal}
 

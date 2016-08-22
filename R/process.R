@@ -3,29 +3,50 @@
 #'
 #' Managing external processes from R is not trivial, and this
 #' class aims to help with this deficiency. It is essentially a small
-#' wrapper around the \code{system} base R function, to return the process
-#' id of the started process. This id is then used to manage the process.
+#' wrapper around the \code{pipe} base R function, to return the process
+#' id of the started process, and set its standard output and error
+#' streams. The process id is then used to manage the process.
 #'
 #' @section Usage:
-#' \preformatted{p <- process$new(command, args)
+#' \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
+#'                  stdout = FALSE, stderr = FALSE)
+#'
 #' p$is_alive()
 #' p$kill(grace = 0.1)
-#' p$restart()}
+#' p$wait()
+#' p$get_exit_status()
+#' p$restart()
+#'
+#' p$read_output_lines(...)
+#' p$read_error_lines(...)
+#' p$get_output_connection()
+#' p$get_error_connection()
+#' }
 #'
 #' @section Arguments:
 #' \describe{
-#'   \item{command}{Character scalar, the command to run.}
-#'   \item{args}{Character vector, arguments to the command. No additional
-#'     escaping is performed, so if you need to escape arguments,
-#'     consider using \code{\link[base]{shQuote}}.}
+#'   \item{command}{Character scalar, the command to run. It will be
+#'     escaped via \code{\link[base]{shQuote}}.}
+#'   \item{args}{Character vector, arguments to the command. The will be
+#'     escaped via \code{\link[base]{shQuote}}.}
+#'   \item{commandline}{A character scalar, a full command line.
+#'     No escaping will be performed on it.}
+#'   \item{stdout}{What to do with the standard output. Possible values:
+#'     \code{FALSE}: discard it; a string, redirect it to this file,
+#'     \code{TRUE}: redirect it to a temporary file.}
+#'   \item{stdout}{What to do with the standard error. Possible values:
+#'     \code{FALSE}: discard it; a string, redirect it to this file,
+#'     \code{TRUE}: redirect it to a temporary file.}
 #'   \item{grace}{Grace pediod between the TERM and KILL signals, in
 #'     seconds.}
+#'   \item{...}{Extra arguments are passed to the
+#'     \code{\link[base]{readLines}} function.}
 #' }
 #'
 #' @section Details:
-#' \code{$new()} starts a new process. The arguments are passed to
-#' \code{\link[base]{system2}}. R does \emph{not} wait for the process
-#' to finish, but returns immediately.
+#' \code{$new()} starts a new process, it uses \code{\link[base]{pipe}}.
+#' R does \emph{not} wait for the process to finish, but returns
+#' immediately.
 #'
 #' \code{$is_alive()} checks if the process is alive. Returns a logical
 #' scalar.
@@ -36,7 +57,28 @@
 #' for the process itself. A killed process can be restarted using the
 #' \code{restart} method. It returns the process itself.
 #'
+#' \code{$wait()} waits until the process finishes. Note that if the
+#' process never finishes, then R will never regain control. It returns
+#' the process itself.
+#'
+#' \code{$get_exit_code} returns the exit code of the process if it has
+#' finished and \code{wait} was called on it. Otherwise it will return
+#' \code{NULL}.
+#'
 #' \code{$restart()} restarts a process. It returns the process itself.
+#'
+#' \code{$read_output_lines()} reads from standard output of the process.
+#' If the standard output was not requested, then it returns an error.
+#' It uses a non-blocking text connection.
+#'
+#' \code{$read_error_lines()} is similar to \code{$read_output_lines}, but
+#' it reads from the standard error stream.
+#'
+#' \code{$get_output_connection()} returns a connection object, to the
+#' standard output stream of the process.
+#'
+#' \code{$get_error_conneciton()} returns a connection object, to the
+#' standard error stream of the process.
 #'
 #' @importFrom R6 R6Class
 #' @name process
