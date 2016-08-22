@@ -11,6 +11,8 @@ null_file <- function() {
   }
 }
 
+#' @importFrom utils tail
+
 get_pid <- function(name) {
 
   res <- safe_system("pgrep", c("-f", name))

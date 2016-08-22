@@ -14,6 +14,7 @@ Suggests:
     testthat
 Imports:
     R6,
-    tools
+    tools,
+    utils
 Encoding: UTF-8
 OS_type: unix
