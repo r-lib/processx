@@ -17,11 +17,12 @@ test_that("One of command & commandline or error", {
 test_that("'commandline' works", {
 
   skip_on_cran()
-  skip_other_platforms("unix")
-  skip_without_command("sleep")
+
+  win  <- "(echo kuku) && (>&2 echo kuku2) && (ping -n 2 127.0.0.1 > NUL)"
+  unix <- "echo kuku; >&2 echo kuku2; sleep 1"
 
   p <- process$new(
-    commandline = "echo kuku; >&2 echo kuku2; sleep 1",
+    commandline = if (os_type() == "windows") win else unix,
     stdout = TRUE,
     stderr = TRUE
   )

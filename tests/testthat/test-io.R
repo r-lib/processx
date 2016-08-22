@@ -4,15 +4,19 @@ context("io")
 test_that("We can get the output", {
 
   skip_on_cran()
-  skip_other_platforms("unix")
-  skip_without_command("ls")
 
   dir.create(tmp <- tempfile())
   on.exit(unlink(tmp), add = TRUE)
   cat("foo", file = file.path(tmp, "foo"))
   cat("bar", file = file.path(tmp, "bar"))
 
-  p <- process$new("ls", tmp, stdout = TRUE)
+  win  <- paste("dir /b", shQuote(tmp))
+  unix <- paste("ls", shQuote(tmp))
+
+  p <- process$new(
+    commandline = if (os_type() == "windows") win else unix,
+    stdout = TRUE
+  )
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   p$wait()
@@ -23,9 +27,8 @@ test_that("We can get the output", {
 test_that("We can get the error stream", {
 
   skip_on_cran()
-  skip_other_platforms("unix")
 
-  tmp <- tempfile(fileext = ".sh")
+  tmp <- tempfile(fileext = ".bat")
   on.exit(unlink(tmp), add = TRUE)
 
   cat(">&2 echo hello", ">&2 echo world", sep = "\n", file = tmp)
@@ -42,12 +45,12 @@ test_that("We can get the error stream", {
 test_that("Output & error at the same time", {
 
   skip_on_cran()
-  skip_other_platforms("unix")
 
-  tmp <- tempfile(fileext = ".sh")
+  tmp <- tempfile(fileext = ".bat")
   on.exit(unlink(tmp), add = TRUE)
 
   cat(
+    if (os_type() == "windows") "@echo off",
     ">&2 echo hello",
     "echo wow",
     ">&2 echo world",
@@ -70,12 +73,12 @@ test_that("Output & error at the same time", {
 test_that("Output and error to specific files", {
 
   skip_on_cran()
-  skip_other_platforms("unix")
 
-  tmp <- tempfile(fileext = ".sh")
+  tmp <- tempfile(fileext = ".bat")
   on.exit(unlink(tmp), add = TRUE)
 
   cat(
+    if (os_type() == "windows") "@echo off",
     ">&2 echo hello",
     "echo wow",
     ">&2 echo world",
