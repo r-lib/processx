@@ -3,6 +3,14 @@ os_type <- function() {
   .Platform$OS.type
 }
 
+null_file <- function() {
+  if (os_type() == "windows") {
+    "NUL"
+  } else {
+    "/dev/null"
+  }
+}
+
 get_pid <- function(name) {
 
   res <- safe_system("pgrep", c("-f", name))

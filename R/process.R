@@ -92,12 +92,14 @@ process <- R6Class(
   ),
 
   private = list(
-    pid = NULL,
-    command = NULL,
-    args = NULL,
-    name = NULL,
-    stdout = NULL,
-    stderr = NULL
+    pipe = NULL,          # The pipe connection object
+    pid = NULL,           # The pid(s) of the child(ren) created by pipe()
+    command = NULL,       # Save 'command' argument here
+    args = NULL,          # Save 'args' argument here
+    name = NULL,          # Name of the temporary file
+    stdout = NULL,        # stdout argument or stream
+    stderr = NULL,        # stderr argument or stream
+    cleanup = NULL        # which temp stdout/stderr file(s) to clean up
   )
 )
 
@@ -107,29 +109,8 @@ process <- R6Class(
 #' @param private this$private
 #' @param command Command to run, string scalar.
 #' @param args Command arguments, character vector.
-#'
-#' @section Unix:
-#'
-#' On Unix, getting the pid of a child is rather tricky.
-#' R uses the \code{system} system call to start the process,
-#' which in turn starts a shell. The shell then starsts the
-#' command. If the command is started in the background (default for us),
-#' then the shell quits immediantely after starting its child, which
-#' will become an orphan process, and its parent pid will be 1 (init or
-#' launchd, or similar).
-#'
-#' So we create a temporary file, and its random name will serve as
-#' an id for the process. We put the command invocation in this
-#' temporary file, and then start this file from R. Then we just
-#' search for this id in the names (command lines) of the running
-#' processes.
-#'
-#' If the command fails immediately, or finishes very quickly, we
-#' will not see it in the process table at all.
-#'
-#' @section Windows:
-#'
-#' TODO
+#' @param stdout Standard output, FALSE to ignore, TRUE for temp file.
+#' @param stderr Standard error, FALSE to ignore, TRUE for temp file.
 #'
 #' @keywords internal
 
@@ -144,26 +125,40 @@ process_initialize <- function(self, private, command, args,
   private$command <- command
   private$args <- args
 
+  ## Destructor. This will be easier once https://github.com/wch/R6/pull/93
+  ## is merged and published on CRAN.
+  reg.finalizer(
+    self,
+    function(me) {
+      me$kill()
+      files <- me$.__enclos_env__$private$cleanup
+      if (length(files)) suppressWarnings(file.remove())
+    }
+  )
+
+  if (isTRUE(stdout)) {
+    private$cleanup <- c(private$cleanup, stdout <- tempfile())
+  }
+  if (isTRUE(stderr)) {
+    private$cleanup <- c(private$cleanup, stderr <- tempfile())
+  }
+
+  commandline <- paste(
+    shQuote(command),
+    ">",  if (isFALSE(stdout)) null_file() else shQuote(stdout),
+    "2>", if (isFALSE(stderr)) null_file() else shQuote(stderr)
+  )
+
   ## Create temporary file to run
   cmdfile <- tempfile(fileext = ".sh")
   on.exit(unlink(cmdfile), add = TRUE)
 
-  ## Add command
-  cat(command, args, "\n", file = cmdfile)
-
-  ## Make it executable
+  ## Add command to it, make it executable
+  cat(commandline, args, "\n", file = cmdfile)
   Sys.chmod(cmdfile, "700")
 
-  if (isTRUE(stdout)) stdout <- tempfile()
-  if (isTRUE(stderr)) stderr <- tempfile()
-
   ## Start
-  system2(
-    cmdfile,
-    wait = FALSE,
-    stdout = stdout,
-    stderr = stderr
-  )
+  private$pipe <- pipe(shQuote(cmdfile), open = "r")
 
   ## pid of the newborn, will be NULL if finished already
   private$name <- basename(cmdfile)
@@ -172,15 +167,6 @@ process_initialize <- function(self, private, command, args,
   ## Store the output and error files, we'll open them later if needed
   private$stdout <- stdout
   private$stderr <- stderr
-
-  ## Close the connections on gc
-  reg.finalizer(
-    self,
-    function(me) {
-      close_if_needed(stdout)
-      close_if_needed(stderr)
-    }
-  )
 
   invisible(self)
 }
