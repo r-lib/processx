@@ -72,9 +72,6 @@ process <- R6Class(
     restart = function()
       process_restart(self, private),
 
-    wait = function()
-      process_wait(self, private),
-
     ## Output
 
     read_output_lines = function(...)
