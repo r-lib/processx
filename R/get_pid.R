@@ -1,36 +1,42 @@
 
-get_pid_by_name <- function(name, children = FALSE) {
-  if (os_type() == "windows") {
-    get_pid_by_name_windows(name, children)
-  } else {
-    get_pid_by_name_unix(name, children)
-  }
+get_children <- function(pid) {
+  if (!length(pid)) return(integer())
+  assert_pid(pid)
+  pstab <- get_processes_windows(parent = pid)
+  as.integer(pstab$ProcessId)
 }
 
-get_pid_by_name_windows <- function(name, children) {
+get_processes_windows <- function(parent) {
   check_tool("wmic")
 
   ## Do we search among children, or in general?
-  cmd <- if (children) {
+  cmd <- if (!is.null(parent)) {
     paste0(
-      "wmic process where (ParentProcessID=", Sys.getpid(), ") ",
-      "get Caption,CommandLine,ProcessId /format:list"
+      "wmic process where (ParentProcessID=", parent, ") ",
+      "get Caption,CommandLine,ProcessId /format:list ",
+      "2>&1"
     )
   } else {
-    "wmic process get Caption,CommandLine,ProcessId /format:list"
+    "wmic process get Caption,CommandLine,ProcessId /format:list 2>&1"
   }
 
   wmic_out <- shell(cmd, intern = TRUE)
-
-  pstab <- parse_wmic_list(wmic_out)
-  pids <- pstab$ProcessId[grepl(name, pstab$CommandLine, fixed = TRUE)]
-
-  if (length(pids) >= 1) pids else NULL
+  parse_wmic_list(wmic_out)
 }
 
 parse_wmic_list <- function(text) {
   text <- paste(text, collapse = "\n")
   text <- win2unix(text)
+
+  ## No processes in list
+  if (grepl("^No Instance", text[1])) {
+    return(data.frame(
+      stringsAsFactors = FALSE,
+      Caption = character(),
+      CommandLine = character(),
+      ProcessId = character()
+    ))
+  }
 
   ## Records are separated by empty lines
   records <- strsplit(text, "\n\n+")[[1]]
@@ -48,6 +54,25 @@ parse_wmic_list <- function(text) {
     do.call(rbind.data.frame, c(vals, list(stringsAsFactors = FALSE))),
     names = keys[[1]]
   )
+}
+
+get_pid_by_name <- function(name, children = FALSE) {
+  if (os_type() == "windows") {
+    get_pid_by_name_windows(name, children)
+  } else {
+    get_pid_by_name_unix(name, children)
+  }
+}
+
+get_pid_by_name_windows <- function(name, children) {
+
+  pstab <- get_processes_windows(
+    if (children) Sys.getpid() else NULL
+  )
+
+  pids <- pstab$ProcessId[grepl(name, pstab$CommandLine, fixed = TRUE)]
+
+  if (length(pids) >= 1) pids else NULL
 }
 
 #' @importFrom utils tail
