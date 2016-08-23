@@ -22,9 +22,7 @@ test_that("'commandline' works", {
   unix <- "echo kuku; >&2 echo kuku2; sleep 1"
 
   p <- process$new(
-    commandline = if (os_type() == "windows") win else unix,
-    stdout = TRUE,
-    stderr = TRUE
+    commandline = if (os_type() == "windows") win else unix
   )
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 

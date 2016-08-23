@@ -14,8 +14,7 @@ test_that("We can get the output", {
   unix <- paste("ls", shQuote(tmp))
 
   p <- process$new(
-    commandline = if (os_type() == "windows") win else unix,
-    stdout = TRUE
+    commandline = if (os_type() == "windows") win else unix
   )
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
@@ -59,7 +58,7 @@ test_that("Output & error at the same time", {
   )
   Sys.chmod(tmp, "700")
 
-  p <- process$new(tmp, stdout = TRUE, stderr = TRUE)
+  p <- process$new(tmp)
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   p$wait()
