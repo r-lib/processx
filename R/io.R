@@ -91,7 +91,7 @@ open_if_needed <- function(con, what = "output") {
 
   ## (3)
   if (is_string(con)) {
-    file(con, open = "r", blocking = FALSE)
+    process_connection(file(con, open = "r", blocking = FALSE))
 
   ## (4)
   } else {
