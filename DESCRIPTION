@@ -3,8 +3,12 @@ Title: Execute and Control System Processes
 Version: 1.0.0
 Author: Gábor Csárdi
 Maintainer: Gábor Csárdi <csardi.gabor@gmail.com>
-Description: Portable tools to run system processes in the background,
-    read their standard output and error, kill and restart them.
+Description: Portable tools to run system processes in the background.
+    It can check if a background process is running; wait on a background
+    process to finish; get the exit status of finished processes; kill
+    background processes and their children; restart processes. It can read
+    the standard output and error of the processes, using non-blocking
+    connections. 'process' is lightweight and contains no compiled code.
 License: MIT + file LICENSE
 LazyData: true
 URL: https://github.com/gaborcsardi/process#readme
