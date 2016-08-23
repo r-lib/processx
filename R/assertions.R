@@ -30,3 +30,14 @@ assert_flag_or_string <- function(x) {
     is_flag(x) || is_string(x)
   )
 }
+
+assert_count <- function(x) {
+  stopifnot(
+    is.numeric(x),
+    length(x) == 1,
+    !is.na(x),
+    round(x) == x
+  )
+}
+
+assert_pid <- assert_count

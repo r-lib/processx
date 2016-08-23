@@ -44,7 +44,9 @@ kill_children <- function(pids, signal) {
 }
 
 kill_children_windows <- function(pids, signal) {
-  ## We do nothing on windows currently
+  children <- unlist(lapply(as.integer(pids), get_children))
+  if (length(children) == 0) return()
+  pskill(children, signal)
 }
 
 kill_children_unix <- function(pids, signal) {
