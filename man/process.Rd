@@ -25,6 +25,8 @@ p$read_output_lines(...)
 p$read_error_lines(...)
 p$can_read_output()
 p$can_read_error()
+p$is_eof_output()
+p$is_eof_error()
 p$get_output_connection()
 p$get_error_connection()
 }
@@ -89,6 +91,14 @@ immediately available.
 
 \code{$can_read_error()} checks if there is any standard error
 immediately available.
+
+\code{$is_eof_output()} checks if the standard output stream has
+ended. This means that the process is finished and all output has
+been processed.
+
+\code{$is_eof_error()} checks if the standard error stream has
+ended. This means that the process is finished and all output has
+been processed.
 
 \code{$get_output_connection()} returns a connection object, to the
 standard output stream of the process.

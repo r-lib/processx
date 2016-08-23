@@ -169,3 +169,67 @@ test_that("can_read methods work, stderr", {
   expect_false(p$can_read_error())
   expect_identical(p$read_error_lines(), character())
 })
+
+test_that("is_eof methods work, stdout", {
+
+  skip_on_cran()
+
+  sleep2 <- if (os_type() == "windows") {
+    "(ping -n 3 127.0.0.1 > NUL)"
+  } else {
+    "(sleep 2)"
+  }
+  cmd <- paste(sep = " && ", "(echo foo)", sleep2, "(echo bar)")
+
+  p <- process$new(commandline = cmd)
+  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+
+  Sys.sleep(1)
+  ## There must be output now
+  expect_false(p$is_eof_output())
+  expect_equal(p$read_output_lines(), "foo")
+
+  ## No output, but hasn't finished yet
+  expect_false(p$is_eof_output())
+
+  Sys.sleep(2)
+  ## Finished, but still has output
+  expect_false(p$is_eof_output())
+  expect_equal(p$read_output_lines(), "bar")
+
+  ## There is no more output and finished
+  expect_true(p$is_eof_output())
+  expect_identical(p$read_output_lines(), character())
+})
+
+test_that("is_eof methods work, stderr", {
+
+  skip_on_cran()
+
+  sleep2 <- if (os_type() == "windows") {
+    "(ping -n 3 127.0.0.1 > NUL)"
+  } else {
+    "(sleep 2)"
+  }
+  cmd <- paste(sep = " && ", "(>&2 echo foo)", sleep2, "(>&2 echo bar)")
+
+  p <- process$new(commandline = cmd)
+  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+
+  Sys.sleep(1)
+  ## There must be output now
+  expect_false(p$is_eof_error())
+  expect_equal(p$read_error_lines(), "foo")
+
+  ## No output, but hasn't finished yet
+  expect_false(p$is_eof_error())
+
+  Sys.sleep(2)
+  ## Finished, but still has output
+  expect_false(p$is_eof_error())
+  expect_equal(p$read_error_lines(), "bar")
+
+  ## There is no more output and finished
+  expect_true(p$is_eof_error())
+  expect_identical(p$read_error_lines(), character())
+})

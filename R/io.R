@@ -55,6 +55,19 @@ process_can_read <- function(self, private, conn) {
   }
 }
 
+process_is_eof_output <- function(self, private) {
+  process_is_eof(self, private, "stdout")
+}
+
+process_is_eof_error <- function(self, private) {
+  process_is_eof(self, private, "stderr")
+}
+
+process_is_eof <- function(self, private, conn) {
+  ! process_can_read(self, private, conn) &&
+  ! process_is_alive(self, private)
+}
+
 ## Could be:
 ## (1) FALSE (connection was not requested)
 ## (2) closed connection

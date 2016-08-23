@@ -157,7 +157,14 @@ p$read_output_lines()
 
 ### End of output
 
-TODO
+There is no standard way in R to signal the end of a connection,
+unfortunately. Most R I/O is blocking, and the end of file is reached when
+nothing can be read from the connection. This clearly does not work for
+non-blocking connections.
+
+For `process` standard output and error streams, you can use the
+`is_eof_output` and `is_eof_error` functions to check if there is any
+chance that more output will arrive on them later.
 
 
 ### Waiting on a process
