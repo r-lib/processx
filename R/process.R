@@ -247,10 +247,13 @@ process_initialize <- function(self, private, command, args,
   Sys.chmod(cmdfile, "700")
 
   ## Start, we drop the output from the shell itself, for now
-  private$pipe <- pipe(
+  ## We wrap the pipe() into process_connection, so it will be closed
+  ## automatially. This way we do not need a finializer for the
+  ## process object itself.
+  private$pipe <- process_connection(pipe(
     paste(shQuote(cmdfile), ">", null_file(), "2>", null_file()),
     open = "r"
-  )
+  ))
 
   ## pid of the newborn, will be NULL if finished already
   private$name <- basename(cmdfile)
