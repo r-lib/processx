@@ -1,12 +1,17 @@
 
 ## We have to use an environment here, because we need
 ## reference semantics
-process_connection <- function(con) {
+process_connection <- function(con, cleanup = TRUE) {
   class(con) <- unique(c("process_connection", class(con)))
 
   state <- new.env()
   state$closed <- FALSE
   attr(con, "closed") <- state
+
+  if (cleanup) {
+    attr(con, "closed")$con <- con
+    reg.finalizer(state, function(e) if (! e$closed) close(e$con), TRUE)
+  }
 
   con
 }

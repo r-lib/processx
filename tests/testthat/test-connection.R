@@ -50,3 +50,13 @@ test_that("print / summary does not fail", {
   expect_error(capture.output(print(con)), NA)
   expect_error(capture.output(summary(con)), NA)
 })
+
+test_that("cleanup", {
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+  cat("foo\n", "bar\n", sep = "", file = tmp)
+
+  con <- process_connection(file(tmp, open = "r", blocking = TRUE))
+
+  expect_warning({ rm(con); gc() }, NA)
+})
