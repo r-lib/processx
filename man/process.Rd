@@ -29,12 +29,15 @@ p$is_eof_output()
 p$is_eof_error()
 p$get_output_connection()
 p$get_error_connection()
+
+print(p)
 }
 }
 
 \section{Arguments}{
 
 \describe{
+  \item{p}{A \code{process} object.}
   \item{command}{Character scalar, the command to run. It will be
     escaped via \code{\link[base]{shQuote}}.}
   \item{args}{Character vector, arguments to the command. The will be
@@ -105,10 +108,14 @@ standard output stream of the process.
 
 \code{$get_error_conneciton()} returns a connection object, to the
 standard error stream of the process.
+
+\code{print(p)} or \code{p$print()} shows some information about the
+process on the screen, whether it is running and it's process id, etc.
 }
 \examples{
 p <- process$new("sleep", "2")
 p$is_alive()
+p
 p$kill()
 p$is_alive()
 

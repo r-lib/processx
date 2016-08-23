@@ -25,10 +25,13 @@
 #' p$is_eof_error()
 #' p$get_output_connection()
 #' p$get_error_connection()
+#'
+#' print(p)
 #' }
 #'
 #' @section Arguments:
 #' \describe{
+#'   \item{p}{A \code{process} object.}
 #'   \item{command}{Character scalar, the command to run. It will be
 #'     escaped via \code{\link[base]{shQuote}}.}
 #'   \item{args}{Character vector, arguments to the command. The will be
@@ -98,11 +101,15 @@
 #' \code{$get_error_conneciton()} returns a connection object, to the
 #' standard error stream of the process.
 #'
+#' \code{print(p)} or \code{p$print()} shows some information about the
+#' process on the screen, whether it is running and it's process id, etc.
+#'
 #' @importFrom R6 R6Class
 #' @name process
 #' @examples
 #' p <- process$new("sleep", "2")
 #' p$is_alive()
+#' p
 #' p$kill()
 #' p$is_alive()
 #'
@@ -139,6 +146,9 @@ process <- R6Class(
     restart = function()
       process_restart(self, private),
 
+    print = function()
+      process_print(self, private),
+
     ## Output
 
     read_output_lines = function(...)
@@ -168,6 +178,7 @@ process <- R6Class(
   ),
 
   private = list(
+
     pipe = NULL,          # The pipe connection object
     pid = NULL,           # The pid(s) of the child(ren) created by pipe()
     command = NULL,       # Save 'command' argument here
@@ -180,7 +191,10 @@ process <- R6Class(
     pstderr = NULL,       # the original stderr argument
     cleanup = NULL,       # which temp stdout/stderr file(s) to clean up
     closed = NULL,        # Was the pipe closed already
-    status = NULL         # Exit status of the process
+    status = NULL,        # Exit status of the process
+
+    get_short_name = function()
+      process_get_short_name(self, private)
   )
 )
 
