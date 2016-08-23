@@ -33,7 +33,7 @@ close.process_connection <- function(con, ...) {
   if (! con %in% getAllConnections()) attr(con, "closed")$closed <- TRUE
 
   ## Return result with correct visibility
-  if (res$visible) res else invisible(res)
+  if (res$visible) res$value else invisible(res$value)
 }
 
 is_closed <- function(con)
