@@ -107,9 +107,15 @@ test_that("Output and error to specific files", {
 test_that("can_read methods work, stdout", {
 
   skip_on_cran()
-  skip_other_platforms("unix")
 
-  p <- process$new(commandline = "echo foo; sleep 2; echo bar")
+  sleep2 <- if (os_type() == "windows") {
+    "(ping -n 3 127.0.0.1 > NUL)"
+  } else {
+    "(sleep 2)"
+  }
+  cmd <- paste(sep = " && ", "(echo foo)", sleep2, "(echo bar)")
+
+  p <- process$new(commandline = cmd)
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   Sys.sleep(1)
@@ -134,9 +140,15 @@ test_that("can_read methods work, stdout", {
 test_that("can_read methods work, stderr", {
 
   skip_on_cran()
-  skip_other_platforms("unix")
 
-  p <- process$new(commandline = ">&2 echo foo; sleep 2; >&2 echo bar")
+  sleep2 <- if (os_type() == "windows") {
+    "(ping -n 3 127.0.0.1 > NUL)"
+  } else {
+    "(sleep 2)"
+  }
+  cmd <- paste(sep = " && ", "(>&2 echo foo)", sleep2, "(>&2 echo bar)")
+
+  p <- process$new(commandline = cmd)
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   Sys.sleep(1)
