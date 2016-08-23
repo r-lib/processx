@@ -13,6 +13,20 @@
 Portable tools to run system processes in the background,
 read their standard output and error, kill and restart them.
 
+---
+
+  - [Features](#features)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Starting processes](#starting-processes)
+    - [Killing and restarting a process](#killing-and-restarting-a-process)
+    - [Standard output and error](#standard-output-and-error)
+    - [End of output](#end-of-output)
+    - [Waiting on a process](#waiting-on-a-process)
+	- [Exit statuses](#exit-statuses)
+	- [Errors](#errors)
+  - [License](#license)
+
 ## Features
 
 * Start system processes in the background.
