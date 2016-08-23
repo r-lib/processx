@@ -33,7 +33,7 @@ test_that("We can get the error stream", {
   cat(">&2 echo hello", ">&2 echo world", sep = "\n", file = tmp)
   Sys.chmod(tmp, "700")
 
-  p <- process$new(tmp, stderr = TRUE)
+  p <- process$new(tmp)
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   p$wait()
