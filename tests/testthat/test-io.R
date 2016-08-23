@@ -103,3 +103,57 @@ test_that("Output and error to specific files", {
   expect_identical(readLines(tmpout), c("wow", "wooow"))
   expect_identical(readLines(tmperr), c("hello", "world"))
 })
+
+test_that("can_read methods work, stdout", {
+
+  skip_on_cran()
+  skip_other_platforms("unix")
+
+  p <- process$new(commandline = "echo foo; sleep 2; echo bar")
+  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+
+  Sys.sleep(1)
+  ## There must be output now
+  expect_true(p$can_read_output())
+  expect_equal(p$read_output_lines(), "foo")
+
+  ## There is no more output now
+  expect_false(p$can_read_output())
+  expect_identical(p$read_output_lines(), character())
+
+  Sys.sleep(2)
+  ## There is output again
+  expect_true(p$can_read_output())
+  expect_equal(p$read_output_lines(), "bar")
+
+  ## There is no more output
+  expect_false(p$can_read_output())
+  expect_identical(p$read_output_lines(), character())
+})
+
+test_that("can_read methods work, stderr", {
+
+  skip_on_cran()
+  skip_other_platforms("unix")
+
+  p <- process$new(commandline = ">&2 echo foo; sleep 2; >&2 echo bar")
+  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+
+  Sys.sleep(1)
+  ## There must be output now
+  expect_true(p$can_read_error())
+  expect_equal(p$read_error_lines(), "foo")
+
+  ## There is no more output now
+  expect_false(p$can_read_error())
+  expect_identical(p$read_error_lines(), character())
+
+  Sys.sleep(2)
+  ## There is output again
+  expect_true(p$can_read_error())
+  expect_equal(p$read_error_lines(), "bar")
+
+  ## There is no more output
+  expect_false(p$can_read_error())
+  expect_identical(p$read_error_lines(), character())
+})
