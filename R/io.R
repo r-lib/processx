@@ -22,6 +22,39 @@ process_get_error_connection <- function(self, private) {
   private$stderr
 }
 
+
+process_can_read_output <- function(self, private) {
+  process_can_read(self, private, "stdout")
+}
+
+
+process_can_read_error <- function(self, private) {
+  process_can_read(self, private, "stderr")
+}
+
+
+process_can_read <- function(self, private, conn) {
+  private[[conn]] <- open_if_needed(private[[conn]])
+
+  ## If there is pushback, then there is definitely
+  ## something to read
+  if (pushBackLength(private[[conn]]) > 0) {
+    TRUE
+
+  ## Otherwise we try to read a line and push it back
+  ## if we succeeded
+  } else {
+    lines <- readLines(private[[conn]], n = 1)
+
+    if (length(lines)) {
+      pushBack(lines, private[[conn]])
+      TRUE
+    } else {
+      FALSE
+    }
+  }
+}
+
 ## Could be:
 ## (1) FALSE (connection was not requested)
 ## (2) closed connection

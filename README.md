@@ -170,6 +170,82 @@ p$read_error_lines()
 #> [1] "bar"
 ```
 
+To check if there is anything available for reading on the standard output
+or error streams, use the `can_read_output` and `can_read_error` functions:
+
+
+```r
+p <- process$new(commandline = "echo foo; sleep 2; echo bar")
+
+Sys.sleep(1)
+## There must be output now
+p$can_read_output()
+```
+
+```
+#> [1] TRUE
+```
+
+```r
+p$read_output_lines()
+```
+
+```
+#> [1] "foo"
+```
+
+```r
+## There is no more output now
+p$can_read_output()
+```
+
+```
+#> [1] FALSE
+```
+
+```r
+p$read_output_lines()
+```
+
+```
+#> character(0)
+```
+
+```r
+Sys.sleep(2)
+## There is output again
+p$can_read_output()
+```
+
+```
+#> [1] TRUE
+```
+
+```r
+p$read_output_lines()
+```
+
+```
+#> [1] "bar"
+```
+
+```r
+## There is no more output
+p$can_read_output()
+```
+
+```
+#> [1] FALSE
+```
+
+```r
+p$read_output_lines()
+```
+
+```
+#> character(0)
+```
+
 ### End of output
 
 TODO
@@ -197,7 +273,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2016-08-22 15:18:20 BST"
+#> [1] "2016-08-23 09:52:55 BST"
 ```
 
 ```r
@@ -206,7 +282,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2016-08-22 15:18:22 BST"
+#> [1] "2016-08-23 09:52:57 BST"
 ```
 
 It is safe to call `wait` multiple times:

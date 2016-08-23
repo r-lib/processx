@@ -130,6 +130,31 @@ p$read_output_lines()
 p$read_error_lines()
 ```
 
+To check if there is anything available for reading on the standard output
+or error streams, use the `can_read_output` and `can_read_error` functions:
+
+```{r}
+p <- process$new(commandline = "echo foo; sleep 2; echo bar")
+
+Sys.sleep(1)
+## There must be output now
+p$can_read_output()
+p$read_output_lines()
+
+## There is no more output now
+p$can_read_output()
+p$read_output_lines()
+
+Sys.sleep(2)
+## There is output again
+p$can_read_output()
+p$read_output_lines()
+
+## There is no more output
+p$can_read_output()
+p$read_output_lines()
+```
+
 ### End of output
 
 TODO
