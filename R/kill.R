@@ -30,7 +30,7 @@ process_kill <- function(self, private, grace) {
     pskill(as.integer(private$pid), SIGKILL)
   }
 
-  private$pid <- get_pid(private$name)
+  private$pid <- get_pid_by_name(private$name)
 
   invisible(self)
 }

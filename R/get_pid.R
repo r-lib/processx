@@ -1,16 +1,14 @@
 
-get_pid <- function(name, children = FALSE) {
+get_pid_by_name <- function(name, children = FALSE) {
   if (os_type() == "windows") {
-    get_pid_windows(name, children)
+    get_pid_by_name_windows(name, children)
   } else {
-    get_pid_unix(name, children)
+    get_pid_by_name_unix(name, children)
   }
 }
 
-get_pid_windows <- function(name, children) {
-  if (Sys.which("wmic") == "") {
-    stop("Could not run 'wmic', 'process' needs 'wmic' on this platform")
-  }
+get_pid_by_name_windows <- function(name, children) {
+  check_tool("wmic")
 
   ## Do we search among children, or in general?
   cmd <- if (children) {
@@ -54,7 +52,7 @@ parse_wmic_list <- function(text) {
 
 #' @importFrom utils tail
 
-get_pid_unix <- function(name, children) {
+get_pid_by_name_unix <- function(name, children) {
 
   ## NOTE: 'children' is ignored on unix, because the started
   ## process might not be a child of the R process, anyway.

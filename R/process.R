@@ -271,7 +271,7 @@ process_initialize <- function(self, private, command, args,
 
   ## pid of the newborn, will be NULL if finished already
   private$name <- basename(cmdfile)
-  private$pid <- get_pid(private$name)
+  private$pid <- get_pid_by_name(private$name)
 
   ## Store the output and error files, we'll open them later if needed
   private$stdout <- stdout
@@ -281,7 +281,7 @@ process_initialize <- function(self, private, command, args,
 }
 
 process_is_alive <- function(self, private) {
-  private$pid <- get_pid(private$name)
+  private$pid <- get_pid_by_name(private$name)
   ! is.null(private$pid)
 }
 

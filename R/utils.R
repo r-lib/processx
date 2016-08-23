@@ -18,3 +18,12 @@ isFALSE <- function(x) {
 close_if_needed <- function(x) {
   if (inherits(x, "connection")) close(x)
 }
+
+check_tool <- function(x) {
+  if (Sys.which(x) == "") {
+    stop(
+      "Could not run '", x,
+      "', 'process' needs '", x, "' on this platform"
+    )
+  }
+}
