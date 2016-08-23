@@ -81,10 +81,11 @@ p1$is_alive()
 
 ### Standard output and error
 
-By default the standard output and error of the processes are lost,
-but the `stdout` and `stderr` constructor arguments will keep them.
-These can be set to a string pointing to a file name, or just to `TRUE`,
-in which case temporary files are used to hold the output.
+By default the standard output and error of the processes are redirected
+to temporary files. You can set the `stdout` and `stderr` constructor
+arguments to `FALSE` to force discarding them, in case you have a long
+running process with a lot of output. You can also set them to file names,
+if you want the output and/or error streams in some specific files.
 
 The `read_output_lines` and `read_error_lines` methods can be used
 to read the standard output or error. They work the same way as the
@@ -95,10 +96,7 @@ are non-blocking text connections, so the read functions will return
 immediately, even if there is no text to read from them.
 
 ```{r}
-p <- process$new(
-  commandline = "echo foo; >&2 echo bar; echo foobar",
-  stdout = TRUE, stderr = TRUE
-)
+p <- process$new(commandline = "echo foo; >&2 echo bar; echo foobar")
 p$read_output_lines()
 p$read_error_lines()
 ```
