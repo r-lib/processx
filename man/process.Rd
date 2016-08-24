@@ -13,7 +13,7 @@ streams. The process id is then used to manage the process.
 \section{Usage}{
 
 \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
-                 stdout = TRUE, stderr = TRUE)
+                 stdout = TRUE, stderr = TRUE, cleanup = TRUE)
 
 p$is_alive()
 p$kill(grace = 0.1)
@@ -50,6 +50,8 @@ print(p)
   \item{stdout}{What to do with the standard error. Possible values:
     \code{FALSE}: discard it; a string, redirect it to this file,
     \code{TRUE}: redirect it to a temporary file.}
+  \item{cleanup}{Whether to kill the process if the \code{process}
+    object is garbage collected.}
   \item{grace}{Grace pediod between the TERM and KILL signals, in
     seconds.}
   \item{...}{Extra arguments are passed to the

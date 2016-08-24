@@ -9,7 +9,7 @@
 #'
 #' @section Usage:
 #' \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
-#'                  stdout = TRUE, stderr = TRUE)
+#'                  stdout = TRUE, stderr = TRUE, cleanup = TRUE)
 #'
 #' p$is_alive()
 #' p$kill(grace = 0.1)
@@ -44,6 +44,8 @@
 #'   \item{stdout}{What to do with the standard error. Possible values:
 #'     \code{FALSE}: discard it; a string, redirect it to this file,
 #'     \code{TRUE}: redirect it to a temporary file.}
+#'   \item{cleanup}{Whether to kill the process if the \code{process}
+#'     object is garbage collected.}
 #'   \item{grace}{Grace pediod between the TERM and KILL signals, in
 #'     seconds.}
 #'   \item{...}{Extra arguments are passed to the
@@ -130,9 +132,9 @@ process <- R6Class(
   public = list(
 
     initialize = function(command = NULL, args = character(),
-      commandline = NULL, stdout = TRUE, stderr = TRUE)
+      commandline = NULL, stdout = TRUE, stderr = TRUE, cleanup = TRUE)
       process_initialize(self, private, command, args, commandline,
-                         stdout, stderr),
+                         stdout, stderr, cleanup),
 
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
@@ -187,12 +189,13 @@ process <- R6Class(
     command = NULL,       # Save 'command' argument here
     args = NULL,          # Save 'args' argument here
     commandline = NULL,   # The full command line
+    cleanup = NULL,       # cleanup argument
     name = NULL,          # Name of the temporary file
     stdout = NULL,        # stdout argument or stream
     stderr = NULL,        # stderr argument or stream
     pstdout = NULL,       # the original stdout argument
     pstderr = NULL,       # the original stderr argument
-    cleanup = NULL,       # which temp stdout/stderr file(s) to clean up
+    cleanfiles = NULL,    # which temp stdout/stderr file(s) to clean up
     closed = NULL,        # Was the pipe closed already
     status = NULL,        # Exit status of the process
 
@@ -210,17 +213,19 @@ process <- R6Class(
 #' @param commandline Alternative to command + args.
 #' @param stdout Standard output, FALSE to ignore, TRUE for temp file.
 #' @param stderr Standard error, FALSE to ignore, TRUE for temp file.
+#' @param cleanup Kill on GC?
 #'
 #' @keywords internal
 
 process_initialize <- function(self, private, command, args,
-                               commandline, stdout, stderr) {
+                               commandline, stdout, stderr, cleanup) {
 
   assert_string_or_null(command)
   assert_character(args)
   assert_flag_or_string(stdout)
   assert_flag_or_string(stderr)
   assert_string_or_null(commandline)
+  assert_flag(cleanup)
 
   if (is.null(command) + is.null(commandline) != 1) {
     stop("Need exactly one of 'command' and 'commandline")
@@ -232,15 +237,16 @@ process_initialize <- function(self, private, command, args,
   private$command <- command
   private$args <- args
   private$commandline <- commandline
+  private$cleanup <- cleanup
   private$closed <- FALSE
   private$pstdout <- stdout
   private$pstderr <- stderr
 
   if (isTRUE(stdout)) {
-    private$cleanup <- c(private$cleanup, stdout <- tempfile())
+    private$cleanfiles <- c(private$cleanfiles, stdout <- tempfile())
   }
   if (isTRUE(stderr)) {
-    private$cleanup <- c(private$cleanup, stderr <- tempfile())
+    private$cleanfiles <- c(private$cleanfiles, stderr <- tempfile())
   }
 
   cmd <- if (!is.null(command)) {
@@ -272,6 +278,9 @@ process_initialize <- function(self, private, command, args,
     open = "r"
   ))
 
+  ## Cleanup on GC, if requested
+  if (cleanup) reg.finalizer(self, function(e) { e$kill() }, TRUE)
+
   ## pid of the newborn, will be NULL if finished already
   private$name <- basename(cmdfile)
   private$pid <- get_pid_by_name(private$name)
@@ -298,7 +307,7 @@ process_restart <- function(self, private) {
   private$pipe <- NULL
   private$pid <- NULL
   private$name <- NULL
-  private$cleanup <- NULL
+  private$cleanfiles <- NULL
   private$closed <- NULL
   private$status <- NULL
 
@@ -309,7 +318,8 @@ process_restart <- function(self, private) {
     private$args,
     private$commandline,
     private$pstdout,
-    private$pstderr
+    private$pstderr,
+    private$cleanup
   )
 
   invisible(self)

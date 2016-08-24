@@ -25,6 +25,10 @@ is_flag <- function(x) {
   !is.na(x)
 }
 
+assert_flag <- function(x) {
+  stopifnot(is_flag(x))
+}
+
 assert_flag_or_string <- function(x) {
   stopifnot(
     is_flag(x) || is_string(x)

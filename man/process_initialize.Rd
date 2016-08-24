@@ -4,7 +4,8 @@
 \alias{process_initialize}
 \title{Start a process}
 \usage{
-process_initialize(self, private, command, args, commandline, stdout, stderr)
+process_initialize(self, private, command, args, commandline, stdout, stderr,
+  cleanup)
 }
 \arguments{
 \item{self}{this}
@@ -20,6 +21,8 @@ process_initialize(self, private, command, args, commandline, stdout, stderr)
 \item{stdout}{Standard output, FALSE to ignore, TRUE for temp file.}
 
 \item{stderr}{Standard error, FALSE to ignore, TRUE for temp file.}
+
+\item{cleanup}{Kill on GC?}
 }
 \description{
 Start a process

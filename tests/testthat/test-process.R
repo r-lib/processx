@@ -61,3 +61,24 @@ test_that("children are removed on kill()", {
   ## But it should not have been alive
   expect_null(pid)
 })
+
+test_that("process is cleaned up on GC", {
+
+  skip_on_cran()
+
+  win  <- c("ping", "-n", "6", "127.0.0.1")
+  unix <- c("sleep", "5")
+  cmd <- if (os_type() == "windows") win else unix
+
+  p <- process$new(cmd[1], cmd[-1])
+
+  expect_true(p$is_alive())
+
+  ## Remove reference and see the process die
+  ## We check for the internal name
+  name <- p$.__enclos_env__$private$name
+  rm(p)
+  gc()
+
+  expect_null(get_pid_by_name(name))
+})
