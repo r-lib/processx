@@ -5,9 +5,6 @@ test_that("process works", {
 
   skip_on_cran()
 
-  dir.create(tmp <- tempfile())
-  on.exit(unlink(tmp), add = TRUE)
-
   win  <- c("ping", "-n", "6", "127.0.0.1")
   unix <- c("sleep", "5")
   cmd <- if (os_type() == "windows") win else unix
