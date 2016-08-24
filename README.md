@@ -42,6 +42,16 @@ read their standard output and error, kill and restart them.
   [R6](http://r-pkg.org/pkg/R6) package.
 * Contains no compiled code, so it is easy to install.
 
+## Caveats
+
+* On killing a process only the direct children are removed,
+  the grandchildren, etc. are not currently.
+* There is no way of doing a *blocking* read from the standard
+  output of error of the process.
+* The process is currently not killed when the `process` object
+  is garbaged-collected by R. You can registes a finalizer on it
+  with `reg.finalizer` to call `kill` explicitly.
+
 ## Installation
 
 
