@@ -49,7 +49,7 @@ read their standard output and error, kill and restart them.
 * On killing a process only the direct children are removed,
   the grandchildren, etc. are not currently.
 * There is no way of doing a *blocking* read from the standard
-  output of error of the process.
+  output or error stream of the process.
 
 ## Installation
 
