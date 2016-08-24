@@ -35,6 +35,8 @@ read their standard output and error, kill and restart them.
 * Get the exit status of a background process, if it has already
   finished.
 * Kill background processes, together with their children.
+* Kill background process, when its associated object is garbage
+  collected.
 * Restart background processes.
 * Read the standard output and error, using non-blocking connections.
 * Portable, works on Linux, macOS and Windows.
@@ -48,9 +50,6 @@ read their standard output and error, kill and restart them.
   the grandchildren, etc. are not currently.
 * There is no way of doing a *blocking* read from the standard
   output of error of the process.
-* The process is currently not killed when the `process` object
-  is garbaged-collected by R. You can register a finalizer on it
-  with `reg.finalizer` to call `kill` explicitly.
 
 ## Installation
 
