@@ -1,14 +1,14 @@
 
 
 
-# process
+# processx
 
 > Execute and Control System Processes
 
-[![Linux Build Status](https://travis-ci.org/gaborcsardi/process.svg?branch=master)](https://travis-ci.org/gaborcsardi/process)
-[![Windows Build status](https://ci.appveyor.com/api/projects/status/github/gaborcsardi/process?svg=true)](https://ci.appveyor.com/project/gaborcsardi/process)
-[![](http://www.r-pkg.org/badges/version/process)](http://www.r-pkg.org/pkg/process)
-[![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/process)](http://www.r-pkg.org/pkg/process)
+[![Linux Build Status](https://travis-ci.org/gaborcsardi/processx.svg?branch=master)](https://travis-ci.org/gaborcsardi/processx)
+[![Windows Build status](https://ci.appveyor.com/api/projects/status/github/gaborcsardi/processx?svg=true)](https://ci.appveyor.com/project/gaborcsardi/processx)
+[![](http://www.r-pkg.org/badges/version/processx)](http://www.r-pkg.org/pkg/processx)
+[![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/processx)](http://www.r-pkg.org/pkg/processx)
 
 Portable tools to run system processes in the background,
 read their standard output and error, kill and restart them.
@@ -46,7 +46,7 @@ read their standard output and error, kill and restart them.
 
 
 ```r
-source("https://install-github.me/gaborcsardi/process")
+source("https://install-github.me/gaborcsardi/processx")
 ```
 
 ## Usage
@@ -56,12 +56,12 @@ Linux systems, but not necessarily on Windows.
 
 
 ```r
-library(process)
+library(processx)
 ```
 
 ### Starting processes
 
-`process` provides two ways to start processes. The first one
+`processx` provides two ways to start processes. The first one
 requires a single command, and a character vector of arguments.
 Both the command and the arguments will be shell quoted, so it is safe
 to include spaces and other special characters:
@@ -280,7 +280,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2016-08-23 09:52:55 BST"
+#> [1] "2016-08-24 09:23:46 BST"
 ```
 
 ```r
@@ -289,7 +289,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2016-08-23 09:52:57 BST"
+#> [1] "2016-08-24 09:23:48 BST"
 ```
 
 It is safe to call `wait` multiple times:
@@ -360,7 +360,7 @@ p$get_exit_status()
 
 ### Errors
 
-Errors are typically signalled via non-zero exits statuses. `process`
+Errors are typically signalled via non-zero exits statuses. `processx`
 currently has no special behavior to handle errors.
 
 If you want to make sure that the process has started successfully,

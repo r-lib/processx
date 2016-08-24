@@ -1,4 +1,4 @@
-Package: process
+Package: processx
 Title: Execute and Control System Processes
 Version: 1.0.0
 Author: Gábor Csárdi
@@ -8,11 +8,11 @@ Description: Portable tools to run system processes in the background.
     process to finish; get the exit status of finished processes; kill
     background processes and their children; restart processes. It can read
     the standard output and error of the processes, using non-blocking
-    connections. 'process' is lightweight and contains no compiled code.
+    connections. 'processx' is lightweight and contains no compiled code.
 License: MIT + file LICENSE
 LazyData: true
-URL: https://github.com/gaborcsardi/process#readme
-BugReports: https://github.com/gaborcsardi/process/issues
+URL: https://github.com/gaborcsardi/processx#readme
+BugReports: https://github.com/gaborcsardi/processx/issues
 RoxygenNote: 5.0.1
 Suggests: 
     testthat
