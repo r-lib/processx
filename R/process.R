@@ -107,6 +107,8 @@
 #' @importFrom R6 R6Class
 #' @name process
 #' @examples
+#' # CRAN does not like long-running examples
+#' \dontrun{
 #' p <- process$new("sleep", "2")
 #' p$is_alive()
 #' p
@@ -117,6 +119,7 @@
 #' p$is_alive()
 #' Sys.sleep(3)
 #' p$is_alive()
+#' }
 #'
 NULL
 

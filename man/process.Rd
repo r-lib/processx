@@ -113,6 +113,8 @@ standard error stream of the process.
 process on the screen, whether it is running and it's process id, etc.
 }
 \examples{
+# CRAN does not like long-running examples
+\dontrun{
 p <- process$new("sleep", "2")
 p$is_alive()
 p
@@ -123,6 +125,7 @@ p$restart()
 p$is_alive()
 Sys.sleep(3)
 p$is_alive()
+}
 
 }
 
