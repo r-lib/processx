@@ -56,7 +56,7 @@ read their standard output and error, kill and restart them.
 * There is no way of doing a *blocking* read from the standard
   output of error of the process.
 * The process is currently not killed when the `process` object
-  is garbaged-collected by R. You can registes a finalizer on it
+  is garbaged-collected by R. You can register a finalizer on it
   with `reg.finalizer` to call `kill` explicitly.
 
 ## Installation
