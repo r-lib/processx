@@ -119,10 +119,16 @@ get_pid_by_name_unix <- function(name, children) {
 
   if (length(pid) == 0) {
     NULL
+
   } else if (length(pid) == 1) {
     pid
+
   } else {
-    warning("Found multiple child processes, this should not happen")
+    warning(
+      "Found multiple child processes: ",
+      paste(pid, collapse = ", "),
+      ", this should not happen"
+)
     tail(pid, 1)
   }
 }
