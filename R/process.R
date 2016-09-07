@@ -190,7 +190,6 @@ process <- R6Class(
     args = NULL,          # Save 'args' argument here
     commandline = NULL,   # The full command line
     cleanup = NULL,       # cleanup argument
-    name = NULL,          # Name of the temporary file
     stdout = NULL,        # stdout argument or stream
     stderr = NULL,        # stderr argument or stream
     pstdout = NULL,       # the original stdout argument
@@ -257,6 +256,7 @@ process_initialize <- function(self, private, command, args,
   }
 
   fullcmd <- paste(
+    'echo $$\n',
     cmd,
     ">",  if (isFALSE(stdout)) null_file() else shQuote(stdout),
     "2>", if (isFALSE(stderr)) null_file() else shQuote(stderr)
@@ -275,17 +275,13 @@ process_initialize <- function(self, private, command, args,
   ## automatially. This way we do not need a finializer for the
   ## process object itself.
   private$pipe <- process_connection(pipe(
-    paste(shQuote(cmdfile), ">", null_file(), "2>", null_file()),
+    paste(shQuote(cmdfile), "2>", null_file()),
     open = "r"
   ))
-  private$starttime <- Sys.time()
+  private$pid <- as.numeric(readLines(private$pipe, n = 1))
 
   ## Cleanup on GC, if requested
   if (cleanup) reg.finalizer(self, function(e) { e$kill() }, TRUE)
-
-  ## pid of the newborn, will be NULL if finished already
-  private$name <- basename(cmdfile)
-  private$pid <- get_pid_by_name(private$name)
 
   ## Store the output and error files, we'll open them later if needed
   private$stdout <- stdout
@@ -295,25 +291,7 @@ process_initialize <- function(self, private, command, args,
 }
 
 process_is_alive <- function(self, private) {
-  private$pid <- get_pid_by_name(private$name)
-
-  ## If have a pid, then no question
-  if (!is.null(private$pid)) {
-    TRUE
-
-  ## Otherwise if we are just starting, then give it some time
-  } else if (Sys.time() - private$starttime <
-             as.difftime(0.1, units = "secs")) {
-    for (i in 1:100) {
-      private$pid <- get_pid_by_name(private$name)
-      if (!is.null(private$pid)) return(TRUE)
-      Sys.sleep(0.01)
-    }
-    FALSE
-
-  } else {
-    FALSE
-  }
+  ! pskill(private$pid, signal = 0)
 }
 
 process_restart <- function(self, private) {
@@ -324,8 +302,6 @@ process_restart <- function(self, private) {
   ## Wipe out state, to be sure
   private$pid <- NULL
   private$pipe <- NULL
-  private$pid <- NULL
-  private$name <- NULL
   private$cleanfiles <- NULL
   private$closed <- NULL
   private$status <- NULL
