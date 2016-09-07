@@ -79,10 +79,11 @@ get_pid_by_name_windows <- function(name, children) {
 
 get_pid_by_name_unix <- function(name, children) {
 
-  ## NOTE: 'children' is ignored on unix, because the started
-  ## process might not be a child of the R process, anyway.
-
-  res <- safe_system("pgrep", c("-f", name))
+  if (children) {
+    res <- safe_system("pgrep", c("-f", name, "-P", Sys.getpid()))
+  } else {
+    res <- safe_system("pgrep", c("-f", name))
+  }
 
   ## This is the same on macOS, Solaris & Linux \o/
   ## 0   One or more processes matched
