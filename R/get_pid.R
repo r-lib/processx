@@ -56,7 +56,7 @@ parse_wmic_list <- function(text) {
   )
 }
 
-get_pid_by_name <- function(name, children = FALSE) {
+get_pid_by_name <- function(name, children = TRUE) {
   if (os_type() == "windows") {
     get_pid_by_name_windows(name, children)
   } else {
