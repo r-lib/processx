@@ -14,6 +14,9 @@ get_children_windows <- function(pid) {
   as.integer(pstab$ProcessId)
 }
 
+## It is important that we don't use this with Sys.getpid(),
+## because then the children will include the pgrep process itself...
+
 get_children_unix <- function(pid) {
   res <- safe_system("pgrep", c("-P", pid))
   pid <- scan(text = res$stdout, what = 1, quiet = TRUE)
@@ -96,10 +99,10 @@ get_pid_by_name_unix <- function(name, children) {
   if (children) {
     ## The order of the arguments matters, at least on maxOS (!)
     ## With the "wrong" order pgrep finds arbitrary extra processes (!)
-    res <- safe_system("pgrep", c("-P", Sys.getpid(), "-f", name))
+    res <- safe_system("pgrep", c("-o", "-P", Sys.getpid(), "-f", name))
 
   } else {
-    res <- safe_system("pgrep", c("-f", name))
+    res <- safe_system("pgrep", c("-o", "-f", name))
   }
 
   ## This is the same on macOS, Solaris & Linux \o/
