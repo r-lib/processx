@@ -46,14 +46,14 @@ test_that("children are removed on kill()", {
   Sys.sleep(1)
 
   ## Child should be alive now
-  pid <- get_pid_by_name(basename(tmp2))
+  pid <- get_pid_by_name(basename(tmp2), children = FALSE)
   expect_true(!is.null(pid))
 
   ## Kill the process
   p$kill()
 
   ## Check on the child
-  pid <- get_pid_by_name(basename(tmp2))
+  pid <- get_pid_by_name(basename(tmp2), children = FALSE)
 
   ## If alive, then kill it
   if (!is.null(pid)) pskill(pid)

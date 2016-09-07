@@ -1,9 +1,23 @@
 
 get_children <- function(pid) {
+  if (os_type() == "windows") {
+    get_children_windows(pid)
+  } else {
+    get_children_unix(pid)
+  }
+}
+
+get_children_windows <- function(pid) {
   if (!length(pid)) return(integer())
   assert_pid(pid)
   pstab <- get_processes_windows(parent = pid)
   as.integer(pstab$ProcessId)
+}
+
+get_children_unix <- function(pid) {
+  res <- safe_system("pgrep", c("-P", pid))
+  pid <- scan(text = res$stdout, what = 1, quiet = TRUE)
+  pid
 }
 
 get_processes_windows <- function(parent) {
@@ -111,4 +125,17 @@ get_pid_by_name_unix <- function(name, children) {
     warning("Found multiple child processes, this should not happen")
     tail(pid, 1)
   }
+}
+
+get_pid_tree_by_name <- function(name) {
+  ## Start pid by name, should be only one
+  pid <- get_pid_by_name(name, children = TRUE)
+
+  ## And then all children of this, recursively
+  c(get_pid_tree(pid), pid)
+}
+
+get_pid_tree <- function(pid) {
+  children <- get_children(pid)
+  c(unlist(lapply(children, get_pid_tree)), children)
 }

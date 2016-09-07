@@ -18,40 +18,13 @@
 
 process_kill <- function(self, private, grace) {
   if (! is.null(private$pid)) {
-
-    ## Children
-    kill_children(private$pid, SIGTERM)
+    pids <- get_pid_tree_by_name(private$name)
+    pskill(pids, SIGTERM)
     Sys.sleep(grace)
-    kill_children(private$pid, SIGKILL)
-
-    ## Process itself
-    pskill(as.integer(private$pid), SIGTERM)
-    Sys.sleep(grace)
-    pskill(as.integer(private$pid), SIGKILL)
+    pskill(pids, SIGKILL)
   }
 
   private$pid <- get_pid_by_name(private$name)
 
   invisible(self)
-}
-
-kill_children <- function(pids, signal) {
-  if (os_type() == "windows") {
-    kill_children_windows(pids, signal)
-  } else {
-    kill_children_unix(pids, signal)
-  }
-}
-
-kill_children_windows <- function(pids, signal) {
-  children <- unlist(lapply(as.integer(pids), get_children))
-  if (length(children) == 0) return()
-  pskill(children, signal)
-}
-
-kill_children_unix <- function(pids, signal) {
-  safe_system(
-    "pkill",
-    c(paste0("-", signal), "-P", pids)
-  )
 }
