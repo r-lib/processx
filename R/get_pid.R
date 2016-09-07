@@ -80,7 +80,10 @@ get_pid_by_name_windows <- function(name, children) {
 get_pid_by_name_unix <- function(name, children) {
 
   if (children) {
-    res <- safe_system("pgrep", c("-f", name, "-P", Sys.getpid()))
+    ## The order of the arguments matters, at least on maxOS (!)
+    ## With the "wrong" order pgrep finds arbitrary extra processes (!)
+    res <- safe_system("pgrep", c("-P", Sys.getpid(), "-f", name))
+
   } else {
     res <- safe_system("pgrep", c("-f", name))
   }
@@ -100,9 +103,12 @@ get_pid_by_name_unix <- function(name, children) {
   ## starts the second, with the same command line. We just take the
   ## last process in this case.
 
-  if (length(pid) >= 1) {
-    tail(sort(pid), 1)
-  } else if (length(pid) == 0) {
+  if (length(pid) == 0) {
     NULL
+  } else if (length(pid) == 1) {
+    pid
+  } else {
+    warning("Found multiple child processes, this should not happen")
+    tail(pid, 1)
   }
 }
