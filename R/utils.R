@@ -31,3 +31,7 @@ check_tool <- function(x) {
     )
   }
 }
+
+str_trim <- function(x) {
+  sub("\\s+$", "", sub("^\\s+", "", x))
+}

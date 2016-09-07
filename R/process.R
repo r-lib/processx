@@ -204,6 +204,44 @@ process <- R6Class(
   )
 )
 
+## We just list all children of the R process here, and will select the
+## proper one in the next function
+
+get_my_pid_code <- function() {
+  if (os_type() == "unix") {
+    'echo $$\n'
+  } else {
+    paste0(
+      "wmic process where '(parentprocessid=", Sys.getpid(),
+      ")' get commandline, processid\n"
+    )
+  }
+}
+
+## On windows, we read until the process with the proper random id
+## is listed
+
+get_pid_from_file <- function(inp, cmdfile) {
+  if (os_type() == "unix") {
+    as.numeric(readLines(inp, n = 1))
+
+  } else {
+    token <- basename(cmdfile)
+    while (length(l <- readLines(inp, n = 1)) &&
+      !grepl(token, l, fixed = TRUE)) {
+      NULL
+    }
+
+    id <- if (length(l)) {
+      as.numeric(tail(strsplit(str_trim(l), " ")[[1]], 1))
+    }
+    if (is.null(id) || is.na(id)) {
+      stop("Cannot find pid, internal processx error")
+    }
+    id
+  }
+}
+
 #' Start a process
 #'
 #' @param self this
@@ -250,24 +288,31 @@ process_initialize <- function(self, private, command, args,
   }
 
   cmd <- if (!is.null(command)) {
-    shQuote(command)
+    paste0(
+      shQuote(command), " ",
+      if (length(args)) paste(shQuote(args), collapse = " ")
+    )
+
   } else {
     paste0("(", commandline, ")")
   }
 
-  fullcmd <- paste(
-    'echo $$\n',
-    cmd,
-    ">",  if (isFALSE(stdout)) null_file() else shQuote(stdout),
-    "2>", if (isFALSE(stderr)) null_file() else shQuote(stderr)
+  fullcmd <- paste0(
+    get_my_pid_code(),
+    cmd, " ",
+    " >",  if (isFALSE(stdout)) null_file() else shQuote(stdout),
+    " 2>", if (isFALSE(stderr)) null_file() else shQuote(stderr),
+    "\n"
   )
 
   ## Create temporary file to run
+  ## Do NOT remove this with on.exit(), because that creates a race
+  ## condition that hits back at you on Windows: the shell might not
+  ## start running before the file is deleted by on.exit.
   cmdfile <- tempfile(fileext = ".bat")
-  on.exit(unlink(cmdfile), add = TRUE)
 
   ## Add command to it, make it executable
-  cat(fullcmd, if (length(args)) shQuote(args), "\n", file = cmdfile)
+  cat(fullcmd, file = cmdfile)
   Sys.chmod(cmdfile, "700")
 
   ## Start, we drop the output from the shell itself, for now
@@ -275,10 +320,10 @@ process_initialize <- function(self, private, command, args,
   ## automatially. This way we do not need a finializer for the
   ## process object itself.
   private$pipe <- process_connection(pipe(
-    paste(shQuote(cmdfile), "2>", null_file()),
+    paste(shQuote(cmdfile), "2>&1"),
     open = "r"
   ))
-  private$pid <- as.numeric(readLines(private$pipe, n = 1))
+  private$pid <- get_pid_from_file(private$pipe, cmdfile)
 
   ## Cleanup on GC, if requested
   if (cleanup) reg.finalizer(self, function(e) { e$kill() }, TRUE)
@@ -291,7 +336,19 @@ process_initialize <- function(self, private, command, args,
 }
 
 process_is_alive <- function(self, private) {
-  ! pskill(private$pid, signal = 0)
+  if (os_type() == "unix") {
+    ! pskill(private$pid, signal = 0)
+
+  } else {
+    cmd <- paste0(
+      "wmic process where (processid=",
+      private$pid,
+      ") get processid, parentprocessid /format:list 2>&1"
+    )
+    wmic_out <- shell(cmd, intern = TRUE)
+    procs <- parse_wmic_list(wmic_out)
+    nrow(procs) > 0
+  }
 }
 
 process_restart <- function(self, private) {
