@@ -15,6 +15,9 @@ install:
 script:
   - ./pkg-build.sh run_tests
 
+after_success:
+  - ./pkg-build.sh dump_logs
+
 after_failure:
   - ./pkg-build.sh dump_logs
 
