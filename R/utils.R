@@ -3,6 +3,10 @@ os_type <- function() {
   .Platform$OS.type
 }
 
+is_linux <- function() {
+  identical(tolower(Sys.info()[["sysname"]]), "linux")
+}
+
 null_file <- function() {
   if (os_type() == "windows") {
     "NUL"
