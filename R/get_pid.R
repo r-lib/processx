@@ -89,7 +89,7 @@ get_pid_by_name_windows <- function(name, children) {
   if (length(pids) >= 1) pids else NULL
 }
 
-#' @importFrom utils tail
+#' @importFrom utils head
 
 get_pid_by_name_unix <- function(name, children) {
 
@@ -129,7 +129,7 @@ get_pid_by_name_unix <- function(name, children) {
       paste(pid, collapse = ", "),
       ", this should not happen"
 )
-    tail(pid, 1)
+    head(pid, 1)
   }
 }
 
