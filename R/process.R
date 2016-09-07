@@ -198,6 +198,7 @@ process <- R6Class(
     cleanfiles = NULL,    # which temp stdout/stderr file(s) to clean up
     closed = NULL,        # Was the pipe closed already
     status = NULL,        # Exit status of the process
+    starttime = NULL,     # timestamp of start
 
     get_short_name = function()
       process_get_short_name(self, private)
@@ -277,6 +278,7 @@ process_initialize <- function(self, private, command, args,
     paste(shQuote(cmdfile), ">", null_file(), "2>", null_file()),
     open = "r"
   ))
+  private$starttime <- Sys.time()
 
   ## Cleanup on GC, if requested
   if (cleanup) reg.finalizer(self, function(e) { e$kill() }, TRUE)
@@ -294,7 +296,24 @@ process_initialize <- function(self, private, command, args,
 
 process_is_alive <- function(self, private) {
   private$pid <- get_pid_by_name(private$name)
-  ! is.null(private$pid)
+
+  ## If have a pid, then no question
+  if (!is.null(private$pid)) {
+    TRUE
+
+  ## Otherwise if we are just starting, then give it some time
+  } else if (Sys.time() - private$starttime <
+             as.difftime(0.1, units = "secs")) {
+    for (i in 1:100) {
+      private$pid <- get_pid_by_name(private$name)
+      if (!is.null(private$pid)) return(TRUE)
+      Sys.sleep(0.01)
+    }
+    FALSE
+
+  } else {
+    FALSE
+  }
 }
 
 process_restart <- function(self, private) {
