@@ -3,6 +3,10 @@ os_type <- function() {
   .Platform$OS.type
 }
 
+is_linux <- function() {
+  identical(tolower(Sys.info()[["sysname"]]), "linux")
+}
+
 null_file <- function() {
   if (os_type() == "windows") {
     "NUL"
@@ -26,4 +30,8 @@ check_tool <- function(x) {
       "', 'process' needs '", x, "' on this platform"
     )
   }
+}
+
+str_trim <- function(x) {
+  sub("\\s+$", "", sub("^\\s+", "", x))
 }

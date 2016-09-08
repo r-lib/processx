@@ -1,23 +1,33 @@
 
 process_read_output_lines <- function(self, private, ...) {
+  ## The process haven't created its output file yet
+  if (is_string(private$stdout) && ! file.exists(private$stdout)) {
+    return(character(0))
+  }
   private$stdout <- open_if_needed(private$stdout)
   readLines(private$stdout, ...)
 }
 
 
 process_read_error_lines <- function(self, private, ...) {
+  ## The process haven't created its output file yet
+  if (is_string(private$stderr) && ! file.exists(private$stderr)) {
+    return(character(0))
+  }
   private$stderr <- open_if_needed(private$stderr)
   readLines(private$stderr, ...)
 }
 
 
 process_get_output_connection <- function(self, private) {
+  ## TODO: what if this does not exist yet?
   private$stdout <- open_if_needed(private$stdout)
   private$stdout
 }
 
 
 process_get_error_connection <- function(self, private) {
+  ## TODO: what if this does not exist yet?
   private$stderr <- open_if_needed(private$stderr)
   private$stderr
 }

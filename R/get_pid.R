@@ -1,9 +1,23 @@
 
 get_children <- function(pid) {
+  if (os_type() == "windows") {
+    get_children_windows(pid)
+  } else {
+    get_children_unix(pid)
+  }
+}
+
+get_children_windows <- function(pid) {
   if (!length(pid)) return(integer())
   assert_pid(pid)
   pstab <- get_processes_windows(parent = pid)
   as.integer(pstab$ProcessId)
+}
+
+get_children_unix <- function(pid) {
+  res <- pgrep(c("-P", pid))
+  pid <- scan(text = res$stdout, what = 1, quiet = TRUE)
+  pid
 }
 
 get_processes_windows <- function(parent) {
@@ -56,52 +70,7 @@ parse_wmic_list <- function(text) {
   )
 }
 
-get_pid_by_name <- function(name, children = FALSE) {
-  if (os_type() == "windows") {
-    get_pid_by_name_windows(name, children)
-  } else {
-    get_pid_by_name_unix(name, children)
-  }
-}
-
-get_pid_by_name_windows <- function(name, children) {
-
-  pstab <- get_processes_windows(
-    if (children) Sys.getpid() else NULL
-  )
-
-  pids <- pstab$ProcessId[grepl(name, pstab$CommandLine, fixed = TRUE)]
-
-  if (length(pids) >= 1) pids else NULL
-}
-
-#' @importFrom utils tail
-
-get_pid_by_name_unix <- function(name, children) {
-
-  ## NOTE: 'children' is ignored on unix, because the started
-  ## process might not be a child of the R process, anyway.
-
-  res <- safe_system("pgrep", c("-f", name))
-
-  ## This is the same on macOS, Solaris & Linux \o/
-  ## 0   One or more processes matched
-  ## 1   No processes matched
-  ## 2   Syntax error in the command line
-  ## 3   Internal error
-  if (res$status > 1) {
-    stop("Could not run 'pgrep'. 'process' needs 'pgrep' on this platform")
-  }
-
-  pid <- scan(text = res$stdout, what = 1, quiet = TRUE)
-
-  ## Looks like system2() sometimes starts two shells, i.e. the first
-  ## starts the second, with the same command line. We just take the
-  ## last process in this case.
-
-  if (length(pid) >= 1) {
-    tail(sort(pid), 1)
-  } else if (length(pid) == 0) {
-    NULL
-  }
+get_pid_tree <- function(pid) {
+  children <- get_children(pid)
+  c(unlist(lapply(children, get_pid_tree)), children)
 }
