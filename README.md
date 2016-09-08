@@ -29,7 +29,8 @@ read their standard output and error, kill and restart them.
 
 ## Features
 
-* Start system processes in the background.
+* Start system processes in the background and find their
+  process id.
 * Check if a background process is running.
 * Wait on a background process.
 * Get the exit status of a background process, if it has already
@@ -46,8 +47,6 @@ read their standard output and error, kill and restart them.
 
 ## Caveats
 
-* On killing a process only the direct children are removed,
-  the grandchildren, etc. are not currently.
 * There is no way of doing a *blocking* read from the standard
   output or error stream of the process.
 
