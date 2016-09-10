@@ -12,8 +12,8 @@ knitr::opts_chunk$set(
 
 > Execute and Control System Processes
 
-[![Linux Build Status](https://travis-ci.org/gaborcsardi/processx.svg?branch=master)](https://travis-ci.org/gaborcsardi/processx)
-[![Windows Build status](https://ci.appveyor.com/api/projects/status/github/gaborcsardi/processx?svg=true)](https://ci.appveyor.com/project/gaborcsardi/processx)
+[![Linux Build Status](https://travis-ci.org/MangoTheCat/processx.svg?branch=master)](https://travis-ci.org/MangoTheCat/processx)
+[![Windows Build status](https://ci.appveyor.com/api/projects/status/github/MangoTheCat/processx?svg=true)](https://ci.appveyor.com/project/gaborcsardi/processx)
 [![](http://www.r-pkg.org/badges/version/processx)](http://www.r-pkg.org/pkg/processx)
 [![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/processx)](http://www.r-pkg.org/pkg/processx)
 
@@ -60,7 +60,7 @@ read their standard output and error, kill and restart them.
 ## Installation
 
 ```{r eval = FALSE}
-source("https://install-github.me/gaborcsardi/processx")
+source("https://install-github.me/MangoTheCat/processx")
 ```
 
 ## Usage

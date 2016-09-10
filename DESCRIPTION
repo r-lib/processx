@@ -2,7 +2,7 @@ Package: processx
 Title: Execute and Control System Processes
 Version: 1.0.0
 Author: Gábor Csárdi
-Maintainer: Gábor Csárdi <csardi.gabor@gmail.com>
+Maintainer: Gábor Csárdi <gcsardi@mango-solutions.com>
 Description: Portable tools to run system processes in the background.
     It can check if a background process is running; wait on a background
     process to finish; get the exit status of finished processes; kill
@@ -11,8 +11,8 @@ Description: Portable tools to run system processes in the background.
     connections. 'processx' is lightweight and contains no compiled code.
 License: MIT + file LICENSE
 LazyData: true
-URL: https://github.com/gaborcsardi/processx#readme
-BugReports: https://github.com/gaborcsardi/processx/issues
+URL: https://github.com/mangothecat/processx#readme
+BugReports: https://github.com/mangothecat/processx/issues
 RoxygenNote: 5.0.1.9000
 Suggests: 
     testthat
