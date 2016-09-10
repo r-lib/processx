@@ -28,7 +28,6 @@ notifications:
 
 env:
   matrix:
-    - RVERSION=oldrel
-    - RVERSION=release
-    - RVERSION=devel
-
+    - RVERSION=oldrel NOT_CRAN=true
+    - RVERSION=release NOT_CRAN=true
+    - RVERSION=devel NOT_CRAN=true
