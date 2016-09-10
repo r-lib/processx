@@ -13,6 +13,7 @@ pgrep <- function(args) {
 }
 
 pgrep_linux <- function(args) {
+  print(safe_system("pgrep", "--version"))
   out <- safe_system("pgrep", c("-a", args))
 
   if (out$status > 0) {
