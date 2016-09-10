@@ -221,6 +221,8 @@ get_my_pid_code <- function() {
 ## On windows, we read until the process with the proper random id
 ## is listed
 
+#' @importFrom utils tail
+
 get_pid_from_file <- function(inp, cmdfile) {
   if (os_type() == "unix") {
     as.numeric(readLines(inp, n = 1))
