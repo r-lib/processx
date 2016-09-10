@@ -392,4 +392,4 @@ if (!p$is_alive()) {
 
 ## License
 
-MIT © Gábor Csárdi
+MIT © Mango Solutions
