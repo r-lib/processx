@@ -17,6 +17,7 @@ script:
 
 after_success:
   - ./pkg-build.sh dump_logs
+  - if [[ ! -z "$COVERAGE" ]];then ./pkg-build.sh install_r covr; ./pkg-build.sh run_script -e 'covr::codecov()'; fi
 
 after_failure:
   - ./pkg-build.sh dump_logs
@@ -30,4 +31,4 @@ env:
   matrix:
     - RVERSION=oldrel NOT_CRAN=true
     - RVERSION=release NOT_CRAN=true
-    - RVERSION=devel NOT_CRAN=true
+    - RVERSION=devel NOT_CRAN=true COVERAGE=true

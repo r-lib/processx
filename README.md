@@ -9,6 +9,7 @@
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/github/MangoTheCat/processx?svg=true)](https://ci.appveyor.com/project/gaborcsardi/processx)
 [![](http://www.r-pkg.org/badges/version/processx)](http://www.r-pkg.org/pkg/processx)
 [![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/processx)](http://www.r-pkg.org/pkg/processx)
+[![Coverage Status](https://img.shields.io/codecov/c/github/MangoTheCat/processx/master.svg)](https://codecov.io/github/MangoTheCat/processx?branch=master)
 
 Portable tools to run system processes in the background,
 read their standard output and error, kill and restart them.
