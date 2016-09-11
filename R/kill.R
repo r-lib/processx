@@ -21,7 +21,7 @@ process_kill <- function(self, private, grace) {
     pids <- c(
       private$pipepid,
       private$pid,
-      get_pid_tree(private$pid)
+      get_pid_tree(private$pipepid)
     )
 
     pskill(pids, SIGTERM)

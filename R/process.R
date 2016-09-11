@@ -332,9 +332,8 @@ process_initialize <- function(self, private, command, args,
     open = "r"
   ))
   pids <- get_pid_from_file(private$pipe, cmdfile)
-  print(pids)
   private$pipepid <- head(pids, 1)
-  private$pid <- tail(pids, 1)
+  private$pid <- tail(pids, -1)
 
   ## Cleanup on GC, if requested
   if (cleanup) reg.finalizer(self, function(e) { e$kill() }, TRUE)
@@ -347,13 +346,16 @@ process_initialize <- function(self, private, command, args,
 }
 
 process_is_alive <- function(self, private) {
-  if (os_type() == "unix") {
+  if (is.null(private$pid)) {
+    FALSE
+
+  } else if (os_type() == "unix") {
     ! pskill(private$pid, signal = 0)
 
   } else {
     cmd <- paste0(
       "wmic process where (processid=",
-      private$pid,
+      tail(private$pid, 1),
       ") get processid, parentprocessid /format:list 2>&1"
     )
     wmic_out <- shell(cmd, intern = TRUE)
