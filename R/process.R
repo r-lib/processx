@@ -185,6 +185,7 @@ process <- R6Class(
   private = list(
 
     pipe = NULL,          # The pipe connection object
+    pipepid = NULL,       # Process of the pipe itself
     pid = NULL,           # The pid(s) of the child(ren) created by pipe()
     command = NULL,       # Save 'command' argument here
     args = NULL,          # Save 'args' argument here
@@ -209,7 +210,7 @@ process <- R6Class(
 
 get_my_pid_code <- function() {
   if (os_type() == "unix") {
-    'echo $$\n'
+    'ps -p $$ -o ppid=\necho $$\n'
   } else {
     paste0(
       "wmic process where '(parentprocessid=", Sys.getpid(),
@@ -219,13 +220,17 @@ get_my_pid_code <- function() {
 }
 
 ## On windows, we read until the process with the proper random id
-## is listed
+## is listed. This will be the pipe process. Then we get its child,
+## this will be the process that runs our script.
 
 #' @importFrom utils tail
 
 get_pid_from_file <- function(inp, cmdfile) {
   if (os_type() == "unix") {
-    as.numeric(readLines(inp, n = 1))
+    pids <- as.numeric(readLines(inp, n = 2))
+    ## This should not happen, but just to be sure that we do not
+    ## kill the R process itself
+    setdiff(pids, Sys.getpid())
 
   } else {
     token <- basename(cmdfile)
@@ -240,7 +245,7 @@ get_pid_from_file <- function(inp, cmdfile) {
     if (is.null(id) || is.na(id)) {
       stop("Cannot find pid, internal processx error")
     }
-    id
+    c(id, get_children(id))
   }
 }
 
@@ -256,6 +261,7 @@ get_pid_from_file <- function(inp, cmdfile) {
 #' @param cleanup Kill on GC?
 #'
 #' @keywords internal
+#' @importFrom utils head tail
 
 process_initialize <- function(self, private, command, args,
                                commandline, stdout, stderr, cleanup) {
@@ -325,7 +331,10 @@ process_initialize <- function(self, private, command, args,
     paste(shQuote(cmdfile), "2>&1"),
     open = "r"
   ))
-  private$pid <- get_pid_from_file(private$pipe, cmdfile)
+  pids <- get_pid_from_file(private$pipe, cmdfile)
+  print(pids)
+  private$pipepid <- head(pids, 1)
+  private$pid <- tail(pids, 1)
 
   ## Cleanup on GC, if requested
   if (cleanup) reg.finalizer(self, function(e) { e$kill() }, TRUE)
@@ -360,6 +369,7 @@ process_restart <- function(self, private) {
 
   ## Wipe out state, to be sure
   private$pid <- NULL
+  private$pipepid <- NULL
   private$pipe <- NULL
   private$cleanfiles <- NULL
   private$closed <- NULL

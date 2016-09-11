@@ -18,10 +18,17 @@
 
 process_kill <- function(self, private, grace) {
   if (! is.null(private$pid)) {
-    pids <- get_pid_tree(private$pid)
+    pids <- c(
+      private$pipepid,
+      private$pid,
+      get_pid_tree(private$pid)
+    )
+
     pskill(pids, SIGTERM)
     Sys.sleep(grace)
     pskill(pids, SIGKILL)
+
+    private$pid <- NULL
   }
 
   invisible(self)
