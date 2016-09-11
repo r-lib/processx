@@ -3,39 +3,28 @@
 ## (e.g. Linux) it does include its ancestors, which is a problem for us
 ## Here we make sure that ancestors are excluded on Linux
 
-pgrep <- function(args) {
+pgrep_children <- function(pid) {
   if (is_linux()) {
-    pgrep_linux(args)
+    pgrep_children_linux(pid)
 
   } else {
-    pgrep_unix(args)
+    pgrep_children_unix(pid)
   }
 }
 
-pgrep_linux <- function(args) {
-  out <- safe_system("pgrep", c("-a", args))
+## Some old Linux systems do not support pgrep -a, so we cannot filter the
+## processes based on their command line. We get all child processes
+## including pgrep's ancestors, and then use ps to list them again.
+## This effectively filters out pgrep and its ancestors.
 
-  if (out$status > 0) {
-    ## Some error, or no processes found, do not touch
-    out
-
-  } else {
-    out$stdout <- strsplit(out$stdout, "\n", fixed = TRUE)[[1]]
-    out$stdout <- grep(
-      "^[0-9]+ sh -c 'pgrep'",
-      out$stdout,
-      value = TRUE,
-      invert = TRUE
-    )
-    out$stdout <- sub("^([0-9]+).*$", "\\1", out$stdout, perl = TRUE)
-    out$stdout <- paste(out$stdout, collapse = "\n")
-
-    ## status denotes if there was a match
-    if (out$stdout == "") out$status <- 1
-    out
-  }
+pgrep_children_linux <- function(pid) {
+  allproc <- safe_system("pgrep", c("-d,", pid))
+  safe_system(
+    "ps",
+    c("-o", "pid", "--no-header", "-p", str_trim(allproc$stdout))
+  )
 }
 
-pgrep_unix <- function(args) {
-  safe_system("pgrep", args)
+pgrep_children_unix <- function(pid) {
+  safe_system("pgrep", c("-P", pid))
 }

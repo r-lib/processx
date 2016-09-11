@@ -15,7 +15,7 @@ get_children_windows <- function(pid) {
 }
 
 get_children_unix <- function(pid) {
-  res <- pgrep(c("-P", pid))
+  res <- pgrep_children(pid)
   pid <- scan(text = res$stdout, what = 1, quiet = TRUE)
   pid
 }
