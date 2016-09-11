@@ -18,7 +18,7 @@ pgrep_children <- function(pid) {
 ## This effectively filters out pgrep and its ancestors.
 
 pgrep_children_linux <- function(pid) {
-  allproc <- safe_system("pgrep", c("-d,", pid))
+  allproc <- safe_system("pgrep", c("-d,", "-P", pid))
   safe_system(
     "ps",
     c("-o", "pid", "--no-header", "-p", str_trim(allproc$stdout))
