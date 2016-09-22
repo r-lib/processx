@@ -3,8 +3,6 @@ context("io")
 
 test_that("We can get the output", {
 
-  skip_on_cran()
-
   dir.create(tmp <- tempfile())
   on.exit(unlink(tmp), add = TRUE)
   cat("foo", file = file.path(tmp, "foo"))
@@ -25,8 +23,6 @@ test_that("We can get the output", {
 
 test_that("We can get the error stream", {
 
-  skip_on_cran()
-
   tmp <- tempfile(fileext = ".bat")
   on.exit(unlink(tmp), add = TRUE)
 
@@ -42,8 +38,6 @@ test_that("We can get the error stream", {
 })
 
 test_that("Output & error at the same time", {
-
-  skip_on_cran()
 
   tmp <- tempfile(fileext = ".bat")
   on.exit(unlink(tmp), add = TRUE)
@@ -70,8 +64,6 @@ test_that("Output & error at the same time", {
 })
 
 test_that("Output and error to specific files", {
-
-  skip_on_cran()
 
   tmp <- tempfile(fileext = ".bat")
   on.exit(unlink(tmp), add = TRUE)
@@ -106,8 +98,6 @@ test_that("Output and error to specific files", {
 
 test_that("can_read methods work, stdout", {
 
-  skip_on_cran()
-
   sleep2 <- if (os_type() == "windows") {
     "(ping -n 3 127.0.0.1 > NUL)"
   } else {
@@ -138,8 +128,6 @@ test_that("can_read methods work, stdout", {
 })
 
 test_that("can_read methods work, stderr", {
-
-  skip_on_cran()
 
   sleep2 <- if (os_type() == "windows") {
     "(ping -n 3 127.0.0.1 > NUL)"
@@ -172,8 +160,6 @@ test_that("can_read methods work, stderr", {
 
 test_that("is_eof methods work, stdout", {
 
-  skip_on_cran()
-
   sleep2 <- if (os_type() == "windows") {
     "(ping -n 3 127.0.0.1 > NUL)"
   } else {
@@ -203,8 +189,6 @@ test_that("is_eof methods work, stdout", {
 })
 
 test_that("is_eof methods work, stderr", {
-
-  skip_on_cran()
 
   sleep2 <- if (os_type() == "windows") {
     "(ping -n 3 127.0.0.1 > NUL)"

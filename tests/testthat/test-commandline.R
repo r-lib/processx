@@ -16,8 +16,6 @@ test_that("One of command & commandline or error", {
 
 test_that("'commandline' works", {
 
-  skip_on_cran()
-
   win  <- "(echo kuku) && (>&2 echo kuku2) && (ping -n 2 127.0.0.1 > NUL)"
   unix <- "echo kuku; >&2 echo kuku2; sleep 1"
 

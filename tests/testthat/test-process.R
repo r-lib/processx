@@ -3,8 +3,6 @@ context("process")
 
 test_that("process works", {
 
-  skip_on_cran()
-
   win  <- c("ping", "-n", "6", "127.0.0.1")
   unix <- c("sleep", "5")
   cmd <- if (os_type() == "windows") win else unix
@@ -17,7 +15,6 @@ test_that("process works", {
 
 test_that("children are removed on kill()", {
 
-  skip_on_cran()
   skip("needs a get pid function")
 
   ## tmp1 will call tmp2, and we'll start tmp1 from process$new
@@ -65,7 +62,6 @@ test_that("children are removed on kill()", {
 
 test_that("process is cleaned up on GC", {
 
-  skip_on_cran()
   skip("needs a get pid function")
 
   win  <- c("ping", "-n", "6", "127.0.0.1")
