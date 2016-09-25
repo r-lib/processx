@@ -4,6 +4,7 @@
 ## Here we make sure that ancestors are excluded on Linux
 
 pgrep_children <- function(pid) {
+  "!DEBUG pgrep_children"
   if (is_linux()) {
     pgrep_children_linux(pid)
 
@@ -18,6 +19,7 @@ pgrep_children <- function(pid) {
 ## This effectively filters out pgrep and its ancestors.
 
 pgrep_children_linux <- function(pid) {
+  "!DEBUG pgrep_children_linux"
   allproc <- safe_system("pgrep", c("-d,", "-P", pid))
   safe_system(
     "ps",
@@ -26,5 +28,6 @@ pgrep_children_linux <- function(pid) {
 }
 
 pgrep_children_unix <- function(pid) {
+  "!DEBUG pgrep_children_unix"
   safe_system("pgrep", c("-P", pid))
 }

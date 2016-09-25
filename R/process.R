@@ -226,6 +226,7 @@ get_my_pid_code <- function() {
 #' @importFrom utils tail
 
 get_pid_from_file <- function(inp, cmdfile) {
+  "!DEBUG get_pid_from_file"
   if (os_type() == "unix") {
     pids <- as.numeric(readLines(inp, n = 2))
     ## This should not happen, but just to be sure that we do not
@@ -265,6 +266,8 @@ get_pid_from_file <- function(inp, cmdfile) {
 
 process_initialize <- function(self, private, command, args,
                                commandline, stdout, stderr, cleanup) {
+
+  "!DEBUG process_initialize"
 
   assert_string_or_null(command)
   assert_character(args)
@@ -327,16 +330,24 @@ process_initialize <- function(self, private, command, args,
   ## We wrap the pipe() into process_connection, so it will be closed
   ## automatially. This way we do not need a finializer for the
   ## process object itself.
+  "!DEBUG process_initialize pipe()"
   private$pipe <- process_connection(pipe(
     paste(shQuote(cmdfile), "2>&1"),
     open = "r"
   ))
+  "!DEBUG process_initialize get_pid_from_file()"
   pids <- get_pid_from_file(private$pipe, cmdfile)
   private$pipepid <- head(pids, 1)
   private$pid <- tail(pids, -1)
 
   ## Cleanup on GC, if requested
-  if (cleanup) reg.finalizer(self, function(e) { e$kill() }, TRUE)
+  if (cleanup) {
+    reg.finalizer(
+      self,
+      function(e) { "!DEBUG killing"; e$kill() },
+      TRUE
+    )
+  }
 
   ## Store the output and error files, we'll open them later if needed
   private$stdout <- stdout
@@ -346,6 +357,7 @@ process_initialize <- function(self, private, command, args,
 }
 
 process_is_alive <- function(self, private) {
+  "!DEBUG process_is_alive"
   if (is.null(private$pid)) {
     FALSE
 
@@ -365,6 +377,8 @@ process_is_alive <- function(self, private) {
 }
 
 process_restart <- function(self, private) {
+
+  "!DEBUG process_restart"
 
   ## Suicide if still alive
   if (self$is_alive()) self$kill()
@@ -392,6 +406,7 @@ process_restart <- function(self, private) {
 }
 
 process_wait <- function(self, private) {
+  "!DEBUG process_wait"
   if (!private$closed) {
     ## windows does not wait on close (!), but it does on readLines
     readLines(private$pipe)

@@ -1,6 +1,8 @@
 
 safe_system <- function(command, args) {
 
+  "!DEBUG safe_system"
+
   out <- tempfile()
   err <- tempfile()
   on.exit(unlink(out), add = TRUE)

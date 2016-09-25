@@ -1,5 +1,6 @@
 
 process_read_output_lines <- function(self, private, ...) {
+  "!DEBUG process_read_output_lines"
   ## The process haven't created its output file yet
   if (is_string(private$stdout) && ! file.exists(private$stdout)) {
     return(character(0))
@@ -10,6 +11,7 @@ process_read_output_lines <- function(self, private, ...) {
 
 
 process_read_error_lines <- function(self, private, ...) {
+  "!DEBUG process_read_error_lines"
   ## The process haven't created its output file yet
   if (is_string(private$stderr) && ! file.exists(private$stderr)) {
     return(character(0))
@@ -20,6 +22,7 @@ process_read_error_lines <- function(self, private, ...) {
 
 
 process_get_output_connection <- function(self, private) {
+  "!DEBUG process_get_output_connection"
   ## TODO: what if this does not exist yet?
   private$stdout <- open_if_needed(private$stdout)
   private$stdout
@@ -27,6 +30,7 @@ process_get_output_connection <- function(self, private) {
 
 
 process_get_error_connection <- function(self, private) {
+  "!DEBUG process_get_error_connection"
   ## TODO: what if this does not exist yet?
   private$stderr <- open_if_needed(private$stderr)
   private$stderr
@@ -34,16 +38,19 @@ process_get_error_connection <- function(self, private) {
 
 
 process_can_read_output <- function(self, private) {
+  "!DEBUG process_can_read_output"
   process_can_read(self, private, "stdout")
 }
 
 
 process_can_read_error <- function(self, private) {
+  "!DEBUG process_can_read_error"
   process_can_read(self, private, "stderr")
 }
 
 
 process_can_read <- function(self, private, conn) {
+  "!DEBUG process_can_read"
   private[[conn]] <- open_if_needed(private[[conn]])
 
   ## If there is pushback, then there is definitely
@@ -66,14 +73,17 @@ process_can_read <- function(self, private, conn) {
 }
 
 process_is_eof_output <- function(self, private) {
+  "!DEBUG process_is_eof_output"
   process_is_eof(self, private, "stdout")
 }
 
 process_is_eof_error <- function(self, private) {
+  "!DEBUG process_is_eof_error"
   process_is_eof(self, private, "stderr")
 }
 
 process_is_eof <- function(self, private, conn) {
+  "!DEBUG process_is_eof"
   ! process_can_read(self, private, conn) &&
   ! process_is_alive(self, private)
 }
@@ -88,6 +98,7 @@ process_is_eof <- function(self, private, conn) {
 ## connection. :/
 
 open_if_needed <- function(con, what = "output") {
+  "!DEBUG open_if_needed"
 
   ## (1)
   if (isFALSE(con)) {

@@ -8,6 +8,7 @@ get_children <- function(pid) {
 }
 
 get_children_windows <- function(pid) {
+  "!DEBUG get_children_windows"
   if (!length(pid)) return(integer())
   assert_pid(pid)
   pstab <- get_processes_windows(parent = pid)
@@ -15,12 +16,14 @@ get_children_windows <- function(pid) {
 }
 
 get_children_unix <- function(pid) {
+  "!DEBUG get_children_unix"
   res <- pgrep_children(pid)
   pid <- scan(text = res$stdout, what = 1, quiet = TRUE)
   pid
 }
 
 get_processes_windows <- function(parent) {
+  "!DEBUG get_processes_windows"
   check_tool("wmic")
 
   ## Do we search among children, or in general?
@@ -71,6 +74,7 @@ parse_wmic_list <- function(text) {
 }
 
 get_pid_tree <- function(pid) {
+  "!DEBUG get_pid_tree"
   children <- get_children(pid)
   c(unlist(lapply(children, get_pid_tree)), children)
 }
