@@ -267,7 +267,7 @@ get_pid_from_file <- function(inp, cmdfile) {
 process_initialize <- function(self, private, command, args,
                                commandline, stdout, stderr, cleanup) {
 
-  "!DEBUG process_initialize"
+  "!DEBUG process_initialize `command`"
 
   assert_string_or_null(command)
   assert_character(args)
@@ -357,7 +357,7 @@ process_initialize <- function(self, private, command, args,
 }
 
 process_is_alive <- function(self, private) {
-  "!DEBUG process_is_alive"
+  "!DEBUG process_is_alive `private$get_short_name()`"
   if (is.null(private$pid)) {
     FALSE
 
@@ -378,7 +378,7 @@ process_is_alive <- function(self, private) {
 
 process_restart <- function(self, private) {
 
-  "!DEBUG process_restart"
+  "!DEBUG process_restart `private$get_short_name()`"
 
   ## Suicide if still alive
   if (self$is_alive()) self$kill()
@@ -406,7 +406,7 @@ process_restart <- function(self, private) {
 }
 
 process_wait <- function(self, private) {
-  "!DEBUG process_wait"
+  "!DEBUG process_wait `private$get_short_name()`"
   if (!private$closed) {
     ## windows does not wait on close (!), but it does on readLines
     readLines(private$pipe)

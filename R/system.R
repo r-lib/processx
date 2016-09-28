@@ -1,7 +1,7 @@
 
 safe_system <- function(command, args) {
 
-  "!DEBUG safe_system"
+  "!DEBUG safe_system `command`"
 
   out <- tempfile()
   err <- tempfile()

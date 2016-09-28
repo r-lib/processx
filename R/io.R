@@ -1,6 +1,6 @@
 
 process_read_output_lines <- function(self, private, ...) {
-  "!DEBUG process_read_output_lines"
+  "!DEBUG process_read_output_lines `private$get_short_name()`"
   ## The process haven't created its output file yet
   if (is_string(private$stdout) && ! file.exists(private$stdout)) {
     return(character(0))
@@ -11,7 +11,7 @@ process_read_output_lines <- function(self, private, ...) {
 
 
 process_read_error_lines <- function(self, private, ...) {
-  "!DEBUG process_read_error_lines"
+  "!DEBUG process_read_error_lines `private$get_short_name()`"
   ## The process haven't created its output file yet
   if (is_string(private$stderr) && ! file.exists(private$stderr)) {
     return(character(0))
@@ -22,7 +22,7 @@ process_read_error_lines <- function(self, private, ...) {
 
 
 process_get_output_connection <- function(self, private) {
-  "!DEBUG process_get_output_connection"
+  "!DEBUG process_get_output_connection `private$get_short_name()`"
   ## TODO: what if this does not exist yet?
   private$stdout <- open_if_needed(private$stdout)
   private$stdout
@@ -30,7 +30,7 @@ process_get_output_connection <- function(self, private) {
 
 
 process_get_error_connection <- function(self, private) {
-  "!DEBUG process_get_error_connection"
+  "!DEBUG process_get_error_connection `private$get_short_name()`"
   ## TODO: what if this does not exist yet?
   private$stderr <- open_if_needed(private$stderr)
   private$stderr
@@ -38,19 +38,19 @@ process_get_error_connection <- function(self, private) {
 
 
 process_can_read_output <- function(self, private) {
-  "!DEBUG process_can_read_output"
+  "!DEBUG process_can_read_output `private$get_short_name()`"
   process_can_read(self, private, "stdout")
 }
 
 
 process_can_read_error <- function(self, private) {
-  "!DEBUG process_can_read_error"
+  "!DEBUG process_can_read_error `private$get_short_name()`"
   process_can_read(self, private, "stderr")
 }
 
 
 process_can_read <- function(self, private, conn) {
-  "!DEBUG process_can_read"
+  "!DEBUG process_can_read `private$get_short_name()`"
   private[[conn]] <- open_if_needed(private[[conn]])
 
   ## If there is pushback, then there is definitely
@@ -73,17 +73,17 @@ process_can_read <- function(self, private, conn) {
 }
 
 process_is_eof_output <- function(self, private) {
-  "!DEBUG process_is_eof_output"
+  "!DEBUG process_is_eof_output  `private$get_short_name()`"
   process_is_eof(self, private, "stdout")
 }
 
 process_is_eof_error <- function(self, private) {
-  "!DEBUG process_is_eof_error"
+  "!DEBUG process_is_eof_error `private$get_short_name()`"
   process_is_eof(self, private, "stderr")
 }
 
 process_is_eof <- function(self, private, conn) {
-  "!DEBUG process_is_eof"
+  "!DEBUG process_is_eof `private$get_short_name()`"
   ! process_can_read(self, private, conn) &&
   ! process_is_alive(self, private)
 }

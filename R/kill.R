@@ -17,7 +17,7 @@
 #' @importFrom tools pskill SIGKILL SIGTERM
 
 process_kill <- function(self, private, grace) {
-  "!DEBUG process_kill"
+  "!DEBUG process_kill '`private$get_short_name()`', pid `private$pid`"
   if (! is.null(private$pid)) {
     pids <- c(
       private$pipepid,
