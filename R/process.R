@@ -331,10 +331,13 @@ process_initialize <- function(self, private, command, args,
   ## automatially. This way we do not need a finializer for the
   ## process object itself.
   "!DEBUG process_initialize pipe()"
-  private$pipe <- process_connection(pipe(
-    paste(shQuote(cmdfile), "2>&1"),
-    open = "r"
-  ))
+  private$pipe <- process_connection(
+    pipe(
+      paste(shQuote(cmdfile), "2>&1"),
+      open = "r"
+    ),
+    cleanup = FALSE
+  )
   "!DEBUG process_initialize get_pid_from_file()"
   pids <- get_pid_from_file(private$pipe, cmdfile)
   private$pipepid <- head(pids, 1)
@@ -344,7 +347,11 @@ process_initialize <- function(self, private, command, args,
   if (cleanup) {
     reg.finalizer(
       self,
-      function(e) { "!DEBUG killing"; e$kill() },
+      function(e) {
+        "!DEBUG killing"
+        e$kill()
+        close(e$.__enclos_env__$private$pipe)
+      },
       TRUE
     )
   }
