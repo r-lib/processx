@@ -20,9 +20,8 @@ process_kill <- function(self, private, grace) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `private$pid`"
   if (! is.null(private$pid)) {
     pids <- c(
-      private$pipepid,
       private$pid,
-      get_pid_tree(private$pipepid)
+      get_pid_tree(private$pid)
     )
 
     pskill(pids, SIGTERM)
