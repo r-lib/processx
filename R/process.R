@@ -3,7 +3,7 @@
 #'
 #' Managing external processes from R is not trivial, and this
 #' class aims to help with this deficiency. It is essentially a small
-#' wrapper around the \code{pipe} base R function, to return the process
+#' wrapper around the \code{system} base R function, to return the process
 #' id of the started process, and set its standard output and error
 #' streams. The process id is then used to manage the process.
 #'
@@ -53,7 +53,7 @@
 #' }
 #'
 #' @section Details:
-#' \code{$new()} starts a new process, it uses \code{\link[base]{pipe}}.
+#' \code{$new()} starts a new process, it uses \code{\link[base]{system}}.
 #' R does \emph{not} wait for the process to finish, but returns
 #' immediately.
 #'
@@ -184,9 +184,7 @@ process <- R6Class(
 
   private = list(
 
-    pipe = NULL,          # The pipe connection object
-    pipepid = NULL,       # Process of the pipe itself
-    pid = NULL,           # The pid(s) of the child(ren) created by pipe()
+    pid = NULL,           # The pid of the shell started with system
     command = NULL,       # Save 'command' argument here
     args = NULL,          # Save 'args' argument here
     commandline = NULL,   # The full command line
@@ -196,7 +194,6 @@ process <- R6Class(
     pstdout = NULL,       # the original stdout argument
     pstderr = NULL,       # the original stderr argument
     cleanfiles = NULL,    # which temp stdout/stderr file(s) to clean up
-    closed = NULL,        # Was the pipe closed already
     status = NULL,        # Exit status of the process
     starttime = NULL,     # timestamp of start
 
@@ -208,34 +205,35 @@ process <- R6Class(
 ## We just list all children of the R process here, and will select the
 ## proper one in the next function
 
-get_my_pid_code <- function() {
+get_my_pid_code <- function(tmpfile) {
   if (os_type() == "unix") {
-    'ps -p $$ -o ppid=\necho $$\n'
+    paste("echo $$ > ", shQuote(tmpfile), "\n")
   } else {
     paste0(
       "wmic process where '(parentprocessid=", Sys.getpid(),
-      ")' get commandline, processid\n"
+      ")' get commandline, processid > ", shQuote(tmpfile), "\n"
     )
   }
 }
 
 ## On windows, we read until the process with the proper random id
-## is listed. This will be the pipe process. Then we get its child,
-## this will be the process that runs our script.
+## is listed. This will be the process started with system.
+## Then we get its child, this will be the process that runs our script.
 
 #' @importFrom utils tail
 
-get_pid_from_file <- function(inp, cmdfile) {
+get_pid_from_file <- function(pidfile, cmdfile) {
   "!DEBUG get_pid_from_file"
+  while(! file.exists(pidfile)) { Sys.sleep(0.001) }
   if (os_type() == "unix") {
-    pids <- as.numeric(readLines(inp, n = 2))
+    pids <- as.numeric(readLines(pidfile, n = 1))
     ## This should not happen, but just to be sure that we do not
     ## kill the R process itself
     setdiff(pids, Sys.getpid())
 
   } else {
     token <- basename(cmdfile)
-    while (length(l <- readLines(inp, n = 1)) &&
+    while (length(l <- readLines(pidfile, n = 1)) &&
       !grepl(token, l, fixed = TRUE)) {
       NULL
     }
@@ -287,7 +285,6 @@ process_initialize <- function(self, private, command, args,
   private$args <- args
   private$commandline <- commandline
   private$cleanup <- cleanup
-  private$closed <- FALSE
   private$pstdout <- stdout
   private$pstderr <- stderr
 
@@ -308,8 +305,9 @@ process_initialize <- function(self, private, command, args,
     paste0("(", commandline, ")")
   }
 
+  pidfile <- tempfile()
   fullcmd <- paste0(
-    get_my_pid_code(),
+    get_my_pid_code(pidfile),
     cmd, " ",
     " >",  if (isFALSE(stdout)) null_file() else shQuote(stdout),
     " 2>", if (isFALSE(stderr)) null_file() else shQuote(stderr),
@@ -326,22 +324,16 @@ process_initialize <- function(self, private, command, args,
   cat(fullcmd, file = cmdfile)
   Sys.chmod(cmdfile, "700")
 
-  ## Start, we drop the output from the shell itself, for now
-  ## We wrap the pipe() into process_connection, so it will be closed
-  ## automatially. This way we do not need a finializer for the
-  ## process object itself.
-  "!DEBUG process_initialize pipe()"
-  private$pipe <- process_connection(
-    pipe(
-      paste(shQuote(cmdfile), "2>&1"),
-      open = "r"
-    ),
-    cleanup = FALSE
+  "!DEBUG process_initialize system()"
+  ret <- system(
+    paste(shQuote(cmdfile), "2>&1"),
+    wait = FALSE
   )
-  "!DEBUG process_initialize get_pid_from_file()"
-  pids <- get_pid_from_file(private$pipe, cmdfile)
-  private$pipepid <- head(pids, 1)
-  private$pid <- tail(pids, -1)
+  if (ret != 0) stop("Cannot start process")
+
+  pids <- get_pid_from_file(pidfile, cmdfile)
+  private$pid <- head(pids, 1)
+  "!DEBUG process_initialize get_pid_from_file(): `private$pid`"
 
   ## Cleanup on GC, if requested
   if (cleanup) {
@@ -350,7 +342,6 @@ process_initialize <- function(self, private, command, args,
       function(e) {
         "!DEBUG killing"
         e$kill()
-        close(e$.__enclos_env__$private$pipe)
       },
       TRUE
     )
@@ -392,8 +383,6 @@ process_restart <- function(self, private) {
 
   ## Wipe out state, to be sure
   private$pid <- NULL
-  private$pipepid <- NULL
-  private$pipe <- NULL
   private$cleanfiles <- NULL
   private$closed <- NULL
   private$status <- NULL
@@ -414,12 +403,7 @@ process_restart <- function(self, private) {
 
 process_wait <- function(self, private) {
   "!DEBUG process_wait `private$get_short_name()`"
-  if (!private$closed) {
-    ## windows does not wait on close (!), but it does on readLines
-    readLines(private$pipe)
-    private$status <- close(private$pipe)
-    private$closed <- TRUE
-  }
+  while(self$is_alive()) Sys.sleep(0.01)
   invisible(self)
 }
 

@@ -6,7 +6,7 @@
 \description{
 Managing external processes from R is not trivial, and this
 class aims to help with this deficiency. It is essentially a small
-wrapper around the \code{pipe} base R function, to return the process
+wrapper around the \code{system} base R function, to return the process
 id of the started process, and set its standard output and error
 streams. The process id is then used to manage the process.
 }
@@ -61,7 +61,7 @@ print(p)
 
 \section{Details}{
 
-\code{$new()} starts a new process, it uses \code{\link[base]{pipe}}.
+\code{$new()} starts a new process, it uses \code{\link[base]{system}}.
 R does \emph{not} wait for the process to finish, but returns
 immediately.
 
