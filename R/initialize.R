@@ -53,29 +53,14 @@ process_initialize <- function(self, private, command, args,
     )
 
   } else {
-    paste0("(", commandline, ")")
+    ## This is needed for "composite" commands: "cmd1 ; cmd2"
+    paste("(", commandline, ")")
   }
 
   pidfile <- tempfile()
   private$statusfile <- tempfile()
-  fullcmd <- paste0(
-    get_my_pid_code(pidfile),
-    cmd, " ",
-    " >",  if (isFALSE(stdout)) null_file() else shQuote(stdout),
-    " 2>", if (isFALSE(stderr)) null_file() else shQuote(stderr),
-    "\n",
-    get_exit_status_code(private$statusfile)
-  )
-
-  ## Create temporary file to run
-  ## Do NOT remove this with on.exit(), because that creates a race
-  ## condition that hits back at you on Windows: the shell might not
-  ## start running before the file is deleted by on.exit.
-  cmdfile <- tempfile(fileext = ".bat")
-
-  ## Add command to it, make it executable
-  cat(fullcmd, file = cmdfile)
-  Sys.chmod(cmdfile, "700")
+  cmdfile <- create_cmd_file(cmd, pidfile, private$statusfile,
+                             stdout, stderr)
 
   ## Clean up the pid files
   pidfile2 <- paste0(pidfile, "2")
@@ -248,6 +233,8 @@ get_pid_from_file_unix <- function(pidfile, cmdfile) {
   setdiff(pids, Sys.getpid())
 }
 
+## ---------------------------------------------------------------------
+
 get_exit_status_code <- function(statusfile) {
   "!DEBUG get_exit_status_code"
   if (os_type() == "unix") {
@@ -255,4 +242,70 @@ get_exit_status_code <- function(statusfile) {
   } else {
     paste("echo %errorlevel% >", shQuote(statusfile))
   }
+}
+
+## ---------------------------------------------------------------------
+
+create_cmd_file <- function(cmd, pidfile, statusfile, stdout, stderr) {
+  if (os_type() == "unix") {
+    create_cmd_file_unix(cmd, pidfile, statusfile, stdout, stderr)
+  } else {
+    create_cmd_file_windows(cmd, pidfile, statusfile, stdout, stderr)
+  }
+}
+
+create_cmd_file_unix <- function(cmd, pidfile, statusfile, stdout,
+                                 stderr) {
+
+  fullcmd <- paste0(
+    get_my_pid_code(pidfile),
+    cmd, " ",
+    " >",  if (isFALSE(stdout)) null_file() else shQuote(stdout),
+    " 2>", if (isFALSE(stderr)) null_file() else shQuote(stderr),
+    "\n",
+    get_exit_status_code(statusfile)
+  )
+
+  ## Create temporary file to run
+  ## Do NOT remove this with on.exit(), because that creates a race
+  ## condition that hits back at you on Windows: the shell might not
+  ## start running before the file is deleted by on.exit.
+  cmdfile <- tempfile(fileext = ".bat")
+
+  ## Add command to it, make it executable
+  cat(fullcmd, file = cmdfile)
+  Sys.chmod(cmdfile, "700")
+
+  cmdfile
+}
+
+## On Windows, we need another file, because calling a batch
+## file from another file does not give back the control,
+## so we cannot extract the exit status. Using `cmd /c` or
+## `call` did not work for me with the redirections.
+
+create_cmd_file_windows <- function(cmd, pidfile, statusfile, stdout,
+                                    stderr) {
+
+  anotherfile <- tempfile(fileext = ".bat")
+  Sys.chmod(anotherfile, "700")
+  tmpcmd <- paste0(
+    cmd,
+    " >",  if (isFALSE(stdout)) null_file() else shQuote(stdout),
+    " 2>", if (isFALSE(stderr)) null_file() else shQuote(stderr),
+    "\n"
+  )
+  cat(tmpcmd, file = anotherfile)
+
+  fullcmd <- paste0(
+    get_my_pid_code(pidfile), "\n",
+    "call ", shQuote(anotherfile), "\n",
+    get_exit_status_code(statusfile), "\n"
+  )
+
+  cmdfile <- tempfile(fileext = ".bat")
+  cat(fullcmd, file = cmdfile)
+  Sys.chmod(cmdfile, "700")
+
+  cmdfile
 }
