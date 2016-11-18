@@ -57,12 +57,14 @@ process_initialize <- function(self, private, command, args,
   }
 
   pidfile <- tempfile()
+  private$statusfile <- tempfile()
   fullcmd <- paste0(
     get_my_pid_code(pidfile),
     cmd, " ",
     " >",  if (isFALSE(stdout)) null_file() else shQuote(stdout),
     " 2>", if (isFALSE(stderr)) null_file() else shQuote(stderr),
-    "\n"
+    "\n",
+    get_exit_status_code(private$statusfile)
   )
 
   ## Create temporary file to run
@@ -74,6 +76,18 @@ process_initialize <- function(self, private, command, args,
   ## Add command to it, make it executable
   cat(fullcmd, file = cmdfile)
   Sys.chmod(cmdfile, "700")
+
+  ## Clean up the pid files
+  pidfile2 <- paste0(pidfile, "2")
+  pidfile3 <- paste0(pidfile, "3")
+  on.exit(
+    {
+      try(unlink(pidfile), silent = TRUE)
+      try(unlink(pidfile2), silent = TRUE)
+      try(unlink(pidfile3), silent = TRUE)
+    },
+    add = TRUE
+  )
 
   "!DEBUG process_initialize system()"
   ret <- system(
@@ -203,15 +217,7 @@ get_pid_from_file_windows <- function(pidfile, cmdfile) {
   wait_for_file(pidfile3)
 
   pidhandle <- file(pidfile, open = "r")
-  on.exit(
-    {
-      close(pidhandle)
-      try(unlink(pidfile), silent = TRUE)
-      try(unlink(pidfile2), silent = TRUE)
-      try(unlink(pidfile3), silent = TRUE)
-    },
-    add = TRUE
-  )
+  on.exit(try(close(pidhandle), silent = TRUE), add = TRUE)
 
   token <- basename(cmdfile)
   while (length(l <- readLines(pidhandle, n = 1)) &&
@@ -231,17 +237,8 @@ get_pid_from_file_windows <- function(pidfile, cmdfile) {
 #' @rdname get_pid_from_file
 
 get_pid_from_file_unix <- function(pidfile, cmdfile) {
-
-  pidfile3 <- paste0(pidfile, "3")
-  on.exit(
-    {
-      try(unlink(pidfile), silent = TRUE)
-      try(unlink(pidfile3), silent = TRUE)
-    },
-    add = TRUE
-  )
-
   ## Wait for the 'done' file to be there
+  pidfile3 <- paste0(pidfile, "3")
   wait_for_file(pidfile3)
 
   pids <- as.numeric(readLines(pidfile, n = 1))
@@ -249,4 +246,13 @@ get_pid_from_file_unix <- function(pidfile, cmdfile) {
   ## This should not happen, but just to be sure that we do not
   ## kill the R process itself
   setdiff(pids, Sys.getpid())
+}
+
+get_exit_status_code <- function(statusfile) {
+  "!DEBUG get_exit_status_code"
+  if (os_type() == "unix") {
+    paste("echo $? >", shQuote(statusfile))
+  } else {
+    paste("echo %errorlevel% >", shQuote(statusfile))
+  }
 }
