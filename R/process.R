@@ -232,7 +232,6 @@ process_restart <- function(self, private) {
   ## Wipe out state, to be sure
   private$pid <- NULL
   private$cleanfiles <- NULL
-  private$closed <- NULL
   private$status <- NULL
 
   process_initialize(
