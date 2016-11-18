@@ -207,11 +207,16 @@ process <- R6Class(
 
 get_my_pid_code <- function(tmpfile) {
   if (os_type() == "unix") {
-    paste("echo $$ > ", shQuote(tmpfile), "\n")
+    paste(
+      "echo $$ > ", shQuote(tmpfile), "\n",
+      "echo done > ", shQuote(paste0(tmpfile, "3")), "\n"
+    )
   } else {
     paste0(
-      "wmic process where '(parentprocessid=", Sys.getpid(),
-      ")' get commandline, processid > ", shQuote(tmpfile), "\n"
+      "wmic /output:", shQuote(tmpfile), " process where '(parentprocessid=", Sys.getpid(),
+      ")' get commandline, processid\n",
+      "type ", shQuote(tmpfile), " > ", shQuote(paste0(tmpfile, "2")), "\n",
+      "echo done > ", shQuote(paste0(tmpfile, "3")), "\n"
     )
   }
 }
@@ -224,7 +229,7 @@ get_my_pid_code <- function(tmpfile) {
 
 get_pid_from_file <- function(pidfile, cmdfile) {
   "!DEBUG get_pid_from_file"
-  while(! file.exists(pidfile)) { Sys.sleep(0.001) }
+  while(! file.exists(paste0(pidfile, "3"))) { Sys.sleep(0.001) }
   if (os_type() == "unix") {
     pids <- as.numeric(readLines(pidfile, n = 1))
     ## This should not happen, but just to be sure that we do not
@@ -233,7 +238,10 @@ get_pid_from_file <- function(pidfile, cmdfile) {
 
   } else {
     token <- basename(cmdfile)
-    while (length(l <- readLines(pidfile, n = 1)) &&
+    pidfile2 <- paste0(pidfile, "2")
+    pidhandle <- file(pidfile2, open = "r")
+    on.exit(close(pidhandle), add = TRUE)
+    while (length(l <- readLines(pidhandle, n = 1)) &&
       !grepl(token, l, fixed = TRUE)) {
       NULL
     }
@@ -326,7 +334,7 @@ process_initialize <- function(self, private, command, args,
 
   "!DEBUG process_initialize system()"
   ret <- system(
-    paste(shQuote(cmdfile), "2>&1"),
+    paste(shQuote(cmdfile), shQuote(basename(cmdfile)), "2>&1"),
     wait = FALSE
   )
   if (ret != 0) stop("Cannot start process")
