@@ -196,6 +196,7 @@ process <- R6Class(
     cleanfiles = NULL,    # which temp stdout/stderr file(s) to clean up
     status = NULL,        # Exit status of the process
     starttime = NULL,     # timestamp of start
+    statusfile = NULL,    # file for the exit status
 
     get_short_name = function()
       process_get_short_name(self, private)
@@ -251,6 +252,9 @@ process_restart <- function(self, private) {
 process_wait <- function(self, private) {
   "!DEBUG process_wait `private$get_short_name()`"
   while(self$is_alive()) Sys.sleep(0.01)
+  if (is.null(private$status)) {
+    private$status <- as.numeric(readLines(private$statusfile))
+  }
   invisible(self)
 }
 
