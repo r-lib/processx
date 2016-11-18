@@ -92,7 +92,7 @@ p2 <- process$new(commandline = "sleep 20")
 ```
 
 Both methods will run the specified command or command line via the
-`pipe` base R function, which currently uses a shell to start them.
+`system` base R function, which currently uses a shell to start them.
 
 ### Killing and restarting a process
 

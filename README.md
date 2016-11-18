@@ -89,7 +89,7 @@ p2 <- process$new(commandline = "sleep 20")
 ```
 
 Both methods will run the specified command or command line via the
-`pipe` base R function, which currently uses a shell to start them.
+`system` base R function, which currently uses a shell to start them.
 
 ### Killing and restarting a process
 
@@ -289,7 +289,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2016-08-24 09:23:46 BST"
+#> [1] "2016-11-18 13:40:22 GMT"
 ```
 
 ```r
@@ -298,7 +298,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2016-08-24 09:23:48 BST"
+#> [1] "2016-11-18 13:40:24 GMT"
 ```
 
 It is safe to call `wait` multiple times:
