@@ -202,7 +202,7 @@ get_pid_from_file_windows <- function(pidfile, cmdfile) {
   ## Wait for the 'done' file to be there, with a timeout
   wait_for_file(pidfile3)
 
-  pidhandle <- file(pidfile2, open = "r")
+  pidhandle <- file(pidfile, open = "r")
   on.exit(
     {
       close(pidhandle)
