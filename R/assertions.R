@@ -1,22 +1,23 @@
 
+#' @importFrom assertthat assert_that on_failure<-
+NULL
+
 is_string <- function(x) {
   is.character(x) &&
   length(x) == 1 &&
   !is.na(x)
 }
 
-assert_string <- function(x) {
-  stopifnot(is_string(x))
+on_failure(is_string) <- function(call, env) {
+  paste0(deparse(call$x), " is not a string (length 1 character)")
 }
 
-assert_string_or_null <- function(x) {
-  stopifnot(is.null(x) || is_string(x))
+is_string_or_null <- function(x) {
+  is.null(x) || is_string(x)
 }
 
-assert_character <- function(x) {
-  stopifnot(
-    is.character(x)
-  )
+on_failure(is_string_or_null) <- function(call, env) {
+  paste0(deparse(call$x), " must a string (length 1 character) or NULL")
 }
 
 is_flag <- function(x) {
@@ -25,23 +26,30 @@ is_flag <- function(x) {
   !is.na(x)
 }
 
-assert_flag <- function(x) {
-  stopifnot(is_flag(x))
+on_failure(is_flag) <- function(call, env) {
+  paste0(deparse(call$x), " is not a flag (length 1 logical)")
 }
 
-assert_flag_or_string <- function(x) {
-  stopifnot(
-    is_flag(x) || is_string(x)
-  )
+is_count <- function(x) {
+  is.numeric(x) && length(x) == 1 && !is.na(x) && round(x) == x
 }
 
-assert_count <- function(x) {
-  stopifnot(
-    is.numeric(x),
-    length(x) == 1,
-    !is.na(x),
-    round(x) == x
-  )
+on_failure(is_count) <- function(call, env) {
+  paste0(deparse(call$x), " is not a count (length 1 integer)")
 }
 
-assert_pid <- assert_count
+is_pid <- function(x) {
+  is.numeric(x) && length(x) == 1 && !is.na(x) && round(x) == x
+}
+
+on_failure(is_pid) <- function(call, env) {
+  paste0(deparse(call$x), " is not a process id (length 1 integer)")
+}
+
+is_flag_or_string <- function(x) {
+  assert_that(is_string(x) || is_flag(x))
+}
+
+on_failure(is_flag_or_string) <- function(call, env) {
+  paste0(deparse(call$x), " is not a flag or a string")
+}

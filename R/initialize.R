@@ -18,12 +18,12 @@ process_initialize <- function(self, private, command, args,
 
   "!DEBUG process_initialize `command`"
 
-  assert_string_or_null(command)
-  assert_character(args)
-  assert_flag_or_string(stdout)
-  assert_flag_or_string(stderr)
-  assert_string_or_null(commandline)
-  assert_flag(cleanup)
+  assert_that(is_string_or_null(command))
+  assert_that(is.character(args))
+  assert_that(is_flag_or_string(stdout))
+  assert_that(is_flag_or_string(stderr))
+  assert_that(is_string_or_null(commandline))
+  assert_that(is_flag(cleanup))
 
   if (is.null(command) + is.null(commandline) != 1) {
     stop("Need exactly one of 'command' and 'commandline")

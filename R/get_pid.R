@@ -10,7 +10,7 @@ get_children <- function(pid) {
 get_children_windows <- function(pid) {
   "!DEBUG get_children_windows `pid`"
   if (!length(pid)) return(integer())
-  assert_pid(pid)
+  assert_that(is_pid(pid))
   pstab <- get_processes_windows(parent = pid)
   as.integer(pstab$ProcessId)
 }
