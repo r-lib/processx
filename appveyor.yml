@@ -21,6 +21,9 @@ build_script:
 test_script:
   - travis-tool.sh run_tests
 
+on_success:
+  - Rscript -e 'covr::codecov()'
+
 on_failure:
   - travis-tool.sh dump_logs
 
