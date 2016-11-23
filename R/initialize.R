@@ -61,6 +61,7 @@ process_initialize <- function(self, private, command, args,
   private$statusfile <- tempfile()
   cmdfile <- create_cmd_file(cmd, pidfile, private$statusfile,
                              stdout, stderr)
+  private$name <- basename(cmdfile)
 
   ## Clean up the pid files
   pidfile2 <- paste0(pidfile, "2")

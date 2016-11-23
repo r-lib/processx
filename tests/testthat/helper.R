@@ -35,3 +35,41 @@ sleep <- function(n, commandline = TRUE) {
     }
   }
 }
+
+get_pid_by_name <- function(name) {
+  if (os_type() == "windows") {
+    get_pid_by_name_windows(name)
+  } else {
+    get_pid_by_name_unix(name)
+  }
+}
+
+get_pid_by_name_windows <- function(name) {
+  cmd <- paste0(
+    "wmic process where (CommandLine Like '%", name, "%') ",
+    "get CommandLine,ProcessId /format:list 2>&1"
+  )
+
+  wmic_out <- shell(cmd, intern = TRUE)
+  parsed <- parse_wmic_list(wmic_out)
+
+  ## To drop the wmic process itself
+  parsed <- parsed[! grepl("wmic[ ]+process", parsed$CommandLine), ,
+                   drop = FALSE]
+
+  ## Just to be safe
+  parsed <- parsed[grepl(name, parsed$CommandLine, fixed = TRUE), ,
+                   drop = FALSE]
+
+  if (nrow(parsed) == 0) {
+    NULL
+  } else {
+    parsed$ProcessId[1]
+  }
+}
+
+get_pid_by_name_unix <- function(name) {
+  out <- safe_system("pgrep", c("-f", name))$stdout
+  pid <- scan(text = out, quiet = TRUE)[1]
+  if (is.na(pid)) NULL else pid
+}

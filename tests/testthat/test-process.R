@@ -15,8 +15,6 @@ test_that("process works", {
 
 test_that("children are removed on kill()", {
 
-  skip("needs a get pid function")
-
   ## tmp1 will call tmp2, and we'll start tmp1 from process$new
   ## Then we kill the process and see if tmp2 was removed as well
   tmp1 <- tempfile(fileext = ".bat")
@@ -44,14 +42,14 @@ test_that("children are removed on kill()", {
   Sys.sleep(1)
 
   ## Child should be alive now
-  pid <- get_pid_by_name(basename(tmp2), children = FALSE)
+  pid <- get_pid_by_name(basename(tmp2))
   expect_true(!is.null(pid))
 
   ## Kill the process
   p$kill()
 
   ## Check on the child
-  pid <- get_pid_by_name(basename(tmp2), children = FALSE)
+  pid <- get_pid_by_name(basename(tmp2))
 
   ## If alive, then kill it
   if (!is.null(pid)) pskill(pid)
@@ -61,8 +59,6 @@ test_that("children are removed on kill()", {
 })
 
 test_that("process is cleaned up on GC", {
-
-  skip("needs a get pid function")
 
   win  <- c("ping", "-n", "6", "127.0.0.1")
   unix <- c("sleep", "5")

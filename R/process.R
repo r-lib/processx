@@ -197,6 +197,7 @@ process <- R6Class(
     status = NULL,        # Exit status of the process
     starttime = NULL,     # timestamp of start
     statusfile = NULL,    # file for the exit status
+    name = NULL,          # random batch file name, used as id
 
     get_short_name = function()
       process_get_short_name(self, private)
@@ -234,6 +235,7 @@ process_restart <- function(self, private) {
   private$pid <- NULL
   private$cleanfiles <- NULL
   private$status <- NULL
+  private$name <- NULL
 
   process_initialize(
     self,
