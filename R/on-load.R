@@ -1,4 +1,4 @@
 
 .onLoad <- function(libname, pkgname) {
-  debugme::debugme()
+  debugme::debugme()                    # nocov
 }

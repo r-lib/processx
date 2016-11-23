@@ -95,3 +95,16 @@ test_that("is_flag_or_string", {
   }
   
 })
+
+test_that("is_existing_file", {
+  expect_false(is_existing_file(tempfile()))
+  expect_error(
+    assert_that(is_existing_file(tempfile())),
+    "File .* does not exist"
+  )
+
+  cat("foo\n", file = tmp <- tempfile())
+  on.exit(unlink(tmp), add = TRUE)
+  expect_true(is_existing_file(tmp))
+  expect_silent(assert_that(is_existing_file(tmp)))
+})

@@ -53,3 +53,11 @@ is_flag_or_string <- function(x) {
 on_failure(is_flag_or_string) <- function(call, env) {
   paste0(deparse(call$x), " is not a flag or a string")
 }
+
+is_existing_file <- function(x) {
+  is_string(x) && file.exists(x)
+}
+
+on_failure(is_existing_file) <- function(call, env) {
+  paste0("File ", deparse(call$x), " does not exist")
+}

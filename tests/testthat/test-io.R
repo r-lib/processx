@@ -98,12 +98,7 @@ test_that("Output and error to specific files", {
 
 test_that("can_read methods work, stdout", {
 
-  sleep2 <- if (os_type() == "windows") {
-    "(ping -n 3 127.0.0.1 > NUL)"
-  } else {
-    "(sleep 2)"
-  }
-  cmd <- paste(sep = " && ", "(echo foo)", sleep2, "(echo bar)")
+  cmd <- paste(sep = " && ", "(echo foo)", sleep(2), "(echo bar)")
 
   p <- process$new(commandline = cmd)
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
@@ -129,12 +124,7 @@ test_that("can_read methods work, stdout", {
 
 test_that("can_read methods work, stderr", {
 
-  sleep2 <- if (os_type() == "windows") {
-    "(ping -n 3 127.0.0.1 > NUL)"
-  } else {
-    "(sleep 2)"
-  }
-  cmd <- paste(sep = " && ", "(>&2 echo foo)", sleep2, "(>&2 echo bar)")
+  cmd <- paste(sep = " && ", "(>&2 echo foo)", sleep(2), "(>&2 echo bar)")
 
   p <- process$new(commandline = cmd)
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
@@ -160,12 +150,7 @@ test_that("can_read methods work, stderr", {
 
 test_that("is_eof methods work, stdout", {
 
-  sleep2 <- if (os_type() == "windows") {
-    "(ping -n 3 127.0.0.1 > NUL)"
-  } else {
-    "(sleep 2)"
-  }
-  cmd <- paste(sep = " && ", "(echo foo)", sleep2, "(echo bar)")
+  cmd <- paste(sep = " && ", "(echo foo)", sleep(2), "(echo bar)")
 
   p <- process$new(commandline = cmd)
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
@@ -190,12 +175,7 @@ test_that("is_eof methods work, stdout", {
 
 test_that("is_eof methods work, stderr", {
 
-  sleep2 <- if (os_type() == "windows") {
-    "(ping -n 3 127.0.0.1 > NUL)"
-  } else {
-    "(sleep 2)"
-  }
-  cmd <- paste(sep = " && ", "(>&2 echo foo)", sleep2, "(>&2 echo bar)")
+  cmd <- paste(sep = " && ", "(>&2 echo foo)", sleep(2), "(>&2 echo bar)")
 
   p <- process$new(commandline = cmd)
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
@@ -216,4 +196,37 @@ test_that("is_eof methods work, stderr", {
   ## There is no more output and finished
   expect_true(p$is_eof_error())
   expect_identical(p$read_error_lines(), character())
+})
+
+test_that("output & error if files are not created yet", {
+
+  ## We produce some output, to make sure that the mocking is in place
+  cmd <- paste("(echo hello) && (>&2 echo foo) &&", sleep(2))
+
+  with_mock(
+    `processx::is_existing_file` = function(...) FALSE,
+    {
+      p <- process$new(commandline = cmd)
+      on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+
+      expect_identical(p$read_output_lines(), character())
+      expect_identical(p$read_error_lines(), character())
+    }
+  )
+})
+
+test_that("get_output_connection", {
+  p <- process$new(commandline = "echo here I am")
+  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+
+  out <- p$get_output_connection()
+  expect_identical(str_trim(readLines(out)), "here I am")
+})
+
+test_that("get_error_connection", {
+  p <- process$new(commandline = "(>&2 echo here I am)")
+  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+
+  err <- p$get_error_connection()
+  expect_identical(str_trim(readLines(err)), "here I am")
 })

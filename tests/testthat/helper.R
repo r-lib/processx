@@ -17,3 +17,21 @@ try_silently <- function(expr) {
     message = function(x) "message"
   )
 }
+
+sleep <- function(n, commandline = TRUE) {
+
+  if (os_type() == "windows") {
+    if (commandline) {
+      paste("ping -n", n + 1L, "127.0.0.1 > NUL")
+    } else {
+      c("ping", "-n", as.character(n + 1L), "127.0.0.1")
+    }
+
+  } else {
+    if (commandline) {
+      paste("(sleep", n, ")")
+    } else {
+      c("sleep", as.character(n))
+    }
+  }
+}

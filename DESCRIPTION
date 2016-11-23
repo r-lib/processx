@@ -16,7 +16,8 @@ BugReports: https://github.com/mangothecat/processx/issues
 RoxygenNote: 5.0.1.9000
 Suggests:
     covr,
-    testthat
+    testthat,
+    withr
 Imports:
     assertthat,
     debugme,

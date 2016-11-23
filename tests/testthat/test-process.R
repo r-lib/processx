@@ -80,3 +80,30 @@ test_that("process is cleaned up on GC", {
 
   expect_null(get_pid_by_name(name))
 })
+
+test_that("get_exit_status", {
+  cmd <- if (os_type() == "windows") {
+    "cmd /c exit 1"
+  } else {
+    "echo alive && exit 1"
+  }
+  p <- process$new(commandline = cmd)
+  p$wait()
+  expect_identical(p$get_exit_status(), 1)
+})
+
+test_that("restart", {
+
+  p <- process$new(commandline = sleep(5))
+  expect_true(p$is_alive())
+
+  Sys.sleep(0.1)
+  p$kill(grace = 0)
+
+  expect_false(p$is_alive())
+
+  p$restart()
+  expect_true(p$is_alive())
+
+  p$kill(grace = 0)
+})
