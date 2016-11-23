@@ -76,7 +76,12 @@ process_initialize <- function(self, private, command, args,
 
   "!DEBUG process_initialize system()"
   ret <- system(
-    paste(shQuote(cmdfile), shQuote(basename(cmdfile)), "2>&1"),
+    paste0(
+      shQuote(cmdfile), " ",
+      shQuote(basename(cmdfile)), " ",
+      "2>", shQuote(tempfile()), " ",
+      ">", shQuote(tempfile())
+    ),
     wait = FALSE
   )
   if (ret != 0) stop("Cannot start process")
