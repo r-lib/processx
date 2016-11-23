@@ -45,6 +45,10 @@ test_that("print / summary does not fail", {
   cat("foo\n", "bar\n", sep = "", file = tmp)
 
   con <- process_connection(file(tmp, open = "r", blocking = TRUE))
+
+  expect_error(capture.output(print(con)), NA)
+  expect_error(capture.output(summary(con)), NA)
+
   close(con)
 
   expect_error(capture.output(print(con)), NA)
