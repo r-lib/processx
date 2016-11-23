@@ -17,7 +17,7 @@ is_string_or_null <- function(x) {
 }
 
 on_failure(is_string_or_null) <- function(call, env) {
-  paste0(deparse(call$x), " must a string (length 1 character) or NULL")
+  paste0(deparse(call$x), " must be a string (length 1 character) or NULL")
 }
 
 is_flag <- function(x) {
@@ -47,7 +47,7 @@ on_failure(is_pid) <- function(call, env) {
 }
 
 is_flag_or_string <- function(x) {
-  assert_that(is_string(x) || is_flag(x))
+  is_string(x) || is_flag(x)
 }
 
 on_failure(is_flag_or_string) <- function(call, env) {
