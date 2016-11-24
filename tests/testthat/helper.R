@@ -80,11 +80,31 @@ get_pid_by_name_unix <- function(name) {
 ## from the list, so we have to do that manually. We remove every
 ## process that contains 'pgrep' in its command line, which is
 ## not the proper solution, but for testing it will do.
+##
+## Unfortunately Ubuntu 12.04 pgrep does not have a -a switch,
+## so we cannot just output the full command line and then filter
+## it in R. So we first run pgrep to get all matching process ids
+## (without their command lines), and then use ps to list the processes
+## again. At this time the first pgrep process is not running any
+## more, but another process might have its id, so we filter again the
+## result for 'name'
 
 get_pid_by_name_linux <- function(name) {
-  out <- safe_system("pgrep", c("-a", "-f", name))$stdout
-  out <- strsplit(out, "\n", fixed = TRUE)[[1]]
-  out <- out[!grepl("pgrep.*[ ]+-a[ ]+-f", out)]
+
+  ## All matching processes, including pgrep's ancestor shell(s)
+  allproc <- str_trim(safe_system("pgrep", c("-d,", "-f", name))$stdout)
+
+  ## List their full command lines
+  out <- safe_system(
+    "ps",
+    c("-p", allproc, "--no-header", "-o", "pid=,command=")
+  )$stdout
+
+  ## Keep the ones that have 'name'
+  out <- str_trim(strsplit(out, "\n", fixed = TRUE)[[1]])
+  out <- grep(name, out, value = TRUE, fixed = TRUE)
+
+  ## First field is process id
   first <- vapply(strsplit(out, " ", fixed = TRUE), "[[", "", 1L)
   pid <- scan(text = first, quiet = TRUE)[1]
   if (is.na(pid)) NULL else pid
