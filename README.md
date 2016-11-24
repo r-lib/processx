@@ -43,7 +43,7 @@ read their standard output and error, kill and restart them.
 * Read the standard output and error, using non-blocking connections.
 * Portable, works on Linux, macOS and Windows.
 * Lightweight, it only depends on the also lightweight
-  [R6](http://r-pkg.org/pkg/R6) package.
+  `R6`, `assertthat` and `debugme` packages.
 * Contains no compiled code, so it is easy to install.
 
 ## Caveats
