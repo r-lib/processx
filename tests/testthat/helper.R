@@ -39,6 +39,8 @@ sleep <- function(n, commandline = TRUE) {
 get_pid_by_name <- function(name) {
   if (os_type() == "windows") {
     get_pid_by_name_windows(name)
+  } else if (is_linux()) {
+    get_pid_by_name_linux(name)
   } else {
     get_pid_by_name_unix(name)
   }
@@ -71,5 +73,19 @@ get_pid_by_name_windows <- function(name) {
 get_pid_by_name_unix <- function(name) {
   out <- safe_system("pgrep", c("-f", name))$stdout
   pid <- scan(text = out, quiet = TRUE)[1]
+  if (is.na(pid)) NULL else pid
+}
+
+## Linux does not exclude the ancestors of the pgrep process
+## from the list, so we have to do that manually. We remove every
+## process that contains 'pgrep' in its command line, which is
+## not the proper solution, but for testing it will do.
+
+get_pid_by_name_linux <- function(name) {
+  out <- safe_system("pgrep", c("-a", "-f", name))$stdout
+  out <- strsplit(out, "\n", fixed = TRUE)[[1]]
+  out <- out[!grepl("pgrep.*[ ]+-a[ ]+-f", out)]
+  first <- vapply(strsplit(out, " ", fixed = TRUE), "[[", "", 1L)
+  pid <- scan(text = first, quiet = TRUE)[1]
   if (is.na(pid)) NULL else pid
 }
