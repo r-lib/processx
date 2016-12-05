@@ -27,6 +27,10 @@
 #'   escaped via [base::shQuote].
 #' @param commandline A character scalar, a full command line.
 #'   No escaping will be performed on it.
+#' @param echo Whether to print the command, the standard output and error
+#'   to the screen. Note that the order of the standard output and error
+#'   lines are not necessarily correct, as standard output is typically
+#'   buffered.
 #' @param timeout Timeout for the process, in seconds, or as a `difftime`
 #'   object. If it is not finished before this, it will be killed.
 #' @param stdout_callback `NULL`, or a function to call for every line
@@ -62,8 +66,9 @@
 #'
 
 run <- function(
-  command = NULL, args = character(), commandline = NULL, timeout = Inf,
-  stdout_callback = NULL, stderr_callback = NULL, check_interval = 0.01) {
+  command = NULL, args = character(), commandline = NULL, echo = FALSE,
+  timeout = Inf, stdout_callback = NULL, stderr_callback = NULL,
+  check_interval = 0.01) {
 
   assert_that(is_time_interval(timeout))
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
@@ -72,7 +77,14 @@ run <- function(
   ## The rest is checked by process$new()
 
   ## Run the process
-  pr <- process$new(command, args, commandline)
+  pr <- process$new(command, args, commandline, echo_cmd = echo)
+
+  ## If echo, then we need to create our own callbacks.
+  ## These are merged to user callbacks if there are any.
+  if (echo) {
+    stdout_callback <- echo_callback(stdout_callback, "stdout")
+    stderr_callback <- echo_callback(stderr_callback, "stderr")
+  }
 
   ## Shall we just wait, or do sg while waiting?
   if (timeout == Inf && is.null(stdout_callback) &&
@@ -87,6 +99,19 @@ run <- function(
   } else {
     run_manage(pr, timeout, stdout_callback, stderr_callback,
                check_interval)
+  }
+}
+
+#' @importFrom crayon red
+
+echo_callback <- function(user_callback, type) {
+  force(user_callback)
+  force(type)
+  function(x, ...) {
+    out <- paste0(if (type == "stdout") "- " else "x ", x)
+    if (type == "stderr") out <- red(out)
+    cat(out, "\n", sep = "")
+    if (!is.null(user_callback)) user_callback(x, ...)
   }
 }
 

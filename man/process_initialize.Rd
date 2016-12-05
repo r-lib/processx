@@ -5,7 +5,7 @@
 \title{Start a process}
 \usage{
 process_initialize(self, private, command, args, commandline, stdout, stderr,
-  cleanup)
+  cleanup, echo_cmd)
 }
 \arguments{
 \item{self}{this}
@@ -23,6 +23,8 @@ process_initialize(self, private, command, args, commandline, stdout, stderr,
 \item{stderr}{Standard error, FALSE to ignore, TRUE for temp file.}
 
 \item{cleanup}{Kill on GC?}
+
+\item{echo_cmd}{Echo command before starting it?}
 }
 \description{
 Start a process

@@ -21,6 +21,7 @@ Suggests:
     withr
 Imports:
     assertthat,
+    crayon,
     debugme,
     R6,
     tools,

@@ -9,12 +9,14 @@
 #' @param stdout Standard output, FALSE to ignore, TRUE for temp file.
 #' @param stderr Standard error, FALSE to ignore, TRUE for temp file.
 #' @param cleanup Kill on GC?
+#' @param echo_cmd Echo command before starting it?
 #'
 #' @keywords internal
 #' @importFrom utils head tail
 
 process_initialize <- function(self, private, command, args,
-                               commandline, stdout, stderr, cleanup) {
+                               commandline, stdout, stderr, cleanup,
+                               echo_cmd) {
 
   "!DEBUG process_initialize `command`"
 
@@ -24,6 +26,7 @@ process_initialize <- function(self, private, command, args,
   assert_that(is_flag_or_string(stderr))
   assert_that(is_string_or_null(commandline))
   assert_that(is_flag(cleanup))
+  assert_that(is_flag(echo_cmd))
 
   if (is.null(command) + is.null(commandline) != 1) {
     stop("Need exactly one of 'command' and 'commandline")
@@ -38,6 +41,7 @@ process_initialize <- function(self, private, command, args,
   private$cleanup <- cleanup
   private$pstdout <- stdout
   private$pstderr <- stderr
+  private$echo_cmd <- echo_cmd
 
   if (isTRUE(stdout)) {
     private$cleanfiles <- c(private$cleanfiles, stdout <- tempfile())
@@ -56,6 +60,8 @@ process_initialize <- function(self, private, command, args,
     ## This is needed for "composite" commands: "cmd1 ; cmd2"
     paste("(", commandline, ")")
   }
+
+  if (echo_cmd) cat("Running", cmd, "\n")
 
   pidfile <- tempfile()
   private$statusfile <- tempfile()

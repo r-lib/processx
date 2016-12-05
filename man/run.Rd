@@ -5,8 +5,8 @@
 \title{Run external command, and wait until finishes}
 \usage{
 run(command = NULL, args = character(), commandline = NULL,
-  timeout = Inf, stdout_callback = NULL, stderr_callback = NULL,
-  check_interval = 0.01)
+  echo = FALSE, timeout = Inf, stdout_callback = NULL,
+  stderr_callback = NULL, check_interval = 0.01)
 }
 \arguments{
 \item{command}{Character scalar, the command to run. It will be
@@ -17,6 +17,11 @@ escaped via \link[base:shQuote]{base::shQuote}.}
 
 \item{commandline}{A character scalar, a full command line.
 No escaping will be performed on it.}
+
+\item{echo}{Whether to print the command, the standard output and error
+to the screen. Note that the order of the standard output and error
+lines are not necessarily correct, as standard output is typically
+buffered.}
 
 \item{timeout}{Timeout for the process, in seconds, or as a \code{difftime}
 object. If it is not finished before this, it will be killed.}

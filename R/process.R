@@ -9,7 +9,8 @@
 #'
 #' @section Usage:
 #' \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
-#'                  stdout = TRUE, stderr = TRUE, cleanup = TRUE)
+#'                  stdout = TRUE, stderr = TRUE, cleanup = TRUE,
+#'                  echo_cmd = FALSE)
 #'
 #' p$is_alive()
 #' p$kill(grace = 0.1)
@@ -46,6 +47,8 @@
 #'     \code{TRUE}: redirect it to a temporary file.}
 #'   \item{cleanup}{Whether to kill the process if the \code{process}
 #'     object is garbage collected.}
+#'   \item{echo_cmd}{Whether to print the command to the screen before
+#'     running it.}
 #'   \item{grace}{Grace pediod between the TERM and KILL signals, in
 #'     seconds.}
 #'   \item{...}{Extra arguments are passed to the
@@ -132,9 +135,10 @@ process <- R6Class(
   public = list(
 
     initialize = function(command = NULL, args = character(),
-      commandline = NULL, stdout = TRUE, stderr = TRUE, cleanup = TRUE)
+      commandline = NULL, stdout = TRUE, stderr = TRUE, cleanup = TRUE,
+      echo_cmd = FALSE)
       process_initialize(self, private, command, args, commandline,
-                         stdout, stderr, cleanup),
+                         stdout, stderr, cleanup, echo_cmd),
 
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
@@ -201,6 +205,7 @@ process <- R6Class(
     starttime = NULL,     # timestamp of start
     statusfile = NULL,    # file for the exit status
     name = NULL,          # random batch file name, used as id
+    echo_cmd = NULL,      # whetheer to echo the command
 
     get_short_name = function()
       process_get_short_name(self, private)
@@ -248,7 +253,8 @@ process_restart <- function(self, private) {
     private$commandline,
     private$pstdout,
     private$pstderr,
-    private$cleanup
+    private$cleanup,
+    private$echo_cmd
   )
 
   invisible(self)
