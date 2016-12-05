@@ -14,6 +14,7 @@ LazyData: true
 URL: https://github.com/mangothecat/processx#readme
 BugReports: https://github.com/mangothecat/processx/issues
 RoxygenNote: 5.0.1.9000
+Roxygen: list(markdown = TRUE)
 Suggests:
     covr,
     testthat,
