@@ -31,6 +31,8 @@
 #'   to the screen. Note that the order of the standard output and error
 #'   lines are not necessarily correct, as standard output is typically
 #'   buffered.
+#' @param spinner Whether to a reassusing spinner while the process
+#'   is running.
 #' @param timeout Timeout for the process, in seconds, or as a `difftime`
 #'   object. If it is not finished before this, it will be killed.
 #' @param stdout_callback `NULL`, or a function to call for every line
@@ -67,14 +69,17 @@
 
 run <- function(
   command = NULL, args = character(), commandline = NULL, echo = FALSE,
-  timeout = Inf, stdout_callback = NULL, stderr_callback = NULL,
-  check_interval = 0.01) {
+  spinner = FALSE, timeout = Inf, stdout_callback = NULL,
+  stderr_callback = NULL, check_interval = 0.01) {
 
   assert_that(is_time_interval(timeout))
+  assert_that(is_flag(spinner))
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
   assert_that(is.null(stderr_callback) || is.function(stderr_callback))
   assert_that(is_time_interval(check_interval))
   ## The rest is checked by process$new()
+
+  if (!interactive()) spinner <- FALSE
 
   ## Run the process
   pr <- process$new(command, args, commandline, echo_cmd = echo)
@@ -87,7 +92,7 @@ run <- function(
   }
 
   ## Shall we just wait, or do sg while waiting?
-  if (timeout == Inf && is.null(stdout_callback) &&
+  if (timeout == Inf && ! spinner && is.null(stdout_callback) &&
       is.null(stderr_callback)) {
     pr$wait()
     list(
@@ -97,7 +102,7 @@ run <- function(
     )
 
   } else {
-    run_manage(pr, timeout, stdout_callback, stderr_callback,
+    run_manage(pr, timeout, spinner, stdout_callback, stderr_callback,
                check_interval)
   }
 }
@@ -115,7 +120,7 @@ echo_callback <- function(user_callback, type) {
   }
 }
 
-run_manage <- function(proc, timeout, stdout_callback,
+run_manage <- function(proc, timeout, spinner, stdout_callback,
                        stderr_callback, check_interval) {
 
   timeout <- as.difftime(timeout, units = "secs")
@@ -144,6 +149,15 @@ run_manage <- function(proc, timeout, stdout_callback,
     had_output
   }
 
+  spin <- (function() {
+    state <- 1L
+    phases <- c("-", "\\", "|", "-")
+    function() {
+      cat(phases[state], "\r")
+      state <<- (state + 1) %% length(phases) + 1L
+    }
+  })()
+
   while (proc$is_alive()) {
 
     ## timeout, maybe finished by now
@@ -153,6 +167,9 @@ run_manage <- function(proc, timeout, stdout_callback,
 
     ## Only sleep if there was no output
     if (!do_output()) Sys.sleep(check_interval)
+
+    ## Spin
+    if (spinner) spin()
   }
 
   ## Needed to get the exit status
@@ -163,6 +180,8 @@ run_manage <- function(proc, timeout, stdout_callback,
 
   if (is.null(stdout_callback)) stdout <- proc$read_output_lines()
   if (is.null(stderr_callback)) stderr <- proc$read_error_lines()
+
+  if (spinner) cat("\r \r")
 
   list(
     status = proc$get_exit_status(),

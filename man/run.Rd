@@ -5,7 +5,7 @@
 \title{Run external command, and wait until finishes}
 \usage{
 run(command = NULL, args = character(), commandline = NULL,
-  echo = FALSE, timeout = Inf, stdout_callback = NULL,
+  echo = FALSE, spinner = FALSE, timeout = Inf, stdout_callback = NULL,
   stderr_callback = NULL, check_interval = 0.01)
 }
 \arguments{
@@ -22,6 +22,9 @@ No escaping will be performed on it.}
 to the screen. Note that the order of the standard output and error
 lines are not necessarily correct, as standard output is typically
 buffered.}
+
+\item{spinner}{Whether to a reassusing spinner while the process
+is running.}
 
 \item{timeout}{Timeout for the process, in seconds, or as a \code{difftime}
 object. If it is not finished before this, it will be killed.}
