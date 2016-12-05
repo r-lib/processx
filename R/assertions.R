@@ -61,3 +61,12 @@ is_existing_file <- function(x) {
 on_failure(is_existing_file) <- function(call, env) {
   paste0("File ", deparse(call$x), " does not exist")
 }
+
+is_time_interval <- function(x) {
+  (inherits(x, "difftime") && length(x) == 1) ||
+    (is.numeric(x) && length(x) == 1 && !is.na(x))
+}
+
+on_failure(is_time_interval) <- function(call, env) {
+  paste0(deparse(call$x), " is not a valid time interval")
+}

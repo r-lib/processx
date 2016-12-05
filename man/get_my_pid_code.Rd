@@ -14,7 +14,7 @@ get_my_pid_code_unix(pidfile)
 }
 \arguments{
 \item{pidfile}{The file that will contain the pid
-`paste0(pidfile, "3")` will be used to notify that `pidfile`
+\code{paste0(pidfile, "3")} will be used to notify that \code{pidfile}
 is complete and contains the PID. (Otherwise it might be an
 empty file.)}
 }
@@ -22,16 +22,18 @@ empty file.)}
 Numeric PID
 }
 \description{
-[get_pid_form_file()] will read the PID from the file.
+\code{get_pid_from_file()} will read the PID from the file.
 You need this function, because the format of the file is
 platform dependent.
 
 Some tricks in the windows version:
-* we output all child processes of the R session into the output
-  file, and will use a random id, that is an argument to the R script,
-  to extract the correct child.
-* `wmic` outputs UTF-16 text to the file, so we run `type` in it, and
-  redirect it to another file, which will be ASCII already.
+\itemize{
+\item we output all child processes of the R session into the output
+file, and will use a random id, that is an argument to the R script,
+to extract the correct child.
+\item \code{wmic} outputs UTF-16 text to the file, so we run \code{type} in it, and
+redirect it to another file, which will be ASCII already.
+}
 
 The unix version is straightforward, as a unix shell knows its
 process id.

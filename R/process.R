@@ -34,7 +34,7 @@
 #'   \item{p}{A \code{process} object.}
 #'   \item{command}{Character scalar, the command to run. It will be
 #'     escaped via \code{\link[base]{shQuote}}.}
-#'   \item{args}{Character vector, arguments to the command. The will be
+#'   \item{args}{Character vector, arguments to the command. They will be
 #'     escaped via \code{\link[base]{shQuote}}.}
 #'   \item{commandline}{A character scalar, a full command line.
 #'     No escaping will be performed on it.}
@@ -154,6 +154,9 @@ process <- R6Class(
     print = function()
       process_print(self, private),
 
+    get_start_time = function()
+      process_get_start_time(self, private),
+
     ## Output
 
     read_output_lines = function(...)
@@ -255,11 +258,19 @@ process_wait <- function(self, private) {
   "!DEBUG process_wait `private$get_short_name()`"
   while(self$is_alive()) Sys.sleep(0.01)
   if (is.null(private$status)) {
-    private$status <- as.numeric(readLines(private$statusfile))
+    if (file.exists(private$statusfile)) {
+      private$status <- as.numeric(readLines(private$statusfile))
+    } else {
+      private$status <- NA_integer_
+    }
   }
   invisible(self)
 }
 
 process_get_exit_status <- function(self, private) {
   private$status
+}
+
+process_get_start_time <- function(self, private) {
+  private$starttime
 }

@@ -85,6 +85,7 @@ process_initialize <- function(self, private, command, args,
     ),
     wait = FALSE
   )
+  private$starttime <- Sys.time()
   if (ret != 0) stop("Cannot start process")
 
   ## Get the pid from the pid file, this also removes it
@@ -115,7 +116,7 @@ process_initialize <- function(self, private, command, args,
 
 #' Platform-dependent code to output the PID to a file
 #'
-#' [get_pid_form_file()] will read the PID from the file.
+#' `get_pid_from_file()` will read the PID from the file.
 #' You need this function, because the format of the file is
 #' platform dependent.
 #'
@@ -174,12 +175,12 @@ get_my_pid_code_unix <- function(pidfile) {
 
 ## ---------------------------------------------------------------------
 
-#' Parse a PID from an output file written by [get_my_pid()]
+#' Parse a PID from an output file written by `get_my_pid()`
 #'
 #' The format of the file is platform dependent.
 #'
 #' @param pidfile Name of the pid file, same as the argument to
-#'   [get_my_pid_file()].
+#'   `get_my_pid_file()`.
 #' @param cmdfile Name of the script file, we use this as an ID on
 #'   windows, to find the process among the children of the R process,
 #'   because windows shells cannot report their own process id.

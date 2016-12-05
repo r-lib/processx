@@ -37,25 +37,25 @@ print(p)
 \section{Arguments}{
 
 \describe{
-  \item{p}{A \code{process} object.}
-  \item{command}{Character scalar, the command to run. It will be
-    escaped via \code{\link[base]{shQuote}}.}
-  \item{args}{Character vector, arguments to the command. The will be
-    escaped via \code{\link[base]{shQuote}}.}
-  \item{commandline}{A character scalar, a full command line.
-    No escaping will be performed on it.}
-  \item{stdout}{What to do with the standard output. Possible values:
-    \code{FALSE}: discard it; a string, redirect it to this file,
-    \code{TRUE}: redirect it to a temporary file.}
-  \item{stdout}{What to do with the standard error. Possible values:
-    \code{FALSE}: discard it; a string, redirect it to this file,
-    \code{TRUE}: redirect it to a temporary file.}
-  \item{cleanup}{Whether to kill the process if the \code{process}
-    object is garbage collected.}
-  \item{grace}{Grace pediod between the TERM and KILL signals, in
-    seconds.}
-  \item{...}{Extra arguments are passed to the
-    \code{\link[base]{readLines}} function.}
+\item{p}{A \code{process} object.}
+\item{command}{Character scalar, the command to run. It will be
+escaped via \code{\link[base]{shQuote}}.}
+\item{args}{Character vector, arguments to the command. They will be
+escaped via \code{\link[base]{shQuote}}.}
+\item{commandline}{A character scalar, a full command line.
+No escaping will be performed on it.}
+\item{stdout}{What to do with the standard output. Possible values:
+\code{FALSE}: discard it; a string, redirect it to this file,
+\code{TRUE}: redirect it to a temporary file.}
+\item{stdout}{What to do with the standard error. Possible values:
+\code{FALSE}: discard it; a string, redirect it to this file,
+\code{TRUE}: redirect it to a temporary file.}
+\item{cleanup}{Whether to kill the process if the \code{process}
+object is garbage collected.}
+\item{grace}{Grace pediod between the TERM and KILL signals, in
+seconds.}
+\item{...}{Extra arguments are passed to the
+\code{\link[base]{readLines}} function.}
 }
 }
 

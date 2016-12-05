@@ -4,7 +4,7 @@
 \alias{get_pid_from_file}
 \alias{get_pid_from_file_windows}
 \alias{get_pid_from_file_unix}
-\title{Parse a PID from an output file written by [get_my_pid()]}
+\title{Parse a PID from an output file written by \code{get_my_pid()}}
 \usage{
 get_pid_from_file(pidfile, cmdfile)
 
@@ -14,7 +14,7 @@ get_pid_from_file_unix(pidfile, cmdfile)
 }
 \arguments{
 \item{pidfile}{Name of the pid file, same as the argument to
-[get_my_pid_file()].}
+\code{get_my_pid_file()}.}
 
 \item{cmdfile}{Name of the script file, we use this as an ID on
 windows, to find the process among the children of the R process,
