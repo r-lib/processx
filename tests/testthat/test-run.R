@@ -41,5 +41,5 @@ test_that("callbacks work, unix", {
   err <- NULL
   run("lsfsdfsdffsdfsdf",
       stderr_callback = function(x, ...) err <<- c(err, x))
-  expect_match(paste(err, collapse = "\n"), "command not found")
+  expect_match(paste(err, collapse = "\n"), "not found")
 })
