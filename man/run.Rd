@@ -78,7 +78,7 @@ if (.Platform$OS.type == "unix") {
     )
   )
 } else {
-  run("ping -n 1 127.0.0.1")
+  run(commandline = "ping -n 1 127.0.0.1")
   run(commandline = "ping -n 6 127.0.0.1", timeout = 1)
 }
 
