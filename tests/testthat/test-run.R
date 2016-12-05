@@ -24,7 +24,11 @@ test_that("timeout works, unix", {
   skip_other_platforms("unix")
 
   tic <- Sys.time()
-  x <- run(commandline = "sleep 5", timeout = 0.01)
+  x <- run(
+    commandline = "sleep 5",
+    timeout = 0.01,
+    error_on_status = FALSE
+  )
   toc <- Sys.time()
 
   expect_true(toc - tic < as.difftime(3, units = "secs"))
@@ -39,7 +43,10 @@ test_that("callbacks work, unix", {
   expect_equal(sort(out), sort(list.files()))
 
   err <- NULL
-  run("lsfsdfsdffsdfsdf",
-      stderr_callback = function(x, ...) err <<- c(err, x))
+  run(
+    "lsfsdfsdffsdfsdf",
+    stderr_callback = function(x, ...) err <<- c(err, x),
+    error_on_status = FALSE
+  )
   expect_match(paste(err, collapse = "\n"), "not found")
 })

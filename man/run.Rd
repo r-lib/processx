@@ -5,8 +5,8 @@
 \title{Run external command, and wait until finishes}
 \usage{
 run(command = NULL, args = character(), commandline = NULL,
-  echo = FALSE, spinner = FALSE, timeout = Inf, stdout_callback = NULL,
-  stderr_callback = NULL, check_interval = 0.01)
+  error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
+  stdout_callback = NULL, stderr_callback = NULL, check_interval = 0.01)
 }
 \arguments{
 \item{command}{Character scalar, the command to run. It will be
@@ -17,6 +17,12 @@ escaped via \link[base:shQuote]{base::shQuote}.}
 
 \item{commandline}{A character scalar, a full command line.
 No escaping will be performed on it.}
+
+\item{error_on_status}{Whether to throw an error if the command returns
+with a non-zero status, or it is interrupted. The error clases are
+\code{system_command_status_error} and \code{system_command_timeout_error},
+respectively, and both errors have class \code{system_command_error} as
+well.}
 
 \item{echo}{Whether to print the command, the standard output and error
 to the screen. Note that the order of the standard output and error
@@ -78,16 +84,18 @@ standard output or error.
 ## Different examples for Unix and Windows
 if (.Platform$OS.type == "unix") {
   run("ls")
-  system.time(run(commandline = "sleep 10", timeout = 1))
+  system.time(run(commandline = "sleep 10", timeout = 1,
+    error_on_status = FALSE))
   system.time(
     run(
       commandline = "for i in 1 2 3 4 5; do echo $i; sleep 1; done",
-      timeout=2
+      timeout=2, error_on_status = FALSE
     )
   )
 } else {
   run(commandline = "ping -n 1 127.0.0.1")
-  run(commandline = "ping -n 6 127.0.0.1", timeout = 1)
+  run(commandline = "ping -n 6 127.0.0.1", timeout = 1,
+    error_on_status = FALSE)
 }
 
 }

@@ -25,6 +25,11 @@
 #'   escaped via [base::shQuote].
 #' @param args Character vector, arguments to the command. They will be
 #'   escaped via [base::shQuote].
+#' @param error_on_status Whether to throw an error if the command returns
+#'   with a non-zero status, or it is interrupted. The error clases are
+#'   `system_command_status_error` and `system_command_timeout_error`,
+#'   respectively, and both errors have class `system_command_error` as
+#'   well.
 #' @param commandline A character scalar, a full command line.
 #'   No escaping will be performed on it.
 #' @param echo Whether to print the command, the standard output and error
@@ -54,24 +59,27 @@
 #' ## Different examples for Unix and Windows
 #' if (.Platform$OS.type == "unix") {
 #'   run("ls")
-#'   system.time(run(commandline = "sleep 10", timeout = 1))
+#'   system.time(run(commandline = "sleep 10", timeout = 1,
+#'     error_on_status = FALSE))
 #'   system.time(
 #'     run(
 #'       commandline = "for i in 1 2 3 4 5; do echo $i; sleep 1; done",
-#'       timeout=2
+#'       timeout=2, error_on_status = FALSE
 #'     )
 #'   )
 #' } else {
 #'   run(commandline = "ping -n 1 127.0.0.1")
-#'   run(commandline = "ping -n 6 127.0.0.1", timeout = 1)
+#'   run(commandline = "ping -n 6 127.0.0.1", timeout = 1,
+#'     error_on_status = FALSE)
 #' }
 #'
 
 run <- function(
-  command = NULL, args = character(), commandline = NULL, echo = FALSE,
-  spinner = FALSE, timeout = Inf, stdout_callback = NULL,
-  stderr_callback = NULL, check_interval = 0.01) {
+  command = NULL, args = character(), commandline = NULL,
+  error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
+  stdout_callback = NULL, stderr_callback = NULL, check_interval = 0.01) {
 
+  assert_that(is_flag(error_on_status))
   assert_that(is_time_interval(timeout))
   assert_that(is_flag(spinner))
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
@@ -92,7 +100,7 @@ run <- function(
   }
 
   ## Shall we just wait, or do sg while waiting?
-  if (timeout == Inf && ! spinner && is.null(stdout_callback) &&
+  res <- if (timeout == Inf && ! spinner && is.null(stdout_callback) &&
       is.null(stderr_callback)) {
     pr$wait()
     list(
@@ -105,6 +113,12 @@ run <- function(
     run_manage(pr, timeout, spinner, stdout_callback, stderr_callback,
                check_interval)
   }
+
+  if (error_on_status && (is.na(res$status) || res$status > 0)) {
+    stop(make_condition(res, call = sys.call()))
+  }
+
+  res
 }
 
 #' @importFrom crayon red
@@ -188,4 +202,29 @@ run_manage <- function(proc, timeout, spinner, stdout_callback,
     stdout = stdout,
     stderr = stderr
   )
+}
+
+make_condition <- function(result, call) {
+  if (is.na(result$status)) {
+    structure(
+      list(
+        message = "System command timeout",
+        stderr = result$stderr,
+        call = call
+      ),
+      class = c("system_command_timeout_error", "system_command_error",
+        "error", "condition")
+    )
+
+  } else {
+    structure(
+      list(
+        message = "System command error",
+        stderr = result$stderr,
+        call = call
+      ),
+      class = c("system_command_status_error", "system_command_error",
+        "error", "condition")
+    )
+  }
 }
