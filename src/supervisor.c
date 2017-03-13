@@ -219,6 +219,18 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
 
     return buf;
 }
+
+
+void sendCtrlC(int pid) {
+    printf("sending ctrl+c to pid %d", pid);
+    FreeConsole();
+
+    if (AttachConsole(pid)) {
+        GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
+    } else {
+        printf("Error attaching to console for PID: %d\n", pid);
+    }
+}
 #endif
 
 
@@ -256,6 +268,11 @@ void kill_children() {
     printf("Sending SIGTERM to children: ");
     for (int i=0; i<n_children; i++) {
         printf("%d ", children[i]);
+
+        #ifdef WIN32
+        // In Windows, try sending a Ctrl-C in addition to the SIGTERM
+        sendCtrlC(children[i]);
+        #endif
         kill(children[i], SIGTERM);
     }
 }
