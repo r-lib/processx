@@ -100,9 +100,7 @@ void configure_stdin(HANDLE h_input) {
         }
 
     } else if (handle_type == FILE_TYPE_PIPE) {
-        printf("FILE_TYPE_PIPE not yet implemented.");
-        // TODO
-
+        // No need to do anything
     } else if (handle_type == FILE_TYPE_DISK) {
         printf("Don't know how to handle FILE_TYPE_DISK.");
         exit(1);
@@ -251,10 +249,9 @@ int extract_pid(char* buf, int len) {
 
 
 // Check if a process is running. Returns 1 if yes, 0 if no.
-// http://stackoverflow.com/a/11785988
 int pid_is_running(pid_t pid) {
-    kill(pid, 0);
-    if (errno == ESRCH) {
+    int res = kill(pid, 0);
+    if (res == -1 && errno == ESRCH) {
         return 0;
     }
     return 1;
@@ -385,7 +382,7 @@ int main() {
 
         // Check that parent is still running. If not, kill children.
         if (!pid_is_running(parent_pid)) {
-            printf("Parent killed.\n");
+            printf("Parent (%d) killed.\n", parent_pid);
             kill_children();
             printf("\nExiting.\n");
             return 0;
