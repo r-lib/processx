@@ -132,7 +132,6 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
         default:
             input_type_name = "Unknown";
     }
-    // printf("Input type: %s\n", input_type_name);
 
 
     if (input_type == FILE_TYPE_CHAR) {
@@ -144,8 +143,6 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
 
         // First use PeekConsoleInput to make sure some char is available,
         // because ReadConsoleInput will block if there's no input.
-        // http://stackoverflow.com/questions/37261889/win32-how-stop-
-        // readfile-stdinpipe?rq=1
         if (!PeekConsoleInput(h_input, in_record_buf, input_buf_size, &num_peeked)) {
             printf("Error peeking at console input.");
             exit(1);            
@@ -185,20 +182,18 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
             }
         }
 
-        // This is the number of events up to and including the '\n'
-        DWORD num_events_read = i+1;
-
 
         if (found_newline) {
-            // Clear out console buffer up to the '\n' event
+            // This is the number of events up to and including the '\n'
+            DWORD num_events_read = i+1;
             DWORD num_events_read2;
+            // Clear out console buffer up to the '\n' event
             if (!ReadConsoleInput(h_input, in_record_buf, num_events_read , &num_events_read2)) {
                 printf("Error reading console input.");
                 exit(1);            
             }
 
             // Place the content in buf
-            printf("Current string: '%.*s'\n", input_char_buf_n, input_char_buf);
             snprintf(buf, MIN(input_char_buf_n, max_chars), "%s", input_char_buf);
             return buf;
 
@@ -207,9 +202,38 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
         }
 
     } else if (input_type == FILE_TYPE_PIPE) {
-        // TODO:
-        // Pipe input
-        // PeekNamedPipe()
+        DWORD num_peeked;
+        char input_char_buf[input_buf_size];
+        int input_char_buf_n = 0;
+
+        if (!PeekNamedPipe(h_input, input_char_buf, input_buf_size, &num_peeked, NULL, NULL)) {
+            printf("Error peeking at pipe input.");
+            exit(1);
+        };
+
+        BOOL found_newline = FALSE;
+        for (int i=0; i<num_peeked; i++) {
+            if (input_char_buf[i] == '\r' || input_char_buf[i] == '\n') {
+                found_newline = TRUE;
+            }
+            input_char_buf_n++;
+        }
+
+        DWORD num_read;
+        if (found_newline) {
+            // Clear out pipe
+            if (!ReadFile(h_input, input_char_buf, input_char_buf_n, &num_read, NULL)) {
+                printf("Error reading pipe input.");
+                exit(1);
+            }
+
+            // Place the content in buf
+            snprintf(buf, MIN(input_char_buf_n, max_chars), "%s", input_char_buf);
+            return buf;
+
+        } else {
+            return NULL;
+        }
 
     } else {
         printf("Unsupported input type: %s", input_type_name);
@@ -229,7 +253,7 @@ void sendCtrlC(int pid) {
         printf("Error attaching to console for PID: %d\n", pid);
     }
 }
-#endif
+#endif // WIN32
 
 
 // Given a string of format "102", return 102. If conversion fails because it
