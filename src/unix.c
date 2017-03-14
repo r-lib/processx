@@ -16,14 +16,11 @@ typedef struct {
   int detached;
 } processx_options_t;
 
-int processx__nonblock_fcntl(int fd, int set) {
+static int processx__nonblock_fcntl(int fd, int set) {
   int flags;
   int r;
 
-  do {
-    r = fcntl(fd, F_GETFL);
-  } while (r == -1 && errno == EINTR);
-
+  do { r = fcntl(fd, F_GETFL); } while (r == -1 && errno == EINTR);
   if (r == -1) { return -errno; }
 
   /* Bail out now if already set/clear. */
@@ -31,18 +28,33 @@ int processx__nonblock_fcntl(int fd, int set) {
 
   if (set) { flags = r | O_NONBLOCK; } else { flags = r & ~O_NONBLOCK; }
 
-  do {
-    r = fcntl(fd, F_SETFL, flags);
-  } while (r == -1 && errno == EINTR);
-
+  do { r = fcntl(fd, F_SETFL, flags); } while (r == -1 && errno == EINTR);
   if (r) { return -errno; }
 
   return 0;
 }
 
-void processx__child_init(char *command, char **args, int error_fd,
-			  const char *stdout, const char *stderr,
-			  processx_options_t *options) {
+static int processx__cloexec_fcntl(int fd, int set) {
+  int flags;
+  int r;
+
+  do { r = fcntl(fd, F_GETFD); } while (r == -1 && errno == EINTR);
+  if (r == -1) { return -errno; }
+
+  /* Bail out now if already set/clear. */
+  if (!!(r & FD_CLOEXEC) == !!set) { return 0; }
+
+  if (set) { flags = r | FD_CLOEXEC; } else { flags = r & ~FD_CLOEXEC; }
+
+  do { r = fcntl(fd, F_SETFD, flags); } while (r == -1 && errno == EINTR);
+  if (r) { return -errno; }
+
+  return 0;
+}
+
+static void processx__child_init(char *command, char **args, int error_fd,
+				 const char *stdout, const char *stderr,
+				 processx_options_t *options) {
 
   int err;
   int fd0, fd1, fd2, use_fd0, use_fd1, use_fd2,
@@ -57,11 +69,11 @@ void processx__child_init(char *command, char **args, int error_fd,
   if (use_fd0 == -1) _exit(127);
 
   close_fd1 = use_fd1 = open(stdout ? stdout : "/dev/null",
-			     O_CREAT | O_TRUNC | O_RDWR);
+			     O_APPEND | O_RDWR, 0);
   if (use_fd1 == -1) _exit(127);
 
   close_fd2 = use_fd2 = open(stderr ? stderr : "/dev/null",
-			     O_CREAT | O_TRUNC | O_RDWR);
+			     O_APPEND | O_RDWR, 0);
   if (use_fd2 == -1) _exit(127);
 
   fd0 = dup2(use_fd0, 0);
@@ -80,24 +92,14 @@ void processx__child_init(char *command, char **args, int error_fd,
   _exit(127);
 }
 
-int processx__open(int fds[2], int readable) {
-  /* TODO */
-  return 0;
-}
-
-int processx__close(int fds[2]) {
-  /* TODO */
-  return 0;
-}
-
-char *processx__tmp_string(SEXP str, int i) {
+static char *processx__tmp_string(SEXP str, int i) {
   const char *ptr = CHAR(STRING_ELT(str, i));
   char *cstr = R_alloc(1, strlen(ptr) + 1);
   strcpy(cstr, ptr);
   return cstr;
 }
 
-char **processx__tmp_character(SEXP chr) {
+static char **processx__tmp_character(SEXP chr) {
   size_t i, n = LENGTH(chr);
   char **cchr = (void*) R_alloc(n + 1, sizeof(char*));
   for (i = 0; i < n; i++) {
@@ -126,6 +128,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   options.detached = LOGICAL(detached)[0];
 
   if (pipe(signal_pipe)) { goto cleanup; }
+  processx__cloexec_fcntl(signal_pipe[0], 1);
+  processx__cloexec_fcntl(signal_pipe[1], 1);
 
   /* TODO: put the new child into the child list */
 
@@ -138,7 +142,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
     close(signal_pipe[0]);
     close(signal_pipe[1]);
     goto cleanup;
-
   }
 
   /* CHILD */
@@ -172,10 +175,58 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 
   close(signal_pipe[0]);
 
-  return handle;
+  if (exec_errorno == 0) {
+    return ScalarInteger(pid);
+    return handle;
+
+  } else {
+    error("Cannot start process");
+  }
 
  cleanup:
   error("processx error");
+}
+
+SEXP processx_wait(SEXP pid, SEXP hang) {
+  pid_t cpid = INTEGER(pid)[0];
+  int chang = LOGICAL(hang)[0];
+  SEXP result = PROTECT(allocVector(INTSXP, 3));
+  int wstat, wp;
+
+  INTEGER(result)[0] = 0;	/* JUST DIED */
+
+  do {
+    wp = waitpid(cpid, &wstat, chang ? 0 : WNOHANG);
+  } while (pid == -1 && errno == EINTR);
+
+  /* Some sort of error? */
+
+  if (! chang && wp == 0) {
+    /* Still running and we didn't want to wait */
+    INTEGER(result)[0] = 1;	/* RUNNING */
+    goto done;
+
+  } else if (wp == -1 && errno == ECHILD) {
+    /* No process to wait on, dead already? */
+    INTEGER(result)[0] = 2;	/* ALREADY DEAD */
+    goto done;
+
+  } else if (wp == -1) {
+    /* Other error */
+    error("processx error: %s", strerror(errno));
+  }
+
+  /* Otherwise we successfully waited and continue to grab the status */
+
+  if (WIFEXITED(wstat)) {
+    INTEGER(result)[1] = WEXITSTATUS(wstat);
+  } else {
+    INTEGER(result)[2] = WTERMSIG(wstat);
+  }
+
+ done:
+  UNPROTECT(1);
+  return result;
 }
 
 #endif

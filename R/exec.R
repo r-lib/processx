@@ -5,3 +5,9 @@ exec <- function(command, args = character(), stdout = NULL, stderr = NULL,
   .Call("processx_exec", command, c(command, args), stdout, stderr,
         detached, PACKAGE = "processx")
 }
+
+wait <- function(pid, hang = FALSE) {
+
+  .Call("processx_wait", as.integer(pid), as.logical(hang),
+        PACKAGE = "processx")
+}

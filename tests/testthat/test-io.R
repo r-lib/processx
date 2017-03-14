@@ -220,7 +220,11 @@ test_that("get_output_connection", {
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   out <- p$get_output_connection()
-  expect_identical(str_trim(readLines(out)), "here I am")
+  lines <- character()
+  while (! p$is_eof_output()) {
+    lines <- c(lines, readLines(out))
+  }
+  expect_identical(str_trim(lines), "here I am")
 })
 
 test_that("get_error_connection", {
@@ -228,5 +232,9 @@ test_that("get_error_connection", {
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   err <- p$get_error_connection()
-  expect_identical(str_trim(readLines(err)), "here I am")
+  lines <- character()
+  while (! p$is_eof_error()) {
+    lines <- c(lines, readLines(err))
+  }
+  expect_identical(str_trim(lines), "here I am")
 })

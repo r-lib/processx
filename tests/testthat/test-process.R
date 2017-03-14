@@ -85,7 +85,7 @@ test_that("get_exit_status", {
   }
   p <- process$new(commandline = cmd)
   p$wait()
-  expect_identical(p$get_exit_status(), 1)
+  expect_identical(p$get_exit_status(), 1L)
 })
 
 test_that("restart", {

@@ -205,9 +205,9 @@ process <- R6Class(
     pstderr = NULL,       # the original stderr argument
     cleanfiles = NULL,    # which temp stdout/stderr file(s) to clean up
     status = NULL,        # Exit status of the process
+    signal = NULL,        # signal that killed it (if any)
     starttime = NULL,     # timestamp of start
     statusfile = NULL,    # file for the exit status
-    name = NULL,          # random batch file name, used as id
     echo_cmd = NULL,      # whetheer to echo the command
 
     get_short_name = function()
@@ -217,21 +217,26 @@ process <- R6Class(
 
 process_is_alive <- function(self, private) {
   "!DEBUG process_is_alive `private$get_short_name()`"
-  if (is.null(private$pid)) {
+  if (! is.null(private$status)) {
     FALSE
 
   } else if (os_type() == "unix") {
-    ! pskill(private$pid, signal = 0)
+    res <- wait(private$pid, hang = FALSE)
+    if (res[[1]] == 2) {
+      private$status <- private$signal <- NA_integer_
+      FALSE
+
+    } else if (res[[1]] == 0) {
+      private$status <- res[[2]]
+      private$signal <- res[[3]]
+      FALSE
+
+    } else {
+      TRUE
+    }
 
   } else {
-    cmd <- paste0(
-      "wmic process where (processid=",
-      tail(private$pid, 1),
-      ") get processid, parentprocessid /format:list 2>&1"
-    )
-    wmic_out <- shell(cmd, intern = TRUE)
-    procs <- parse_wmic_list(wmic_out)
-    nrow(procs) > 0
+    ## TODO: windows
   }
 }
 
@@ -246,7 +251,7 @@ process_restart <- function(self, private) {
   private$pid <- NULL
   private$cleanfiles <- NULL
   private$status <- NULL
-  private$name <- NULL
+  private$signal <- NULL
 
   process_initialize(
     self,
@@ -265,12 +270,14 @@ process_restart <- function(self, private) {
 
 process_wait <- function(self, private) {
   "!DEBUG process_wait `private$get_short_name()`"
-  while(self$is_alive()) Sys.sleep(0.01)
   if (is.null(private$status)) {
-    if (file.exists(private$statusfile)) {
-      private$status <- as.numeric(readLines(private$statusfile))
-    } else {
-      private$status <- NA_integer_
+    res <- wait(private$pid, hang = TRUE)
+    if (res[[1]] == 2) {
+      private$status <- private$signal <- NA_integer_
+
+    } else if (res[[1]] == 0) {
+      private$status <- res[[2]]
+      private$signal <- res[[3]]
     }
   }
   invisible(self)

@@ -23,7 +23,6 @@ process_read_error_lines <- function(self, private, ...) {
 
 process_get_output_connection <- function(self, private) {
   "!DEBUG process_get_output_connection `private$get_short_name()`"
-  ## TODO: what if this does not exist yet?
   private$stdout <- open_if_needed(private$stdout)
   private$stdout
 }
@@ -31,7 +30,6 @@ process_get_output_connection <- function(self, private) {
 
 process_get_error_connection <- function(self, private) {
   "!DEBUG process_get_error_connection `private$get_short_name()`"
-  ## TODO: what if this does not exist yet?
   private$stderr <- open_if_needed(private$stderr)
   private$stderr
 }

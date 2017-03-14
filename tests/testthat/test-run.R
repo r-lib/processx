@@ -44,9 +44,9 @@ test_that("callbacks work, unix", {
 
   err <- NULL
   run(
-    "lsfsdfsdffsdfsdf",
+    "ls", basename(tempfile()),
     stderr_callback = function(x, ...) err <<- c(err, x),
     error_on_status = FALSE
   )
-  expect_match(paste(err, collapse = "\n"), "not found")
+  expect_match(paste(err, collapse = "\n"), "No such file")
 })
