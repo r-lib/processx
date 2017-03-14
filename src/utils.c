@@ -1,4 +1,6 @@
 
+#include "utils.h"
+
 char *processx__tmp_string(SEXP str, int i) {
   const char *ptr = CHAR(STRING_ELT(str, i));
   char *cstr = R_alloc(1, strlen(ptr) + 1);
