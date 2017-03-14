@@ -1,4 +1,7 @@
 
+#' @useDynLib processx
+NULL
+
 #' External process
 #'
 #' Managing external processes from R is not trivial, and this

@@ -27,4 +27,3 @@ The format of the file is platform dependent.
 Other pid queries: \code{\link{get_my_pid_code}}
 }
 \keyword{internal}
-

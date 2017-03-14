@@ -42,4 +42,3 @@ process id.
 Other pid queries: \code{\link{get_pid_from_file}}
 }
 \keyword{internal}
-

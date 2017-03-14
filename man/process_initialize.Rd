@@ -30,4 +30,3 @@ process_initialize(self, private, command, args, commandline, stdout, stderr,
 Start a process
 }
 \keyword{internal}
-

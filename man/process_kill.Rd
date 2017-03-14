@@ -25,4 +25,3 @@ A killed process can be restarted.}
 Kill a process
 }
 \keyword{internal}
-

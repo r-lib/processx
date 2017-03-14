@@ -80,6 +80,7 @@ object. You can manipulate this object, for example you can call
 \code{$kill()} on it to terminate it, as a response to a message on the
 standard output or error.
 }
+
 \examples{
 ## Different examples for Unix and Windows
 if (.Platform$OS.type == "unix") {
@@ -99,4 +100,3 @@ if (.Platform$OS.type == "unix") {
 }
 
 }
-

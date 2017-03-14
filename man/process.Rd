@@ -117,6 +117,7 @@ standard error stream of the process.
 \code{print(p)} or \code{p$print()} shows some information about the
 process on the screen, whether it is running and it's process id, etc.
 }
+
 \examples{
 # CRAN does not like long-running examples
 \dontrun{
@@ -133,4 +134,3 @@ p$is_alive()
 }
 
 }
-
