@@ -13,6 +13,8 @@
 #include <signal.h>
 
 #ifdef WIN32
+#include <windows.h>
+#include <tlhelp32.h>
 #include <process.h>
 #endif
 
@@ -66,14 +68,33 @@ void sleep_ms(int milliseconds) {
 // Windows process management functions
 #ifdef WIN32
 
-// TODO
-// http://stackoverflow.com/questions/185254/how-can-a-win32-process-get-the-pid-of-its-parent
 int getppid() {
-    return 0;
+    int pid = GetCurrentProcessId();
+
+    HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    PROCESSENTRY32 pe;
+    // Set the size of the structure before using it.
+    pe.dwSize = sizeof(PROCESSENTRY32);
+
+    // Get info about first process.
+    if(!Process32First(hProcessSnap, &pe)) {
+        printf("Unable to get parent pid");
+        exit(1);
+    }
+
+    // Walk the snapshot of processes to find the parent.
+    do {
+        if (pe.th32ProcessID == pid) {
+            return pe.th32ParentProcessID;
+        }
+    } while(Process32Next(hProcessSnap, &pe));
+
+    CloseHandle(hProcessSnap);
+    printf("Unable to get parent pid");
+    exit(1);
 }
 
 
-//
 void configure_stdin(HANDLE h_input) {
     DWORD handle_type = GetFileType(h_input);
 
