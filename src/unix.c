@@ -11,6 +11,7 @@ void processx_unix_dummy() { }
 #include <fcntl.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <signal.h>
 
 #include "utils.h"
 
