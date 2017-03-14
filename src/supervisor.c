@@ -65,10 +65,6 @@ void sleep_ms(int milliseconds) {
 
 // Windows process management functions
 #ifdef WIN32
-// TODO
-void kill(pid_t pid, int signal) {
-
-}
 
 // TODO
 // http://stackoverflow.com/questions/185254/how-can-a-win32-process-get-the-pid-of-its-parent
@@ -291,10 +287,10 @@ void kill_children() {
         printf("%d ", children[i]);
 
         #ifdef WIN32
-        // In Windows, try sending a Ctrl-C in addition to the SIGTERM
         sendCtrlC(children[i]);
-        #endif
+        #else
         kill(children[i], SIGTERM);
+        #endif
     }
 }
 
@@ -406,7 +402,7 @@ int main() {
 
         // Check that parent is still running. If not, kill children.
         if (!pid_is_running(parent_pid)) {
-            printf("Parent (%d) killed.\n", parent_pid);
+            printf("Parent (%d) is no longer running.\n", parent_pid);
             kill_children();
             printf("\nExiting.\n");
             return 0;
