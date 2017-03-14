@@ -106,9 +106,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   processx_options_t options = { 0 };
 
   pid_t pid;
-  int i, err, exec_errorno = 0, status;
+  int err, exec_errorno = 0, status;
   ssize_t r;
-  int (*pipes)[2];
   int signal_pipe[2] = { -1, -1 };
 
   options.detached = LOGICAL(detached)[0];
