@@ -294,13 +294,13 @@ int pid_is_running(pid_t pid) {
     #ifdef WIN32
     HANDLE h_process = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
     if (h_process == NULL) {
-        printf("Unable to check if process %d is running.", pid);
+        printf("Unable to check if process %d is running.", (int)pid);
         return 0;
     }
 
     DWORD exit_code;
     if (!GetExitCodeProcess(h_process, &exit_code)) {
-        printf("Unable to check if process %d is running.", pid);
+        printf("Unable to check if process %d is running.", (int)pid);
         return 0;
     }
 
