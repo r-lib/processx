@@ -270,11 +270,32 @@ int extract_pid(char* buf, int len) {
 
 // Check if a process is running. Returns 1 if yes, 0 if no.
 int pid_is_running(pid_t pid) {
+    #ifdef WIN32
+    HANDLE h_process = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+    if (h_process == NULL) {
+        printf("Unable to check if process %d is running.", pid);
+        return 0;
+    }
+
+    DWORD exit_code;
+    if (!GetExitCodeProcess(h_process, &exit_code)) {
+        printf("Unable to check if process %d is running.", pid);
+        return 0;
+    }
+
+    if (exit_code == STILL_ACTIVE) {
+        return 1;
+    } else {
+        return 0;
+    }
+
+    #else
     int res = kill(pid, 0);
     if (res == -1 && errno == ESRCH) {
         return 0;
     }
     return 1;
+    #endif
 }
 
 // TODO: First try a soft kill, then wait for 5 seconds, then do hard kill if
