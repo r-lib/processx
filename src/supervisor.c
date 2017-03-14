@@ -29,7 +29,7 @@
 // Maximum number of children to keep track of
 #define max_children 2048
 // Milliseconds to sleep in polling loop
-#define poll_ms 1000
+#define poll_ms 200
 // Input event buffer size, used in Windows.
 // Will read this many console events before blocking.
 #define input_buf_size 1024
