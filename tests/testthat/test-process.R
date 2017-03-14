@@ -15,6 +15,8 @@ test_that("process works", {
 
 test_that("children are removed on kill()", {
 
+  skip("get_pid_by_name not implemented")
+
   ## tmp1 will call tmp2, and we'll start tmp1 from process$new
   ## Then we kill the process and see if tmp2 was removed as well
   tmp1 <- tempfile(fileext = ".bat")
@@ -59,6 +61,8 @@ test_that("children are removed on kill()", {
 })
 
 test_that("process is cleaned up on GC", {
+
+  skip("get_pid_by_name not implemented")
 
   win  <- c("ping", "-n", "6", "127.0.0.1")
   unix <- c("sleep", "5")
