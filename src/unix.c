@@ -12,6 +12,8 @@ void processx_unix_dummy() { }
 #include <string.h>
 #include <sys/socket.h>
 
+#include "utils.h"
+
 typedef struct {
   int detached;
 } processx_options_t;
@@ -90,23 +92,6 @@ static void processx__child_init(char *command, char **args, int error_fd,
   err = -errno;
   write(error_fd, &err, sizeof(int));
   raise(SIGKILL);
-}
-
-static char *processx__tmp_string(SEXP str, int i) {
-  const char *ptr = CHAR(STRING_ELT(str, i));
-  char *cstr = R_alloc(1, strlen(ptr) + 1);
-  strcpy(cstr, ptr);
-  return cstr;
-}
-
-static char **processx__tmp_character(SEXP chr) {
-  size_t i, n = LENGTH(chr);
-  char **cchr = (void*) R_alloc(n + 1, sizeof(char*));
-  for (i = 0; i < n; i++) {
-    cchr[i] = processx__tmp_string(chr, i);
-  }
-  cchr[n] = 0;
-  return cchr;
 }
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
