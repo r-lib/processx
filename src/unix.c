@@ -182,7 +182,7 @@ SEXP processx_wait(SEXP pid, SEXP hang) {
 
   do {
     wp = waitpid(cpid, &wstat, chang ? 0 : WNOHANG);
-  } while (pid == -1 && errno == EINTR);
+  } while (cpid == -1 && errno == EINTR);
 
   /* Some sort of error? */
 
