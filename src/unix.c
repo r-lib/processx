@@ -66,22 +66,22 @@ static void processx__child_init(char *command, char **args, int error_fd,
      For now, we just redirect them to the supplied files (if not NULL).  */
 
   close_fd0 = use_fd0 = open("/dev/null", O_RDONLY);
-  if (use_fd0 == -1) _exit(127);
+  if (use_fd0 == -1) raise(SIGKILL);
 
   close_fd1 = use_fd1 = open(stdout ? stdout : "/dev/null",
 			     O_APPEND | O_RDWR, 0);
-  if (use_fd1 == -1) _exit(127);
+  if (use_fd1 == -1) raise(SIGKILL);
 
   close_fd2 = use_fd2 = open(stderr ? stderr : "/dev/null",
 			     O_APPEND | O_RDWR, 0);
-  if (use_fd2 == -1) _exit(127);
+  if (use_fd2 == -1) raise(SIGKILL);
 
   fd0 = dup2(use_fd0, 0);
-  if (fd0 == -1) _exit(127);
+  if (fd0 == -1) raise(SIGKILL);
   fd1 = dup2(use_fd1, 1);
-  if (fd1 == -1) _exit(127);
+  if (fd1 == -1) raise(SIGKILL);
   fd2 = dup2(use_fd2, 2);
-  if (fd2 == -1) _exit(127);
+  if (fd2 == -1) raise(SIGKILL);
 
   processx__nonblock_fcntl(fd0, 0);
   processx__nonblock_fcntl(fd1, 0);
@@ -89,7 +89,7 @@ static void processx__child_init(char *command, char **args, int error_fd,
   execvp(command, args);
   err = -errno;
   write(error_fd, &err, sizeof(int));
-  _exit(127);
+  raise(SIGKILL);
 }
 
 static char *processx__tmp_string(SEXP str, int i) {
