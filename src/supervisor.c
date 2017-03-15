@@ -6,6 +6,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdarg.h>
 #include <errno.h>
 #include <limits.h>
 #include <fcntl.h>
@@ -36,6 +39,8 @@
 
 // Globals --------------------------------------------------------------------
 
+bool verbose_mode = false;
+
 // Child processes to track
 int children[max_children];
 int n_children = 0;
@@ -62,6 +67,17 @@ void sleep_ms(int milliseconds) {
 #else
     usleep(milliseconds * 1000);
 #endif
+}
+
+
+void verbose_printf(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    if (verbose_mode)
+        vprintf(format, args);
+
+    va_end(args);
 }
 
 
@@ -102,13 +118,11 @@ void configure_stdin(HANDLE h_input) {
 
         DWORD lpmode;
         GetConsoleMode(h_input, &lpmode);
-        printf("Console mode: %04x\n", (int)lpmode);
 
         // Disable line input
         lpmode = lpmode &
                  ~ENABLE_LINE_INPUT &
                  ~ENABLE_ECHO_INPUT;
-        printf("Setting console mode to: %04x\n", (int)lpmode);
 
         // Only listen for character input events
         if (!SetConsoleMode(h_input, lpmode)) {
@@ -170,7 +184,7 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
             return NULL;
         }
 
-        BOOL found_newline = FALSE;
+        bool found_newline = false;
 
         int i;
         for (i=0; i<num_peeked; i++) {
@@ -185,7 +199,7 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
                 char c = in_record_buf[i].Event.KeyEvent.uChar.AsciiChar;
 
                 if (c == '\r') {
-                    found_newline = TRUE;
+                    found_newline = true;
                     input_char_buf[input_char_buf_n] = '\n';
                     input_char_buf_n++;
                     break;
@@ -228,10 +242,10 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
             exit(1);
         };
 
-        BOOL found_newline = FALSE;
+        bool found_newline = false;
         for (int i=0; i<num_peeked; i++) {
             if (input_char_buf[i] == '\r' || input_char_buf[i] == '\n') {
-                found_newline = TRUE;
+                found_newline = true;
             }
             input_char_buf_n++;
         }
@@ -254,6 +268,7 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
 
     } else {
         printf("Unsupported input type: %s", input_type_name);
+        exit(1);
     }
 
     return buf;
@@ -261,7 +276,7 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
 
 
 void sendCtrlC(int pid) {
-    printf("sending ctrl+c to pid %d", pid);
+    verbose_printf("sending ctrl+c to pid %d", pid);
     FreeConsole();
 
     if (AttachConsole(pid)) {
@@ -292,7 +307,7 @@ int extract_pid(char* buf, int len) {
 // Check if a process is running. Returns 1 if yes, 0 if no.
 int pid_is_running(pid_t pid) {
     #ifdef WIN32
-    HANDLE h_process = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+    HANDLE h_process = OpenProcess(PROCESS_QUERY_INFORMATION, false, pid);
     if (h_process == NULL) {
         printf("Unable to check if process %d is running.", (int)pid);
         return 0;
@@ -324,9 +339,9 @@ int pid_is_running(pid_t pid) {
 
 // Send SIGTERM to all children.
 void kill_children() {
-    printf("Sending SIGTERM to children: ");
+    verbose_printf("Sending SIGTERM to children: ");
     for (int i=0; i<n_children; i++) {
-        printf("%d ", children[i]);
+        verbose_printf("%d ", children[i]);
 
         #ifdef WIN32
         sendCtrlC(children[i]);
@@ -345,11 +360,12 @@ static void sig_handler(int signum) {
         signame = "SIGINT";
     else
         signame = "Unkown signal";
-    printf("%s received.\n", signame);
+
+    verbose_printf("%s received.\n", signame);
 
     kill_children();
 
-    printf("\n");
+    verbose_printf("\n");
     exit(0);
 }
 
@@ -365,12 +381,41 @@ int remove_element(int* ar, int len, int idx) {
 }
 
 
+int main(int argc, char **argv) {
 
+    int parent_pid;
+    int parent_pid_arg = 0;
+    int parent_pid_detected;
 
-int main() {
-    printf("PID: %d\n", getpid());
-    int parent_pid = getppid();
-    printf("Parent PID: %d\n", parent_pid);
+    // Process arguments
+    if (argc >= 2) {
+        for (int i=1; i<argc; i++) {
+            if (strcmp(argv[i], "-v") == 0) {
+                verbose_mode = true;
+            } else if (extract_pid(argv[i], strlen(argv[i])) != 0) {
+                parent_pid_arg = extract_pid(argv[i], strlen(argv[i]));
+            } else {
+                printf("Unknown argument: %s\n", argv[i]);
+                exit(1);
+            }
+        }
+    }
+
+    verbose_printf("PID: %d\n", getpid());
+
+    parent_pid_detected = getppid();
+    verbose_printf("Parent PID (detected): %d\n", parent_pid_detected);
+
+    if (parent_pid_arg != 0) {
+        verbose_printf("Parent PID (argument): %d\n", parent_pid_arg);
+        parent_pid = parent_pid_arg;
+        if (parent_pid_arg != parent_pid_detected) {
+            verbose_printf("Note: detected parent PID differs from argument parent PID.\n");
+            verbose_printf("Using parent PID from argument (%d).\n", parent_pid_arg);
+        }
+    } else {
+        parent_pid = parent_pid_detected;
+    }
 
     // stdin input buffer
     char readbuf[buf_len];
@@ -382,9 +427,7 @@ int main() {
         printf("Unable to get stdin handle.");
         exit(1);
     }
-
     configure_stdin(h_stdin);
-
     #else
     fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
     #endif
@@ -426,6 +469,7 @@ int main() {
                         max_children
                     );
                 } else {
+                    verbose_printf("Adding:%d", pid);
                     children[n_children] = pid;
                     n_children++;
                 }
@@ -435,18 +479,18 @@ int main() {
         // Remove any children from list that are no longer running.
         for (int i=0; i<n_children; i++) {
             if (pid_is_running(children[i])) {
-                printf("Running: %d ", children[i]);
+                verbose_printf(" Running:%d", children[i]);
             } else {
+                verbose_printf(" Stopped:%d", children[i]);
                 n_children = remove_element(children, n_children, i);
             }
         }
-        printf("\n");
 
         // Check that parent is still running. If not, kill children.
         if (!pid_is_running(parent_pid)) {
-            printf("Parent (%d) is no longer running.\n", parent_pid);
+            verbose_printf("Parent (%d) is no longer running.\n", parent_pid);
             kill_children();
-            printf("\nExiting.\n");
+            verbose_printf("\nExiting.\n");
             return 0;
         }
 
