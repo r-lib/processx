@@ -83,6 +83,9 @@ static int processx__create_output_handle(HANDLE *handle_ptr, const char *file,
     /* hTemplateFile =         */ NULL);
   if (handle == INVALID_HANDLE_VALUE) { return GetLastError(); }
 
+  /* We will append, so set pointer to end of file */
+  SetFilePointer(handle, 0, NULL, FILE_END);
+
   *handle_ptr = handle;
   return 0;
 }
