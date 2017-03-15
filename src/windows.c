@@ -121,12 +121,12 @@ static int processx__make_program_args(SEXP args, int verbatim_arguments,
   size_t dst_len = 0;
   size_t temp_buffer_len = 0;
   WCHAR* pos;
-  int arg_count = LENGTH(args);
+  int arg_count = LENGTH(args) - 1;
   int err = 0;
   int i;
 
   /* Count the required size. */
-  for (i = 0; i < arg_count; i++) {
+  for (i = 1; i <= arg_count; i++) {
     DWORD arg_len;
     arg = CHAR(STRING_ELT(args, i));
 
@@ -156,7 +156,7 @@ static int processx__make_program_args(SEXP args, int verbatim_arguments,
   temp_buffer = (WCHAR*) R_alloc(temp_buffer_len, sizeof(WCHAR));
 
   pos = dst;
-  for (i = 0; i < arg_count; i++) {
+  for (i = 1; i <= arg_count; i++) {
     DWORD arg_len;
     arg = CHAR(STRING_ELT(args, i));
 
@@ -183,7 +183,7 @@ static int processx__make_program_args(SEXP args, int verbatim_arguments,
       pos = processx__quote_cmd_arg(temp_buffer, pos);
     }
 
-    *pos++ = i < arg_count ? L' ' : L'\0';
+    *pos++ = i <= arg_count ? L' ' : L'\0';
   }
 
   *dst_ptr = dst;
