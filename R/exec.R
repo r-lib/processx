@@ -7,8 +7,8 @@ exec <- function(command, args = character(), stdout = NULL, stderr = NULL,
         detached, windows_verbatim_args, windows_hide_window, PACKAGE = "processx")
 }
 
-wait <- function(pid, hang = FALSE) {
+wait <- function(handle, hang = FALSE) {
 
-  .Call("processx_wait", as.integer(pid), as.logical(hang),
+  .Call("processx_wait", handle, as.logical(hang),
         PACKAGE = "processx")
 }

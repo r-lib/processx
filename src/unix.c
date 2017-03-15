@@ -113,7 +113,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   ssize_t r;
   int signal_pipe[2] = { -1, -1 };
 
-  processx_handle_t *handle;
+  processx_handle_t *handle = NULL;
   SEXP result;
 
   options.detached = LOGICAL(detached)[0];
@@ -182,8 +182,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   error("processx error");
 }
 
-SEXP processx_wait(SEXP pid, SEXP hang) {
-  pid_t cpid = INTEGER(pid)[0];
+SEXP processx_wait(SEXP rhandle, SEXP hang) {
+  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
+  if (!handle) error("processx internal error: invalid process handle");
+  pid_t cpid = handle->pid;
   int chang = LOGICAL(hang)[0];
   SEXP result = PROTECT(allocVector(INTSXP, 3));
   int wstat, wp;
@@ -222,6 +224,21 @@ SEXP processx_wait(SEXP pid, SEXP hang) {
  done:
   UNPROTECT(1);
   return result;
+}
+
+SEXP processx_pid(SEXP rhandle) {
+  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
+  if (!handle) error("processx internal error: invalid process handle");
+  return ScalarInteger(handle->pid);
+}
+
+SEXP processx_kill(SEXP rhandle) {
+  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
+  if (!handle) error("processx internal error: invalid process handle");
+  pid_t pid = handle->pid;
+  kill(pid, SIGTERM);
+  kill(pid, SIGKILL);
+  return R_NilValue;
 }
 
 #endif

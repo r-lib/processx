@@ -146,6 +146,9 @@ process <- R6Class(
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
 
+    get_pid = function()
+      process_get_pid(self, private),
+
     is_alive = function()
       process_is_alive(self, private),
 
@@ -194,7 +197,7 @@ process <- R6Class(
 
   private = list(
 
-    pid = NULL,           # The pid of the shell started with system
+    handle = NULL,        # OS specific handle of the process
     command = NULL,       # Save 'command' argument here
     args = NULL,          # Save 'args' argument here
     commandline = NULL,   # The full command line
@@ -221,7 +224,7 @@ process_is_alive <- function(self, private) {
     FALSE
 
   } else if (os_type() == "unix") {
-    res <- wait(private$pid, hang = FALSE)
+    res <- wait(private$handle, hang = FALSE)
     if (res[[1]] == 2) {
       private$status <- private$signal <- NA_integer_
       FALSE
@@ -248,7 +251,7 @@ process_restart <- function(self, private) {
   if (self$is_alive()) self$kill()
 
   ## Wipe out state, to be sure
-  private$pid <- NULL
+  private$handle <- NULL
   private$cleanfiles <- NULL
   private$status <- NULL
   private$signal <- NULL
@@ -271,7 +274,7 @@ process_restart <- function(self, private) {
 process_wait <- function(self, private) {
   "!DEBUG process_wait `private$get_short_name()`"
   if (is.null(private$status)) {
-    res <- wait(private$pid, hang = TRUE)
+    res <- wait(private$handle, hang = TRUE)
     if (res[[1]] == 2) {
       private$status <- private$signal <- NA_integer_
 
@@ -289,4 +292,8 @@ process_get_exit_status <- function(self, private) {
 
 process_get_start_time <- function(self, private) {
   private$starttime
+}
+
+process_get_pid <- function(self, private) {
+  .Call("processx_pid", private->handle);
 }

@@ -66,7 +66,7 @@ process_initialize <- function(self, private, command, args,
   }
 
   "!DEBUG process_initialize exec()"
-  private$pid <- exec(command, args, stdout = stdout, stderr = stderr)
+  private$handle <- exec(command, args, stdout = stdout, stderr = stderr)
   private$starttime <- Sys.time()
 
   ## Cleanup on GC, if requested
@@ -75,8 +75,7 @@ process_initialize <- function(self, private, command, args,
       self,
       function(e) {
         "!DEBUG killing"
-        pskill(private$pid)
-        wait(private$pid)
+        ## TODO
       },
       TRUE
     )

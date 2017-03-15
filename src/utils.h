@@ -26,7 +26,7 @@ typedef struct {
   DWORD  dwThreadId;
   BYTE *child_stdio_buffer;
 #else
-  pid_t pid
+  pid_t pid;
 #endif
 } processx_handle_t;
 
