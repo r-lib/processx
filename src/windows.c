@@ -582,7 +582,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 
   if (!err) { processx__error(GetLastError()); }
 
-  return R_NilValue;
+  return ScalarInteger(info.dwProcessId);
 }
 
 #endif
