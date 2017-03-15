@@ -17,3 +17,14 @@ char **processx__tmp_character(SEXP chr) {
   cchr[n] = 0;
   return cchr;
 }
+
+void processx__handle_destroy(processx_handle_t *handle) {
+  if (!handle) return;
+#ifdef WIN
+  if (handle->child_stdio_buffer) free(handle->child_stdio_buffer);
+#else
+  /* Nothing to do currently */
+#endif
+  free(handle);
+}
+

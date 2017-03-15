@@ -477,6 +477,17 @@ void processx__error(DWORD err) {
   error("Internal processx error: %d", (int) err);
 }
 
+void processx__finalizer(SEXP ptr) {
+  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(ptr);
+  if (!handle) return;
+  CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 0));
+  CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 1));
+  CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 2));
+  CloseHandle(handle->hProcess);
+  processx__handle_destroy(handle);
+  R_ClearExternalPtr(ptr);
+}
+
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 		   SEXP detached, SEXP windows_verbatim_args, SEXP windows_hide) {
 
@@ -491,7 +502,9 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   STARTUPINFOW startup;
   PROCESS_INFORMATION info;
   DWORD process_flags;
-  BYTE *child_stdio_buffer;
+
+  processx_handle_t *handle;
+  SEXP result;
 
   options.detached = LOGICAL(detached)[0];
   options.windows_verbatim_args = LOGICAL(windows_verbatim_args)[0];
@@ -532,11 +545,14 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     if (r == 0 || r >= path_len) { processx__error(GetLastError()); }
   }
 
-  err = processx__stdio_create(cstd_out, cstd_err,  &child_stdio_buffer);
-  if (err) { processx__error(err); }
+  handle = (void*) malloc(sizeof(processx_handle_t));
+  if (!handle) { error("Out of memory"); }
+
+  err = processx__stdio_create(cstd_out, cstd_err, &handle->child_stdio_buffer);
+  if (err) { goto failed; }
 
   application_path = processx__search_path(application, cwd, path);
-  if (!application_path) { error("Command not found"); }
+  if (!application_path) { free(handle); error("Command not found"); }
 
   startup.cb = sizeof(startup);
   startup.lpReserved = NULL;
@@ -544,12 +560,12 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   startup.lpTitle = NULL;
   startup.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
 
-  startup.cbReserved2 = processx__stdio_size(child_stdio_buffer);
-  startup.lpReserved2 = (BYTE*) child_stdio_buffer;
+  startup.cbReserved2 = processx__stdio_size(handle->child_stdio_buffer);
+  startup.lpReserved2 = (BYTE*) handle->child_stdio_buffer;
 
-  startup.hStdInput = processx__stdio_handle(child_stdio_buffer, 0);
-  startup.hStdInput = processx__stdio_handle(child_stdio_buffer, 1);
-  startup.hStdInput = processx__stdio_handle(child_stdio_buffer, 2);
+  startup.hStdInput = processx__stdio_handle(handle->child_stdio_buffer, 0);
+  startup.hStdInput = processx__stdio_handle(handle->child_stdio_buffer, 1);
+  startup.hStdInput = processx__stdio_handle(handle->child_stdio_buffer, 2);
   startup.wShowWindow = options.windows_hide ? SW_HIDE : SW_SHOWDEFAULT;
 
   process_flags = CREATE_UNICODE_ENVIRONMENT;
@@ -580,9 +596,24 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     /* lpStartupInfo =        */ &startup,
     /* lpProcessInformation = */ &info);
 
-  if (!err) { processx__error(GetLastError()); }
+  if (!err) { err = GetLastError(); goto failed; }
 
-  return ScalarInteger(info.dwProcessId);
+  handle->hProcess = info.hProcess;
+  handle->hThread = info.hThread;
+  handle->dwProcessId = info.dwProcessId;
+  handle->dwThreadId = info.dwThreadId;
+
+  result = PROTECT(R_MakeExternalPtr(handle, R_NilValue, R_NilValue));
+  R_RegisterCFinalizerEx(result, processx__finalizer, /* on_exit= */ 1);
+  UNPROTECT(1);
+  return result;
+
+ failed:
+  processx__handle_destroy(handle);
+  processx__error(err);
+
+  /* Never called */
+  return R_NilValue;
 }
 
 #endif

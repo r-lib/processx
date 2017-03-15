@@ -91,10 +91,17 @@ static void processx__child_init(char *command, char **args, int error_fd,
   raise(SIGKILL);
 }
 
+void processx__finalizer(SEXP ptr) {
+  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(ptr);
+  if (!handle) return;
+  processx__handle_destroy(handle);
+  R_ClearExternalPtr(ptr);
+}
+
+
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 		   SEXP detached, SEXP windows_verbatim_args) {
 
-  SEXP handle = R_NilValue;
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
   const char *cstdout = isNull(stdout) ? 0 : CHAR(STRING_ELT(stdout, 0));
@@ -106,6 +113,9 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   ssize_t r;
   int signal_pipe[2] = { -1, -1 };
 
+  processx_handle_t *handle;
+  SEXP result;
+
   options.detached = LOGICAL(detached)[0];
 
   if (pipe(signal_pipe)) { goto cleanup; }
@@ -115,6 +125,11 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   /* TODO: put the new child into the child list */
 
   /* TODO: make sure signal handler is set up */
+
+  handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
+  if (!handle) { goto cleanup; }
+  result = PROTECT(R_MakeExternalPtr(handle, R_NilValue, R_NilValue));
+  R_RegisterCFinalizerEx(result, processx__finalizer, /* on_exit= */ 1);
 
   pid = fork();
 
@@ -157,14 +172,13 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   close(signal_pipe[0]);
 
   if (exec_errorno == 0) {
-    return ScalarInteger(pid);
-    return handle;
-
-  } else {
-    error("Cannot start process");
+    handle->pid = pid;
+    UNPROTECT(1);		/* result */
+    return result;
   }
 
  cleanup:
+  processx__handle_destroy(handle);
   error("processx error");
 }
 
