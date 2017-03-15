@@ -3,3 +3,4 @@
 .RData
 /src/*.o
 /src/processx.so
+/src/processx.dll

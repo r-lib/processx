@@ -15,10 +15,6 @@ void processx_unix_dummy() { }
 
 #include "utils.h"
 
-typedef struct {
-  int detached;
-} processx_options_t;
-
 static int processx__nonblock_fcntl(int fd, int set) {
   int flags;
   int r;
@@ -96,7 +92,7 @@ static void processx__child_init(char *command, char **args, int error_fd,
 }
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
-		   SEXP detached) {
+		   SEXP detached, SEXP windows_verbatim_args) {
 
   SEXP handle = R_NilValue;
   char *ccommand = processx__tmp_string(command, 0);
