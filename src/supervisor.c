@@ -1,3 +1,31 @@
+// This supervisor program keeps track of a process (normally the parent
+// process) and receives process IDs (called children) on standard input. If
+// the supervisor process receives a SIGINT (Ctrl-C) or SIGTERM, or if it
+// detects that the parent process has died, it will kill all the child
+// processes.
+//
+// Every 0.2 seconds, it does the following:
+// * Checks for any new process IDs on standard input, and adds them to the list
+//   of child processes to track.
+// * Checks if any child processes have died. If so, remove them from the list
+//   of child processes to track.
+// * Checks if the parent process has died. If so, kill all children and exit.
+//
+// To test it out in verbose mode, run:
+//   gcc supervisor.c -o supervisor
+//   ./supervisor -v [parent_pid]
+//
+// The parent_pid is optional. If not supplied, the supervisor will auto-
+// detect the parent process.
+//
+// After it is started, you can enter pids for child processes. Then you can
+// do any of the following to test it out:
+// * Press Ctrl-C.
+// * Send a SIGTERM to the supervisor with `killall supervisor`.
+// * Kill the parent processes.
+// * Kill a child process.
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
