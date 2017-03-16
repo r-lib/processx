@@ -100,6 +100,7 @@ static void processx__child_init(char *command, char **args, int error_fd,
 void processx__finalizer(SEXP ptr) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(ptr);
   if (!handle) return;
+  kill(handle->pid, SIGKILL);
   processx__handle_destroy(handle);
   R_ClearExternalPtr(ptr);
 }
