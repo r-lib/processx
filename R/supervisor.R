@@ -66,9 +66,6 @@ supervisor_watch_pid <- function(pid) {
 # Start the supervisor process. Information about the process will be stored in
 # supervisor_info. If startup fails, this function will throw an error.
 supervisor_start <- function() {
-  supervisor_name <- if (os_type() == "windows") "supervisor.exe" else "supervisor"
-  supervisor_path <- system.file(supervisor_name, package = "processx",
-    mustWork = TRUE)
 
   supervisor_info$stdin_file  <- tempfile("supervisor_stdin")
   supervisor_info$stdout_file <- tempfile("supervisor_stdout")
@@ -78,7 +75,7 @@ supervisor_start <- function() {
 
   # Start the supervisor, passing the R process's PID to it.
   res <- system2(
-    supervisor_path,
+    supervisor_path(),
     args   = Sys.getpid(),
     stdout = supervisor_info$stdout_file,
     stdin  = supervisor_info$stdin_file,
@@ -115,4 +112,24 @@ supervisor_start <- function() {
       Sys.sleep(0.2)
     }
   }
+}
+
+
+# Returns full path to the supervisor binary
+supervisor_path <- function() {
+  supervisor_name <- "supervisor"
+  if (os_type() == "windows")
+    supervisor_name <- paste0(supervisor_name, ".exe")
+
+  # Detect if package was loaded via devtools::load_all()
+  dev_meta <- parent.env(environment())$.__DEVTOOLS__
+  devtools_loaded <- !is.null(dev_meta)
+
+  if (devtools_loaded) {
+    subdir <- "src"
+  } else {
+    subdir <- "bin"
+  }
+
+  system.file(subdir, supervisor_name, package = "processx", mustWork = TRUE)
 }
