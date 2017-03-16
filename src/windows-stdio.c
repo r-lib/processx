@@ -78,7 +78,7 @@ static int processx__create_output_handle(HANDLE *handle_ptr, const char *file,
     /* dwDesiredAccess=        */ access,
     /* dwShareMode =           */ FILE_SHARE_READ | FILE_SHARE_WRITE,
     /* lpSecurityAttributes =  */ &sa,
-    /* dwCreationDisposition = */ OPEN_ALWAYS,
+    /* dwCreationDisposition = */ CREATE_ALWAYS,
     /* dwFlagsAndAttributes =  */ 0,
     /* hTemplateFile =         */ NULL);
   if (handle == INVALID_HANDLE_VALUE) { return GetLastError(); }

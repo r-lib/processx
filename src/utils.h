@@ -21,9 +21,7 @@ typedef struct {
 typedef struct {
 #ifdef WIN32
   HANDLE hProcess;
-  HANDLE hThread;
   DWORD  dwProcessId;
-  DWORD  dwThreadId;
   BYTE *child_stdio_buffer;
 #else
   pid_t pid;

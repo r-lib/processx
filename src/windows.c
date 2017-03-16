@@ -121,12 +121,12 @@ static int processx__make_program_args(SEXP args, int verbatim_arguments,
   size_t dst_len = 0;
   size_t temp_buffer_len = 0;
   WCHAR* pos;
-  int arg_count = LENGTH(args) - 1;
+  int arg_count = LENGTH(args);
   int err = 0;
   int i;
 
   /* Count the required size. */
-  for (i = 1; i <= arg_count; i++) {
+  for (i = 0; i < arg_count; i++) {
     DWORD arg_len;
     arg = CHAR(STRING_ELT(args, i));
 
@@ -156,7 +156,7 @@ static int processx__make_program_args(SEXP args, int verbatim_arguments,
   temp_buffer = (WCHAR*) R_alloc(temp_buffer_len, sizeof(WCHAR));
 
   pos = dst;
-  for (i = 1; i <= arg_count; i++) {
+  for (i = 0; i < arg_count; i++) {
     DWORD arg_len;
     arg = CHAR(STRING_ELT(args, i));
 
@@ -183,7 +183,7 @@ static int processx__make_program_args(SEXP args, int verbatim_arguments,
       pos = processx__quote_cmd_arg(temp_buffer, pos);
     }
 
-    *pos++ = i <= arg_count ? L' ' : L'\0';
+    *pos++ = i < arg_count - 1 ? L' ' : L'\0';
   }
 
   *dst_ptr = dst;
@@ -564,8 +564,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   startup.lpReserved2 = (BYTE*) handle->child_stdio_buffer;
 
   startup.hStdInput = processx__stdio_handle(handle->child_stdio_buffer, 0);
-  startup.hStdInput = processx__stdio_handle(handle->child_stdio_buffer, 1);
-  startup.hStdInput = processx__stdio_handle(handle->child_stdio_buffer, 2);
+  startup.hStdOutput = processx__stdio_handle(handle->child_stdio_buffer, 1);
+  startup.hStdError = processx__stdio_handle(handle->child_stdio_buffer, 2);
   startup.wShowWindow = options.windows_hide ? SW_HIDE : SW_SHOWDEFAULT;
 
   process_flags = CREATE_UNICODE_ENVIRONMENT;
@@ -599,9 +599,9 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   if (!err) { err = GetLastError(); goto failed; }
 
   handle->hProcess = info.hProcess;
-  handle->hThread = info.hThread;
   handle->dwProcessId = info.dwProcessId;
-  handle->dwThreadId = info.dwThreadId;
+
+  CloseHandle(info.hThread);
 
   result = PROTECT(R_MakeExternalPtr(handle, R_NilValue, R_NilValue));
   R_RegisterCFinalizerEx(result, processx__finalizer, /* on_exit= */ 1);
@@ -613,6 +613,57 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   processx__error(err);
 
   /* Never called */
+  return R_NilValue;
+}
+
+SEXP processx_wait(SEXP rhandle, SEXP hang) {
+  int chang = LOGICAL(hang)[0];
+  SEXP result = PROTECT(allocVector(INTSXP, 3));
+  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
+  DWORD exitcode;
+  BOOL err;
+
+  if (!handle) {
+    /* Already dead */
+    INTEGER(result)[0] = 2;
+    UNPROTECT(1);
+    return result;
+  }
+
+  err = GetExitCodeProcess(handle->hProcess, &exitcode);
+  if (!err) processx__error(GetLastError());
+  if (! chang && exitcode == STILL_ACTIVE) {
+    /* Still running, and we didn't want to wait */
+    INTEGER(result)[0] = 1;
+
+  } else if (exitcode == STILL_ACTIVE) {
+    /* Still running and we wait */
+    DWORD err2 = WaitForSingleObject(handle->hProcess, INFINITE);
+    if (err2 == WAIT_FAILED) { processx__error(GetLastError()); }
+    err = GetExitCodeProcess(handle->hProcess, &exitcode);
+    INTEGER(result)[0] = 0;
+    INTEGER(result)[1] = exitcode;
+
+  } else {
+    /* Not running any more, we already returned the exit code */
+    INTEGER(result)[0] = 2;
+  }
+
+  UNPROTECT(1);
+  return result;
+}
+
+SEXP processx_pid(SEXP rhandle) {
+  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
+  if (!handle) error("processx internal error: invalid process handle");
+  return ScalarInteger(handle->dwProcessId);
+}
+
+SEXP processx_kill(SEXP rhandle) {
+  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
+  if (!handle) error("processx internal error: invalid process handle");
+  TerminateProcess(handle->hProcess, 1);
+  processx__finalizer(rhandle);
   return R_NilValue;
 }
 

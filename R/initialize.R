@@ -16,7 +16,7 @@
 
 process_initialize <- function(self, private, command, args,
                                commandline, stdout, stderr, cleanup,
-                               echo_cmd) {
+                               echo_cmd, windows_verbatim_args) {
 
   "!DEBUG process_initialize `command`"
 
@@ -27,6 +27,7 @@ process_initialize <- function(self, private, command, args,
   assert_that(is_string_or_null(commandline))
   assert_that(is_flag(cleanup))
   assert_that(is_flag(echo_cmd))
+  assert_that(is_flag(windows_verbatim_args))
 
   if (is.null(command) + is.null(commandline) != 1) {
     stop("Need exactly one of 'command' and 'commandline")
@@ -42,6 +43,7 @@ process_initialize <- function(self, private, command, args,
   private$pstdout <- stdout
   private$pstderr <- stderr
   private$echo_cmd <- echo_cmd
+  private$windows_verbatim_args = windows_verbatim_args
 
   if (isTRUE(stdout)) {
     private$cleanfiles <- c(private$cleanfiles, stdout <- tempfile())
@@ -50,14 +52,14 @@ process_initialize <- function(self, private, command, args,
     private$cleanfiles <- c(private$cleanfiles, stderr <- tempfile())
   }
 
-  ## Make sure the files exist when the process object is created
-  ## exec uses NULL instead of FALSE, easier to test in C
-  if (isFALSE(stdout)) stdout <- NULL else cat("", file = stdout)
-  if (isFALSE(stderr)) stderr <- NULL else cat("", file = stderr)
-
   if (is.null(command)) {
-    command <- "sh"
-    args <- c("-c", commandline)
+    if (os_type() == "unix") {
+      command <- "sh"
+      args <- c("-c", commandline)
+    } else {
+      command <- "cmd"
+      args <- c("/c", commandline)
+    }
   }
 
   if (echo_cmd) {
@@ -66,7 +68,13 @@ process_initialize <- function(self, private, command, args,
   }
 
   "!DEBUG process_initialize exec()"
-  private$handle <- exec(command, args, stdout = stdout, stderr = stderr)
+  if (isFALSE(stdout)) stdout <- NULL
+  if (isFALSE(stderr)) stderr <- NULL
+  private$handle <- exec(
+    command, args,
+    stdout = stdout, stderr = stderr,
+    windows_verbatim_args = windows_verbatim_args
+  )
   private$starttime <- Sys.time()
 
   ## Cleanup on GC, if requested

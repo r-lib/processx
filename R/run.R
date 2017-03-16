@@ -77,7 +77,8 @@
 run <- function(
   command = NULL, args = character(), commandline = NULL,
   error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
-  stdout_callback = NULL, stderr_callback = NULL, check_interval = 0.01) {
+  stdout_callback = NULL, stderr_callback = NULL, check_interval = 0.01,
+  windows_verbatim_args = FALSE) {
 
   assert_that(is_flag(error_on_status))
   assert_that(is_time_interval(timeout))
@@ -90,7 +91,8 @@ run <- function(
   if (!interactive()) spinner <- FALSE
 
   ## Run the process
-  pr <- process$new(command, args, commandline, echo_cmd = echo)
+  pr <- process$new(command, args, commandline, echo_cmd = echo,
+    windows_verbatim_args = windows_verbatim_args)
 
   ## If echo, then we need to create our own callbacks.
   ## These are merged to user callbacks if there are any.

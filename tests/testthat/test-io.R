@@ -8,7 +8,7 @@ test_that("We can get the output", {
   cat("foo", file = file.path(tmp, "foo"))
   cat("bar", file = file.path(tmp, "bar"))
 
-  win  <- paste("dir /b", shQuote(tmp))
+  win  <- paste("dir /b", tmp)
   unix <- paste("ls", shQuote(tmp))
 
   p <- process$new(
@@ -216,7 +216,7 @@ test_that("output & error if files are not created yet", {
 })
 
 test_that("get_output_connection", {
-  p <- process$new(commandline = "echo here I am")
+  p <- process$new(commandline = "echo here I am", windows_verbatim_args = TRUE)
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   out <- p$get_output_connection()

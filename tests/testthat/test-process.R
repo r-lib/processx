@@ -10,6 +10,7 @@ test_that("process works", {
   p <- process$new(cmd[1], cmd[-1])
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
+  Sys.sleep(.1)
   expect_true(p$is_alive())
 })
 
@@ -95,6 +96,7 @@ test_that("get_exit_status", {
 test_that("restart", {
 
   p <- process$new(commandline = sleep(5))
+  Sys.sleep(0.1)
   expect_true(p$is_alive())
 
   Sys.sleep(0.1)

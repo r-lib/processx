@@ -139,9 +139,9 @@ process <- R6Class(
 
     initialize = function(command = NULL, args = character(),
       commandline = NULL, stdout = TRUE, stderr = TRUE, cleanup = TRUE,
-      echo_cmd = FALSE)
+      echo_cmd = FALSE, windows_verbatim_args = FALSE)
       process_initialize(self, private, command, args, commandline,
-                         stdout, stderr, cleanup, echo_cmd),
+                         stdout, stderr, cleanup, echo_cmd, windows_verbatim_args),
 
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
@@ -212,6 +212,7 @@ process <- R6Class(
     starttime = NULL,     # timestamp of start
     statusfile = NULL,    # file for the exit status
     echo_cmd = NULL,      # whetheer to echo the command
+    windows_verbatim_args = NULL,
 
     get_short_name = function()
       process_get_short_name(self, private)
@@ -223,7 +224,7 @@ process_is_alive <- function(self, private) {
   if (! is.null(private$status)) {
     FALSE
 
-  } else if (os_type() == "unix") {
+  } else {
     res <- wait(private$handle, hang = FALSE)
     if (res[[1]] == 2) {
       private$status <- private$signal <- NA_integer_
@@ -237,9 +238,6 @@ process_is_alive <- function(self, private) {
     } else {
       TRUE
     }
-
-  } else {
-    ## TODO: windows
   }
 }
 
@@ -265,7 +263,8 @@ process_restart <- function(self, private) {
     private$pstdout,
     private$pstderr,
     private$cleanup,
-    private$echo_cmd
+    private$echo_cmd,
+    private$windows_verbatim_args
   )
 
   invisible(self)
@@ -295,5 +294,5 @@ process_get_start_time <- function(self, private) {
 }
 
 process_get_pid <- function(self, private) {
-  .Call("processx_pid", private->handle);
+  .Call("processx_pid", private$handle);
 }
