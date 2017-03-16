@@ -50,8 +50,7 @@ read their standard output and error, kill and restart them.
 * Read the standard output and error, using non-blocking connections.
 * Portable, works on Linux, macOS and Windows.
 * Lightweight, it only depends on the also lightweight
-  `R6`, `assertthat` and `debugme` packages.
-* Contains no compiled code, so it is easy to install.
+  `R6`, `assertthat`, `crayon` and `debugme` packages.
 
 ## Caveats
 
@@ -229,20 +228,12 @@ p$get_exit_status()
 ### Errors
 
 Errors are typically signalled via non-zero exits statuses. `processx`
-currently has no special behavior to handle errors.
-
-If you want to make sure that the process has started successfully,
-check that it is running via `is_alive()`, and if it is not, then check
-its exit status (after calling `wait`).
+fails to intialize the `process` object if the external program cannot
+be started, but it does not deal with errors that happen after the
+program has started running.
 
 ```{r, error = TRUE}
 p <- process$new("nonexistant-command-for-sure")
-if (!p$is_alive()) {
-  p$wait()
-  if (p$get_exit_status() != 0) {
-    stop("nonexistant-command-for-sure failed")
-  }
-}
 ```
 
 ## License
