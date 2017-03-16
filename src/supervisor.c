@@ -22,21 +22,21 @@
 // Constants ------------------------------------------------------------------
 
 // Size of stdin input buffer
-#define buf_len 256
+#define INPUT_BUF_LEN 1024
 // Maximum number of children to keep track of
-#define max_children 2048
+#define MAX_CHILDREN 2048
 // Milliseconds to sleep in polling loop
-#define poll_ms 200
-// Input event buffer size, used in Windows.
-// Will read this many console events before blocking.
-#define input_buf_size 1024
+#define POLL_MS 200
+// Windows input event buffer size. Will read this many console events each
+// time.
+#define WIN_INPUT_BUF_LEN 1024
 
 // Globals --------------------------------------------------------------------
 
 bool verbose_mode = false;
 
 // Child processes to track
-int children[max_children];
+int children[MAX_CHILDREN];
 int n_children = 0;
 
 // Utility functions ----------------------------------------------------------
@@ -162,13 +162,13 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
     if (input_type == FILE_TYPE_CHAR) {
         // Attempt to read enough to fill the buffer
         DWORD num_peeked;
-        INPUT_RECORD in_record_buf[input_buf_size];
-        char input_char_buf[input_buf_size];
+        INPUT_RECORD in_record_buf[WIN_INPUT_BUF_LEN];
+        char input_char_buf[WIN_INPUT_BUF_LEN];
         int input_char_buf_n = 0;
 
         // First use PeekConsoleInput to make sure some char is available,
         // because ReadConsoleInput will block if there's no input.
-        if (!PeekConsoleInput(h_input, in_record_buf, input_buf_size, &num_peeked)) {
+        if (!PeekConsoleInput(h_input, in_record_buf, WIN_INPUT_BUF_LEN, &num_peeked)) {
             printf("Error peeking at console input.");
             exit(1);            
         };
@@ -201,9 +201,6 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
                     input_char_buf[input_char_buf_n] = c;
                     input_char_buf_n++;
                 }
-
-                // TODO: Make sure not to overflow input_buf_n. Block if we
-                // hit the maximum?
             }
         }
 
@@ -228,10 +225,10 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
 
     } else if (input_type == FILE_TYPE_PIPE) {
         DWORD num_peeked;
-        char input_char_buf[input_buf_size];
+        char input_char_buf[WIN_INPUT_BUF_LEN];
         int input_char_buf_n = 0;
 
-        if (!PeekNamedPipe(h_input, input_char_buf, input_buf_size, &num_peeked, NULL, NULL)) {
+        if (!PeekNamedPipe(h_input, input_char_buf, WIN_INPUT_BUF_LEN, &num_peeked, NULL, NULL)) {
             printf("Error peeking at pipe input.");
             exit(1);
         };
@@ -413,7 +410,7 @@ int main(int argc, char **argv) {
     }
 
     // stdin input buffer
-    char readbuf[buf_len];
+    char readbuf[INPUT_BUF_LEN];
 
     // Make stdin nonblocking
     #ifdef WIN32
@@ -451,9 +448,9 @@ int main(int argc, char **argv) {
         char* res;
 
         #ifdef WIN32
-        res = get_line_nonblock(readbuf, buf_len, h_stdin);   
+        res = get_line_nonblock(readbuf, INPUT_BUF_LEN, h_stdin);
         #else
-        res = fgets(readbuf, buf_len, stdin);
+        res = fgets(readbuf, INPUT_BUF_LEN, stdin);
         #endif
         if (res != NULL) {
             if (strncmp(readbuf, "kill", 4) == 0) {
@@ -461,12 +458,12 @@ int main(int argc, char **argv) {
                 kill_children();
                 return 0;
             }
-            int pid = extract_pid(readbuf, buf_len);
+            int pid = extract_pid(readbuf, INPUT_BUF_LEN);
             if (pid != 0) {
-                if (n_children == max_children) {
+                if (n_children == MAX_CHILDREN) {
                     printf(
                         "Number of child processes to watch has exceeded limit of %d.",
-                        max_children
+                        MAX_CHILDREN
                     );
                 } else {
                     verbose_printf("Adding:%d", pid);
@@ -497,7 +494,7 @@ int main(int argc, char **argv) {
             return 0;
         }
 
-        sleep_ms(poll_ms);
+        sleep_ms(POLL_MS);
     }
 
     return 0;
