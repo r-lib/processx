@@ -401,7 +401,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    verbose_printf("PID: %d\n", getpid());
+    printf("PID: %d\n", getpid());
+    fflush(stdout);
 
     parent_pid_detected = getppid();
     verbose_printf("Parent PID (detected): %d\n", parent_pid_detected);
@@ -461,6 +462,11 @@ int main(int argc, char **argv) {
         res = fgets(readbuf, buf_len, stdin);
         #endif
         if (res != NULL) {
+            if (strncmp(readbuf, "kill", 4) == 0) {
+                verbose_printf("\'kill' command received.\n");
+                kill_children();
+                return 0;
+            }
             int pid = extract_pid(readbuf, buf_len);
             if (pid != 0) {
                 if (n_children == max_children) {
@@ -477,6 +483,7 @@ int main(int argc, char **argv) {
         }
 
         // Remove any children from list that are no longer running.
+        bool had_running_children = (n_children > 0);
         for (int i=0; i<n_children; i++) {
             if (pid_is_running(children[i])) {
                 verbose_printf(" Running:%d", children[i]);
@@ -485,6 +492,8 @@ int main(int argc, char **argv) {
                 n_children = remove_element(children, n_children, i);
             }
         }
+        if (had_running_children)
+            verbose_printf("\n");
 
         // Check that parent is still running. If not, kill children.
         if (!pid_is_running(parent_pid)) {

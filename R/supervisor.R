@@ -1,13 +1,36 @@
-supervisor_info <- as.environment(
-  # TODO: initialize in .onLoad. Make sure not to lose when package reloaded.
-  list(
+# Stores information about the supervisor process
+supervisor_info <- new.env()
+
+supervisor_reset <- function() {
+  if (supervisor_running()) {
+    supervisor_kill()
+  }
+
+  list2env(list(
     pid         = NULL,
     stdin       = NULL,
     stdout      = NULL,
     stdin_file  = NULL,
     stdout_file = NULL
-  )
-)
+  ), envir = supervisor_info)
+}
+
+
+reg.finalizer(supervisor_info, function(s) {
+  # Call the functions on s directly, in case the GC event happens _after_ a new
+  # `processx:::supervisor_info` has been created and the name `supervisor_info`
+  # is bound to the new object.
+  cat("Finalizing!\n")
+  supervisor_kill(s)
+
+  if (!is.null(s$stdin) && is_fifo_open(s$stdin))
+    close(s$stdin)
+  if (!is.null(s$stdout) && is_fifo_open(s$stdout))
+    close(s$stdout)
+}, onexit = TRUE)
+
+
+# TODO: Add which_supervisor (borrow from Rttf2pt1)
 
 supervisor_ensure_running <- function() {
   if (is.null(supervisor_info$pid))
@@ -18,8 +41,15 @@ supervisor_ensure_running <- function() {
 
 supervisor_running <- function() {
   if (is.null(supervisor_info$pid)) {
-    return(FALSE)
+    FALSE
+  } else {
+    TRUE
   }
+}
+
+supervisor_kill <- function(s = supervisor_info) {
+  if (!is.null(s$stdin) && is_fifo_open(s$stdin))
+    writeLines("kill", s$stdin)
 }
 
 supervisor_watch_pid <- function(pid) {
@@ -38,8 +68,8 @@ supervisor_start <- function() {
   supervisor_info$stdin_file  <- tempfile("supervisor_stdin")
   supervisor_info$stdout_file <- tempfile("supervisor_stdout")
 
-  supervisor_info$stdin  <- fifo(supervisor_info$stdin_file)
-  supervisor_info$stdout <- fifo(supervisor_info$stdout_file)
+  supervisor_info$stdin  <- fifo(supervisor_info$stdin_file,  "w+")
+  supervisor_info$stdout <- fifo(supervisor_info$stdout_file, "w+")
 
   # Start the supervisor, passing the R process's PID to it.
   res <- system2(
