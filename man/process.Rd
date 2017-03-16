@@ -14,7 +14,8 @@ streams. The process id is then used to manage the process.
 
 \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
                  stdout = TRUE, stderr = TRUE, cleanup = TRUE,
-                 echo_cmd = FALSE)
+                 echo_cmd = FALSE, windows_verbatim_args = FALSE,
+                 windows_hide_window = FALSE)
 
 p$is_alive()
 p$kill(grace = 0.1)
@@ -55,6 +56,10 @@ No escaping will be performed on it.}
 object is garbage collected.}
 \item{echo_cmd}{Whether to print the command to the screen before
 running it.}
+\item{windows_verbatim_args}{Whether to omit quoting the arguments
+on Windows. It is ignored on other platforms.}
+\item{windows_hide_window}{Whether to hide the application's window
+on Windows. It is ignored on other platforms.}
 \item{grace}{Grace pediod between the TERM and KILL signals, in
 seconds.}
 \item{...}{Extra arguments are passed to the
