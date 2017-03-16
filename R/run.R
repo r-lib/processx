@@ -48,6 +48,10 @@
 #'   This is only used if the process had no output at the last check.
 #'   If a process continuously produces output, then `run` does not
 #'   wait at all.
+#' @param windows_verbatim_args Whether to omit the escaping of the
+#'   command and the arguments on windows. Ignored on other platforms.
+#' @param windows_hide_window Whether to hide the window of the
+#'   application on windows. Ignored on other platforms.
 #' @return A list with components:
 #'   * status The exit status of the process. If this is `NA`, then the
 #'     process was killed and had no exit status.
@@ -78,7 +82,7 @@ run <- function(
   command = NULL, args = character(), commandline = NULL,
   error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
   stdout_callback = NULL, stderr_callback = NULL, check_interval = 0.01,
-  windows_verbatim_args = FALSE) {
+  windows_verbatim_args = FALSE, windows_hide_window = TRUE) {
 
   assert_that(is_flag(error_on_status))
   assert_that(is_time_interval(timeout))

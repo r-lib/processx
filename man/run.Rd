@@ -7,7 +7,7 @@
 run(command = NULL, args = character(), commandline = NULL,
   error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
   stdout_callback = NULL, stderr_callback = NULL, check_interval = 0.01,
-  windows_verbatim_args = FALSE)
+  windows_verbatim_args = FALSE, windows_hide_window = TRUE)
 }
 \arguments{
 \item{command}{Character scalar, the command to run. It will be
@@ -46,6 +46,12 @@ of the standard error. See more below.}
 This is only used if the process had no output at the last check.
 If a process continuously produces output, then \code{run} does not
 wait at all.}
+
+\item{windows_verbatim_args}{Whether to omit the escaping of the
+command and the arguments on windows. Ignored on other platforms.}
+
+\item{windows_hide_window}{Whether to hide the window of the
+application on windows. Ignored on other platforms.}
 }
 \value{
 A list with components:
