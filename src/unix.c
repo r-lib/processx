@@ -67,12 +67,18 @@ static void processx__child_init(char *command, char **args, int error_fd,
   close_fd0 = use_fd0 = open("/dev/null", O_RDONLY);
   if (use_fd0 == -1) raise(SIGKILL);
 
-  close_fd1 = use_fd1 = open(stdout ? stdout : "/dev/null",
-			     O_APPEND | O_RDWR, 0);
+  if (stdout) {
+    close_fd1 = use_fd1 = open(stdout, O_CREAT | O_TRUNC| O_RDWR, 0644);
+  } else {
+    close_fd1 = use_fd1 = open("/dev/null", O_RDWR);
+  }
   if (use_fd1 == -1) raise(SIGKILL);
 
-  close_fd2 = use_fd2 = open(stderr ? stderr : "/dev/null",
-			     O_APPEND | O_RDWR, 0);
+  if (stderr) {
+    close_fd2 = use_fd2 = open(stderr, O_CREAT | O_TRUNC | O_RDWR, 0644);
+  } else {
+    close_fd2 = use_fd2 = open("/dev/null", O_RDWR);
+  }
   if (use_fd2 == -1) raise(SIGKILL);
 
   fd0 = dup2(use_fd0, 0);
