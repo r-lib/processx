@@ -115,7 +115,8 @@ supervisor_start <- function() {
 }
 
 
-# Returns full path to the supervisor binary
+# Returns full path to the supervisor binary. Works when package is loaded the
+# normal way, and when loaded with devtools::load_all().
 supervisor_path <- function() {
   supervisor_name <- "supervisor"
   if (os_type() == "windows")

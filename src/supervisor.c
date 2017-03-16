@@ -1,9 +1,3 @@
-// gcc -Wall -std=gnu99 supervisor.c -o supervisor && ./supervisor
-//
-// Using C99 in R package:
-// http://stackoverflow.com/questions/35198301/how-use-the-option-std-c99-for-installing-r-packages
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
