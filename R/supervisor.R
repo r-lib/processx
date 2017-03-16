@@ -6,13 +6,11 @@ supervisor_reset <- function() {
     supervisor_kill()
   }
 
-  list2env(list(
-    pid         = NULL,
-    stdin       = NULL,
-    stdout      = NULL,
-    stdin_file  = NULL,
-    stdout_file = NULL
-  ), envir = supervisor_info)
+  supervisor_info$pid         <- NULL
+  supervisor_info$stdin       <- NULL
+  supervisor_info$stdout      <- NULL
+  supervisor_info$stdin_file  <- NULL
+  supervisor_info$stdout_file <- NULL
 }
 
 
@@ -22,18 +20,13 @@ reg.finalizer(supervisor_info, function(s) {
   # is bound to the new object.
   cat("Finalizing!\n")
   supervisor_kill(s)
-
-  if (!is.null(s$stdin) && is_fifo_open(s$stdin))
-    close(s$stdin)
-  if (!is.null(s$stdout) && is_fifo_open(s$stdout))
-    close(s$stdout)
 }, onexit = TRUE)
 
 
 # TODO: Add which_supervisor (borrow from Rttf2pt1)
 
 supervisor_ensure_running <- function() {
-  if (is.null(supervisor_info$pid))
+  if (!supervisor_running())
     supervisor_start()
 
   # TODO: Deal with a killed supervisor. How?
@@ -47,12 +40,25 @@ supervisor_running <- function() {
   }
 }
 
+# This takes an object s, because a new `supervisor_info` object could have been
+# created.
 supervisor_kill <- function(s = supervisor_info) {
+  if (is.null(s$pid))
+    return()
+
   if (!is.null(s$stdin) && is_fifo_open(s$stdin))
     writeLines("kill", s$stdin)
+
+  if (!is.null(s$stdin) && is_fifo_open(s$stdin))
+    close(s$stdin)
+  if (!is.null(s$stdout) && is_fifo_open(s$stdout))
+    close(s$stdout)
+
+  s$pid <- NULL
 }
 
 supervisor_watch_pid <- function(pid) {
+  supervisor_ensure_running()
   writeLines(as.character(pid), supervisor_info$stdin)
 }
 
