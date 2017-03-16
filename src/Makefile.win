@@ -4,7 +4,7 @@ CFLAGS = `"$(R_HOME)/bin/R" CMD config CFLAGS`
 supervisor.exe: supervisor.c
 	$(CC) $(CFLAGS) supervisor.c -o supervisor.exe
 
-all: supervisor
+all: supervisor.exe
 
 clean:
-	rm -f supervisor.exe
+	rm -f supervisor supervisor.dSYM supervisor.exe

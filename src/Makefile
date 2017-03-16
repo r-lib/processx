@@ -7,4 +7,4 @@ supervisor: supervisor.c
 all: supervisor
 
 clean:
-	rm -f supervisor
+	rm -rf supervisor supervisor.dSYM supervisor.exe
