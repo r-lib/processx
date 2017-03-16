@@ -1,19 +1,6 @@
 # Stores information about the supervisor process
 supervisor_info <- new.env()
 
-supervisor_reset <- function() {
-  if (supervisor_running()) {
-    supervisor_kill()
-  }
-
-  supervisor_info$pid         <- NULL
-  supervisor_info$stdin       <- NULL
-  supervisor_info$stdout      <- NULL
-  supervisor_info$stdin_file  <- NULL
-  supervisor_info$stdout_file <- NULL
-}
-
-
 reg.finalizer(supervisor_info, function(s) {
   # Call the functions on s directly, in case the GC event happens _after_ a new
   # `processx:::supervisor_info` has been created and the name `supervisor_info`
@@ -22,23 +9,6 @@ reg.finalizer(supervisor_info, function(s) {
   supervisor_kill(s)
 }, onexit = TRUE)
 
-
-# TODO: Add which_supervisor (borrow from Rttf2pt1)
-
-supervisor_ensure_running <- function() {
-  if (!supervisor_running())
-    supervisor_start()
-
-  # TODO: Deal with a killed supervisor. How?
-}
-
-supervisor_running <- function() {
-  if (is.null(supervisor_info$pid)) {
-    FALSE
-  } else {
-    TRUE
-  }
-}
 
 # This takes an object s, because a new `supervisor_info` object could have been
 # created.
@@ -57,12 +27,41 @@ supervisor_kill <- function(s = supervisor_info) {
   s$pid <- NULL
 }
 
+
+supervisor_reset <- function() {
+  if (supervisor_running()) {
+    supervisor_kill()
+  }
+
+  supervisor_info$pid         <- NULL
+  supervisor_info$stdin       <- NULL
+  supervisor_info$stdout      <- NULL
+  supervisor_info$stdin_file  <- NULL
+  supervisor_info$stdout_file <- NULL
+}
+
+
+supervisor_ensure_running <- function() {
+  if (!supervisor_running())
+    supervisor_start()
+}
+
+
+supervisor_running <- function() {
+  if (is.null(supervisor_info$pid)) {
+    FALSE
+  } else {
+    TRUE
+  }
+}
+
+
+# Tell the supervisor to watch a PID
 supervisor_watch_pid <- function(pid) {
   supervisor_ensure_running()
   writeLines(as.character(pid), supervisor_info$stdin)
 }
 
-# TODO: Deal with session save/restart
 
 # Start the supervisor process. Information about the process will be stored in
 # supervisor_info. If startup fails, this function will throw an error.
