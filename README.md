@@ -5,11 +5,11 @@
 
 > Execute and Control System Processes
 
-[![Linux Build Status](https://travis-ci.org/MangoTheCat/processx.svg?branch=master)](https://travis-ci.org/MangoTheCat/processx)
-[![Windows Build status](https://ci.appveyor.com/api/projects/status/github/MangoTheCat/processx?svg=true)](https://ci.appveyor.com/project/gaborcsardi/processx)
+[![Linux Build Status](https://travis-ci.org/r-pkgs/processx.svg?branch=master)](https://travis-ci.org/r-pkgs/processx)
+[![Windows Build status](https://ci.appveyor.com/api/projects/status/github/r-pkgs/processx?svg=true)](https://ci.appveyor.com/project/gaborcsardi/processx)
 [![](http://www.r-pkg.org/badges/version/processx)](http://www.r-pkg.org/pkg/processx)
 [![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/processx)](http://www.r-pkg.org/pkg/processx)
-[![Coverage Status](https://img.shields.io/codecov/c/github/MangoTheCat/processx/master.svg)](https://codecov.io/github/MangoTheCat/processx?branch=master)
+[![Coverage Status](https://img.shields.io/codecov/c/github/r-pkgs/processx/master.svg)](https://codecov.io/github/r-pkgs/processx?branch=master)
 
 Portable tools to run system processes in the background,
 read their standard output and error, kill and restart them.
@@ -55,7 +55,7 @@ read their standard output and error, kill and restart them.
 
 
 ```r
-source("https://install-github.me/MangoTheCat/processx")
+source("https://install-github.me/r-pkgs/processx")
 ```
 
 ## Usage
@@ -355,7 +355,7 @@ p$get_exit_status()
 ```
 
 ```
-#> NULL
+#> [1] 0
 ```
 
 ```r
@@ -393,4 +393,4 @@ if (!p$is_alive()) {
 
 ## License
 
-MIT © Mango Solutions
+MIT © Mango Solutions, Gábor Csárdi
