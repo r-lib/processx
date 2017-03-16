@@ -134,6 +134,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 
   handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
   if (!handle) { goto cleanup; }
+  memset(handle, 0, sizeof(processx_handle_t));
   result = PROTECT(allocVector(VECSXP, 2));
   SET_VECTOR_ELT(result, 0, allocVector(INTSXP, 1));
   SET_VECTOR_ELT(result, 1,

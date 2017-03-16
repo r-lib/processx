@@ -480,10 +480,12 @@ void processx__error(DWORD err) {
 void processx__finalizer(SEXP ptr) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(ptr);
   if (!handle) return;
-  CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 0));
-  CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 1));
-  CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 2));
-  CloseHandle(handle->hProcess);
+  if (handle->child_stdio_buffer) {
+    CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 0));
+    CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 1));
+    CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 2));
+  }
+  if (handle->hProcess) CloseHandle(handle->hProcess);
   processx__handle_destroy(handle);
   R_ClearExternalPtr(ptr);
 }
@@ -545,11 +547,17 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     if (r == 0 || r >= path_len) { processx__error(GetLastError()); }
   }
 
-  handle = (void*) malloc(sizeof(processx_handle_t));
+  handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
   if (!handle) { error("Out of memory"); }
+  memset(handle, 0, sizeof(processx_handle_t));
+  result = PROTECT(allocVector(VECSXP, 2));
+  SET_VECTOR_ELT(result, 0, allocVector(INTSXP, 1));
+  SET_VECTOR_ELT(result, 1,
+		 R_MakeExternalPtr(handle, R_NilValue, R_NilValue));
+  R_RegisterCFinalizerEx(VECTOR_ELT(result, 1), processx__finalizer, 1);
 
   err = processx__stdio_create(cstd_out, cstd_err, &handle->child_stdio_buffer);
-  if (err) { goto failed; }
+  if (err) { processx__error(err); }
 
   application_path = processx__search_path(application, cwd, path);
   if (!application_path) { free(handle); error("Command not found"); }
@@ -596,24 +604,15 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     /* lpStartupInfo =        */ &startup,
     /* lpProcessInformation = */ &info);
 
-  if (!err) { err = GetLastError(); goto failed; }
+  if (!err) { processx__error(err); }
 
   handle->hProcess = info.hProcess;
-  handle->dwProcessId = info.dwProcessId;
+  INTEGER(VECTOR_ELT(result, 0))[0] = handle->dwProcessId = info.dwProcessId;
 
   CloseHandle(info.hThread);
 
-  result = PROTECT(R_MakeExternalPtr(handle, R_NilValue, R_NilValue));
-  R_RegisterCFinalizerEx(result, processx__finalizer, /* on_exit= */ 1);
   UNPROTECT(1);
   return result;
-
- failed:
-  processx__handle_destroy(handle);
-  processx__error(err);
-
-  /* Never called */
-  return R_NilValue;
 }
 
 SEXP processx_wait(SEXP rhandle, SEXP hang) {
@@ -629,6 +628,8 @@ SEXP processx_wait(SEXP rhandle, SEXP hang) {
     UNPROTECT(1);
     return result;
   }
+
+  INTEGER(result)[0] = 0;	/* JUST DIED */
 
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
   if (!err) processx__error(GetLastError());
@@ -655,9 +656,10 @@ SEXP processx_wait(SEXP rhandle, SEXP hang) {
 
 SEXP processx_kill(SEXP rhandle) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
-  if (!handle) error("processx internal error: invalid process handle");
-  TerminateProcess(handle->hProcess, 1);
-  processx__finalizer(rhandle);
+  if (handle) {
+    TerminateProcess(handle->hProcess, 1);
+    processx__finalizer(rhandle);
+  }
   return R_NilValue;
 }
 

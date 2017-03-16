@@ -216,7 +216,7 @@ test_that("output & error if files are not created yet", {
 })
 
 test_that("get_output_connection", {
-  p <- process$new(commandline = "echo here I am", windows_verbatim_args = TRUE)
+  p <- process$new(commandline = "echo here I am")
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   out <- p$get_output_connection()
