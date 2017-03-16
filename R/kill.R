@@ -3,8 +3,7 @@
 #'
 #' @param self this
 #' @param private this.private
-#' @param grace Numeric scalar, grace period between sending a TERM
-#'   and a KILL signal, in seconds.
+#' @param grace Deprecated and ignored.
 #'
 #' The process might not be running any more, but \code{tools::pskill}
 #' does not seem to care about whether it could actually kill the
@@ -18,9 +17,10 @@
 
 process_kill <- function(self, private, grace) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `private$pid`"
-  if (is.null(private$status)) {
-    .Call("processx_kill", private$handle);
-  }
+  .Call("processx_kill", private$handle[[2]])
+
+  ## This is to collect the exit status
+  self$is_alive()
 
   invisible(self)
 }

@@ -5,7 +5,7 @@
 \title{Start a process}
 \usage{
 process_initialize(self, private, command, args, commandline, stdout, stderr,
-  cleanup, echo_cmd)
+  cleanup, echo_cmd, windows_verbatim_args)
 }
 \arguments{
 \item{self}{this}

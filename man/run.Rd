@@ -6,7 +6,8 @@
 \usage{
 run(command = NULL, args = character(), commandline = NULL,
   error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
-  stdout_callback = NULL, stderr_callback = NULL, check_interval = 0.01)
+  stdout_callback = NULL, stderr_callback = NULL, check_interval = 0.01,
+  windows_verbatim_args = FALSE)
 }
 \arguments{
 \item{command}{Character scalar, the command to run. It will be

@@ -653,12 +653,6 @@ SEXP processx_wait(SEXP rhandle, SEXP hang) {
   return result;
 }
 
-SEXP processx_pid(SEXP rhandle) {
-  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
-  if (!handle) error("processx internal error: invalid process handle");
-  return ScalarInteger(handle->dwProcessId);
-}
-
 SEXP processx_kill(SEXP rhandle) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
   if (!handle) error("processx internal error: invalid process handle");

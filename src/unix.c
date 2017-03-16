@@ -134,8 +134,11 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 
   handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
   if (!handle) { goto cleanup; }
-  result = PROTECT(R_MakeExternalPtr(handle, R_NilValue, R_NilValue));
-  R_RegisterCFinalizerEx(result, processx__finalizer, /* on_exit= */ 1);
+  result = PROTECT(allocVector(VECSXP, 2));
+  SET_VECTOR_ELT(result, 0, allocVector(INTSXP, 1));
+  SET_VECTOR_ELT(result, 1,
+		 R_MakeExternalPtr(handle, R_NilValue, R_NilValue));
+  R_RegisterCFinalizerEx(VECTOR_ELT(result, 1), processx__finalizer, 1);
 
   pid = fork();
 
@@ -178,7 +181,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   close(signal_pipe[0]);
 
   if (exec_errorno == 0) {
-    handle->pid = pid;
+    INTEGER(VECTOR_ELT(result, 0))[0] = handle->pid = pid;
     UNPROTECT(1);		/* result */
     return result;
   }
@@ -190,19 +193,23 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 
 SEXP processx_wait(SEXP rhandle, SEXP hang) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
-  if (!handle) error("processx internal error: invalid process handle");
-  pid_t cpid = handle->pid;
+  pid_t cpid = handle ? handle->pid : 0;
   int chang = LOGICAL(hang)[0];
   SEXP result = PROTECT(allocVector(INTSXP, 3));
   int wstat, wp;
+
+  /* Already dead and no handle */
+  if (!handle) {
+    INTEGER(result)[0] = 2;
+    UNPROTECT(1);
+    return result;
+  }
 
   INTEGER(result)[0] = 0;	/* JUST DIED */
 
   do {
     wp = waitpid(cpid, &wstat, chang ? 0 : WNOHANG);
   } while (cpid == -1 && errno == EINTR);
-
-  /* Some sort of error? */
 
   if (! chang && wp == 0) {
     /* Still running and we didn't want to wait */
@@ -232,18 +239,13 @@ SEXP processx_wait(SEXP rhandle, SEXP hang) {
   return result;
 }
 
-SEXP processx_pid(SEXP rhandle) {
-  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
-  if (!handle) error("processx internal error: invalid process handle");
-  return ScalarInteger(handle->pid);
-}
-
 SEXP processx_kill(SEXP rhandle) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
-  if (!handle) error("processx internal error: invalid process handle");
-  pid_t pid = handle->pid;
-  kill(pid, SIGKILL);
-  processx__finalizer(rhandle);
+  if (handle) {
+    pid_t pid = handle->pid;
+    kill(pid, SIGKILL);
+    processx__finalizer(rhandle);
+  }
   return R_NilValue;
 }
 

@@ -225,7 +225,7 @@ process_is_alive <- function(self, private) {
     FALSE
 
   } else {
-    res <- wait(private$handle, hang = FALSE)
+    res <- wait(private$handle[[2]], hang = FALSE)
     if (res[[1]] == 2) {
       private$status <- private$signal <- NA_integer_
       FALSE
@@ -273,7 +273,7 @@ process_restart <- function(self, private) {
 process_wait <- function(self, private) {
   "!DEBUG process_wait `private$get_short_name()`"
   if (is.null(private$status)) {
-    res <- wait(private$handle, hang = TRUE)
+    res <- wait(private$handle[[2]], hang = TRUE)
     if (res[[1]] == 2) {
       private$status <- private$signal <- NA_integer_
 
@@ -294,5 +294,5 @@ process_get_start_time <- function(self, private) {
 }
 
 process_get_pid <- function(self, private) {
-  .Call("processx_pid", private$handle);
+  private$handle[[1]]
 }

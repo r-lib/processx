@@ -11,8 +11,7 @@ process_kill(self, private, grace)
 
 \item{private}{this.private}
 
-\item{grace}{Numeric scalar, grace period between sending a TERM
-and a KILL signal, in seconds.
+\item{grace}{Deprecated and ignored.
 
 The process might not be running any more, but \code{tools::pskill}
 does not seem to care about whether it could actually kill the
