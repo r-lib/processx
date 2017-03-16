@@ -81,18 +81,6 @@ process_initialize <- function(self, private, command, args,
   )
   private$starttime <- Sys.time()
 
-  ## Cleanup on GC, if requested
-  if (cleanup) {
-    reg.finalizer(
-      self,
-      function(e) {
-        "!DEBUG killing"
-        ## TODO
-      },
-      TRUE
-    )
-  }
-
   ## Store the output and error files, we'll open them later if needed
   private$stdout <- stdout
   private$stderr <- stderr

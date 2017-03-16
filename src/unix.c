@@ -15,6 +15,8 @@ void processx_unix_dummy() { }
 
 #include "utils.h"
 
+SEXP processx_wait(SEXP rhandle, SEXP hang);
+
 static int processx__nonblock_fcntl(int fd, int set) {
   int flags;
   int r;
@@ -101,6 +103,7 @@ void processx__finalizer(SEXP ptr) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(ptr);
   if (!handle) return;
   kill(handle->pid, SIGKILL);
+  processx_wait(ptr, ScalarLogical(1));
   processx__handle_destroy(handle);
   R_ClearExternalPtr(ptr);
 }
@@ -243,11 +246,7 @@ SEXP processx_wait(SEXP rhandle, SEXP hang) {
 
 SEXP processx_kill(SEXP rhandle) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
-  if (handle) {
-    pid_t pid = handle->pid;
-    kill(pid, SIGKILL);
-    processx__finalizer(rhandle);
-  }
+  if (handle) { processx__finalizer(rhandle); }
   return R_NilValue;
 }
 
