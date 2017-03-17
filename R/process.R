@@ -285,8 +285,10 @@ process_get_exit_status <- function(self, private) {
 }
 
 process_signal <- function(self, private, signal) {
- "!DEBUG process_signal `private$get_short_name()` `signal`"
- .Call("processx_signal", private$status, as.integer(signal))
+  "!DEBUG process_signal `private$get_short_name()` `signal`"
+  res <- .Call("processx_signal", private$status, as.integer(signal))
+  private$status <- res[[1]]
+  res[[2]]
 }
 
 process_kill <- function(self, private, grace) {

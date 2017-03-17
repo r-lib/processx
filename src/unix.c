@@ -213,82 +213,79 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 
 /* Process status (and related functions).
 
-The main complication here, is that checking the status of the process
-might mean that we need to collect its exit status.
+   The main complication here, is that checking the status of the process
+   might mean that we need to collect its exit status.
 
-Collecting the exit status always means freeing memory allocated for
-the handle.
+   * `process_wait`:
+     1. If we already have its exit status, return immediately.
+     2. Otherwise, do a blocking `waitpid()`.
+     3. When it's done, collect the exit status.
 
-* `process_wait`:
-    1. If we already have its exit status, return immediately.
-    2. Otherwise, do a blocking `waitpid()`.
-    3. When it's done, collect the exit status.
+   * `process_is_alive`:
+     1. If we already have its exit status, then return `FALSE`.
+     2. Otherwise, do a non-blocking `waitpid()`.
+     3. If the `waitpid()` says that it is running, then return `TRUE`.
+     4. Otherwise collect its exit status, and return `FALSE`.
 
-* `process_is_alive`:
-    1. If we already have its exit status, then return `FALSE`.
-    2. Otherwise, do a non-blocking `waitpid()`.
-    3. If the `waitpid()` says that it is running, then return `TRUE`.
-    4. Otherwise collect its exit status, and return `FALSE`.
+   * `process_get_exit_status`:
+     1. If we already have the exit status, then return that.
+     2. Otherwise do a non-blocking `waitpid()`.
+     3. If the process just finished, then collect the exit status, and
+        also return it.
+     4. Otherwise return `NULL`, the process is still running.
 
-* `process_get_exit_status`:
-    1. If we already have the exit status, then return that.
-    2. Otherwise do a non-blocking `waitpid()`.
-    3. If the process just finished, then collect the exit status, and
-       also return it.
-    4. Otherwise return `NULL`, the process is still running.
+   * `process_signal`:
+     1. If we already have its exit status, return with `FALSE`.
+     2. Otherwise just try to deliver the signal. If successful, return
+        `TRUE`, otherwise return `FALSE`.
 
-* `process_signal`:
-    1. If we already have its exit status, return with `FALSE`.
-    2. Otherwise just try to deliver the signal. If successful, return
-       `TRUE`, otherwise return `FALSE`.
+     We might as well call `waitpid()` as well, but `process_signal` is
+     able to deliver arbitrary signals, so the process might not have
+     finished.
 
-    We might as well call `waitpid()` as well, but `process_signal` is
-    able to deliver arbitrary signals, so the process might not have
-    finished.
+   * `process_kill`:
+     1. Check if we have the exit status. If yes, then the process
+        has already finished. and we return `FALSE`. We don't error,
+        because then there would be no way to deliver a signal.
+        (Simply doing `if (p$is_alive()) p$kill()` does not work, because
+        it is a race condition.
+     2. If there is no exit status, the process might be running (or might
+        be a zombie).
+     3. We call a non-blocking `waitpid()` on the process and potentially
+        collect the exit status. If the process has exited, then we return
+        TRUE. This step is to avoid the potential grace period, if the
+        process is in a zombie state.
+     4. If the process is still running, we call `kill(SIGKILL)`.
+     5. We do a blocking `waitpid()` to collect the exit status.
+     6. If the process was indeed killed by us, we return `TRUE`.
+     7. Otherwise we return `FALSE`.
 
-* `process_kill`:
-    1. Check if we have the exit status. If yes, then the process
-       has already finished. and we return `FALSE`. We don't error,
-       because then there would be no way to deliver a signal.
-       (Simply doing `if (p$is_alive()) p$kill()` does not work, because
-       it is a race condition.
-    2. If there is no exit status, the process might be running (or might
-       be a zombie).
-    3. We call a non-blocking `waitpid()` on the process and potentially
-       collect the exit status. If the process has exited, then we return
-       TRUE. This step is to avoid the potential grace period, if the
-       process is in a zombie state.
-    4. If the process is still running, we call `kill(SIGKILL)`.
-    5. We do a blocking `waitpid()` to collect the exit status.
-    6. If the process was indeed killed by us, we return `TRUE`.
-    7. Otherwise we return `FALSE`.
+    The return value of `process_kill()` is `TRUE` if the process was
+    indeed killed by the signal. It is `FALSE` otherwise, i.e. if the
+    process finished.
 
-   The return value of `process_kill()` is `TRUE` if the process was
-   indeed killed by the signal. It is `FALSE` otherwise, i.e. if the
-   process finished.
+    We currently ignore the grace argument, as there is no way to
+    implement it on Unix. It will be implemented later using a SIGCHLD
+    handler.
 
-   We currently ignore the grace argument, as there is no way to
-   implement it on Unix. It will be implemented later using a SIGCHLD
-   handler.
+   * Finalizers (`processx__finalizer`):
 
-* Finalizers (`processx__finalizer`):
+     Finalizers are called on the handle only, so we do not know if the
+     process has already finished or not.
 
-    Finalizers are called on the handle only, so we do not know if the
-    process has already finished or not.
+     1. Call a non-blocking `waitpid()` to see if it is still running.
+     2. If just finished, then collect exit status (=free memory).
+     3. If it has finished before, then still try to free memory, just in
+        case the exit status was read out by another package.
+     4. If it is running, then kill it with SIGKILL, then call a blocking
+        `waitpid()` to clean up the zombie process. Then free all memory.
 
-    1. Call a non-blocking `waitpid()` to see if it is still running.
-    2. If just finished, then collect exit status (=free memory).
-    3. If it has finished before, then still try to free memory, just in
-       case the exit status was read out by another package.
-    4. If it is running, then kill it with SIGKILL, then call a blocking
-       `waitpid()` to clean up the zombie process. Then free all memory.
-
-    The finalizer is implemented in C, because we might need to use it
-    from the process startup code (which is C).
+     The finalizer is implemented in C, because we might need to use it
+     from the process startup code (which is C).
 */
 
 SEXP processx__collect_exit_status(SEXP status, int wstat) {
-  SEXP result = duplicate(status);
+  SEXP result = PROTECT(duplicate(status));
 
   SET_VECTOR_ELT(result, 0, allocVector(INTSXP, 1));
 
@@ -299,6 +296,7 @@ SEXP processx__collect_exit_status(SEXP status, int wstat) {
     INTEGER(VECTOR_ELT(result, 0))[0] = - WTERMSIG(wstat);
   }
 
+  UNPROTECT(1);
   return result;
 }
 
@@ -346,7 +344,7 @@ SEXP processx_is_alive(SEXP status) {
   }
 }
 
-SEXP processx_get_exit_status(SEXP status, SEXP signal) {
+SEXP processx_get_exit_status(SEXP status) {
   pid_t pid;
   int wp, wstat;
 
@@ -371,24 +369,40 @@ SEXP processx_get_exit_status(SEXP status, SEXP signal) {
 }
 
 SEXP processx_signal(SEXP status, SEXP signal) {
+  SEXP result = PROTECT(allocVector(VECSXP, 2));
   pid_t pid;
-  int ret;
+  int ret, wp, wstat;
+
+  SET_VECTOR_ELT(result, 0, duplicate(status));
+  SET_VECTOR_ELT(result, 1, allocVector(LGLSXP, 1));
 
   /* If we already have the status, then return `FALSE` */
-  if (!isNull(VECTOR_ELT(status, 0))) { return ScalarLogical(0); }
+  if (!isNull(VECTOR_ELT(status, 0))) { UNPROTECT(1); return result; }
 
-  /* Otherwise try to kill*/
+  /* Otherwise try to send signal */
   pid = INTEGER(VECTOR_ELT(status, 1))[0];
   ret = kill(pid, INTEGER(signal)[0]);
 
   if (ret == 0) {
-    return ScalarLogical(1);
+    LOGICAL(VECTOR_ELT(result, 1))[0] = 1;
   } else if (ret == -1 && errno == ESRCH) {
-    return ScalarLogical(0);
+    LOGICAL(VECTOR_ELT(result, 1))[0] = 0;
   } else {
     error("processx_signal: %s", strerror(errno));
     return R_NilValue;
   }
+
+  /* Dead now, collect status */
+  do {
+    wp = waitpid(pid, &wstat, WNOHANG);
+  } while (wp == -1 && errno == EINTR);
+  if (wp == -1) { error("processx_get_exit_status: %s", strerror(errno)); }
+
+  SET_VECTOR_ELT(result, 0,
+		 processx__collect_exit_status(status, wstat));
+
+  UNPROTECT(1);
+  return result;
 }
 
 SEXP processx_kill(SEXP status, SEXP grace) {

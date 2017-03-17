@@ -550,11 +550,12 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
   if (!handle) { error("Out of memory"); }
   memset(handle, 0, sizeof(processx_handle_t));
-  result = PROTECT(allocVector(VECSXP, 2));
-  SET_VECTOR_ELT(result, 0, allocVector(INTSXP, 1));
-  SET_VECTOR_ELT(result, 1,
+  result = PROTECT(allocVector(VECSXP, 3));
+  SET_VECTOR_ELT(result, 0, R_NilValue);
+  SET_VECTOR_ELT(result, 1, allocVector(INTSXP, 1));
+  SET_VECTOR_ELT(result, 2,
 		 R_MakeExternalPtr(handle, R_NilValue, R_NilValue));
-  R_RegisterCFinalizerEx(VECTOR_ELT(result, 1), processx__finalizer, 1);
+  R_RegisterCFinalizerEx(VECTOR_ELT(result, 2), processx__finalizer, 1);
 
   err = processx__stdio_create(cstd_out, cstd_err, &handle->child_stdio_buffer);
   if (err) { processx__error(err); }
@@ -607,7 +608,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   if (!err) { processx__error(err); }
 
   handle->hProcess = info.hProcess;
-  INTEGER(VECTOR_ELT(result, 0))[0] = handle->dwProcessId = info.dwProcessId;
+  INTEGER(VECTOR_ELT(result, 1))[0] = handle->dwProcessId = info.dwProcessId;
 
   CloseHandle(info.hThread);
 
@@ -615,52 +616,179 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   return result;
 }
 
-SEXP processx_wait(SEXP rhandle, SEXP hang) {
-  int chang = LOGICAL(hang)[0];
-  SEXP result = PROTECT(allocVector(INTSXP, 3));
-  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
-  DWORD exitcode;
-  BOOL err;
+/* Process status and related functions.
 
-  if (!handle) {
-    /* Already dead */
-    INTEGER(result)[0] = 2;
-    UNPROTECT(1);
-    return result;
-  }
+ * `process_wait`:
+    1. If we already have its exit status, return immediately.
+    2. Othewise do a blocking WaitForSingleObject.
+    3. Then collect exit status.
 
-  INTEGER(result)[0] = 0;	/* JUST DIED */
+ * `process_is_alive`:
+    1. If we already have its exit status, then return `FALSE`.
+    2. Otherwise do a GetExitCodeProcess.
+    3. If it is running return `TRUE`, otherwise `FALSE`.
 
-  err = GetExitCodeProcess(handle->hProcess, &exitcode);
-  if (!err) processx__error(GetLastError());
-  if (! chang && exitcode == STILL_ACTIVE) {
-    /* Still running, and we didn't want to wait */
-    INTEGER(result)[0] = 1;
+ * `process_get_exit_status`:
+    1. If we already have the exit status, then return that.
+    2. Otherwise do a GetExitCodeProcess.
+    3. If the process has finished, then collect the exit status, and return it.
+    4. Otherwise return `NULL`, the process is still running.
 
-  } else if (exitcode == STILL_ACTIVE) {
-    /* Still running and we wait */
-    DWORD err2 = WaitForSingleObject(handle->hProcess, INFINITE);
-    if (err2 == WAIT_FAILED) { processx__error(GetLastError()); }
-    err = GetExitCodeProcess(handle->hProcess, &exitcode);
-    INTEGER(result)[0] = 0;
-    INTEGER(result)[1] = exitcode;
+ * `process_signal`:
+    1. If we already have its exit status, return with `FALSE`.
+    2. Otherwise deliver the signal. If successful, return `TRUE`, otherwise
+       `FALSE`. Only a limited set of signals are supported.
 
-  } else {
-    /* Not running any more, we already returned the exit code */
-    INTEGER(result)[0] = 2;
-  }
+ * `process_kill`:
+    1. If we already have its exit status, return with `FALSE`.
+    2. Otherwise call GetExitCodeProcess.
+    3. If the process is not running, collect the exit status, and
+       return `FALSE`.
+    4. Otherwise kill the process, and collect the exit status.
+    5. If the killing was successful, return `TRUE`, otherwise `FALSE`.
 
+    The return value of `process_kill()` is `TRUE` if the process was
+    indeed killed by the signal. It is `FALSE` otherwise, i.e. if the
+    process finished.
+
+ * Finalizers (`processx__finalizer`):
+
+   Finalizers are called on the handle only, so we do not know if the
+   process has already finished or not.
+
+   1. Run `GetExitCodeProcess` to see if it has finished already.
+   2. If yes, then free memory.
+   3. Otherwise terminate it.
+   4. Free memory.
+
+ */
+
+SEXP processx__collect_exit_status(SEXP status, DWORD exitcode) {
+  SEXP result = PROTECT(duplicate(status));
+  SET_VECTOR_ELT(result, 0, ScalarInteger(exitcode));
+  processx__finalizer(VECTOR_ELT(status, 2));
   UNPROTECT(1);
   return result;
 }
 
-SEXP processx_kill(SEXP rhandle) {
-  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(rhandle);
-  if (handle) {
-    TerminateProcess(handle->hProcess, 1);
-    processx__finalizer(rhandle);
+SEXP processx_wait(SEXP status) {
+  processx_handle_t *handle;
+  DWORD err, err2, exitcode;
+
+  /* If we already have the status, then return now. */
+  if (!isNull(VECTOR_ELT(status, 0))) { return status; }
+
+  /* Othewise do a blocking wait */
+  handle = (processx_handle_t*) R_ExternalPtrAddr(VECTOR_ELT(status, 2));
+  err2 = WaitForSingleObject(handle->hProcess, INFINITE);
+  if (err2 == WAIT_FAILED) { processx__error(GetLastError()); }
+
+  /* Collect  */
+  err = GetExitCodeProcess(handle->hProcess, &exitcode);
+  if (!err) { processx__error(GetLastError()); }
+
+  return processx__collect_exit_status(status, exitcode);
+}
+
+SEXP processx_is_alive(SEXP status) {
+  processx_handle_t *handle;
+  DWORD err, exitcode;
+
+  /* If we already have the status, then return now. */
+  if (!isNull(VECTOR_ELT(status, 0))) { return status; }
+
+  /* Otherwise try to get exit code */
+  handle = (processx_handle_t*) R_ExternalPtrAddr(VECTOR_ELT(status, 2));
+  err = GetExitCodeProcess(handle->hProcess, &exitcode);
+  if (!err) { processx__error(GetLastError()); }
+
+  if (exitcode == STILL_ACTIVE) {
+    return status;
+  } else {
+    return processx__collect_exit_status(status, exitcode);
   }
-  return R_NilValue;
+}
+
+SEXP processx_get_exit_status(SEXP status) {
+  processx_handle_t *handle;
+  DWORD err, exitcode;
+
+  /* If we already have the status, then just return */
+  if (!isNull(VECTOR_ELT(status, 0))) { return status; }
+
+  /* Otherwise try to get exit code */
+  handle = (processx_handle_t*) R_ExternalPtrAddr(VECTOR_ELT(status, 2));
+  err = GetExitCodeProcess(handle->hProcess, &exitcode);
+  if (!err) {processx__error(GetLastError()); }
+
+  if (exitcode == STILL_ACTIVE) {
+    return status;
+  } else {
+    return processx__collect_exit_status(status, exitcode);
+  }
+}
+
+SEXP processx_signal(SEXP status, SEXP signal) {
+  processx_handle_t *handle;
+  SEXP result = PROTECT(allocVector(VECSXP, 2));
+  DWORD err, exitcode = STILL_ACTIVE;
+
+  /* If we already have the status, then return `FALSE` */
+  if (!isNull(VECTOR_ELT(status, 0))) { UNPROTECT(1); return result; }
+
+  SET_VECTOR_ELT(result, 0, duplicate(status));
+  SET_VECTOR_ELT(result, 1, allocVector(LGLSXP, 1));
+
+  handle = (processx_handle_t*) R_ExternalPtrAddr(VECTOR_ELT(status, 2));
+
+  switch (INTEGER(signal)[0]) {
+  case 15:   /* SIGTERM */
+  case 9:    /* SIGKILL */
+  case 2: {  /* SIGINT */
+    /* Call GetExitCodeProcess to see if it is done */
+    /* TODO: there is a race condition here, might finish right before
+       we are terminating it... */
+    err = GetExitCodeProcess(handle->hProcess, &exitcode);
+    if (!err) { processx__error(GetLastError()); }
+
+    if (exitcode == STILL_ACTIVE) {
+      err = TerminateProcess(handle->hProcess, 1);
+      if (err) {
+	LOGICAL(VECTOR_ELT(result, 1))[0] = 1;
+	SET_VECTOR_ELT(result, 0,
+		       processx__collect_exit_status(status, 1));
+      }
+    } else {
+      SET_VECTOR_ELT(result, 0,
+		     processx__collect_exit_status(status, exitcode));
+    }
+
+    UNPROTECT(1);
+    return result;
+  }
+  case 0: {
+    /* Health check: is the process still alive? */
+    err = GetExitCodeProcess(handle->hProcess, &exitcode);
+    if (!err) { processx__error(GetLastError()); }
+
+    if (exitcode == STILL_ACTIVE) {
+      LOGICAL(VECTOR_ELT(result, 1))[0] = 1;
+    } else {
+      LOGICAL(VECTOR_ELT(result, 1))[0] = 0;
+    }
+
+    UNPROTECT(1);
+    return result;
+  }
+
+  default:
+    error("Unsupported signal on this platform");
+    return R_NilValue;
+  }
+}
+
+SEXP processx_kill(SEXP status, SEXP grace) {
+  return processx_signal(status, ScalarInteger(9));
 }
 
 #endif
