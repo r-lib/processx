@@ -24,7 +24,6 @@ Imports:
     crayon,
     debugme,
     R6,
-    tools,
     utils
 Remotes:
     gaborcsardi/debugme
