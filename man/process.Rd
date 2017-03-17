@@ -18,6 +18,7 @@ streams. The process id is then used to manage the process.
                  windows_hide_window = FALSE)
 
 p$is_alive()
+p$signal(signal)
 p$kill(grace = 0.1)
 p$wait()
 p$get_exit_status()
@@ -62,6 +63,7 @@ on Windows. It is ignored on other platforms.}
 on Windows. It is ignored on other platforms.}
 \item{grace}{Grace pediod between the TERM and KILL signals, in
 seconds.}
+\item{signal}{The signal to send to the process.}
 \item{...}{Extra arguments are passed to the
 \code{\link[base]{readLines}} function.}
 }

@@ -6,9 +6,3 @@ exec <- function(command, args = character(), stdout = NULL, stderr = NULL,
   .Call("processx_exec", command, c(command, args), stdout, stderr,
         detached, windows_verbatim_args, windows_hide_window, PACKAGE = "processx")
 }
-
-wait <- function(handle, hang = FALSE) {
-
-  .Call("processx_wait", handle, as.logical(hang),
-        PACKAGE = "processx")
-}

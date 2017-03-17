@@ -73,7 +73,7 @@ process_initialize <- function(self, private, command, args,
   "!DEBUG process_initialize exec()"
   if (isFALSE(stdout)) stdout <- NULL
   if (isFALSE(stderr)) stderr <- NULL
-  private$handle <- exec(
+  private$status <- exec(
     command, args,
     stdout = stdout, stderr = stderr,
     windows_verbatim_args = windows_verbatim_args,
