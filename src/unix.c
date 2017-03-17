@@ -296,6 +296,8 @@ SEXP processx__collect_exit_status(SEXP status, int wstat) {
     INTEGER(VECTOR_ELT(result, 0))[0] = - WTERMSIG(wstat);
   }
 
+  processx__finalizer(VECTOR_ELT(status, 2));
+
   UNPROTECT(1);
   return result;
 }
