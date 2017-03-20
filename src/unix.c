@@ -13,6 +13,7 @@ void processx_unix_dummy() { }
 #include <string.h>
 #include <sys/socket.h>
 #include <signal.h>
+#include <sys/wait.h>
 
 #include "utils.h"
 
@@ -104,7 +105,7 @@ static void processx__child_init(char *command, char **args, int error_fd,
 				 const char *stdout, const char *stderr,
 				 processx_options_t *options) {
 
-  int err;
+  int err, dummy;
   int fd0, fd1, fd2, use_fd0, use_fd1, use_fd2,
     close_fd0, close_fd1, close_fd2;
 
@@ -142,7 +143,7 @@ static void processx__child_init(char *command, char **args, int error_fd,
 
   execvp(command, args);
   err = -errno;
-  write(error_fd, &err, sizeof(int));
+  dummy = write(error_fd, &err, sizeof(int));
   raise(SIGKILL);
 }
 
