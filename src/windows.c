@@ -472,9 +472,25 @@ static WCHAR* processx__search_path(const WCHAR *file,
   return result;
 }
 
-void processx__error(DWORD err) {
-  /* TODO: use err to get error message */
-  error("Internal processx error: %d", (int) err);
+void processx__error(DWORD errorcode) {
+  LPVOID lpMsgBuf;
+  char *msg;
+
+  FormatMessage(
+    FORMAT_MESSAGE_ALLOCATE_BUFFER |
+    FORMAT_MESSAGE_FROM_SYSTEM |
+    FORMAT_MESSAGE_IGNORE_INSERTS,
+    NULL,
+    errorcode,
+    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+    (LPTSTR) &lpMsgBuf,
+    0, NULL );
+
+  msg = R_alloc(1, strlen(lpMsgBuf) + 1);
+  strcpy(msg, lpMsgBuf);
+  LocalFree(lpMsgBuf);
+
+  error("processx error: %s", msg);
 }
 
 void processx__finalizer(SEXP ptr) {
