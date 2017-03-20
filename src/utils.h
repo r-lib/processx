@@ -19,14 +19,15 @@ typedef struct {
 } processx_options_t;
 
 typedef struct {
+  int exitcode;
+  int collected;    /* Whether exit code was collected already */
 #ifdef WIN32
   HANDLE hProcess;
   DWORD  dwProcessId;
   BYTE *child_stdio_buffer;
+  HANDLE waitObject;
 #else
   pid_t pid;
-  int exitcode;
-  int collected;    /* Whether exit code was collected already */
 #endif
 } processx_handle_t;
 

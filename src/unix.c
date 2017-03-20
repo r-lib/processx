@@ -456,7 +456,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 void processx__collect_exit_status(SEXP status, int wstat) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
 
-  /* This must be called from a function that block SIGCHLD.
+  /* This must be called from a function that blocks SIGCHLD.
      So we are not blocking it here. */
 
   if (!handle) {

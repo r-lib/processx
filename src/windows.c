@@ -493,9 +493,21 @@ void processx__error(DWORD errorcode) {
   error("processx error: %s", msg);
 }
 
-void processx__finalizer(SEXP ptr) {
-  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(ptr);
+void processx__finalizer(SEXP status) {
+  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
+  SEXP private;
+
   if (!handle) return;
+
+  /* Just in case it is running */
+  TerminateProcess(handle->hProcess, 1);
+
+  /* Copy over pid and exit status */
+  private = R_ExternalPtrTag(status);
+  defineVar(install("exited"), ScalarLogical(1), private);
+  defineVar(install("pid"), ScalarInteger(handle->dwProcessId), private);
+  defineVar(install("exitcode"), ScalarInteger(handle->exitcode), private);
+
   if (handle->child_stdio_buffer) {
     CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 0));
     CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 1));
@@ -503,11 +515,42 @@ void processx__finalizer(SEXP ptr) {
   }
   if (handle->hProcess) CloseHandle(handle->hProcess);
   processx__handle_destroy(handle);
-  R_ClearExternalPtr(ptr);
+  R_ClearExternalPtr(status);
+}
+
+void processx__collect_exit_status(SEXP status, DWORD exitcode);
+
+/* This is not strictly necessary, but we might as well do it.... */
+
+static void CALLBACK processx__exit_callback(void* data, BOOLEAN didTimeout) {
+  SEXP status = (SEXP) data;
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
+  DWORD err, exitcode;
+
+  err = GetExitCodeProcess(handle->hProcess, &exitcode);
+  if (!err) return;
+
+  processx__collect_exit_status(status, exitcode);
+}
+
+SEXP processx__make_handle(SEXP private) {
+  processx_handle_t * handle;
+  SEXP result;
+
+  handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
+  if (!handle) { error("Out of memory"); }
+  memset(handle, 0, sizeof(processx_handle_t));
+
+  result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
+  R_RegisterCFinalizerEx(result, processx__finalizer, 1);
+
+  UNPROTECT(1);
+  return result;
 }
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
-		   SEXP detached, SEXP windows_verbatim_args, SEXP windows_hide) {
+		   SEXP detached, SEXP windows_verbatim_args, SEXP windows_hide,
+		   SEXP private) {
 
   const char *cstd_out = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
   const char *cstd_err = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
@@ -523,6 +566,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 
   processx_handle_t *handle;
   SEXP result;
+  BOOL regerr;
 
   options.detached = LOGICAL(detached)[0];
   options.windows_verbatim_args = LOGICAL(windows_verbatim_args)[0];
@@ -563,15 +607,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     if (r == 0 || r >= path_len) { processx__error(GetLastError()); }
   }
 
-  handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
-  if (!handle) { error("Out of memory"); }
-  memset(handle, 0, sizeof(processx_handle_t));
-  result = PROTECT(allocVector(VECSXP, 3));
-  SET_VECTOR_ELT(result, 0, R_NilValue);
-  SET_VECTOR_ELT(result, 1, allocVector(INTSXP, 1));
-  SET_VECTOR_ELT(result, 2,
-		 R_MakeExternalPtr(handle, R_NilValue, R_NilValue));
-  R_RegisterCFinalizerEx(VECTOR_ELT(result, 2), processx__finalizer, 1);
+  result = PROTECT(processx__make_handle(private));
+  handle = R_ExternalPtrAddr(result);
 
   err = processx__stdio_create(cstd_out, cstd_err, &handle->child_stdio_buffer);
   if (err) { processx__error(err); }
@@ -624,9 +661,22 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   if (!err) { processx__error(err); }
 
   handle->hProcess = info.hProcess;
-  INTEGER(VECTOR_ELT(result, 1))[0] = handle->dwProcessId = info.dwProcessId;
+  handle->dwProcessId = info.dwProcessId;
 
   CloseHandle(info.hThread);
+
+  regerr = RegisterWaitForSingleObject(
+    &handle->waitObject,
+    handle->hProcess,
+    processx__exit_callback,
+    (void*) result,
+    /* dwMilliseconds = */ INFINITE,
+    WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE);
+
+  if (!regerr) {
+    /* This also kills the process, in the finalizer */
+    processx__error(GetLastError());
+  }
 
   UNPROTECT(1);
   return result;
@@ -679,23 +729,19 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 
  */
 
-SEXP processx__collect_exit_status(SEXP status, DWORD exitcode) {
-  SEXP result = PROTECT(duplicate(status));
-  SET_VECTOR_ELT(result, 0, ScalarInteger(exitcode));
-  processx__finalizer(VECTOR_ELT(status, 2));
-  UNPROTECT(1);
-  return result;
+void processx__collect_exit_status(SEXP status, DWORD exitcode) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
+  handle->exitcode = exitcode;
+  handle->collected = 1;
 }
 
 SEXP processx_wait(SEXP status) {
-  processx_handle_t *handle;
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
   DWORD err, err2, exitcode;
 
-  /* If we already have the status, then return now. */
-  if (!isNull(VECTOR_ELT(status, 0))) { return status; }
+  if (handle->collected) return R_NilValue;
 
   /* Othewise do a blocking wait */
-  handle = (processx_handle_t*) R_ExternalPtrAddr(VECTOR_ELT(status, 2));
   err2 = WaitForSingleObject(handle->hProcess, INFINITE);
   if (err2 == WAIT_FAILED) { processx__error(GetLastError()); }
 
@@ -703,61 +749,55 @@ SEXP processx_wait(SEXP status) {
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
   if (!err) { processx__error(GetLastError()); }
 
-  return processx__collect_exit_status(status, exitcode);
+  processx__collect_exit_status(status, exitcode);
+
+  return R_NilValue;
 }
 
 SEXP processx_is_alive(SEXP status) {
-  processx_handle_t *handle;
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
   DWORD err, exitcode;
 
-  /* If we already have the status, then return now. */
-  if (!isNull(VECTOR_ELT(status, 0))) { return status; }
+  if (handle->collected) return ScalarLogical(0);
 
   /* Otherwise try to get exit code */
-  handle = (processx_handle_t*) R_ExternalPtrAddr(VECTOR_ELT(status, 2));
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
   if (!err) { processx__error(GetLastError()); }
 
   if (exitcode == STILL_ACTIVE) {
-    return status;
+    return ScalarLogical(1);
   } else {
-    return processx__collect_exit_status(status, exitcode);
+    processx__collect_exit_status(status, exitcode);
+    return ScalarLogical(0);
   }
 }
 
 SEXP processx_get_exit_status(SEXP status) {
-  processx_handle_t *handle;
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
   DWORD err, exitcode;
 
-  /* If we already have the status, then just return */
-  if (!isNull(VECTOR_ELT(status, 0))) { return status; }
+  if (handle->collected) return ScalarInteger(handle->exitcode);
 
   /* Otherwise try to get exit code */
-  handle = (processx_handle_t*) R_ExternalPtrAddr(VECTOR_ELT(status, 2));
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
   if (!err) {processx__error(GetLastError()); }
 
   if (exitcode == STILL_ACTIVE) {
-    return status;
+    return R_NilValue;
   } else {
-    return processx__collect_exit_status(status, exitcode);
+    processx__collect_exit_status(status, exitcode);
+    return ScalarInteger(handle->exitcode);
   }
 }
 
 SEXP processx_signal(SEXP status, SEXP signal) {
-  processx_handle_t *handle;
-  SEXP result = PROTECT(allocVector(VECSXP, 2));
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
   DWORD err, exitcode = STILL_ACTIVE;
 
-  /* If we already have the status, then return `FALSE` */
-  if (!isNull(VECTOR_ELT(status, 0))) { UNPROTECT(1); return result; }
-
-  SET_VECTOR_ELT(result, 0, duplicate(status));
-  SET_VECTOR_ELT(result, 1, allocVector(LGLSXP, 1));
-
-  handle = (processx_handle_t*) R_ExternalPtrAddr(VECTOR_ELT(status, 2));
+  if (handle->collected) return ScalarLogical(0);
 
   switch (INTEGER(signal)[0]) {
+
   case 15:   /* SIGTERM */
   case 9:    /* SIGKILL */
   case 2: {  /* SIGINT */
@@ -770,31 +810,28 @@ SEXP processx_signal(SEXP status, SEXP signal) {
     if (exitcode == STILL_ACTIVE) {
       err = TerminateProcess(handle->hProcess, 1);
       if (err) {
-	LOGICAL(VECTOR_ELT(result, 1))[0] = 1;
-	SET_VECTOR_ELT(result, 0,
-		       processx__collect_exit_status(status, 1));
+	processx__collect_exit_status(status, 1);
+	return ScalarLogical(0);
+      } else {
+	return ScalarLogical(1);
       }
-    } else {
-      SET_VECTOR_ELT(result, 0,
-		     processx__collect_exit_status(status, exitcode));
-    }
 
-    UNPROTECT(1);
-    return result;
+    } else {
+      processx__collect_exit_status(status, exitcode);
+      return ScalarLogical(0);
+    }
   }
+
   case 0: {
     /* Health check: is the process still alive? */
     err = GetExitCodeProcess(handle->hProcess, &exitcode);
     if (!err) { processx__error(GetLastError()); }
 
     if (exitcode == STILL_ACTIVE) {
-      LOGICAL(VECTOR_ELT(result, 1))[0] = 1;
+      return ScalarLogical(1);
     } else {
-      LOGICAL(VECTOR_ELT(result, 1))[0] = 0;
+      return ScalarLogical(0);
     }
-
-    UNPROTECT(1);
-    return result;
   }
 
   default:
@@ -805,6 +842,14 @@ SEXP processx_signal(SEXP status, SEXP signal) {
 
 SEXP processx_kill(SEXP status, SEXP grace) {
   return processx_signal(status, ScalarInteger(9));
+}
+
+SEXP processx_get_pid(SEXP status) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
+
+  if (!handle) { error("Internal processx error, handle already removed"); }
+
+  return ScalarInteger(handle->dwProcessId);
 }
 
 #endif
