@@ -218,16 +218,15 @@ process <- R6Class(
     pstdout = NULL,       # the original stdout argument
     pstderr = NULL,       # the original stderr argument
     cleanfiles = NULL,    # which temp stdout/stderr file(s) to clean up
-    status = list(NULL, NULL, NULL),
-                          # Exit status, pid and handle. The exit status is
-                          # NULL if we don't know it yet. handle might be
-                          # NULL, before start and after finish. Exit status
-                          # is negative signal if killed by a signal.
     starttime = NULL,     # timestamp of start
-    statusfile = NULL,    # file for the exit status
     echo_cmd = NULL,      # whether to echo the command
     windows_verbatim_args = NULL,
     windows_hide_window = NULL,
+
+    status = NULL,        # C file handle
+    exited = FALSE,       # Whether pid & exitcode was copied over here
+    pid = NULL,           # pid, if finished, otherwise in status!
+    exitcode = NULL,      # exit code, if finished, otherwise in status!
 
     get_short_name = function()
       process_get_short_name(self, private)
@@ -243,7 +242,10 @@ process_restart <- function(self, private) {
 
   ## Wipe out state, to be sure
   private$cleanfiles <- NULL
-  private$status <- list(NULL, NULL, NULL)
+  private$status <- NULL
+  private$exited <- FALSE
+  private$pid <- NULL
+  private$exitcode <- NULL
 
   process_initialize(
     self,
@@ -267,35 +269,48 @@ process_restart <- function(self, private) {
 
 process_wait <- function(self, private) {
   "!DEBUG process_wait `private$get_short_name()`"
-  private$status <- .Call("processx_wait", private$status)
+  if (private$exited) {
+    ## Nothing
+  } else {
+    .Call("processx_wait", private$status)
+  }
   invisible(self)
 }
 
 process_is_alive <- function(self, private) {
   "!DEBUG process_is_alive `private$get_short_name()`"
-  private$status <- .Call("processx_is_alive", private$status)
-  is.null(private$status[[1]])
+  if (private$exited) {
+    FALSE
+  } else {
+    .Call("processx_is_alive", private$status)
+  }
 }
 
 process_get_exit_status <- function(self, private) {
   "!DEBUG process_get_exit_status `private$get_short_name()`"
-  private$status <- .Call("processx_get_exit_status", private$status)
-  ## This is NULL if still running
-  private$status[[1]]
+  if (private$exited) {
+    private$exitcode
+  } else {
+    .Call("processx_get_exit_status", private$status)
+  }
 }
 
 process_signal <- function(self, private, signal) {
   "!DEBUG process_signal `private$get_short_name()` `signal`"
-  res <- .Call("processx_signal", private$status, as.integer(signal))
-  private$status <- res[[1]]
-  res[[2]]
+  if (private$exited) {
+    FALSE
+  } else {
+    .Call("processx_signal", private$status, as.integer(signal))
+  }
 }
 
 process_kill <- function(self, private, grace) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `private$get_pid()`"
-  res <- .Call("processx_kill", private$status, as.numeric(grace))
-  private$status <- res[[1]]
-  res[[2]]
+  if (private$exited) {
+    FALSE
+  } else {
+    .Call("processx_kill", private$status, as.numeric(grace))
+  }
 }
 
 process_get_start_time <- function(self, private) {
@@ -303,5 +318,9 @@ process_get_start_time <- function(self, private) {
 }
 
 process_get_pid <- function(self, private) {
-  private$status[[2]]
+  if (private$exited) {
+    private$pid
+  } else {
+    .Call("processx_get_pid", private$status)
+  }
 }

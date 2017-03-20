@@ -73,11 +73,11 @@ process_initialize <- function(self, private, command, args,
   "!DEBUG process_initialize exec()"
   if (isFALSE(stdout)) stdout <- NULL
   if (isFALSE(stderr)) stderr <- NULL
-  private$status <- exec(
-    command, args,
-    stdout = stdout, stderr = stderr,
-    windows_verbatim_args = windows_verbatim_args,
-    windows_hide_window = windows_hide_window
+  private$status <- .Call(
+    "processx_exec",
+    command, c(command, args), stdout, stderr,
+    detached = FALSE, windows_verbatim_args, windows_hide_window,
+    private
   )
   private$starttime <- Sys.time()
 

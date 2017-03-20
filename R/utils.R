@@ -40,3 +40,5 @@ wait_for_file <- function(file, check_interval = 0.01, timeout = 10) {
   }
   stop("File was not created in ", timeout, " secs: ", file)
 }
+
+`%||%` <- function(l, r) if (is.null(l)) r else l

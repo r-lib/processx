@@ -1,4 +1,6 @@
 
+#include <stdlib.h>
+
 #include "utils.h"
 
 char *processx__tmp_string(SEXP str, int i) {

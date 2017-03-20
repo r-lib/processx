@@ -25,6 +25,8 @@ typedef struct {
   BYTE *child_stdio_buffer;
 #else
   pid_t pid;
+  int exitcode;
+  int collected;    /* Whether exit code was collected already */
 #endif
 } processx_handle_t;
 

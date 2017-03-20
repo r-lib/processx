@@ -97,10 +97,13 @@ static void processx__child_init(char *command, char **args, int error_fd,
   raise(SIGKILL);
 }
 
-void processx__finalizer(SEXP ptr) {
-  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(ptr);
+void processx__collect_exit_status(SEXP status, int wstat);
+
+void processx__finalizer(SEXP status) {
+  processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
   pid_t pid;
   int wp, wstat;
+  SEXP private;
 
   /* Already freed? */
   if (!handle) return;
@@ -111,21 +114,47 @@ void processx__finalizer(SEXP ptr) {
     wp = waitpid(pid, &wstat, WNOHANG);
   } while (wp == -1 && errno == EINTR);
 
-  /* If it is running, we need to kill it */
+  /* Maybe just waited on it? Then collect status */
+  if (wp != -1) processx__collect_exit_status(status, wstat);
+
+  /* If it is running, we need to kill it, and wait for the exit status */
   if (wp == 0) {
     kill(pid, SIGKILL);
     do {
       wp = waitpid(pid, &wstat, 0);
     } while (wp == -1 && errno == EINTR);
+    processx__collect_exit_status(status, wstat);
   }
 
-  /* It is dead now, clean up */
+  /* It is dead now, copy over pid and exit status */
+  private = R_ExternalPtrTag(status);
+  defineVar(install("exited"), ScalarLogical(1), private);
+  defineVar(install("pid"), ScalarInteger(pid), private);
+  defineVar(install("exitcode"), ScalarInteger(handle->exitcode), private);
+
+  /* Deallocate memory */
+  R_ClearExternalPtr(status);
   processx__handle_destroy(handle);
-  R_ClearExternalPtr(ptr);
+}
+
+SEXP processx__make_handle(SEXP private) {
+  processx_handle_t * handle;
+  SEXP result;
+
+  handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
+  if (!handle) { error("Out of memory"); }
+  memset(handle, 0, sizeof(processx_handle_t));
+
+  result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
+  R_RegisterCFinalizerEx(result, processx__finalizer, 1);
+
+  UNPROTECT(1);
+  return result;
 }
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
-		   SEXP detached, SEXP windows_verbatim_args) {
+		   SEXP detached, SEXP windows_verbatim_args,
+		   SEXP windows_hide_window, SEXP private) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
@@ -151,15 +180,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 
   /* TODO: make sure signal handler is set up */
 
-  handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
-  if (!handle) { goto cleanup; }
-  memset(handle, 0, sizeof(processx_handle_t));
-  result = PROTECT(allocVector(VECSXP, 3));
-  SET_VECTOR_ELT(result, 0, R_NilValue);
-  SET_VECTOR_ELT(result, 1, allocVector(INTSXP, 1));
-  SET_VECTOR_ELT(result, 2,
-		 R_MakeExternalPtr(handle, R_NilValue, R_NilValue));
-  R_RegisterCFinalizerEx(VECTOR_ELT(result, 2), processx__finalizer, 1);
+  result = PROTECT(processx__make_handle(private));
+  handle = R_ExternalPtrAddr(result);
 
   pid = fork();
 
@@ -202,7 +224,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   close(signal_pipe[0]);
 
   if (exec_errorno == 0) {
-    INTEGER(VECTOR_ELT(result, 1))[0] = handle->pid = pid;
+    handle->pid = pid;
     UNPROTECT(1);		/* result */
     return result;
   }
@@ -284,33 +306,37 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
      from the process startup code (which is C).
 */
 
-SEXP processx__collect_exit_status(SEXP status, int wstat) {
-  SEXP result = PROTECT(duplicate(status));
+void processx__collect_exit_status(SEXP status, int wstat) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
 
-  SET_VECTOR_ELT(result, 0, allocVector(INTSXP, 1));
+  if (!handle) { error("Internal processx error, handle already removed"); }
+
+  if (handle->collected) {
+    error("Exit code already collected, this should not happen");
+  }
 
   /* We assume that errors were handled before */
   if (WIFEXITED(wstat)) {
-    INTEGER(VECTOR_ELT(result, 0))[0] = WEXITSTATUS(wstat);
+    handle->exitcode = WEXITSTATUS(wstat);
   } else {
-    INTEGER(VECTOR_ELT(result, 0))[0] = - WTERMSIG(wstat);
+    handle->exitcode = - WTERMSIG(wstat);
   }
 
-  processx__finalizer(VECTOR_ELT(status, 2));
-
-  UNPROTECT(1);
-  return result;
+  handle->collected = 1;
 }
 
 SEXP processx_wait(SEXP status) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
   pid_t pid;
   int wstat, wp;
 
+  if (!handle) { error("Internal processx error, handle already removed"); }
+
   /* If we already have the status, then return now. */
-  if (!isNull(VECTOR_ELT(status, 0))) { return status; }
+  if (handle->collected) { return R_NilValue; }
 
   /* Otherwise do a blocking waitpid */
-  pid = INTEGER(VECTOR_ELT(status, 1))[0];
+  pid = handle->pid;
   do {
     wp = waitpid(pid, &wstat, 0);
   } while (wp == -1 && errno == EINTR);
@@ -318,19 +344,24 @@ SEXP processx_wait(SEXP status) {
   /* Some other error? */
   if (wp == -1) { error("processx_wait: %s", strerror(errno)); }
 
-  /* Collect exit status, and return it */
-  return processx__collect_exit_status(status, wstat);
+  /* Collect exit status */
+  processx__collect_exit_status(status, wstat);
+
+  return R_NilValue;
 }
 
 SEXP processx_is_alive(SEXP status) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
   pid_t pid;
   int wstat, wp;
 
+  if (!handle) { error("Internal processx error, handle already removed"); }
+
   /* If we already have the status, return now. */
-  if (!isNull(VECTOR_ELT(status, 0))) { return status; }
+  if (handle->collected) { return ScalarLogical(0); }
 
   /* Otherwise a non-blocking waitpid to collect zombies */
-  pid = INTEGER(VECTOR_ELT(status, 1))[0];
+  pid = handle->pid;
   do {
     wp = waitpid(pid, &wstat, WNOHANG);
   } while (wp == -1 && errno == EINTR);
@@ -338,23 +369,27 @@ SEXP processx_is_alive(SEXP status) {
   /* Some other error? */
   if (wp == -1) { error("processx_is_alive: %s", strerror(errno)); }
 
-  /* If running, just return, otherwise collect exit status */
+  /* If running, return TRUE, otherwise collect exit status, return FALSE */
   if (wp == 0) {
-    return status;
+    return ScalarLogical(1);
   } else {
-    return processx__collect_exit_status(status, wstat);
+    processx__collect_exit_status(status, wstat);
+    return ScalarLogical(0);
   }
 }
 
 SEXP processx_get_exit_status(SEXP status) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
   pid_t pid;
-  int wp, wstat;
+  int wstat, wp;
+
+  if (!handle) { error("Internal processx error, handle already removed"); }
 
   /* If we already have the status, then just return */
-  if (!isNull(VECTOR_ELT(status, 0))) { return status; }
+  if (handle->collected) { return ScalarInteger(handle->exitcode); }
 
   /* Otherwise do a non-blocking waitpid to collect zombies */
-  pid = INTEGER(VECTOR_ELT(status, 1))[0];
+  pid = handle->pid;
   do {
     wp = waitpid(pid, &wstat, WNOHANG);
   } while (wp == -1 && errno == EINTR);
@@ -364,31 +399,31 @@ SEXP processx_get_exit_status(SEXP status) {
 
   /* If running, do nothing otherwise collect */
   if (wp == 0) {
-    return status;
+    return R_NilValue;
   } else {
-    return processx__collect_exit_status(status, wstat);
+    processx__collect_exit_status(status, wstat);
+    return ScalarInteger(handle->exitcode);
   }
 }
 
 SEXP processx_signal(SEXP status, SEXP signal) {
-  SEXP result = PROTECT(allocVector(VECSXP, 2));
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
   pid_t pid;
-  int ret, wp, wstat;
+  int wstat, wp, ret, result;
 
-  SET_VECTOR_ELT(result, 0, duplicate(status));
-  SET_VECTOR_ELT(result, 1, allocVector(LGLSXP, 1));
+  if (!handle) { error("Internal processx error, handle already removed"); }
 
   /* If we already have the status, then return `FALSE` */
-  if (!isNull(VECTOR_ELT(status, 0))) { UNPROTECT(1); return result; }
+  if (handle->collected) { return ScalarLogical(0); }
 
   /* Otherwise try to send signal */
-  pid = INTEGER(VECTOR_ELT(status, 1))[0];
+  pid = handle->pid;
   ret = kill(pid, INTEGER(signal)[0]);
 
   if (ret == 0) {
-    LOGICAL(VECTOR_ELT(result, 1))[0] = 1;
+    result = 1;
   } else if (ret == -1 && errno == ESRCH) {
-    LOGICAL(VECTOR_ELT(result, 1))[0] = 0;
+    result = 0;
   } else {
     error("processx_signal: %s", strerror(errno));
     return R_NilValue;
@@ -400,26 +435,21 @@ SEXP processx_signal(SEXP status, SEXP signal) {
   } while (wp == -1 && errno == EINTR);
   if (wp == -1) { error("processx_get_exit_status: %s", strerror(errno)); }
 
-  SET_VECTOR_ELT(result, 0,
-		 processx__collect_exit_status(status, wstat));
-
-  UNPROTECT(1);
-  return result;
+  return ScalarLogical(result);
 }
 
 SEXP processx_kill(SEXP status, SEXP grace) {
-  SEXP result = PROTECT(allocVector(VECSXP, 2));
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
   pid_t pid;
-  int wp, wstat;
+  int wstat, wp, result;
 
-  SET_VECTOR_ELT(result, 0, duplicate(status));
-  SET_VECTOR_ELT(result, 1, allocVector(LGLSXP, 1));
+  if (!handle) { error("Internal processx error, handle already removed"); }
 
   /* Check if we have an exit status, it yes, just return (FALSE) */
-  if (!isNull(VECTOR_ELT(status, 0))) { UNPROTECT(1); return result; }
+  if (handle->collected) { return ScalarLogical(0); }
 
   /* Do a non-blocking waitpid to collect zombies */
-  pid = INTEGER(VECTOR_ELT(status, 1))[0];
+  pid = handle->pid;
   do {
     wp = waitpid(pid, &wstat, WNOHANG);
   } while (wp == -1 && errno == EINTR);
@@ -428,11 +458,11 @@ SEXP processx_kill(SEXP status, SEXP grace) {
   if (wp == -1) { error("processx_kill: %s", strerror(errno)); }
 
   /* If the process is not running, return (FALSE) */
-  if (wp != 0) { UNPROTECT(1); return result; }
+  if (wp != 0) { return ScalarLogical(0); }
 
   /* It is still running, so a SIGKILL */
-  int ret = kill(pid, SIGTERM);
-  if (ret == -1 && errno == ESRCH) { UNPROTECT(1); return result; }
+  int ret = kill(pid, SIGKILL);
+  if (ret == -1 && errno == ESRCH) { return ScalarLogical(0); }
   if (ret == -1) { error("process_kill: %s", strerror(errno)); }
 
   /* Do a waitpid to collect the status and reap the zombie */
@@ -443,12 +473,18 @@ SEXP processx_kill(SEXP status, SEXP grace) {
   /* Collect exit status, and check if it was killed by a SIGKILL
      If yes, this was most probably us (although we cannot be sure in
      general... */
-  SET_VECTOR_ELT(result, 0, processx__collect_exit_status(status, wstat));
-  LOGICAL(VECTOR_ELT(result, 1))[0] =
-    INTEGER(VECTOR_ELT(VECTOR_ELT(result, 0), 0))[0] == SIGKILL;
+  processx__collect_exit_status(status, wstat);
+  result = handle->exitcode == - SIGKILL;
 
-  UNPROTECT(1);
-  return result;
+  return ScalarLogical(result);
+}
+
+SEXP processx_get_pid(SEXP status) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
+
+  if (!handle) { error("Internal processx error, handle already removed"); }
+
+  return ScalarInteger(handle->pid);
 }
 
 #endif
