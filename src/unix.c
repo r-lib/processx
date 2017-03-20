@@ -4,6 +4,7 @@ void processx_unix_dummy() { }
 #ifndef _WIN32
 
 #include <Rinternals.h>
+#include <R_ext/Rdynload.h>
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -14,6 +15,54 @@ void processx_unix_dummy() { }
 #include <signal.h>
 
 #include "utils.h"
+
+/* API from R */
+
+SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
+		   SEXP detached, SEXP windows_verbatim_args,
+		   SEXP windows_hide_window, SEXP private);
+SEXP processx_wait(SEXP status);
+SEXP processx_is_alive(SEXP status);
+SEXP processx_get_exit_status(SEXP status);
+SEXP processx_signal(SEXP status, SEXP signal);
+SEXP processx_kill(SEXP status, SEXP grace);
+SEXP processx_get_pid(SEXP status);
+
+/* Child list and its functions */
+
+typedef struct processx__child_list_s {
+  pid_t pid;
+  SEXP status;
+  struct processx__child_list_s *next;
+} processx__child_list_t;
+
+static processx__child_list_t *child_list = NULL;
+
+static void processx__child_add(pid_t pid, SEXP status);
+static void processx__child_remove(pid_t pid);
+static processx__child_list_t *processx__child_find(pid_t pid);
+
+void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx);
+static void processx__setup_sigchld();
+static void processx__remove_sigchld();
+static void processx__block_sigchld();
+static void processx__unblock_sigchld();
+
+/* Other internals */
+
+static int processx__nonblock_fcntl(int fd, int set);
+static int processx__cloexec_fcntl(int fd, int set);
+static void processx__child_init(char *command, char **args, int error_fd,
+				 const char *stdout, const char *stderr,
+				 processx_options_t *options);
+static void processx__collect_exit_status(SEXP status, int wstat);
+static void processx__finalizer(SEXP status);
+
+SEXP processx__make_handle(SEXP private);
+
+void R_unload_processx(DllInfo *dll) {
+  processx__remove_sigchld();
+}
 
 static int processx__nonblock_fcntl(int fd, int set) {
   int flags;
@@ -97,9 +146,7 @@ static void processx__child_init(char *command, char **args, int error_fd,
   raise(SIGKILL);
 }
 
-void processx__collect_exit_status(SEXP status, int wstat);
-
-void processx__finalizer(SEXP status) {
+static void processx__finalizer(SEXP status) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
   pid_t pid;
   int wp, wstat;
@@ -115,7 +162,7 @@ void processx__finalizer(SEXP status) {
   } while (wp == -1 && errno == EINTR);
 
   /* Maybe just waited on it? Then collect status */
-  if (wp != -1) processx__collect_exit_status(status, wstat);
+  if (wp == pid) processx__collect_exit_status(status, wstat);
 
   /* If it is running, we need to kill it, and wait for the exit status */
   if (wp == 0) {
@@ -152,6 +199,83 @@ SEXP processx__make_handle(SEXP private) {
   return result;
 }
 
+static void processx__child_add(pid_t pid, SEXP status) {
+  processx__child_list_t *child = malloc(sizeof(processx__child_list_t));
+  child->pid = pid;
+  child->status = status;
+  child->next = child_list;
+  child_list = child;
+}
+
+static void processx__child_remove(pid_t pid) {
+  processx__child_list_t *ptr = child_list, *prev = 0;
+  while (ptr) {
+    if (ptr->pid == pid) {
+      if (prev) {
+	prev->next = ptr->next;
+	free(ptr);
+      }
+      return;
+    }
+    prev = ptr;
+    ptr = ptr->next;
+  }
+}
+
+static processx__child_list_t *processx__child_find(pid_t pid) {
+  processx__child_list_t *ptr = child_list;
+  while (ptr) {
+    if (ptr->pid == pid) return ptr;
+    ptr = ptr->next;
+  }
+  return 0;
+}
+
+void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
+  if (sig != SIGCHLD) return;
+  pid_t pid = info->si_pid;
+  processx__child_list_t *child = processx__child_find(pid);
+  if (child) {
+    /* This will wait, save the exit code in R, and clean up */
+    processx__finalizer(child->status);
+    processx__child_remove(pid);
+    if (!child_list) processx__remove_sigchld();
+  }
+}
+
+/* TODO: use oldact */
+
+static void processx__setup_sigchld() {
+  struct sigaction action;
+  action.sa_sigaction = processx__sigchld_callback;
+  action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NOCLDSTOP;
+  sigaction(SIGCHLD, &action, /* oldact= */ NULL);
+}
+
+static void processx__remove_sigchld() {
+  struct sigaction action;
+  action.sa_handler = SIG_DFL;
+  sigaction(SIGCHLD, &action, /* oldact= */ NULL);
+}
+
+static void processx__block_sigchld() {
+  sigset_t blockMask;
+  sigemptyset(&blockMask);
+  sigaddset(&blockMask, SIGCHLD);
+  if (sigprocmask(SIG_BLOCK, &blockMask, NULL) == -1) {
+    error("processx error setting up signal handlers");
+  }
+}
+
+static void processx__unblock_sigchld() {
+  sigset_t unblockMask;
+  sigemptyset(&unblockMask);
+  sigaddset(&unblockMask, SIGCHLD);
+  if (sigprocmask(SIG_UNBLOCK, &unblockMask, NULL) == -1) {
+    error("processx error setting up signal handlers");
+  }
+}
+
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 		   SEXP detached, SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private) {
@@ -176,12 +300,12 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   processx__cloexec_fcntl(signal_pipe[0], 1);
   processx__cloexec_fcntl(signal_pipe[1], 1);
 
-  /* TODO: put the new child into the child list */
-
-  /* TODO: make sure signal handler is set up */
+  processx__setup_sigchld();
 
   result = PROTECT(processx__make_handle(private));
   handle = R_ExternalPtrAddr(result);
+
+  processx__block_sigchld();
 
   pid = fork();
 
@@ -189,6 +313,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
     err = -errno;
     close(signal_pipe[0]);
     close(signal_pipe[1]);
+    processx__unblock_sigchld();
     goto cleanup;
   }
 
@@ -198,6 +323,12 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 			 cstderr, &options);
     goto cleanup;
   }
+
+  /* We need to know the processx children */
+  processx__child_add(pid, result);
+
+  /* SIGCHLD can arrive now */
+  processx__unblock_sigchld();
 
   close(signal_pipe[1]);
 
@@ -341,7 +472,10 @@ SEXP processx_wait(SEXP status) {
     wp = waitpid(pid, &wstat, 0);
   } while (wp == -1 && errno == EINTR);
 
-  /* Some other error? */
+  /* Maybe finished before us and SIGCHLD collected it? */
+  if (handle->collected) { return R_NilValue; }
+
+  /* Error? */
   if (wp == -1) { error("processx_wait: %s", strerror(errno)); }
 
   /* Collect exit status */
@@ -365,6 +499,9 @@ SEXP processx_is_alive(SEXP status) {
   do {
     wp = waitpid(pid, &wstat, WNOHANG);
   } while (wp == -1 && errno == EINTR);
+
+  /* Maybe finished before us and SIGCHLD collected it? */
+  if (handle->collected) { return ScalarLogical(0); }
 
   /* Some other error? */
   if (wp == -1) { error("processx_is_alive: %s", strerror(errno)); }
@@ -393,6 +530,9 @@ SEXP processx_get_exit_status(SEXP status) {
   do {
     wp = waitpid(pid, &wstat, WNOHANG);
   } while (wp == -1 && errno == EINTR);
+
+  /* Maybe finished before us and SIGCHLD collected it? */
+  if (handle->collected) { return ScalarInteger(handle->exitcode); }
 
   /* Some other error? */
   if (wp == -1) { error("processx_get_exit_status: %s", strerror(errno)); }
@@ -433,6 +573,10 @@ SEXP processx_signal(SEXP status, SEXP signal) {
   do {
     wp = waitpid(pid, &wstat, WNOHANG);
   } while (wp == -1 && errno == EINTR);
+
+  /* Maybe finished before us and SIGCHLD collected it? Assume it was us*/
+  if (handle->collected) { return ScalarLogical(1); }
+
   if (wp == -1) { error("processx_get_exit_status: %s", strerror(errno)); }
 
   return ScalarLogical(result);
@@ -454,6 +598,9 @@ SEXP processx_kill(SEXP status, SEXP grace) {
     wp = waitpid(pid, &wstat, WNOHANG);
   } while (wp == -1 && errno == EINTR);
 
+  /* Maybe finished before us and SIGCHLD collected it? */
+  if (handle->collected) { return ScalarLogical(0); }
+
   /* Some other error? */
   if (wp == -1) { error("processx_kill: %s", strerror(errno)); }
 
@@ -469,6 +616,9 @@ SEXP processx_kill(SEXP status, SEXP grace) {
   do {
     wp = waitpid(pid, &wstat, 0);
   } while (wp == -1 && errno == EINTR);
+
+  /* Maybe finished before us and SIGCHLD collected it? */
+  if (handle->collected) { return ScalarLogical(1); }
 
   /* Collect exit status, and check if it was killed by a SIGKILL
      If yes, this was most probably us (although we cannot be sure in
