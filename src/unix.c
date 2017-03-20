@@ -441,7 +441,9 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 void processx__collect_exit_status(SEXP status, int wstat) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
 
-  if (!handle) { error("Internal processx error, handle already removed"); }
+  /* This is not an error, because the SIGCHLD handler might have
+     removed the handle. */
+  if (!handle) { return; }
 
   if (handle->collected) {
     error("Exit code already collected, this should not happen");
