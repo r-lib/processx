@@ -153,8 +153,10 @@ static void processx__finalizer(SEXP status) {
   int wp, wstat;
   SEXP private;
 
+  processx__block_sigchld();
+
   /* Already freed? */
-  if (!handle) return;
+  if (!handle) goto cleanup;
 
   /* Do a non-blocking waitpid() to see if it is running */
   pid = handle->pid;
@@ -183,6 +185,9 @@ static void processx__finalizer(SEXP status) {
   /* Deallocate memory */
   R_ClearExternalPtr(status);
   processx__handle_destroy(handle);
+
+ cleanup:
+  processx__unblock_sigchld();
 }
 
 SEXP processx__make_handle(SEXP private) {
@@ -236,10 +241,20 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
   if (sig != SIGCHLD) return;
   pid_t pid = info->si_pid;
   processx__child_list_t *child = processx__child_find(pid);
+
   if (child) {
-    /* This will wait, save the exit code in R, and clean up */
-    processx__finalizer(child->status);
+    /* We deliberately do not call the finalizer here, because that
+       moves the exit code and pid to R, and we might have just checked
+       that these are not in R, before calling C. So finalizing here
+       would be a race condition. */
+    int wp, wstat;
+    do {
+      wp = waitpid(pid, &wstat, 0);
+    } while (wp == -1 && errno == EINTR);
+    processx__collect_exit_status(child->status, wstat);
     processx__child_remove(pid);
+
+    /* If no more children, then we do not need a SIGCHLD handler */
     if (!child_list) processx__remove_sigchld();
   }
 }
@@ -441,13 +456,14 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 void processx__collect_exit_status(SEXP status, int wstat) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
 
-  /* This is not an error, because the SIGCHLD handler might have
-     removed the handle. */
-  if (!handle) { return; }
+  /* This must be called from a function that block SIGCHLD.
+     So we are not blocking it here. */
 
-  if (handle->collected) {
-    error("Exit code already collected, this should not happen");
+  if (!handle) {
+    error("Invalid handle, already finalized");
   }
+
+  if (handle->collected) { return; }
 
   /* We assume that errors were handled before */
   if (WIFEXITED(wstat)) {
@@ -464,10 +480,15 @@ SEXP processx_wait(SEXP status) {
   pid_t pid;
   int wstat, wp;
 
-  if (!handle) { error("Internal processx error, handle already removed"); }
+  processx__block_sigchld();
+
+  if (!handle) {
+    processx__unblock_sigchld();
+    error("Internal processx error, handle already removed");
+  }
 
   /* If we already have the status, then return now. */
-  if (handle->collected) { return R_NilValue; }
+  if (handle->collected) goto cleanup;
 
   /* Otherwise do a blocking waitpid */
   pid = handle->pid;
@@ -475,15 +496,17 @@ SEXP processx_wait(SEXP status) {
     wp = waitpid(pid, &wstat, 0);
   } while (wp == -1 && errno == EINTR);
 
-  /* Maybe finished before us and SIGCHLD collected it? */
-  if (handle->collected) { return R_NilValue; }
-
   /* Error? */
-  if (wp == -1) { error("processx_wait: %s", strerror(errno)); }
+  if (wp == -1) {
+    processx__unblock_sigchld();
+    error("processx_wait: %s", strerror(errno));
+  }
 
   /* Collect exit status */
   processx__collect_exit_status(status, wstat);
 
+ cleanup:
+  processx__unblock_sigchld();
   return R_NilValue;
 }
 
@@ -491,11 +514,16 @@ SEXP processx_is_alive(SEXP status) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   pid_t pid;
   int wstat, wp;
+  int ret = 0;
 
-  if (!handle) { error("Internal processx error, handle already removed"); }
+  processx__block_sigchld();
 
-  /* If we already have the status, return now. */
-  if (handle->collected) { return ScalarLogical(0); }
+  if (!handle) {
+    processx__unblock_sigchld();
+    error("Internal processx error, handle already removed");
+  }
+
+  if (handle->collected) goto cleanup;
 
   /* Otherwise a non-blocking waitpid to collect zombies */
   pid = handle->pid;
@@ -503,30 +531,42 @@ SEXP processx_is_alive(SEXP status) {
     wp = waitpid(pid, &wstat, WNOHANG);
   } while (wp == -1 && errno == EINTR);
 
-  /* Maybe finished before us and SIGCHLD collected it? */
-  if (handle->collected) { return ScalarLogical(0); }
-
   /* Some other error? */
-  if (wp == -1) { error("processx_is_alive: %s", strerror(errno)); }
+  if (wp == -1) {
+    processx__unblock_sigchld();
+    error("processx_is_alive: %s", strerror(errno));
+  }
 
   /* If running, return TRUE, otherwise collect exit status, return FALSE */
   if (wp == 0) {
-    return ScalarLogical(1);
+    ret = 1;
   } else {
     processx__collect_exit_status(status, wstat);
-    return ScalarLogical(0);
   }
+
+ cleanup:
+  processx__unblock_sigchld();
+  return ScalarLogical(ret);
 }
 
 SEXP processx_get_exit_status(SEXP status) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   pid_t pid;
   int wstat, wp;
+  SEXP result;
 
-  if (!handle) { error("Internal processx error, handle already removed"); }
+  processx__block_sigchld();
+
+  if (!handle) {
+    processx__unblock_sigchld();
+    error("Internal processx error, handle already removed");
+  }
 
   /* If we already have the status, then just return */
-  if (handle->collected) { return ScalarInteger(handle->exitcode); }
+  if (handle->collected) {
+    result = PROTECT(ScalarInteger(handle->exitcode));
+    goto cleanup;
+  }
 
   /* Otherwise do a non-blocking waitpid to collect zombies */
   pid = handle->pid;
@@ -534,19 +574,24 @@ SEXP processx_get_exit_status(SEXP status) {
     wp = waitpid(pid, &wstat, WNOHANG);
   } while (wp == -1 && errno == EINTR);
 
-  /* Maybe finished before us and SIGCHLD collected it? */
-  if (handle->collected) { return ScalarInteger(handle->exitcode); }
-
   /* Some other error? */
-  if (wp == -1) { error("processx_get_exit_status: %s", strerror(errno)); }
+  if (wp == -1) {
+    processx__unblock_sigchld();
+    error("processx_get_exit_status: %s", strerror(errno));
+  }
 
   /* If running, do nothing otherwise collect */
   if (wp == 0) {
-    return R_NilValue;
+    result = PROTECT(R_NilValue);
   } else {
     processx__collect_exit_status(status, wstat);
-    return ScalarInteger(handle->exitcode);
+    result = PROTECT(ScalarInteger(handle->exitcode));
   }
+
+ cleanup:
+  processx__unblock_sigchld();
+  UNPROTECT(1);
+  return result;
 }
 
 SEXP processx_signal(SEXP status, SEXP signal) {
@@ -554,10 +599,18 @@ SEXP processx_signal(SEXP status, SEXP signal) {
   pid_t pid;
   int wstat, wp, ret, result;
 
-  if (!handle) { error("Internal processx error, handle already removed"); }
+  processx__block_sigchld();
+
+  if (!handle) {
+    processx__unblock_sigchld();
+    error("Internal processx error, handle already removed");
+  }
 
   /* If we already have the status, then return `FALSE` */
-  if (handle->collected) { return ScalarLogical(0); }
+  if (handle->collected) {
+    result = 0;
+    goto cleanup;
+  }
 
   /* Otherwise try to send signal */
   pid = handle->pid;
@@ -568,6 +621,7 @@ SEXP processx_signal(SEXP status, SEXP signal) {
   } else if (ret == -1 && errno == ESRCH) {
     result = 0;
   } else {
+    processx__unblock_sigchld();
     error("processx_signal: %s", strerror(errno));
     return R_NilValue;
   }
@@ -577,23 +631,30 @@ SEXP processx_signal(SEXP status, SEXP signal) {
     wp = waitpid(pid, &wstat, WNOHANG);
   } while (wp == -1 && errno == EINTR);
 
-  /* Maybe finished before us and SIGCHLD collected it? Assume it was us*/
-  if (handle->collected) { return ScalarLogical(1); }
+  if (wp == -1) {
+    processx__unblock_sigchld();
+    error("processx_get_exit_status: %s", strerror(errno));
+  }
 
-  if (wp == -1) { error("processx_get_exit_status: %s", strerror(errno)); }
-
+ cleanup:
+  processx__unblock_sigchld();
   return ScalarLogical(result);
 }
 
 SEXP processx_kill(SEXP status, SEXP grace) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   pid_t pid;
-  int wstat, wp, result;
+  int wstat, wp, result = 0;
 
-  if (!handle) { error("Internal processx error, handle already removed"); }
+  processx__block_sigchld();
+
+  if (!handle) {
+    processx__unblock_sigchld();
+    error("Internal processx error, handle already removed");
+  }
 
   /* Check if we have an exit status, it yes, just return (FALSE) */
-  if (handle->collected) { return ScalarLogical(0); }
+  if (handle->collected) { goto cleanup; }
 
   /* Do a non-blocking waitpid to collect zombies */
   pid = handle->pid;
@@ -601,27 +662,27 @@ SEXP processx_kill(SEXP status, SEXP grace) {
     wp = waitpid(pid, &wstat, WNOHANG);
   } while (wp == -1 && errno == EINTR);
 
-  /* Maybe finished before us and SIGCHLD collected it? */
-  if (handle->collected) { return ScalarLogical(0); }
-
   /* Some other error? */
-  if (wp == -1) { error("processx_kill: %s", strerror(errno)); }
+  if (wp == -1) {
+    processx__unblock_sigchld();
+    error("processx_kill: %s", strerror(errno));
+  }
 
   /* If the process is not running, return (FALSE) */
-  if (wp != 0) { return ScalarLogical(0); }
+  if (wp != 0) { goto cleanup; }
 
   /* It is still running, so a SIGKILL */
   int ret = kill(pid, SIGKILL);
-  if (ret == -1 && errno == ESRCH) { return ScalarLogical(0); }
-  if (ret == -1) { error("process_kill: %s", strerror(errno)); }
+  if (ret == -1 && errno == ESRCH) { goto cleanup; }
+  if (ret == -1) {
+    processx__unblock_sigchld();
+    error("process_kill: %s", strerror(errno));
+  }
 
   /* Do a waitpid to collect the status and reap the zombie */
   do {
     wp = waitpid(pid, &wstat, 0);
   } while (wp == -1 && errno == EINTR);
-
-  /* Maybe finished before us and SIGCHLD collected it? */
-  if (handle->collected) { return ScalarLogical(1); }
 
   /* Collect exit status, and check if it was killed by a SIGKILL
      If yes, this was most probably us (although we cannot be sure in
@@ -629,6 +690,8 @@ SEXP processx_kill(SEXP status, SEXP grace) {
   processx__collect_exit_status(status, wstat);
   result = handle->exitcode == - SIGKILL;
 
+ cleanup:
+  processx__unblock_sigchld();
   return ScalarLogical(result);
 }
 
