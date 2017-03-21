@@ -174,7 +174,7 @@ run_manage <- function(proc, timeout, spinner, stdout_callback,
     state <- 1L
     phases <- c("-", "\\", "|", "-")
     function() {
-      cat(phases[state], "\r")
+      cat("\r", phases[state], "\r", sep = "")
       state <<- (state + 1) %% length(phases) + 1L
     }
   })()
