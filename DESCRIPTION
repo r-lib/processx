@@ -25,6 +25,4 @@ Imports:
     debugme,
     R6,
     utils
-Remotes:
-    gaborcsardi/debugme
 Encoding: UTF-8
