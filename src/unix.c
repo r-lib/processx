@@ -246,12 +246,24 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
     /* We deliberately do not call the finalizer here, because that
        moves the exit code and pid to R, and we might have just checked
        that these are not in R, before calling C. So finalizing here
-       would be a race condition. */
+       would be a race condition.
+
+       OTOH, we need to check if the handle is null, because a finalizer
+       might actually run before the SIGCHLD handler. Or the finalizer
+       might even trigger the SIGCHLD handler...
+    */
     int wp, wstat;
+    processx_handle_t *handle = R_ExternalPtrAddr(child->status);
+
+    /* This might not be necessary, if the handle was finalized,
+       but it does not hurt... */
     do {
       wp = waitpid(pid, &wstat, 0);
     } while (wp == -1 && errno == EINTR);
-    processx__collect_exit_status(child->status, wstat);
+
+    /* If handle is NULL, then the exit status was collected already */
+    if (handle) processx__collect_exit_status(child->status, wstat);
+
     processx__child_remove(pid);
 
     /* If no more children, then we do not need a SIGCHLD handler */
