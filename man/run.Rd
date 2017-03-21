@@ -90,6 +90,7 @@ standard output or error.
 
 \examples{
 ## Different examples for Unix and Windows
+\dontrun{
 if (.Platform$OS.type == "unix") {
   run("ls")
   system.time(run(commandline = "sleep 10", timeout = 1,
@@ -105,5 +106,5 @@ if (.Platform$OS.type == "unix") {
   run(commandline = "ping -n 6 127.0.0.1", timeout = 1,
     error_on_status = FALSE)
 }
-
+}
 }

@@ -61,6 +61,7 @@
 #' @export
 #' @examples
 #' ## Different examples for Unix and Windows
+#' \dontrun{
 #' if (.Platform$OS.type == "unix") {
 #'   run("ls")
 #'   system.time(run(commandline = "sleep 10", timeout = 1,
@@ -76,7 +77,7 @@
 #'   run(commandline = "ping -n 6 127.0.0.1", timeout = 1,
 #'     error_on_status = FALSE)
 #' }
-#'
+#' }
 
 run <- function(
   command = NULL, args = character(), commandline = NULL,

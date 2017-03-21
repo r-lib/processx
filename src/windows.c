@@ -493,14 +493,19 @@ void processx__error(DWORD errorcode) {
   error("processx error: %s", msg);
 }
 
+void processx__collect_exit_status(SEXP status, DWORD exitcode);
+
 void processx__finalizer(SEXP status) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
   SEXP private;
+  DWORD err;
 
   if (!handle) return;
 
   /* Just in case it is running */
-  TerminateProcess(handle->hProcess, 1);
+  err = TerminateProcess(handle->hProcess, 1);
+  if (err) processx__collect_exit_status(status, 1);
+  WaitForSingleObject(handle->hProcess, INFINITE);
 
   /* Copy over pid and exit status */
   private = R_ExternalPtrTag(status);
@@ -518,19 +523,20 @@ void processx__finalizer(SEXP status) {
   R_ClearExternalPtr(status);
 }
 
-void processx__collect_exit_status(SEXP status, DWORD exitcode);
-
 /* This is not strictly necessary, but we might as well do it.... */
 
 static void CALLBACK processx__exit_callback(void* data, BOOLEAN didTimeout) {
-  SEXP status = (SEXP) data;
-  processx_handle_t *handle = R_ExternalPtrAddr(status);
+  processx_handle_t *handle = (processx_handle_t *) data;
   DWORD err, exitcode;
-
+  
+  /* Still need to wait a bit, otherwise we might crash.... */
+  WaitForSingleObject(handle->hProcess, INFINITE);
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
   if (!err) return;
 
-  processx__collect_exit_status(status, exitcode);
+  if (handle->collected) return;
+  handle->exitcode = exitcode;
+  handle->collected = 1;
 }
 
 SEXP processx__make_handle(SEXP private) {
@@ -669,7 +675,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     &handle->waitObject,
     handle->hProcess,
     processx__exit_callback,
-    (void*) result,
+    (void*) handle,
     /* dwMilliseconds = */ INFINITE,
     WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE);
 

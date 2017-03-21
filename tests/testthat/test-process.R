@@ -96,10 +96,8 @@ test_that("get_exit_status", {
 test_that("restart", {
 
   p <- process$new(commandline = sleep(5))
-  Sys.sleep(0.1)
   expect_true(p$is_alive())
 
-  Sys.sleep(0.1)
   p$kill(grace = 0)
 
   expect_false(p$is_alive())
