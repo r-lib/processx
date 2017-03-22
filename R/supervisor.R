@@ -119,7 +119,7 @@ supervisor_start <- function() {
 # normal way, and when loaded with devtools::load_all().
 supervisor_path <- function() {
   supervisor_name <- "supervisor"
-  if (os_type() == "windows")
+  if (is_windows())
     supervisor_name <- paste0(supervisor_name, ".exe")
 
   # Detect if package was loaded via devtools::load_all()
