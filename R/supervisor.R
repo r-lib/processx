@@ -130,6 +130,8 @@ supervisor_path <- function() {
     subdir <- "src"
   } else {
     subdir <- "bin"
+    # Add arch (it may be ""; on Windows it may be "/X64")
+    subdir <- paste0(subdir, Sys.getenv("R_ARCH"))
   }
 
   system.file(subdir, supervisor_name, package = "processx", mustWork = TRUE)
