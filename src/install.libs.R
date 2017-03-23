@@ -3,8 +3,12 @@ execs <- "supervisor"
 if (WINDOWS)
   execs <- paste0(execs, ".exe")
 
-if (file.exists(execs)) {
-  dest <- file.path(R_PACKAGE_DIR,  paste0("bin", R_ARCH))
-  dir.create(dest, recursive = TRUE, showWarnings = FALSE)
-  file.copy(execs, dest, overwrite = TRUE)
-}
+dest <- file.path(R_PACKAGE_DIR, paste0("bin", R_ARCH))
+dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+file.copy(execs, dest, overwrite = TRUE)
+
+
+dlls <- paste0("processx", .Platform$dynlib.ext)
+dest <- file.path(R_PACKAGE_DIR, paste0("libs", R_ARCH))
+dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+file.copy(dlls, dest, overwrite = TRUE)
