@@ -17,7 +17,7 @@ supervisor_kill <- function(s = supervisor_info) {
     return()
 
   if (!is.null(s$stdin) && is_pipe_open(s$stdin))
-    write_named_pipe(s$stdin, "kill")
+    write_lines_named_pipe(s$stdin, "kill")
 
   if (!is.null(s$stdin) && is_pipe_open(s$stdin))
     close_named_pipe(s$stdin)
@@ -59,7 +59,7 @@ supervisor_running <- function() {
 # Tell the supervisor to watch a PID
 supervisor_watch_pid <- function(pid) {
   supervisor_ensure_running()
-  write_named_pipe(supervisor_info$stdin, as.character(pid))
+  write_lines_named_pipe(supervisor_info$stdin, as.character(pid))
 }
 
 

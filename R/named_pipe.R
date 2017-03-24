@@ -78,19 +78,25 @@ close_named_pipe.unix_named_pipe <- function(pipe) {
 }
 
 
-write_named_pipe <- function(pipe, text) {
-  UseMethod("write_named_pipe")
+write_lines_named_pipe <- function(pipe, text) {
+  UseMethod("write_lines_named_pipe")
 }
 
 #' @useDynLib processx C_writeNamedPipe
 #' @export
-write_named_pipe.windows_named_pipe <- function(pipe, text) {
+write_lines_named_pipe.windows_named_pipe <- function(pipe, text) {
   text <- paste(text, collapse = "\n")
+
+  # Make sure it ends with \n
+  len <- nchar(text)
+  if (substr(text, len, len) != "\n")
+    text <- paste0(text, "\n")
+
   .Call(C_writeNamedPipe, text, pipe$handle)
 }
 
 #' @useDynLib processx C_writeNamedPipe
 #' @export
-write_named_pipe.unix_named_pipe <- function(pipe, text) {
+write_lines_named_pipe.unix_named_pipe <- function(pipe, text) {
   writeLines(text, pipe$handle)
 }
