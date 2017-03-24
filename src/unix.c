@@ -780,23 +780,65 @@ SEXP processx_get_pid(SEXP status) {
   return ScalarInteger(handle->pid);
 }
 
-SEXP processx_read_stdio(SEXP status) {
+SEXP processx_read_output_lines(SEXP status) {
+  /* TODO */
+}
+
+SEXP processx_read_output(SEXP status) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   ssize_t num;
   char buffer[4096];
   SEXP result;
 
   if (!handle) { error("Internal processx error, handle already removed"); }
+  if (handle->fd1 < 0) { error("No stdout pipe exists for this process"); }
 
   num = read(handle->fd1, buffer, sizeof(buffer));
 
-  if (num < 0) error("processx error: %s", strerror(errno));
+  if (num < 0 && errno == EAGAIN) {
+    /* Not closed, but no data currently */
+    result = PROTECT(mkString(""));
 
-  result = PROTECT(allocVector(STRSXP, 1));
-  SET_STRING_ELT(result, 0, mkCharLen(buffer, num));
+  } else if (num < 0) {
+    error("processx read error: %s", strerror(errno));
+
+  } else if (num == 0) {
+    /* Closed, EOF */
+    result = PROTECT(mkString(""));
+    setAttrib(result, install("eof"), ScalarLogical(1));
+
+  } else {
+    /* Data */
+    result = PROTECT(allocVector(STRSXP, 1));
+    SET_STRING_ELT(result, 0, mkCharLen(buffer, num));
+  }
 
   UNPROTECT(1);
   return result;
+}
+
+SEXP processx_read_error_lines(SEXP status) {
+  /* TODO */
+}
+
+SEXP processx_read_error(SEXP status) {
+  /* TODO */
+}
+
+SEXP processx_can_read_output(SEXP status) {
+  /* TODO */
+}
+
+SEXP processx_can_read_error(SEXP status) {
+  /* TODO */
+}
+
+SEXP processx_is_eof_output(SEXP status) {
+  /* TODO */
+}
+
+SEXP processx_is_eof_error(SEXP status) {
+  /* TODO */
 }
 
 #endif

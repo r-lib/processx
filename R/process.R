@@ -23,8 +23,8 @@ NULL
 #' p$get_exit_status()
 #' p$restart()
 #'
-#' p$read_output_lines(...)
-#' p$read_error_lines(...)
+#' p$read_output_lines()
+#' p$read_error_lines()
 #' p$can_read_output()
 #' p$can_read_error()
 #' p$is_eof_output()
@@ -173,11 +173,17 @@ process <- R6Class(
 
     ## Output
 
-    read_output_lines = function(...)
-      process_read_output_lines(self, private, ...),
+    read_output_lines = function()
+      process_read_output_lines(self, private),
 
-    read_error_lines = function(...)
-      process_read_error_lines(self, private, ...),
+    read_error_lines = function()
+      process_read_error_lines(self, private),
+
+    read_output = function()
+      process_read_output(self, private),
+
+    read_error = function()
+      process_read_error(self, private),
 
     can_read_output = function()
       process_can_read_output(self, private),
