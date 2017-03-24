@@ -16,13 +16,13 @@ supervisor_kill <- function(s = supervisor_info) {
   if (is.null(s$pid))
     return()
 
-  if (!is.null(s$stdin) && is_fifo_open(s$stdin))
-    writeLines("kill", s$stdin)
+  if (!is.null(s$stdin) && is_pipe_open(s$stdin))
+    write_named_pipe(s$stdin, "kill")
 
-  if (!is.null(s$stdin) && is_fifo_open(s$stdin))
-    close(s$stdin)
-  if (!is.null(s$stdout) && is_fifo_open(s$stdout))
-    close(s$stdout)
+  if (!is.null(s$stdin) && is_pipe_open(s$stdin))
+    close_named_pipe(s$stdin)
+  if (!is.null(s$stdout) && is_pipe_open(s$stdout))
+    close_named_pipe(s$stdout)
 
   s$pid <- NULL
 }
@@ -59,7 +59,7 @@ supervisor_running <- function() {
 # Tell the supervisor to watch a PID
 supervisor_watch_pid <- function(pid) {
   supervisor_ensure_running()
-  writeLines(as.character(pid), supervisor_info$stdin)
+  write_named_pipe(supervisor_info$stdin, as.character(pid))
 }
 
 
@@ -67,20 +67,32 @@ supervisor_watch_pid <- function(pid) {
 # supervisor_info. If startup fails, this function will throw an error.
 supervisor_start <- function() {
 
-  supervisor_info$stdin_file  <- tempfile("supervisor_stdin")
-  supervisor_info$stdout_file <- tempfile("supervisor_stdout")
+  supervisor_info$stdin_file  <- named_pipe_tempfile("supervisor_stdin")
+  supervisor_info$stdout_file <- named_pipe_tempfile("supervisor_stdout")
 
-  supervisor_info$stdin  <- fifo(supervisor_info$stdin_file,  "w+")
-  supervisor_info$stdout <- fifo(supervisor_info$stdout_file, "w+")
+  supervisor_info$stdin  <- create_named_pipe(supervisor_info$stdin_file)
+  supervisor_info$stdout <- create_named_pipe(supervisor_info$stdout_file)
 
   # Start the supervisor, passing the R process's PID to it.
-  res <- system2(
-    supervisor_path(),
-    args   = Sys.getpid(),
-    stdout = supervisor_info$stdout_file,
-    stdin  = supervisor_info$stdin_file,
-    wait   = FALSE
-  )
+  if (is_windows()) {
+    # TODO: fix stdout
+    res <- system2(
+      supervisor_path(),
+      args   = c("-v", "-p", Sys.getpid(), "-i", supervisor_info$stdin_file),
+      # stdout = supervisor_info$stdout_file,
+      stdout = "supervisor_out.txt",
+      wait   = FALSE
+    )
+
+  } else {
+    res <- system2(
+      supervisor_path(),
+      args   = c("-p", Sys.getpid()),
+      stdout = supervisor_info$stdout_file,
+      stdin  = supervisor_info$stdin_file,
+      wait   = FALSE
+    )
+  }
 
   if (res != 0) {
     stop("Error starting supervisor process.")
@@ -95,7 +107,9 @@ supervisor_start <- function() {
       stop("Timed out starting supervisor process.")
     }
 
-    pid_txt <- readLines(supervisor_info$stdout, n = 1)
+    # pid_txt <- readLines(supervisor_info$stdout, n = 1)
+    Sys.sleep(0.5)
+    pid_txt <- "PID: 8888"
 
     if (length(pid_txt) > 0) {
       if (!grepl("^PID: \\d+$", pid_txt))

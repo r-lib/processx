@@ -48,19 +48,3 @@ wait_for_file <- function(file, check_interval = 0.01, timeout = 10) {
   }
   stop("File was not created in ", timeout, " secs: ", file)
 }
-
-
-# isOpen() gives an error when passed a closed fifo object, so this is a more
-# robust version.
-is_fifo_open <- function(f) {
-  if (!inherits(f, "fifo"))
-    stop("f must be a fifo object")
-
-  is_open <- NA
-  tryCatch(
-    is_open <- isOpen(f),
-    error = function(e) { is_open <<- FALSE }
-  )
-
-  is_open
-}

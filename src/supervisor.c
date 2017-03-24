@@ -96,8 +96,10 @@ void verbose_printf(const char *format, ...) {
     va_list args;
     va_start(args, format);
 
-    if (verbose_mode)
+    if (verbose_mode) {
         vprintf(format, args);
+        fflush(stdout);
+    }
 
     va_end(args);
 }
@@ -133,7 +135,38 @@ int getppid() {
 }
 
 
-void configure_stdin(HANDLE h_input) {
+HANDLE open_stdin() {
+    HANDLE h_input = GetStdHandle(STD_INPUT_HANDLE);
+
+    if (h_input == INVALID_HANDLE_VALUE) {
+        printf("Unable to get stdin handle.");
+        exit(1);
+    }
+
+    return h_input;
+}
+
+
+HANDLE open_named_pipe(const char* pipe_name) {
+    HANDLE h_input = CreateFile(pipe_name,
+        GENERIC_READ,
+        0,
+        NULL,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL
+    );
+
+    if (h_input == INVALID_HANDLE_VALUE) {
+        printf("CreateFile failed with error %u\n", (unsigned)GetLastError());
+        exit(1);
+    }
+
+    return h_input;
+}
+
+
+void configure_input_handle(HANDLE h_input) {
     DWORD handle_type = GetFileType(h_input);
 
     if (handle_type == FILE_TYPE_CHAR) {
@@ -198,7 +231,7 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
         // because ReadConsoleInput will block if there's no input.
         if (!PeekConsoleInput(h_input, in_record_buf, WIN_INPUT_BUF_LEN, &num_peeked)) {
             printf("Error peeking at console input.");
-            exit(1);            
+            exit(1);
         };
 
         if (num_peeked == 0) {
@@ -214,7 +247,7 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
             // (Special keys like Shift will have AsciiChar value of 0.)
             if (in_record_buf[i].EventType == KEY_EVENT &&
                 in_record_buf[i].Event.KeyEvent.bKeyDown &&
-                in_record_buf[i].Event.KeyEvent.uChar.AsciiChar != 0) 
+                in_record_buf[i].Event.KeyEvent.uChar.AsciiChar != 0)
             {
                 // Store the character in input_char_buf. If there's a \n, then
                 // copy in_record_buf (up to the \n) to buf.
@@ -240,7 +273,7 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
             // Clear out console buffer up to the '\n' event
             if (!ReadConsoleInput(h_input, in_record_buf, num_events_read , &num_events_read2)) {
                 printf("Error reading console input.");
-                exit(1);            
+                exit(1);
             }
 
             // Place the content in buf
@@ -257,7 +290,7 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
         int input_char_buf_n = 0;
 
         if (!PeekNamedPipe(h_input, input_char_buf, WIN_INPUT_BUF_LEN, &num_peeked, NULL, NULL)) {
-            printf("Error peeking at pipe input.");
+            printf("Error peeking at pipe input. Error %d", (unsigned)GetLastError());
             exit(1);
         };
 
@@ -405,14 +438,36 @@ int main(int argc, char **argv) {
     int parent_pid;
     int parent_pid_arg = 0;
     int parent_pid_detected;
+    char* input_pipe_name = NULL;
 
     // Process arguments
     if (argc >= 2) {
         for (int i=1; i<argc; i++) {
             if (strcmp(argv[i], "-v") == 0) {
                 verbose_mode = true;
-            } else if (extract_pid(argv[i], strlen(argv[i])) != 0) {
+
+            } else if (strcmp(argv[i], "-p") == 0) {
+                i++;
+                if (i >= argc) {
+                    printf("-p must be followed with a process ID.");
+                    exit(1);
+                }
+
                 parent_pid_arg = extract_pid(argv[i], strlen(argv[i]));
+                if (parent_pid_arg == 0) {
+                    printf("Invalid parent process ID: %s\n", argv[i]);
+                    exit(1);
+                }
+
+            } else if (strcmp(argv[i], "-i") == 0) {
+                i++;
+                if (i >= argc) {
+                    printf("-i must be followed with the name of a pipe.");
+                    exit(1);
+                }
+
+                input_pipe_name = argv[i];
+
             } else {
                 printf("Unknown argument: %s\n", argv[i]);
                 exit(1);
@@ -437,18 +492,28 @@ int main(int argc, char **argv) {
         parent_pid = parent_pid_detected;
     }
 
-    // stdin input buffer
+    if (input_pipe_name != NULL) {
+        verbose_printf("Reading input from %s.\n", input_pipe_name);
+    }
+
+    // Input buffer for messages from the R process
     char readbuf[INPUT_BUF_LEN];
 
-    // Make stdin nonblocking
+    // Open input source and make it nonblocking
     #ifdef WIN32
-    HANDLE h_stdin = GetStdHandle(STD_INPUT_HANDLE); 
-    if (h_stdin == INVALID_HANDLE_VALUE) {
-        printf("Unable to get stdin handle.");
-        exit(1);
+    HANDLE h_input;
+
+    if (input_pipe_name == NULL) {
+        h_input = open_stdin();
+    } else {
+        h_input = open_named_pipe(input_pipe_name);
     }
-    configure_stdin(h_stdin);
+
+    configure_input_handle(h_input);
+
     #else
+    // TODO: Support named pipe objects, or if -i is used, give error and tell
+    // them to use shell redirection.
     fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
     #endif
 
@@ -468,7 +533,6 @@ int main(int argc, char **argv) {
     }
     #endif
 
-
     // Poll
     while(1) {
         // TODO: Handle case where multiple PIDs are entered in one cycle.
@@ -476,7 +540,7 @@ int main(int argc, char **argv) {
         char* res;
 
         #ifdef WIN32
-        res = get_line_nonblock(readbuf, INPUT_BUF_LEN, h_stdin);
+        res = get_line_nonblock(readbuf, INPUT_BUF_LEN, h_input);
         #else
         res = fgets(readbuf, INPUT_BUF_LEN, stdin);
         #endif
