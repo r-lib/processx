@@ -118,6 +118,8 @@ SEXP C_writeNamedPipe(SEXP text, SEXP pipe_ext) {
             (int)last_error, extra_info);
     }
 
+    FlushFileBuffers(hPipe);
+
     return text;
 }
 
