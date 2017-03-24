@@ -53,7 +53,8 @@ static void processx__unblock_sigchld();
 
 static int processx__nonblock_fcntl(int fd, int set);
 static int processx__cloexec_fcntl(int fd, int set);
-static void processx__child_init(char *command, char **args, int error_fd,
+static void processx__child_init(processx_handle_t *handle, int pipes[3][2],
+				 char *command, char **args, int error_fd,
 				 const char *stdout, const char *stderr,
 				 processx_options_t *options);
 static void processx__collect_exit_status(SEXP status, int wstat);
@@ -101,49 +102,64 @@ static int processx__cloexec_fcntl(int fd, int set) {
   return 0;
 }
 
-static void processx__child_init(char *command, char **args, int error_fd,
+void processx__write_int(int fd, int err) {
+  int dummy = write(fd, &err, sizeof(int));
+  (void) dummy;
+}
+
+static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
+				 char *command, char **args, int error_fd,
 				 const char *stdout, const char *stderr,
 				 processx_options_t *options) {
 
-  int err, dummy;
-  int fd0, fd1, fd2, use_fd0, use_fd1, use_fd2,
-    close_fd0, close_fd1, close_fd2;
+  int fd0, fd1, fd2;
 
   if (options->detached) setsid();
 
-  /* Handle stdin, stdout, stderr
-     For now, we just redirect them to the supplied files (if not NULL).  */
+  /* stdin is coming from /dev/null */
 
-  close_fd0 = use_fd0 = open("/dev/null", O_RDONLY);
-  if (use_fd0 == -1) raise(SIGKILL);
+  fd0 = open("/dev/null", O_RDONLY);
+  if (fd0 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
 
-  if (stdout) {
-    close_fd1 = use_fd1 = open(stdout, O_CREAT | O_TRUNC| O_RDWR, 0644);
+  if (fd0 != 0) fd0 = dup2(fd0, 0);
+  if (fd0 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
+
+  /* stdout is going into file or a pipe */
+
+  if (!stdout) {
+    fd1 = open("/dev/null", O_RDWR);
+  } else if (!strcmp(stdout, "|")) {
+    fd1 = pipes[1][1];
+    close(pipes[1][0]);
   } else {
-    close_fd1 = use_fd1 = open("/dev/null", O_RDWR);
+    fd1 = open(stdout, O_CREAT | O_TRUNC| O_RDWR, 0644);
   }
-  if (use_fd1 == -1) raise(SIGKILL);
+  if (fd1 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
 
-  if (stderr) {
-    close_fd2 = use_fd2 = open(stderr, O_CREAT | O_TRUNC | O_RDWR, 0644);
+  if (fd1 != 1) fd1 = dup2(fd1, 1);
+  if (fd1 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
+
+  /* stderr, to file or a pipe */
+
+  if (!stderr) {
+    fd2 = open("/dev/null", O_RDWR);
+  } else if (!strcmp(stderr, "|")) {
+    fd2 = pipes[2][1];
+    close(pipes[2][0]);
   } else {
-    close_fd2 = use_fd2 = open("/dev/null", O_RDWR);
+    fd2 = open(stderr, O_CREAT | O_TRUNC| O_RDWR, 0644);
   }
-  if (use_fd2 == -1) raise(SIGKILL);
+  if (fd2 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
 
-  fd0 = dup2(use_fd0, 0);
-  if (fd0 == -1) raise(SIGKILL);
-  fd1 = dup2(use_fd1, 1);
-  if (fd1 == -1) raise(SIGKILL);
-  fd2 = dup2(use_fd2, 2);
-  if (fd2 == -1) raise(SIGKILL);
+  if (fd2 != 2) fd2 = dup2(fd2, 2);
+  if (fd2 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
 
   processx__nonblock_fcntl(fd0, 0);
   processx__nonblock_fcntl(fd1, 0);
+  processx__nonblock_fcntl(fd2, 0);
 
   execvp(command, args);
-  err = -errno;
-  dummy = write(error_fd, &err, sizeof(int));
+  processx__write_int(error_fd, - errno);
   raise(SIGKILL);
 }
 
@@ -304,6 +320,34 @@ static void processx__unblock_sigchld() {
   }
 }
 
+void processx__make_socketpair(int pipe[2]) {
+#if defined(__linux__)
+  static int no_cloexec;
+  if (no_cloexec)  goto skip;
+
+  if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, pipe) == 0)
+    return;
+
+  /* Retry on EINVAL, it means SOCK_CLOEXEC is not supported.
+   * Anything else is a genuine error.
+   */
+  if (errno != EINVAL) {
+    error("processx socketpair: %s", strerror(errno));
+  }
+
+  no_cloexec = 1;
+
+skip:
+#endif
+
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, pipe)) {
+    error("processx socketpair: %s", strerror(errno));
+  }
+
+  processx__cloexec_fcntl(pipe[0], 1);
+  processx__cloexec_fcntl(pipe[1], 1);
+}
+
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 		   SEXP detached, SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private) {
@@ -318,6 +362,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   int err, exec_errorno = 0, status;
   ssize_t r;
   int signal_pipe[2] = { -1, -1 };
+  int pipes[3][2] = { { -1, -1 }, { -1, -1 }, { -1, -1 } };
 
   processx_handle_t *handle = NULL;
   SEXP result;
@@ -333,6 +378,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   result = PROTECT(processx__make_handle(private));
   handle = R_ExternalPtrAddr(result);
 
+  /* Create pipes, if requested. TODO: stdin */
+  if (cstdout && !strcmp(cstdout, "|")) processx__make_socketpair(pipes[1]);
+  if (cstderr && !strcmp(cstderr, "|")) processx__make_socketpair(pipes[2]);
+
   processx__block_sigchld();
 
   pid = fork();
@@ -347,8 +396,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 
   /* CHILD */
   if (pid == 0) {
-    processx__child_init(ccommand, cargs, signal_pipe[1], cstdout,
-			 cstderr, &options);
+    processx__child_init(handle, pipes, ccommand, cargs, signal_pipe[1],
+			 cstdout, cstderr, &options);
     goto cleanup;
   }
 
@@ -381,6 +430,22 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   }
 
   close(signal_pipe[0]);
+
+  /* Set fds for standard I/O */
+  /* TODO: implement stdin */
+  handle->fd0 = handle->fd1 = handle->fd2 = -1;
+  if (pipes[1][0] >= 0) {
+    handle->fd1 = pipes[1][0];
+    processx__nonblock_fcntl(handle->fd1, 1);
+  }
+  if (pipes[2][0] >= 0) {
+    handle->fd2 = pipes[2][0];
+    processx__nonblock_fcntl(handle->fd2, 1);
+  }
+
+  /* Closed unused ends of pipes */
+  if (pipes[1][1] >= 0) close(pipes[1][1]);
+  if (pipes[2][1] >= 0) close(pipes[2][1]);
 
   if (exec_errorno == 0) {
     handle->pid = pid;
@@ -713,6 +778,25 @@ SEXP processx_get_pid(SEXP status) {
   if (!handle) { error("Internal processx error, handle already removed"); }
 
   return ScalarInteger(handle->pid);
+}
+
+SEXP processx_read_stdio(SEXP status) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
+  ssize_t num;
+  char buffer[4096];
+  SEXP result;
+
+  if (!handle) { error("Internal processx error, handle already removed"); }
+
+  num = read(handle->fd1, buffer, sizeof(buffer));
+
+  if (num < 0) error("processx error: %s", strerror(errno));
+
+  result = PROTECT(allocVector(STRSXP, 1));
+  SET_STRING_ELT(result, 0, mkCharLen(buffer, num));
+
+  UNPROTECT(1);
+  return result;
 }
 
 #endif

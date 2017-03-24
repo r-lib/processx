@@ -29,8 +29,6 @@ NULL
 #' p$can_read_error()
 #' p$is_eof_output()
 #' p$is_eof_error()
-#' p$get_output_connection()
-#' p$get_error_connection()
 #'
 #' print(p)
 #' }
@@ -109,12 +107,6 @@ NULL
 #' \code{$is_eof_error()} checks if the standard error stream has
 #' ended. This means that the process is finished and all output has
 #' been processed.
-#'
-#' \code{$get_output_connection()} returns a connection object, to the
-#' standard output stream of the process.
-#'
-#' \code{$get_error_conneciton()} returns a connection object, to the
-#' standard error stream of the process.
 #'
 #' \code{print(p)} or \code{p$print()} shows some information about the
 #' process on the screen, whether it is running and it's process id, etc.
@@ -197,13 +189,7 @@ process <- R6Class(
       process_is_eof_output(self, private),
 
     is_eof_error = function()
-      process_is_eof_error(self, private),
-
-    get_output_connection = function()
-      process_get_output_connection(self, private),
-
-    get_error_connection = function()
-      process_get_error_connection(self, private)
+      process_is_eof_error(self, private)
 
   ),
 

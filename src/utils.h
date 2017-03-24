@@ -28,6 +28,9 @@ typedef struct {
   HANDLE waitObject;
 #else
   pid_t pid;
+  int fd0;			/* writeable */
+  int fd1;			/* readable */
+  int fd2;			/* readable */
 #endif
 } processx_handle_t;
 
