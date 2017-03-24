@@ -12,7 +12,8 @@ test_that("We can get the output", {
   unix <- paste("ls", shQuote(tmp))
 
   p <- process$new(
-    commandline = if (os_type() == "windows") win else unix
+    commandline = if (os_type() == "windows") win else unix,
+    stdout = "|"
   )
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
@@ -29,7 +30,7 @@ test_that("We can get the error stream", {
   cat(">&2 echo hello", ">&2 echo world", sep = "\n", file = tmp)
   Sys.chmod(tmp, "700")
 
-  p <- process$new(tmp)
+  p <- process$new(tmp, stderr = "|")
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   p$wait()
@@ -52,7 +53,7 @@ test_that("Output & error at the same time", {
   )
   Sys.chmod(tmp, "700")
 
-  p <- process$new(tmp)
+  p <- process$new(tmp, stdout = "|", stderr = "|")
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   p$wait()
@@ -86,114 +87,42 @@ test_that("Output and error to specific files", {
 
   p$wait()
 
-  out <- p$read_output_lines()
-  expect_identical(out, c("wow", "wooow"))
-
-  err <- p$read_error_lines()
-  expect_identical(err, c("hello", "world"))
-
   expect_identical(readLines(tmpout), c("wow", "wooow"))
   expect_identical(readLines(tmperr), c("hello", "world"))
 })
 
-test_that("can_read methods work, stdout", {
+test_that("isIncomplete", {
 
-  cmd <- paste(sep = " && ", "(echo foo)", sleep(2), "(echo bar)")
+  p <- process$new("ls", stdout = "|")
+  con <- p$get_output_connection()
 
-  p <- process$new(commandline = cmd)
-  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+  expect_true(isIncomplete(con))
 
-  Sys.sleep(1)
-  ## There must be output now
-  expect_true(p$can_read_output())
-  expect_equal(p$read_output_lines(), "foo")
+  p$read_output_lines(n = 1)
+  expect_true(isIncomplete(con))
 
-  ## There is no more output now
-  expect_false(p$can_read_output())
-  expect_identical(p$read_output_lines(), character())
+  p$read_output_lines()
+  expect_false(isIncomplete(con))
 
-  Sys.sleep(2)
-  ## There is output again
-  expect_true(p$can_read_output())
-  expect_equal(p$read_output_lines(), "bar")
-
-  ## There is no more output
-  expect_false(p$can_read_output())
-  expect_identical(p$read_output_lines(), character())
+  close(con)
 })
 
-test_that("can_read methods work, stderr", {
+test_that("can read after process was finalized", {
 
-  cmd <- paste(sep = " && ", "(>&2 echo foo)", sleep(2), "(>&2 echo bar)")
+  p <- process$new("ls", stdout = "|")
+  con <- p$get_output_connection()
+  rm(p) ; gc()
 
-  p <- process$new(commandline = cmd)
-  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
-
-  Sys.sleep(1)
-  ## There must be output now
-  expect_true(p$can_read_error())
-  expect_equal(p$read_error_lines(), "foo")
-
-  ## There is no more output now
-  expect_false(p$can_read_error())
-  expect_identical(p$read_error_lines(), character())
-
-  Sys.sleep(2)
-  ## There is output again
-  expect_true(p$can_read_error())
-  expect_equal(p$read_error_lines(), "bar")
-
-  ## There is no more output
-  expect_false(p$can_read_error())
-  expect_identical(p$read_error_lines(), character())
+  expect_equal(sort(readLines(con)), sort(dir()))
 })
 
-test_that("is_eof methods work, stdout", {
+test_that("readChar on IO", {
 
-  cmd <- paste(sep = " && ", "(echo foo)", sleep(2), "(echo bar)")
+  p <- process$new("echo", "hello world!", stdout = "|")
+  con <- p$get_output_connection()
+  p$wait()
 
-  p <- process$new(commandline = cmd)
-  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
-
-  Sys.sleep(1)
-  ## There must be output now
-  expect_false(p$is_eof_output())
-  expect_equal(p$read_output_lines(), "foo")
-
-  ## No output, but hasn't finished yet
-  expect_false(p$is_eof_output())
-
-  Sys.sleep(2)
-  ## Finished, but still has output
-  expect_false(p$is_eof_output())
-  expect_equal(p$read_output_lines(), "bar")
-
-  ## There is no more output and finished
-  expect_true(p$is_eof_output())
-  expect_identical(p$read_output_lines(), character())
-})
-
-test_that("is_eof methods work, stderr", {
-
-  cmd <- paste(sep = " && ", "(>&2 echo foo)", sleep(2), "(>&2 echo bar)")
-
-  p <- process$new(commandline = cmd)
-  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
-
-  Sys.sleep(1)
-  ## There must be output now
-  expect_false(p$is_eof_error())
-  expect_equal(p$read_error_lines(), "foo")
-
-  ## No output, but hasn't finished yet
-  expect_false(p$is_eof_error())
-
-  Sys.sleep(2)
-  ## Finished, but still has output
-  expect_false(p$is_eof_error())
-  expect_equal(p$read_error_lines(), "bar")
-
-  ## There is no more output and finished
-  expect_true(p$is_eof_error())
-  expect_identical(p$read_error_lines(), character())
+  expect_equal(readChar(con, 5), "hello")
+  expect_equal(readChar(con, 5), " worl")
+  expect_equal(readChar(con, 5), "d!\n")
 })

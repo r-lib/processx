@@ -30,7 +30,7 @@ to the screen. Note that the order of the standard output and error
 lines are not necessarily correct, as standard output is typically
 buffered.}
 
-\item{spinner}{Whether to a reassusing spinner while the process
+\item{spinner}{Whether to show a reassusing spinner while the process
 is running.}
 
 \item{timeout}{Timeout for the process, in seconds, or as a \code{difftime}

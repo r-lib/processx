@@ -36,7 +36,7 @@
 #'   to the screen. Note that the order of the standard output and error
 #'   lines are not necessarily correct, as standard output is typically
 #'   buffered.
-#' @param spinner Whether to a reassusing spinner while the process
+#' @param spinner Whether to show a reassusing spinner while the process
 #'   is running.
 #' @param timeout Timeout for the process, in seconds, or as a `difftime`
 #'   object. If it is not finished before this, it will be killed.
@@ -96,8 +96,11 @@ run <- function(
   if (!interactive()) spinner <- FALSE
 
   ## Run the process
-  pr <- process$new(command, args, commandline, echo_cmd = echo,
-    windows_verbatim_args = windows_verbatim_args)
+  pr <- process$new(
+    command, args, commandline, echo_cmd = echo,
+    windows_verbatim_args = windows_verbatim_args,
+    stdout = "|", stderr = "|"
+  )
 
   ## If echo, then we need to create our own callbacks.
   ## These are merged to user callbacks if there are any.
@@ -106,20 +109,8 @@ run <- function(
     stderr_callback <- echo_callback(stderr_callback, "stderr")
   }
 
-  ## Shall we just wait, or do sg while waiting?
-  res <- if (timeout == Inf && ! spinner && is.null(stdout_callback) &&
-      is.null(stderr_callback)) {
-    pr$wait()
-    list(
-      status = pr$get_exit_status(),
-      stdout = pr$read_output_lines(),
-      stderr = pr$read_error_lines()
-    )
-
-  } else {
-    run_manage(pr, timeout, spinner, stdout_callback, stderr_callback,
-               check_interval)
-  }
+  res <- run_manage(pr, timeout, spinner, stdout_callback, stderr_callback,
+                    check_interval)
 
   if (error_on_status && (is.na(res$status) || res$status > 0)) {
     stop(make_condition(res, call = sys.call()))
@@ -152,21 +143,21 @@ run_manage <- function(proc, timeout, spinner, stdout_callback,
 
   do_output <- function() {
     had_output <- FALSE
-    ## stdout callback
-    if (!is.null(stdout_callback)) {
-      newout <- proc$read_output_lines()
-      lapply(newout, function(x) stdout_callback(x, proc))
-      stdout <<- c(stdout, newout)
-      had_output <- length(newout) > 0
-    }
 
-    ## stderr callback
-    if (!is.null(stderr_callback)) {
-      newerr <- proc$read_error_lines()
-      lapply(newerr, function(x) stderr_callback(x, proc))
-      stderr <<- c(stderr, newerr)
-      had_output <- had_output || length(newerr) > 0
+    newout <- proc$read_output_lines()
+    if (!is.null(stdout_callback)) {
+      lapply(newout, function(x) stdout_callback(x, proc))
     }
+    stdout <<- c(stdout, newout)
+    had_output <- had_output || length(newout) > 0
+
+    newerr <- proc$read_error_lines()
+    if (!is.null(stderr_callback)) {
+      lapply(newerr, function(x) stderr_callback(x, proc))
+    }
+    stderr <<- c(stderr, newerr)
+    had_output <- had_output || length(newerr) > 0
+
     had_output
   }
 
@@ -184,23 +175,23 @@ run_manage <- function(proc, timeout, spinner, stdout_callback,
     ## timeout, maybe finished by now
     if (!is.null(timeout) && Sys.time() - start_time > timeout) {
       proc$kill()
+
+    } else {
+      ## Only sleep if there was no output
+      if (!do_output()) Sys.sleep(check_interval)
+
+      ## Spin
+      if (spinner) spin()
     }
-
-    ## Only sleep if there was no output
-    if (!do_output()) Sys.sleep(check_interval)
-
-    ## Spin
-    if (spinner) spin()
   }
 
   ## Needed to get the exit status
   proc$wait()
 
   ## We might still have output
-  do_output()
-
-  if (is.null(stdout_callback)) stdout <- proc$read_output_lines()
-  if (is.null(stderr_callback)) stderr <- proc$read_error_lines()
+  while (proc$is_incomplete_output() || proc$is_incomplete_error()) {
+    do_output()
+  }
 
   if (spinner) cat("\r \r")
 

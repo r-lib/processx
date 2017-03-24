@@ -21,7 +21,7 @@ test_that("'commandline' works", {
 
   p <- process$new(
     commandline = if (os_type() == "windows") win else unix,
-    windows_verbatim_args = TRUE
+    stdout = "|", stderr = "|", windows_verbatim_args = TRUE
   )
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 

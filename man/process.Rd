@@ -26,10 +26,8 @@ p$restart()
 
 p$read_output_lines(...)
 p$read_error_lines(...)
-p$can_read_output()
-p$can_read_error()
-p$is_eof_output()
-p$is_eof_error()
+p$get_output_connection()
+p$get_error_connection()
 
 print(p)
 }
@@ -99,21 +97,12 @@ It uses a non-blocking text connection.
 \code{$read_error_lines()} is similar to \code{$read_output_lines}, but
 it reads from the standard error stream.
 
-\code{$can_read_output()} checks if there is any standard output
-immediately available.
+\code{$get_output_connection()} returns a connection object, to the
+standard output stream of the process.
 
-\code{$can_read_error()} checks if there is any standard error
-immediately available.
-
-\code{$is_eof_output()} checks if the standard output stream has
-ended. This means that the process is finished and all output has
-been processed.
-
-\code{$is_eof_error()} checks if the standard error stream has
-ended. This means that the process is finished and all output has
-been processed.
-
-\code{print(p)} or \code{p$print()} shows some information about the
+\code{$get_error_conneciton()} returns a connection object, to the
+standard error stream of the process.
+#' \code{print(p)} or \code{p$print()} shows some information about the
 process on the screen, whether it is running and it's process id, etc.
 }
 

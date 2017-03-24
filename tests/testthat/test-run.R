@@ -24,11 +24,7 @@ test_that("timeout works, unix", {
   skip_other_platforms("unix")
 
   tic <- Sys.time()
-  x <- run(
-    commandline = "sleep 5",
-    timeout = 0.01,
-    error_on_status = FALSE
-  )
+  x <- run("sleep", "5", timeout = 0.01, error_on_status = FALSE)
   toc <- Sys.time()
 
   expect_true(toc - tic < as.difftime(3, units = "secs"))

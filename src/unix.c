@@ -62,6 +62,21 @@ static void processx__finalizer(SEXP status);
 
 SEXP processx__make_handle(SEXP private);
 
+/* Define BSWAP_32 on Big Endian systems */
+#ifdef WORDS_BIGENDIAN
+#if (defined(__sun) && defined(__SVR4))
+#include <sys/byteorder.h>
+#elif (defined(__APPLE__) && defined(__ppc__) || defined(__ppc64__))
+#include <libkern/OSByteOrder.h>
+#define BSWAP_32 OSSwapInt32
+#elif (defined(__OpenBSD__))
+#define BSWAP_32(x) swap32(x)
+#elif (defined(__GLIBC__))
+#include <byteswap.h>
+#define BSWAP_32(x) bswap_32(x)
+#endif
+#endif
+
 void R_unload_processx(DllInfo *dll) {
   processx__remove_sigchld();
 }
@@ -348,6 +363,90 @@ skip:
   processx__cloexec_fcntl(pipe[1], 1);
 }
 
+void processx__con_destroy(Rconnection con) {
+  if (con->status >= 0) {
+    close(con->status);
+    con->status = -1;
+    con->isopen = 0;
+  }
+}
+
+size_t processx__con_read(void *target, size_t sz, size_t ni,
+			  Rconnection con) {
+  int num;
+  int fd = con->status;
+  if (fd < 0) error("Connection was already closed");
+  if (sz != 1) error("Can only read bytes from processx connections");
+
+  num = read(fd, target, ni);
+
+  if (num < 0 && errno == EAGAIN) {
+    con->incomplete = 1;
+    num = 0;			/* cannot return negative number */
+
+  } else if (num < 0) {
+    error("Cannot read from processx pipe");
+
+  } else if (num == 0) {
+    con->incomplete = 0;
+    con->EOF_signalled = 1;
+
+  } else {
+    con->incomplete = 1;
+  }
+
+  return (size_t) num;
+}
+
+int processx__con_fgetc(Rconnection con) {
+  int x = 0;
+#ifdef WORDS_BIGENDIAN
+  return processx__con_read(&x, 1, 1, con) ? BSWAP_32(x) : -1;
+#else
+  return processx__con_read(&x, 1, 1, con) ? x : -1;
+#endif
+}
+
+SEXP processx__create_connection(processx_handle_t *handle,
+				 int fd, Rconnection* con) {
+
+  SEXP res =
+    PROTECT(R_new_custom_connection("processx", "r", "textConnection", con));
+
+  (*con)->incomplete = 1;
+  (*con)->private = handle;
+  (*con)->status = fd;		/* slight abuse */
+  (*con)->canseek = 0;
+  (*con)->canwrite = 0;
+  (*con)->canread = 1;
+  (*con)->isopen = 1;
+  (*con)->blocking = 0;
+  (*con)->text = 1;
+  (*con)->UTF8out = 1;
+  (*con)->destroy = &processx__con_destroy;
+  (*con)->read = &processx__con_read;
+  (*con)->fgetc = &processx__con_fgetc;
+  (*con)->fgetc_internal = &processx__con_fgetc;
+
+  UNPROTECT(1);
+  return res;
+}
+
+void processx__create_connections(processx_handle_t *handle) {
+
+  handle->std_out = handle->std_err = R_NilValue;
+
+  if (handle->fd1 >= 0) {
+    handle->std_out = processx__create_connection(handle, handle->fd1,
+						  &handle->std_out_con);
+  }
+
+  if (handle->fd2 >= 0) {
+    handle->std_err = processx__create_connection(handle, handle->fd2,
+						  &handle->std_err_con);
+  }
+}
+
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 		   SEXP detached, SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private) {
@@ -446,6 +545,9 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   /* Closed unused ends of pipes */
   if (pipes[1][1] >= 0) close(pipes[1][1]);
   if (pipes[2][1] >= 0) close(pipes[2][1]);
+
+  /* Create proper connections */
+  processx__create_connections(handle);
 
   if (exec_errorno == 0) {
     handle->pid = pid;
@@ -780,65 +882,22 @@ SEXP processx_get_pid(SEXP status) {
   return ScalarInteger(handle->pid);
 }
 
-SEXP processx_read_output_lines(SEXP status) {
-  /* TODO */
-}
-
-SEXP processx_read_output(SEXP status) {
+SEXP processx_get_output_connection(SEXP status) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
-  ssize_t num;
-  char buffer[4096];
-  SEXP result;
 
   if (!handle) { error("Internal processx error, handle already removed"); }
-  if (handle->fd1 < 0) { error("No stdout pipe exists for this process"); }
+  if (handle->fd1 < 0) { error("No stdout pipe for this process"); }
 
-  num = read(handle->fd1, buffer, sizeof(buffer));
-
-  if (num < 0 && errno == EAGAIN) {
-    /* Not closed, but no data currently */
-    result = PROTECT(mkString(""));
-
-  } else if (num < 0) {
-    error("processx read error: %s", strerror(errno));
-
-  } else if (num == 0) {
-    /* Closed, EOF */
-    result = PROTECT(mkString(""));
-    setAttrib(result, install("eof"), ScalarLogical(1));
-
-  } else {
-    /* Data */
-    result = PROTECT(allocVector(STRSXP, 1));
-    SET_STRING_ELT(result, 0, mkCharLen(buffer, num));
-  }
-
-  UNPROTECT(1);
-  return result;
+  return handle->std_out;
 }
 
-SEXP processx_read_error_lines(SEXP status) {
-  /* TODO */
-}
+SEXP processx_get_error_connection(SEXP status) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
 
-SEXP processx_read_error(SEXP status) {
-  /* TODO */
-}
+  if (!handle) { error("Internal processx error, handle already removed"); }
+  if (handle->fd2 < 0) { error("No stdout pipe for this process"); }
 
-SEXP processx_can_read_output(SEXP status) {
-  /* TODO */
-}
-
-SEXP processx_can_read_error(SEXP status) {
-  /* TODO */
-}
-
-SEXP processx_is_eof_output(SEXP status) {
-  /* TODO */
-}
-
-SEXP processx_is_eof_error(SEXP status) {
-  /* TODO */
+  return handle->std_err;
 }
 
 #endif
