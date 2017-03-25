@@ -226,6 +226,8 @@ process_restart <- function(self, private) {
   private$exited <- FALSE
   private$pid <- NULL
   private$exitcode <- NULL
+  private$stdout_pipe <- NULL
+  private$stderr_pipe <- NULL
 
   process_initialize(
     self,
