@@ -23,7 +23,7 @@ void processx_unix_dummy() { }
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 		   SEXP detached, SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private);
-SEXP processx_wait(SEXP status);
+SEXP processx_wait(SEXP status, SEXP timeout);
 SEXP processx_is_alive(SEXP status);
 SEXP processx_get_exit_status(SEXP status);
 SEXP processx_signal(SEXP status, SEXP signal);
@@ -229,6 +229,7 @@ SEXP processx__make_handle(SEXP private) {
   handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
   if (!handle) { error("Out of memory"); }
   memset(handle, 0, sizeof(processx_handle_t));
+  handle->waitpipe[0] = handle->waitpipe[1] = -1;
 
   result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
   R_RegisterCFinalizerEx(result, processx__finalizer, 1);
@@ -300,6 +301,12 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
 
     /* If no more children, then we do not need a SIGCHLD handler */
     if (!child_list) processx__remove_sigchld();
+
+    /* If there is an active wait() with a timeout, then stop it */
+    if (handle->waitpipe[1] >= 0) {
+      close(handle->waitpipe[1]);
+      handle->waitpipe[1] = -1;
+    }
   }
 }
 
@@ -653,7 +660,7 @@ void processx__collect_exit_status(SEXP status, int wstat) {
   handle->collected = 1;
 }
 
-SEXP processx_wait(SEXP status) {
+SEXP processx__wait(SEXP status) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   pid_t pid;
   int wstat, wp;
@@ -686,6 +693,60 @@ SEXP processx_wait(SEXP status) {
  cleanup:
   processx__unblock_sigchld();
   return R_NilValue;
+}
+
+SEXP processx__wait_timeout(SEXP status, SEXP timeout) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
+  int ctimeout = INTEGER(timeout)[0];
+  struct pollfd fd;
+  int ret;
+
+  processx__block_sigchld();
+
+  if (!handle) {
+    processx__unblock_sigchld();
+    error("Internal processx error, handle already removed");
+  }
+
+  /* Make sure this is active, in case another package replaced it... */
+  processx__setup_sigchld();
+
+  /* Setup the self-pipe that we can poll */
+  if (pipe(handle->waitpipe)) {
+    processx__unblock_sigchld();
+    error("processx error: %s", strerror(errno));
+  }
+  processx__nonblock_fcntl(handle->waitpipe[0], 1);
+  processx__nonblock_fcntl(handle->waitpipe[1], 1);
+
+  /* Poll on the pipe, need to unblock sigchld before */
+  fd.fd = handle->waitpipe[0];
+  fd.events = POLLIN;
+  fd.revents = 0;
+
+  processx__unblock_sigchld();
+
+  do {
+    ret = poll(&fd, 1, ctimeout);
+  } while (ret == -1 && errno == EINTR);
+
+  if (ret == -1) {
+    error("processx wait with timeout error: %s", strerror(errno));
+  }
+
+  close(handle->waitpipe[0]);
+  handle->waitpipe[0] = -1;
+
+  return R_NilValue;
+}
+
+SEXP processx_wait(SEXP status, SEXP timeout) {
+  if (INTEGER(timeout)[0] < 0) {
+    return processx__wait(status);
+
+  } else {
+    return processx__wait_timeout(status, timeout);
+  }
 }
 
 SEXP processx_is_alive(SEXP status) {

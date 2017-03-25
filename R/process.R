@@ -145,8 +145,8 @@ process <- R6Class(
     is_alive = function()
       process_is_alive(self, private),
 
-    wait = function()
-      process_wait(self, private),
+    wait = function(timeout = -1)
+      process_wait(self, private, timeout),
 
     get_exit_status = function()
       process_get_exit_status(self, private),
@@ -249,12 +249,12 @@ process_restart <- function(self, private) {
 ## See the C source code for a discussion about the implementation
 ## of these methods
 
-process_wait <- function(self, private) {
+process_wait <- function(self, private, timeout) {
   "!DEBUG process_wait `private$get_short_name()`"
   if (private$exited) {
     ## Nothing
   } else {
-    .Call("processx_wait", private$status)
+    .Call("processx_wait", private$status, as.integer(timeout))
   }
   invisible(self)
 }

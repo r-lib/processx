@@ -36,6 +36,7 @@ typedef struct {
   int fd0;			/* writeable */
   int fd1;			/* readable */
   int fd2;			/* readable */
+  int waitpipe[2];		/* use it for wait() with timeout */
 #endif
 } processx_handle_t;
 
