@@ -44,10 +44,6 @@
 #'   of the standard output. See more below.
 #' @param stderr_callback `NULL`, or a function to call for every line
 #'   of the standard error. See more below.
-#' @param check_interval How often to check on the process for output.
-#'   This is only used if the process had no output at the last check.
-#'   If a process continuously produces output, then `run` does not
-#'   wait at all.
 #' @param windows_verbatim_args Whether to omit the escaping of the
 #'   command and the arguments on windows. Ignored on other platforms.
 #' @param windows_hide_window Whether to hide the window of the
@@ -82,7 +78,7 @@
 run <- function(
   command = NULL, args = character(), commandline = NULL,
   error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
-  stdout_callback = NULL, stderr_callback = NULL, check_interval = 0.01,
+  stdout_callback = NULL, stderr_callback = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = TRUE) {
 
   assert_that(is_flag(error_on_status))
@@ -90,7 +86,6 @@ run <- function(
   assert_that(is_flag(spinner))
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
   assert_that(is.null(stderr_callback) || is.function(stderr_callback))
-  assert_that(is_time_interval(check_interval))
   ## The rest is checked by process$new()
 
   if (!interactive()) spinner <- FALSE
@@ -109,8 +104,7 @@ run <- function(
     stderr_callback <- echo_callback(stderr_callback, "stderr")
   }
 
-  res <- run_manage(pr, timeout, spinner, stdout_callback, stderr_callback,
-                    check_interval)
+  res <- run_manage(pr, timeout, spinner, stdout_callback, stderr_callback)
 
   if (error_on_status && (is.na(res$status) || res$status > 0)) {
     stop(make_condition(res, call = sys.call()))
@@ -133,7 +127,7 @@ echo_callback <- function(user_callback, type) {
 }
 
 run_manage <- function(proc, timeout, spinner, stdout_callback,
-                       stderr_callback, check_interval) {
+                       stderr_callback) {
 
   timeout <- as.difftime(timeout, units = "secs")
   start_time <- proc$get_start_time()
@@ -171,18 +165,23 @@ run_manage <- function(proc, timeout, spinner, stdout_callback,
   })()
 
   while (proc$is_alive()) {
-
-    ## timeout, maybe finished by now
+    ## Timeout? Maybe finished by now...
     if (!is.null(timeout) && Sys.time() - start_time > timeout) {
       proc$kill()
-
-    } else {
-      ## Only sleep if there was no output
-      if (!do_output()) Sys.sleep(check_interval)
-
-      ## Spin
-      if (spinner) spin()
+      break
     }
+
+    ## Otherwise just poll for the remaining time
+    if (!is.null(timeout) && timeout < Inf) {
+      remains <- timeout - (Sys.time() - start_time)
+      remains <- as.integer(as.numeric(remains) * 1000)
+    } else {
+      remains <- -1L
+    }
+    polled <- proc$poll_io(remains)
+
+    ## If output/error, then collect it
+    if (any(polled == "pollin")) do_output()
   }
 
   ## Needed to get the exit status

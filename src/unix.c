@@ -967,7 +967,7 @@ static int processx__poll_decode(short code) {
 }
 
 SEXP processx_poll_io(SEXP status, SEXP ms) {
-  double cms = INTEGER(ms)[0];
+  int cms = INTEGER(ms)[0];
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   struct pollfd fds[2];
   int idx = 0, num, ret;
