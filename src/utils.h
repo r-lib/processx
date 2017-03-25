@@ -36,10 +36,6 @@ typedef struct {
   int fd0;			/* writeable */
   int fd1;			/* readable */
   int fd2;			/* readable */
-  Rconnection std_out_con;
-  SEXP std_out;
-  Rconnection std_err_con;
-  SEXP std_err;
 #endif
 } processx_handle_t;
 

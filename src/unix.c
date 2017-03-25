@@ -14,6 +14,7 @@ void processx_unix_dummy() { }
 #include <sys/socket.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <poll.h>
 
 #include "utils.h"
 
@@ -407,43 +408,41 @@ int processx__con_fgetc(Rconnection con) {
 #endif
 }
 
-SEXP processx__create_connection(processx_handle_t *handle,
-				 int fd, Rconnection* con) {
+void processx__create_connection(processx_handle_t *handle,
+				 int fd, const char *membername,
+				 SEXP private) {
 
+  Rconnection con;
   SEXP res =
-    PROTECT(R_new_custom_connection("processx", "r", "textConnection", con));
+    PROTECT(R_new_custom_connection("processx", "r", "textConnection", &con));
 
-  (*con)->incomplete = 1;
-  (*con)->private = handle;
-  (*con)->status = fd;		/* slight abuse */
-  (*con)->canseek = 0;
-  (*con)->canwrite = 0;
-  (*con)->canread = 1;
-  (*con)->isopen = 1;
-  (*con)->blocking = 0;
-  (*con)->text = 1;
-  (*con)->UTF8out = 1;
-  (*con)->destroy = &processx__con_destroy;
-  (*con)->read = &processx__con_read;
-  (*con)->fgetc = &processx__con_fgetc;
-  (*con)->fgetc_internal = &processx__con_fgetc;
+  con->incomplete = 1;
+  con->private = handle;
+  con->status = fd;		/* slight abuse */
+  con->canseek = 0;
+  con->canwrite = 0;
+  con->canread = 1;
+  con->isopen = 1;
+  con->blocking = 0;
+  con->text = 1;
+  con->UTF8out = 1;
+  con->destroy = &processx__con_destroy;
+  con->read = &processx__con_read;
+  con->fgetc = &processx__con_fgetc;
+  con->fgetc_internal = &processx__con_fgetc;
 
+  defineVar(install(membername), res, private);
   UNPROTECT(1);
-  return res;
 }
 
-void processx__create_connections(processx_handle_t *handle) {
-
-  handle->std_out = handle->std_err = R_NilValue;
+void processx__create_connections(processx_handle_t *handle, SEXP private) {
 
   if (handle->fd1 >= 0) {
-    handle->std_out = processx__create_connection(handle, handle->fd1,
-						  &handle->std_out_con);
+    processx__create_connection(handle, handle->fd1, "stdout_pipe", private);
   }
 
   if (handle->fd2 >= 0) {
-    handle->std_err = processx__create_connection(handle, handle->fd2,
-						  &handle->std_err_con);
+    processx__create_connection(handle, handle->fd2, "stderr_pipe", private);
   }
 }
 
@@ -547,7 +546,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   if (pipes[2][1] >= 0) close(pipes[2][1]);
 
   /* Create proper connections */
-  processx__create_connections(handle);
+  processx__create_connections(handle, private);
 
   if (exec_errorno == 0) {
     handle->pid = pid;
@@ -882,22 +881,82 @@ SEXP processx_get_pid(SEXP status) {
   return ScalarInteger(handle->pid);
 }
 
-SEXP processx_get_output_connection(SEXP status) {
-  processx_handle_t *handle = R_ExternalPtrAddr(status);
+/* Various OSes and OS versions return various poll codes when the
+   child's end of the pipe is closed, so we cannot provide a more
+   elaborate API. See e.g. http://www.greenend.org.uk/rjk/tech/poll.html
+   In particular, (recent) macOS return both POLLIN and POLLHUP,
+   Cygwin return POLLHUP, and most others return just POLLIN, so there
+   is not way to distinguish. Essentially, if a read would not block,
+   then we return with PXPOLLIN.
 
-  if (!handle) { error("Internal processx error, handle already removed"); }
-  if (handle->fd1 < 0) { error("No stdout pipe for this process"); }
+   So for us, we just have
+   * PXCLOSED  - fd was already closed when started polling
+   * PXPOLLIN  - fd has sg to read or was closed
+   * PXTIMEOUT - timed out
+*/
 
-  return handle->std_out;
+#define PXCLOSED  1
+#define PXPOLLIN  2
+#define PXTIMEOUT 3
+
+static int processx__poll_decode(short code) {
+  if (code & POLLNVAL) return PXCLOSED;
+  if (code & POLLIN || code & POLLHUP) return PXPOLLIN;
+  return 0;
 }
 
-SEXP processx_get_error_connection(SEXP status) {
+SEXP processx_poll_io(SEXP status, SEXP ms) {
+  double cms = INTEGER(ms)[0];
   processx_handle_t *handle = R_ExternalPtrAddr(status);
+  struct pollfd fds[2];
+  int idx = 0, num, ret;
+  SEXP result;
+  int ptr1 = -1, ptr2 = -1;
 
   if (!handle) { error("Internal processx error, handle already removed"); }
-  if (handle->fd2 < 0) { error("No stdout pipe for this process"); }
 
-  return handle->std_err;
+  num = (handle->fd1 >= 0) + (handle->fd2 >= 0);
+  if (num == 0) { error("No stdout or stderr pipe for this process"); }
+
+  if (handle->fd1 >= 0) {
+    fds[idx].fd = handle->fd1;
+    fds[idx].events = POLLIN;
+    fds[idx].revents = 0;
+    ptr1 = idx;
+    idx++;
+  }
+  if (handle->fd2 >= 0) {
+    fds[idx].fd = handle->fd2;
+    fds[idx].events = POLLIN;
+    fds[idx].revents = 0;
+    ptr2 = idx;
+  }
+
+  result = PROTECT(allocVector(INTSXP, 2));
+  INTEGER(result)[0] = INTEGER(result)[1] = PXCLOSED;
+
+  do {
+    ret = poll(fds, num, cms);
+  } while (ret == -1 && errno == EINTR);
+
+  if (ret == -1) {
+    error("Processx poll error: %s", strerror(errno));
+
+  } else if (ret == 0) {
+    if (ptr1 >= 0) INTEGER(result)[0] = PXTIMEOUT;
+    if (ptr2 >= 0) INTEGER(result)[1] = PXTIMEOUT;
+
+  } else {
+    if (ptr1 >= 0 && fds[ptr1].revents) {
+      INTEGER(result)[0] = processx__poll_decode(fds[ptr1].revents);
+    }
+    if (ptr2 >= 0 && fds[ptr2].revents) {
+      INTEGER(result)[1] = processx__poll_decode(fds[ptr2].revents);
+    }
+  }
+
+  UNPROTECT(1);
+  return result;
 }
 
 #endif

@@ -178,7 +178,10 @@ process <- R6Class(
       process_get_output_connection(self, private),
 
     get_error_connection = function()
-      process_get_error_connection(self, private)
+      process_get_error_connection(self, private),
+
+    poll_io = function(ms)
+      process_poll_io(self, private, ms)
   ),
 
   private = list(
@@ -201,6 +204,9 @@ process <- R6Class(
     exited = FALSE,       # Whether pid & exitcode was copied over here
     pid = NULL,           # pid, if finished, otherwise in status!
     exitcode = NULL,      # exit code, if finished, otherwise in status!
+
+    stdout_pipe = NULL,
+    stderr_pipe = NULL,
 
     get_short_name = function()
       process_get_short_name(self, private)
