@@ -175,6 +175,9 @@ run_manage <- function(proc, timeout, spinner, stdout_callback,
     if (!is.null(timeout) && timeout < Inf) {
       remains <- timeout - (Sys.time() - start_time)
       remains <- as.integer(as.numeric(remains) * 1000)
+      if (spinner) remains <- min(remains, 200)
+    } else if (spinner) {
+      remains <- 200
     } else {
       remains <- -1L
     }
@@ -182,6 +185,8 @@ run_manage <- function(proc, timeout, spinner, stdout_callback,
 
     ## If output/error, then collect it
     if (any(polled == "pollin")) do_output()
+
+    if (spinner) spin()
   }
 
   ## Needed to get the exit status
