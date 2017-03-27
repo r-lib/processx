@@ -616,7 +616,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   result = PROTECT(processx__make_handle(private));
   handle = R_ExternalPtrAddr(result);
 
-  err = processx__stdio_create(cstd_out, cstd_err, &handle->child_stdio_buffer);
+  err = processx__stdio_create(handle, cstd_out, cstd_err,
+			       &handle->child_stdio_buffer, private);
   if (err) { processx__error(err); }
 
   application_path = processx__search_path(application, cwd, path);
@@ -683,6 +684,9 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     /* This also kills the process, in the finalizer */
     processx__error(GetLastError());
   }
+
+  /* Start reading form the pipes, if any */
+  processx__stdio_start_reading_pipes(handle);
 
   UNPROTECT(1);
   return result;
