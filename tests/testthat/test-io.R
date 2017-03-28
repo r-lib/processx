@@ -93,7 +93,7 @@ test_that("Output and error to specific files", {
 
 test_that("isIncomplete", {
 
-  p <- process$new("ls", stdout = "|")
+  p <- process$new(commandline = "dir /b", stdout = "|")
   con <- p$get_output_connection()
 
   expect_true(isIncomplete(con))

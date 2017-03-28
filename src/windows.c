@@ -685,9 +685,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     processx__error(GetLastError());
   }
 
-  /* Start reading form the pipes, if any */
-  processx__stdio_start_reading_pipes(handle);
-
   UNPROTECT(1);
   return result;
 }

@@ -23,26 +23,16 @@ typedef struct {
   int windows_hide;
 } processx_options_t;
 
-#ifdef WIN32
-struct processx_handle_s;
-typedef struct {
-  HANDLE handle;
-  OVERLAPPED overlapped;
-  struct processx_handle_s *process;
-  char buffer[65536];
-  DWORD have_bytes;
-} processx_pipe_t;
-#endif
-
 typedef struct processx_handle_s {
   int exitcode;
-  int collected;    /* Whether exit code was collected already */
+  int collected;	 /* Whether exit code was collected already */
 #ifdef WIN32
   HANDLE hProcess;
   DWORD  dwProcessId;
   BYTE *child_stdio_buffer;
   HANDLE waitObject;
-  processx_pipe_t stdio[3];	/* stdin, stdout, stderr */
+  HANDLE stdout_pipe;
+  HANDLE stderr_pipe;
 #else
   pid_t pid;
   int fd0;			/* writeable */
