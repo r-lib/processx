@@ -103,26 +103,34 @@ int processx__create_pipe(processx_handle_t *handle,
   char pipe_name[64];
   HANDLE parent = NULL, child = NULL;
   DWORD err;
+  char *ptr = (char*) handle;
 
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;  
 
-  processx__unique_pipe_name((char*) handle, pipe_name, sizeof(pipe_name));
+  while (1) {
+    processx__unique_pipe_name(ptr, pipe_name, sizeof(pipe_name));
   
-  parent = CreateNamedPipeA(
-    pipe_name,
-    PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED,
-    PIPE_TYPE_BYTE | PIPE_WAIT,
-    1,
-    4096,
-    4096,
-    0,
-    NULL);
+    parent = CreateNamedPipeA(
+      pipe_name,
+      PIPE_ACCESS_INBOUND, //  | FILE_FLAG_OVERLAPPED,
+      PIPE_TYPE_BYTE | PIPE_WAIT,
+      1,
+      4096,
+      4096,
+      0,
+      NULL);
 
-  if (!parent) {
+    /* Created successfully */
+    if (parent != INVALID_HANDLE_VALUE) break;
+
+    /* Some real error happened */
     err = GetLastError();
-    goto error;
+    if (err != ERROR_PIPE_BUSY) goto error;
+
+    /* Just a name collisiom try again, with a slightly different name */
+    ptr++;
   }
 
   child = CreateFileA(
