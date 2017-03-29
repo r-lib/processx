@@ -93,6 +93,8 @@ test_that("Output and error to specific files", {
 
 test_that("isIncomplete", {
 
+  skip_other_platforms("windows")
+
   p <- process$new(commandline = "dir /b", stdout = "|")
   con <- p$get_output_connection()
 
