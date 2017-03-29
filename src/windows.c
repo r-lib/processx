@@ -528,7 +528,7 @@ void processx__finalizer(SEXP status) {
 static void CALLBACK processx__exit_callback(void* data, BOOLEAN didTimeout) {
   processx_handle_t *handle = (processx_handle_t *) data;
   DWORD err, exitcode;
-  
+
   /* Still need to wait a bit, otherwise we might crash.... */
   WaitForSingleObject(handle->hProcess, INFINITE);
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
@@ -684,6 +684,9 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     /* This also kills the process, in the finalizer */
     processx__error(GetLastError());
   }
+
+  processx__stdio_destroy(handle->child_stdio_buffer);
+  handle->child_stdio_buffer = NULL;
 
   UNPROTECT(1);
   return result;

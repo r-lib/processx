@@ -101,13 +101,16 @@ test_that("isIncomplete", {
   p$read_output_lines(n = 1)
   expect_true(isIncomplete(con))
 
+  p$wait()
   p$read_output_lines()
   expect_false(isIncomplete(con))
 
   close(con)
 })
 
-test_that("can read after process was finalized", {
+test_that("can read after process was finalized, unix", {
+
+  skip_other_platforms("unix")
 
   p <- process$new("ls", stdout = "|")
   con <- p$get_output_connection()
@@ -116,7 +119,21 @@ test_that("can read after process was finalized", {
   expect_equal(sort(readLines(con)), sort(dir()))
 })
 
-test_that("readChar on IO", {
+test_that("can read after process was finalized, windows", {
+
+  skip_other_platforms("windows")
+
+  p <- process$new(commandline = "dir /b", stdout = "|")
+  con <- p$get_output_connection()
+  p$wait()
+  rm(p) ; gc()
+
+  expect_equal(sort(readLines(con)), sort(dir()))
+})
+
+test_that("readChar on IO, unix", {
+
+  skip_other_platforms("unix")
 
   p <- process$new("echo", "hello world!", stdout = "|")
   con <- p$get_output_connection()
@@ -125,4 +142,17 @@ test_that("readChar on IO", {
   expect_equal(readChar(con, 5), "hello")
   expect_equal(readChar(con, 5), " worl")
   expect_equal(readChar(con, 5), "d!\n")
+})
+
+test_that("readChar on IO, windows", {
+
+  skip_other_platforms("windows")
+
+  p <- process$new(commandline = "echo hello world!", stdout = "|")
+  con <- p$get_output_connection()
+  p$wait()
+
+  expect_equal(readChar(con, 5), "hello")
+  expect_equal(readChar(con, 5), " worl")
+  expect_equal(readChar(con, 5), "d!\r\n")
 })

@@ -14,5 +14,6 @@ int processx__stdio_create(processx_handle_t *handle,
 			   BYTE** buffer_ptr, SEXP private);
 WORD processx__stdio_size(BYTE* buffer);
 HANDLE processx__stdio_handle(BYTE* buffer, int fd);
+void processx__stdio_destroy(BYTE* buffer);
 
 #endif

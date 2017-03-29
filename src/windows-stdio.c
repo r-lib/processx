@@ -92,74 +92,51 @@ static int processx__create_output_handle(HANDLE *handle_ptr, const char *file,
   return 0;
 }
 
-static void processx__unique_pipe_name(char* ptr, char* name, size_t size) {
-  snprintf(name, size, "\\\\?\\pipe\\px\\%p-%lu", ptr, GetCurrentProcessId());
-}
+/* https://support.microsoft.com/en-us/help/190351/how-to-spawn-console-processes-with-redirected-standard-handles */
 
 int processx__create_pipe(processx_handle_t *handle,
 			  HANDLE* parent_pipe_ptr,
 			  HANDLE* child_pipe_ptr) {
+
+  HANDLE hOutputReadTmp = INVALID_HANDLE_VALUE;
+  HANDLE hOutputRead = INVALID_HANDLE_VALUE;
+  HANDLE hOutputWrite = INVALID_HANDLE_VALUE;
   SECURITY_ATTRIBUTES sa;
-  char pipe_name[64];
-  HANDLE parent = NULL, child = NULL;
   DWORD err;
-  char *ptr = (char*) handle;
+  BOOLEAN res;
 
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
-  sa.bInheritHandle = TRUE;  
+  sa.bInheritHandle = TRUE;
 
-  while (1) {
-    processx__unique_pipe_name(ptr, pipe_name, sizeof(pipe_name));
-  
-    parent = CreateNamedPipeA(
-      pipe_name,
-      PIPE_ACCESS_INBOUND, //  | FILE_FLAG_OVERLAPPED,
-      PIPE_TYPE_BYTE | PIPE_WAIT,
-      1,
-      4096,
-      4096,
-      0,
-      NULL);
+  res = CreatePipe(&hOutputReadTmp, &hOutputWrite, &sa, 0);
+  if (!res) processx__error(GetLastError());
 
-    /* Created successfully */
-    if (parent != INVALID_HANDLE_VALUE) break;
+  // Create new output read handle and the input write handles. Set
+  // the Properties to FALSE. Otherwise, the child inherits the
+  // properties and, as a result, non-closeable handles to the pipes
+  // are created.
+  res = DuplicateHandle(GetCurrentProcess(), hOutputReadTmp,
+			GetCurrentProcess(), &hOutputRead,
+			0, FALSE, DUPLICATE_SAME_ACCESS);
+  if (!res) { err = GetLastError(); goto error; }
 
-    /* Some real error happened */
-    err = GetLastError();
-    if (err != ERROR_PIPE_BUSY) goto error;
+  // Close inheritable copies of the handles you do not want to be
+  // inherited.
+  res = CloseHandle(hOutputReadTmp);
+  if (!res) { err = GetLastError(); goto error; }
 
-    /* Just a name collisiom try again, with a slightly different name */
-    ptr++;
-  }
-
-  child = CreateFileA(
-    pipe_name,
-    GENERIC_WRITE,
-    0,
-    &sa,
-    OPEN_EXISTING,
-    FILE_ATTRIBUTE_NORMAL,
-    NULL);
-
-  if (child == INVALID_HANDLE_VALUE) {
-    err = GetLastError();
-    child = NULL;
-    goto error;
-  }
-
-  *parent_pipe_ptr = parent;
-  *child_pipe_ptr  = child;
+  *parent_pipe_ptr = hOutputRead;
+  *child_pipe_ptr  = hOutputWrite;
 
   return 0;
-  
+
  error:
-  if (parent) CloseHandle(parent);
-  if (child)  CloseHandle(child);
-
+  if (hOutputReadTmp != INVALID_HANDLE_VALUE) CloseHandle(hOutputReadTmp);
+  if (hOutputRead != INVALID_HANDLE_VALUE) CloseHandle(hOutputRead);
+  if (hOutputWrite != INVALID_HANDLE_VALUE) CloseHandle(hOutputWrite);
   processx__error(err);
-  
-  return 0;
+  return 0;			/* never reached */
 }
 
 void processx__con_destroy(Rconnection con) {
@@ -186,7 +163,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
   if (which == 1) pipe = px->stdout_pipe; else pipe = px->stderr_pipe;
 
   con->incomplete = 1;
-  
+
   result = PeekNamedPipe(
     /* hNamedPipe = */ pipe,
     /* lpBuffer = */ NULL,
@@ -195,7 +172,16 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
     /* lpTotalBytesAvail = */ &available,
     /* lpBytesLeftThisMessage = */ NULL);
 
-  if (!result) processx__error(GetLastError());
+  if (!result) {
+    DWORD err = GetLastError();
+    if (err == ERROR_BROKEN_PIPE) {
+      con->incomplete = 0;
+      con->EOF_signalled = 1;
+      return 0;
+    } else {
+      processx__error(err);
+    }
+  }
 
   if (available > 0) {
     result = ReadFile(
@@ -303,6 +289,20 @@ int processx__stdio_create(processx_handle_t *handle,
  error:
   free(buffer);
   return err;
+}
+
+void processx__stdio_destroy(BYTE* buffer) {
+  int i, count;
+
+  count = CHILD_STDIO_COUNT(buffer);
+  for (i = 0; i < count; i++) {
+    HANDLE handle = CHILD_STDIO_HANDLE(buffer, i);
+    if (handle != INVALID_HANDLE_VALUE) {
+      CloseHandle(handle);
+    }
+  }
+
+  free(buffer);
 }
 
 WORD processx__stdio_size(BYTE* buffer) {
