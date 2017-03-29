@@ -92,39 +92,46 @@ static int processx__create_output_handle(HANDLE *handle_ptr, const char *file,
   return 0;
 }
 
-/* https://support.microsoft.com/en-us/help/190351/how-to-spawn-console-processes-with-redirected-standard-handles */
+static void processx__unique_pipe_name(char* ptr, char* name, size_t size) {
+  snprintf(name, size, "\\\\?\\pipe\\px\\%p-%lu", ptr, GetCurrentProcessId());
+}
 
 int processx__create_pipe(processx_handle_t *handle,
 			  HANDLE* parent_pipe_ptr,
 			  HANDLE* child_pipe_ptr) {
 
-  HANDLE hOutputReadTmp = INVALID_HANDLE_VALUE;
+  char pipe_name[40];
   HANDLE hOutputRead = INVALID_HANDLE_VALUE;
   HANDLE hOutputWrite = INVALID_HANDLE_VALUE;
   SECURITY_ATTRIBUTES sa;
   DWORD err;
-  BOOLEAN res;
 
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
 
-  res = CreatePipe(&hOutputReadTmp, &hOutputWrite, &sa, 0);
-  if (!res) processx__error(GetLastError());
+  processx__unique_pipe_name((char*) parent_pipe_ptr, pipe_name, sizeof(pipe_name));
 
-  // Create new output read handle and the input write handles. Set
-  // the Properties to FALSE. Otherwise, the child inherits the
-  // properties and, as a result, non-closeable handles to the pipes
-  // are created.
-  res = DuplicateHandle(GetCurrentProcess(), hOutputReadTmp,
-			GetCurrentProcess(), &hOutputRead,
-			0, FALSE, DUPLICATE_SAME_ACCESS);
-  if (!res) { err = GetLastError(); goto error; }
+  hOutputRead = CreateNamedPipeA(
+    pipe_name,
+    PIPE_ACCESS_INBOUND,
+    PIPE_TYPE_BYTE | PIPE_WAIT,
+    1,
+    4096,
+    4096,
+    0,
+    NULL);
+  if (hOutputRead == INVALID_HANDLE_VALUE) { err = GetLastError(); goto error; }
 
-  // Close inheritable copies of the handles you do not want to be
-  // inherited.
-  res = CloseHandle(hOutputReadTmp);
-  if (!res) { err = GetLastError(); goto error; }
+  hOutputWrite = CreateFileA(
+    pipe_name,
+    GENERIC_WRITE,
+    0,
+    &sa,
+    OPEN_EXISTING,
+    FILE_ATTRIBUTE_NORMAL,
+    NULL);
+  if (hOutputWrite == INVALID_HANDLE_VALUE) { err = GetLastError(); goto error; }
 
   *parent_pipe_ptr = hOutputRead;
   *child_pipe_ptr  = hOutputWrite;
@@ -132,7 +139,6 @@ int processx__create_pipe(processx_handle_t *handle,
   return 0;
 
  error:
-  if (hOutputReadTmp != INVALID_HANDLE_VALUE) CloseHandle(hOutputReadTmp);
   if (hOutputRead != INVALID_HANDLE_VALUE) CloseHandle(hOutputRead);
   if (hOutputWrite != INVALID_HANDLE_VALUE) CloseHandle(hOutputWrite);
   processx__error(err);
