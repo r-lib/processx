@@ -10,6 +10,7 @@
 #' @param stderr Standard error, FALSE to ignore, TRUE for temp file.
 #' @param cleanup Kill on GC?
 #' @param echo_cmd Echo command before starting it?
+#' @param detached Whether to create a new process group for the child.
 #'
 #' @keywords internal
 #' @importFrom utils head tail
