@@ -17,7 +17,7 @@
 process_initialize <- function(self, private, command, args,
                                commandline, stdout, stderr, cleanup,
                                echo_cmd, windows_verbatim_args,
-                               windows_hide_window) {
+                               windows_hide_window, detached) {
 
   "!DEBUG process_initialize `command`"
 
@@ -30,6 +30,7 @@ process_initialize <- function(self, private, command, args,
   assert_that(is_flag(echo_cmd))
   assert_that(is_flag(windows_verbatim_args))
   assert_that(is_flag(windows_hide_window))
+  assert_that(is_flag(detached))
 
   if (is.null(command) + is.null(commandline) != 1) {
     stop("Need exactly one of 'command' and 'commandline")
@@ -47,6 +48,7 @@ process_initialize <- function(self, private, command, args,
   private$echo_cmd <- echo_cmd
   private$windows_verbatim_args <- windows_verbatim_args
   private$windows_hide_window <- windows_hide_window
+  private$detached <- detached
 
   if (isTRUE(stdout)) {
     private$cleanfiles <- c(private$cleanfiles, stdout <- tempfile())
@@ -76,7 +78,7 @@ process_initialize <- function(self, private, command, args,
   private$status <- .Call(
     "processx_exec",
     command, c(command, args), stdout, stderr,
-    detached = FALSE, windows_verbatim_args, windows_hide_window,
+    detached, windows_verbatim_args, windows_hide_window,
     private
   )
   private$starttime <- Sys.time()
