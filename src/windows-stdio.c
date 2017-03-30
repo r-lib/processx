@@ -3,6 +3,8 @@
 
 #include "windows-stdio.h"
 
+HANDLE processx__iocp = NULL;
+
 void processx__error(DWORD errorcode);
 
 /*
@@ -114,7 +116,7 @@ int processx__create_pipe(processx_handle_t *handle,
 
   hOutputRead = CreateNamedPipeA(
     pipe_name,
-    PIPE_ACCESS_INBOUND,
+    PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED,
     PIPE_TYPE_BYTE | PIPE_WAIT,
     1,
     4096,
@@ -147,60 +149,112 @@ int processx__create_pipe(processx_handle_t *handle,
 
 void processx__con_destroy(Rconnection con) {
   if (con->status >= 0) {
-    processx_handle_t *px = con->private;
-    if (con->status == 1) {
-      CloseHandle(px->stdout_pipe);
-    } else {
-      CloseHandle(px->stderr_pipe);
+    processx_pipe_handle_t *handle = con->private;
+    CloseHandle(handle->pipe);
+    handle->pipe = NULL;
+    if (handle->buffer) {
+      free(handle->buffer);
+      handle->buffer = 0;
     }
   }
 }
 
 size_t processx__con_read(void *target, size_t sz, size_t ni,
 			  Rconnection con) {
-  int which = con->status;
-  processx_handle_t *px = con->private;
-  HANDLE pipe;
-  DWORD bytes_read = 0, available;
+  processx_pipe_handle_t *handle = con->private;
+  HANDLE pipe = handle->pipe;
+  DWORD bytes_read = 0;
   BOOLEAN result;
+  OVERLAPPED *ov, *ovres;
+  ULONG_PTR key;
+  size_t have_already;
 
-  if (which < 0) error("Connection was already closed");
+  if (!pipe) error("Connection was closed already");
   if (sz != 1) error("Can only read bytes from processx connections");
-  if (which == 1) pipe = px->stdout_pipe; else pipe = px->stderr_pipe;
+
+  /* Already seen an EOF? */
+  if (con->EOF_signalled) return 0;
 
   con->incomplete = 1;
 
-  result = PeekNamedPipe(
-    /* hNamedPipe = */ pipe,
-    /* lpBuffer = */ NULL,
-    /* nBufferSize = */ 0,
-    /* lpBytesRead = */ NULL,
-    /* lpTotalBytesAvail = */ &available,
-    /* lpBytesLeftThisMessage = */ NULL);
+  /* Do we have something to return already? */
+  have_already = handle->buffer_end - handle->buffer;
+
+  /* Do we have too much? */
+  if (have_already > sz * ni) {
+    memcpy(target, handle->buffer, sz * ni);
+    memmove(handle->buffer, handle->buffer + sz * ni,
+	     have_already - sz * ni);
+    handle->buffer_end = handle->buffer + have_already - sz * ni;
+    return sz * ni;
+
+  } else if (have_already > 0) {
+    memcpy(target, handle->buffer, have_already);
+    handle->buffer_end = handle->buffer;
+    return have_already;
+  }
+
+  /* We don't have anything. If there is no read pending, we
+     start one. It might return synchronously, the little bastard. */
+  if (! handle->read_pending) {
+    memset(&handle->overlapped, 0, sizeof(handle->overlapped));
+    result = ReadFile(
+      pipe,
+      handle->buffer,
+      sz * ni < handle->buffer_size ? sz * ni : handle->buffer_size,
+      &bytes_read,
+      &handle->overlapped);
+
+    if (!result) {
+      DWORD err = GetLastError();
+      if (err == ERROR_BROKEN_PIPE) {
+	con->incomplete = 0;
+	con->EOF_signalled = 1;
+	return 0;
+      } else if (err == ERROR_IO_PENDING) {
+	handle->read_pending = TRUE;
+      } else {
+	processx__error(err);
+	return 0;		/* neve called */
+      }
+    } else {
+      /* returned synchronously (!) */
+      memcpy(target, handle->buffer, bytes_read);
+      return bytes_read;
+    }
+  }
+
+  /* There is a read pending at this point.
+     See if it has finished. */
+
+  result = GetOverlappedResult(
+    pipe,
+    &handle->overlapped,
+    &bytes_read,
+    FALSE);
 
   if (!result) {
     DWORD err = GetLastError();
     if (err == ERROR_BROKEN_PIPE) {
+      handle->read_pending = FALSE;
       con->incomplete = 0;
       con->EOF_signalled = 1;
       return 0;
+
+    } else if (err == ERROR_IO_INCOMPLETE) {
+      return 0;
+
     } else {
+      handle->read_pending = FALSE;
       processx__error(err);
+      return 0;			/* never called */
     }
+
+  } else {
+    handle->read_pending = FALSE;
+    memcpy(target, handle->buffer, bytes_read);
+    return bytes_read;
   }
-
-  if (available > 0) {
-    result = ReadFile(
-      /* hFile = */ pipe,
-      /* lpBuffer = */ target,
-      /* nNumberOfBytesToRead = */ sz * ni,
-      /* lpNumberOfBytesRead = */ &bytes_read,
-      /* lpOverlapped = */ NULL);
-
-    if (!result) processx__error(GetLastError());
-  }
-
-  return (size_t) bytes_read;
 }
 
 int processx__con_fgetc(Rconnection con) {
@@ -212,9 +266,9 @@ int processx__con_fgetc(Rconnection con) {
 #endif
 }
 
-void processx__create_connection(processx_handle_t *handle,
-				 HANDLE server_pipe, const char *membername,
-				 int which, SEXP private) {
+void processx__create_connection(processx_pipe_handle_t *handle,
+				 const char *membername,
+				 SEXP private) {
 
   Rconnection con;
   SEXP res =
@@ -222,7 +276,6 @@ void processx__create_connection(processx_handle_t *handle,
 
   con->incomplete = 1;
   con->private = handle;
-  con->status = which;		/* slight abuse */
   con->canseek = 0;
   con->canwrite = 0;
   con->canread = 1;
@@ -230,6 +283,7 @@ void processx__create_connection(processx_handle_t *handle,
   con->blocking = 0;
   con->text = 1;
   con->UTF8out = 1;
+  con->EOF_signalled = 0;
   con->destroy = &processx__con_destroy;
   con->read = &processx__con_read;
   con->fgetc = &processx__con_fgetc;
@@ -257,11 +311,12 @@ int processx__stdio_create(processx_handle_t *handle,
     CHILD_STDIO_HANDLE(buffer, i) = INVALID_HANDLE_VALUE;
   }
 
-  handle->stdout_pipe = handle->stderr_pipe = 0;
   for (i = 0; i < count; i++) {
     DWORD access = (i == 0) ? FILE_GENERIC_READ :
       FILE_GENERIC_WRITE | FILE_READ_ATTRIBUTES;
     const char *output = i == 0 ? 0 : (i == 1 ? std_out : std_err);
+
+    handle->pipes[i] = 0;
 
     if (!output) {
       /* ignored output */
@@ -278,14 +333,21 @@ int processx__stdio_create(processx_handle_t *handle,
 
     } else {
       /* piped output */
-      const char *pipe_name = i == 1 ? "stdout_pipe" : "stderr_pipe";
-      HANDLE *server_pipe = i == 1 ? &handle->stdout_pipe : &handle->stderr_pipe;
+      processx_pipe_handle_t *pipe = handle->pipes[i] = malloc(sizeof(processx_pipe_handle_t));
+      const char *r_pipe_name = i == 1 ? "stdout_pipe" : "stderr_pipe";
       err = processx__create_pipe(
-        handle, server_pipe, &CHILD_STDIO_HANDLE(buffer, i)
+        handle, &pipe->pipe, &CHILD_STDIO_HANDLE(buffer, i)
       );
       if (err) { goto error; }
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FPIPE;
-      processx__create_connection(handle, *server_pipe, pipe_name, i, private);
+
+      /* Allocate buffer for pipe */
+      pipe->buffer_size = 256 * 256;
+      pipe->buffer = malloc(pipe->buffer_size);
+      if (!pipe->buffer) { goto error; }
+      pipe->buffer_end = pipe->buffer;
+      pipe->read_pending = FALSE;
+      processx__create_connection(pipe, r_pipe_name, private);
     }
   }
 
@@ -294,6 +356,12 @@ int processx__stdio_create(processx_handle_t *handle,
 
  error:
   free(buffer);
+  for (i = 0; i < count; i++) {
+    if (handle->pipes[i]) {
+      if (handle->pipes[i]->buffer) free(handle->pipes[i]->buffer);
+      free(handle->pipes[i]);
+    }
+  }
   return err;
 }
 

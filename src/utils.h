@@ -23,29 +23,41 @@ typedef struct {
   int windows_hide;
 } processx_options_t;
 
+#ifdef WIN32
+struct processx_handle_s;
+typedef struct processx_pipe_handle_s {
+  HANDLE pipe;
+  OVERLAPPED overlapped;
+  BYTE *buffer;
+  DWORD buffer_size;
+  BYTE *buffer_end;
+  BOOLEAN read_pending;
+} processx_pipe_handle_t;
+
 typedef struct processx_handle_s {
   int exitcode;
   int collected;	 /* Whether exit code was collected already */
-#ifdef WIN32
   HANDLE hProcess;
   DWORD  dwProcessId;
   BYTE *child_stdio_buffer;
   HANDLE waitObject;
-  HANDLE stdout_pipe;
-  HANDLE stderr_pipe;
+  processx_pipe_handle_t *pipes[3];
+} processx_handle_t;
+
+extern HANDLE processx__iocp;
+
 #else
+
+typedef struct processx_handle_s {
+  int exitcode;
+  int collected;	 /* Whether exit code was collected already */
   pid_t pid;
   int fd0;			/* writeable */
   int fd1;			/* readable */
   int fd2;			/* readable */
   int waitpipe[2];		/* use it for wait() with timeout */
-#endif
 } processx_handle_t;
-
-typedef struct {
-  processx_handle_t *handle;
-  int which;			/* 0, 1 or 2 */
-} processx_connection_t;
+#endif
 
 void processx__handle_destroy(processx_handle_t *handle);
 

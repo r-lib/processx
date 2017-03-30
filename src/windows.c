@@ -8,6 +8,13 @@ void processx_win_dummy() { }
 #include "utils.h"
 #include "windows-stdio.h"
 
+#include <R_ext/Rdynload.h>
+
+void R_unload_mylib(DllInfo *info)
+{
+  CloseHandle(processx__iocp);
+}
+
 int uv_utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr) {
   int ws_len, r;
   WCHAR* ws;
@@ -513,11 +520,6 @@ void processx__finalizer(SEXP status) {
   defineVar(install("pid"), ScalarInteger(handle->dwProcessId), private);
   defineVar(install("exitcode"), ScalarInteger(handle->exitcode), private);
 
-  if (handle->child_stdio_buffer) {
-    CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 0));
-    CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 1));
-    CloseHandle(processx__stdio_handle(handle->child_stdio_buffer, 2));
-  }
   if (handle->hProcess) CloseHandle(handle->hProcess);
   processx__handle_destroy(handle);
   R_ClearExternalPtr(status);
