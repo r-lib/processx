@@ -692,7 +692,7 @@ SEXP processx__wait(SEXP status) {
 
  cleanup:
   processx__unblock_sigchld();
-  return R_NilValue;
+  return ScalarLogical(1);
 }
 
 SEXP processx__wait_timeout(SEXP status, SEXP timeout) {
@@ -737,7 +737,7 @@ SEXP processx__wait_timeout(SEXP status, SEXP timeout) {
   close(handle->waitpipe[0]);
   handle->waitpipe[0] = -1;
 
-  return R_NilValue;
+  return ScalarLogical(ret != 0);
 }
 
 SEXP processx_wait(SEXP status, SEXP timeout) {

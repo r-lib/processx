@@ -746,15 +746,19 @@ void processx__collect_exit_status(SEXP status, DWORD exitcode) {
   handle->collected = 1;
 }
 
-SEXP processx_wait(SEXP status) {
+SEXP processx_wait(SEXP status, SEXP timeout) {
+  int ctimeout = INTEGER(timeout)[0];
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   DWORD err, err2, exitcode;
 
   if (handle->collected) return R_NilValue;
 
-  /* Othewise do a blocking wait */
-  err2 = WaitForSingleObject(handle->hProcess, INFINITE);
-  if (err2 == WAIT_FAILED) { processx__error(GetLastError()); }
+  err2 = WaitForSingleObject(handle->hProcess, ctimeout < 0 ? INFINITE : ctimeout);
+  if (err2 == WAIT_FAILED) {
+    processx__error(GetLastError());
+  } else if (err2 == WAIT_TIMEOUT) {
+    return ScalarLogical(FALSE);
+  }
 
   /* Collect  */
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
@@ -762,7 +766,7 @@ SEXP processx_wait(SEXP status) {
 
   processx__collect_exit_status(status, exitcode);
 
-  return R_NilValue;
+  return ScalarLogical(TRUE);
 }
 
 SEXP processx_is_alive(SEXP status) {
