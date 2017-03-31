@@ -88,9 +88,9 @@ test_that("Output and error to specific files", {
 
 test_that("isIncomplete", {
 
-  skip_other_platforms("windows")
+  cmd <- if (os_type() == "windows") "dir /b /A" else "ls -A"
 
-  p <- process$new(commandline = "dir /b", stdout = "|")
+  p <- process$new(commandline = cmd, stdout = "|")
   con <- p$get_output_connection()
 
   expect_true(isIncomplete(con))

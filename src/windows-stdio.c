@@ -203,11 +203,13 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
     memmove(handle->buffer, handle->buffer + sz * ni,
 	     have_already - sz * ni);
     handle->buffer_end = handle->buffer + have_already - sz * ni;
+    if (sz * ni > 0) handle->tail = ((char*)target)[sz * ni - 1];
     return sz * ni;
 
   } else if (have_already > 0) {
     memcpy(target, handle->buffer, have_already);
     handle->buffer_end = handle->buffer;
+    handle->tail = ((char*)target)[have_already - 1];
     return have_already;
   }
 
@@ -228,6 +230,10 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
 	con->incomplete = 0;
 	con->EOF_signalled = 1;
 	handle->EOF_signalled = 1;
+	if (handle->tail != '\n') {
+	  ((char*)target)[0] = '\n';
+	  return 1;
+	}
 	return 0;
       } else if (err == ERROR_IO_PENDING) {
 	handle->read_pending = TRUE;
@@ -238,6 +244,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
     } else {
       /* returned synchronously (!) */
       memcpy(target, handle->buffer, bytes_read);
+      if (bytes_read > 0) handle->tail = ((char*)target)[bytes_read - 1];
       return bytes_read;
     }
   }
@@ -258,6 +265,10 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
       con->incomplete = 0;
       con->EOF_signalled = 1;
       handle->EOF_signalled = 1;
+      if (handle->tail != '\n') {
+	((char*)target)[0] = '\n';
+	return 1;
+      }
       return 0;
 
     } else if (err == ERROR_IO_INCOMPLETE) {
@@ -273,11 +284,13 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
     handle->read_pending = FALSE;
     if (sz * ni >= bytes_read) {
       memcpy(target, handle->buffer, bytes_read);
+      if (bytes_read > 0) handle->tail = ((char*)target)[bytes_read - 1];
     } else {
       memcpy(target, handle->buffer, sz * ni);
       memmove(handle->buffer, handle->buffer + sz * ni,
 	      bytes_read - sz * ni);
       handle->buffer_end = handle->buffer + bytes_read - sz * ni;
+      if (sz * ni > 0) handle->tail = ((char*)target)[sz * ni - 1];
     }
     return bytes_read;
   }
@@ -299,6 +312,8 @@ void processx__create_connection(processx_pipe_handle_t *handle,
   Rconnection con;
   SEXP res =
     PROTECT(R_new_custom_connection("processx", "r", "textConnection", &con));
+
+  handle->tail = '\n';
 
   con->incomplete = 1;
   con->private = handle;

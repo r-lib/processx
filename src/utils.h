@@ -51,6 +51,7 @@ typedef struct processx_pipe_handle_s {
   BYTE *buffer_end;
   BOOLEAN read_pending;
   BOOLEAN EOF_signalled;
+  char tail;
 } processx_pipe_handle_t;
 
 typedef struct processx_handle_s {

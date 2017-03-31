@@ -2,16 +2,27 @@
 context("character IO")
 
 test_that("Can read last line without trailing newline", {
-  skip_other_platforms("unix")
 
-  p <- process$new(commandline = "printf foobar", stdout = "|")
+  cmd <- if (os_type() == "unix") {
+    "printf foobar"
+  } else {
+    "<nul set /p =foobar"
+  }
+
+  p <- process$new(commandline = cmd, stdout = "|")
   p$wait()
   expect_equal(p$read_output_lines(), "foobar")
 })
 
 test_that("Can read single characters", {
-  skip_other_platforms("unix")
-  p <- process$new(commandline = "printf 123", stdout = "|")
+
+  cmd <- if (os_type() == "unix") {
+    "printf 123"
+  } else {
+    "<nul set /p =123"
+  }
+
+  p <- process$new(commandline = cmd, stdout = "|")
   p$wait()
   con <- p$get_output_connection()
 
@@ -22,8 +33,14 @@ test_that("Can read single characters", {
 })
 
 test_that("Can read multiple characters", {
-  skip_other_platforms("unix")
-  p <- process$new(commandline = "printf 123456789", stdout = "|")
+
+  cmd <- if (os_type() == "unix") {
+    "printf 123456789"
+  } else {
+    "<nul set /p =123456789"
+  }
+
+  p <- process$new(commandline = cmd, stdout = "|")
   p$wait()
   con <- p$get_output_connection()
 
