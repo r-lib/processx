@@ -72,6 +72,7 @@ typedef struct processx_handle_s {
   int fd0;			/* writeable */
   int fd1;			/* readable */
   int fd2;			/* readable */
+  char tails[3];
   int waitpipe[2];		/* use it for wait() with timeout */
 } processx_handle_t;
 #endif
