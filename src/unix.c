@@ -393,6 +393,8 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
 
   num = read(fd, target, ni);
 
+  con->incomplete = 1;
+
   if (num < 0 && errno == EAGAIN) {
     num = 0;			/* cannot return negative number */
 
@@ -400,6 +402,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
     error("Cannot read from processx pipe");
 
   } else if (num == 0) {
+    con->incomplete = 0;
     con->EOF_signalled = 1;
     /* If the last line does not have a trailing '\n', then
        we add one manually, because otherwise readLines() will
@@ -437,6 +440,7 @@ void processx__create_connection(processx_handle_t *handle,
 
   handle->tails[fd] = '\n';
 
+  con->incomplete = 1;
   con->EOF_signalled = 0;
   con->private = handle;
   con->status = fd;		/* slight abuse */
