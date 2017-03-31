@@ -383,10 +383,13 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
 			  Rconnection con) {
   int num;
   int fd = con->status;
+  int whichfd;
   processx_handle_t *handle = con->private;
 
   if (fd < 0) error("Connection was already closed");
   if (sz != 1) error("Can only read bytes from processx connections");
+
+  if (fd == handle->fd1) whichfd = 1; else whichfd = 2;
 
   /* Already got EOF? */
   if (con->EOF_signalled) return 0;
@@ -407,7 +410,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
     /* If the last line does not have a trailing '\n', then
        we add one manually, because otherwise readLines() will
        never read this line. */
-    if (handle->tails[fd] != '\n') {
+    if (handle->tails[whichfd] != '\n') {
       ((char*)target)[0] = '\n';
       num = 1;
     }
@@ -415,7 +418,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
   } else {
     /* Make note of the last character, to know if the last line
        was incomplete or not. */
-    handle->tails[fd] = ((char*)target)[num - 1];
+    handle->tails[whichfd] = ((char*)target)[num - 1];
   }
 
   return (size_t) num;
@@ -438,7 +441,9 @@ void processx__create_connection(processx_handle_t *handle,
   SEXP res =
     PROTECT(R_new_custom_connection("processx", "r", "textConnection", &con));
 
-  handle->tails[fd] = '\n';
+  int whichfd;
+  if (fd == handle->fd1) whichfd = 1; else whichfd = 2;
+  handle->tails[whichfd] = '\n';
 
   con->incomplete = 1;
   con->EOF_signalled = 0;
