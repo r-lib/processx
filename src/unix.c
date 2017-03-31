@@ -944,7 +944,7 @@ SEXP processx_get_pid(SEXP status) {
 
 static int processx__poll_decode(short code) {
   if (code & POLLNVAL) return PXCLOSED;
-  if (code & POLLIN || code & POLLHUP) return PXDATA;
+  if (code & POLLIN || code & POLLHUP) return PXREADY;
   return 0;
 }
 
@@ -983,7 +983,7 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe, SEXP stderr_pipe) 
   }
   if (isNull(stderr_pipe)) {
     INTEGER(result)[1] = PXNOPIPE;
-  } else {
+  } else if (handle->fd2 < 0) {
     INTEGER(result)[1] = PXCLOSED;
   } else {
     num++;

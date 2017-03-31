@@ -32,8 +32,8 @@
 #define PXREADY   2		/* one fd is ready, or got EOF */
 #define PXTIMEOUT 3		/* no fd is ready before the timeout */
 #define PXCLOSED  4		/* fd was already closed when started polling */
-#define PXSILENT  5		/* still open, but no data or EOF for now. No timeout, either,
-				   but there were events on other fds*/
+#define PXSILENT  5		/* still open, but no data or EOF for now. No timeout, either */
+                                /* but there were events on other fds */
 
 typedef struct {
   int detached;
