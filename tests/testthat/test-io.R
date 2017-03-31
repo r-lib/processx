@@ -3,23 +3,18 @@ context("io")
 
 test_that("We can get the output", {
 
-  dir.create(tmp <- tempfile())
-  on.exit(unlink(tmp), add = TRUE)
-  cat("foo", file = file.path(tmp, "foo"))
-  cat("bar", file = file.path(tmp, "bar"))
-
-  win  <- paste("dir /b", tmp)
-  unix <- paste("ls", shQuote(tmp))
+  win  <- "dir /b /A"
+  unix <- "ls -A"
 
   p <- process$new(
     commandline = if (os_type() == "windows") win else unix,
-    stdout = "|"
+    stdout = "|", stderr = "|"
   )
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   p$wait()
   out <- sort(p$read_output_lines())
-  expect_identical(out, c("bar", "foo"))
+  expect_identical(sort(out), sort(dir(no..=TRUE, all.files=TRUE)))
 })
 
 test_that("We can get the error stream", {
