@@ -184,7 +184,7 @@ run_manage <- function(proc, timeout, spinner, stdout_callback,
     polled <- proc$poll_io(remains)
 
     ## If output/error, then collect it
-    if (any(polled == "pollin")) do_output()
+    if (any(polled == "ready")) do_output()
 
     if (spinner) spin()
   }
