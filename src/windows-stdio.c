@@ -427,7 +427,6 @@ HANDLE processx__stdio_handle(BYTE* buffer, int fd) {
 int processx__poll_start_read(processx_pipe_handle_t *handle, int *result) {
   DWORD bytes_read = 0;
   BOOLEAN res;
-  //    REprintf("read from stdout\n");
   ResetEvent(handle->overlapped.hEvent);
   res = ReadFile(
     handle->pipe,
@@ -439,18 +438,15 @@ int processx__poll_start_read(processx_pipe_handle_t *handle, int *result) {
   if (!res) {
     DWORD err = GetLastError();
     if (err == ERROR_BROKEN_PIPE) {
-      //	REprintf("EOF\n");
       handle->EOF_signalled = 1;
       *result = PXREADY;
     } else if (err == ERROR_IO_PENDING) {
-      //	REprintf("read pending\n");
       handle->read_pending = TRUE;
     } else {
       return err;
     }
   } else {
     /* returnd synchronously */
-    //      REprintf("read returned synch\n");
     handle->buffer_end = handle->buffer + bytes_read;
     *result = PXREADY;
   }
@@ -538,14 +534,11 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP rstdout_pipe, SEXP rstderr_pipe
     ptr2 = nCount;
     wait_handles[nCount++] = px->pipes[2]->overlapped.hEvent;
   }
-  //    REprintf("waiting\n");
   waitres = WaitForMultipleObjects(
     nCount,
     wait_handles,
     /* bWaitAll = */ FALSE,
     cms >= 0 ? cms : INFINITE);
-
-  //    REprintf("done\n");
 
   if (waitres == WAIT_FAILED) {
     err = GetLastError();
