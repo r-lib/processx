@@ -271,7 +271,14 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
 
   } else {
     handle->read_pending = FALSE;
-    memcpy(target, handle->buffer, bytes_read);
+    if (sz * ni >= bytes_read) {
+      memcpy(target, handle->buffer, bytes_read);
+    } else {
+      memcpy(target, handle->buffer, sz * ni);
+      memmove(handle->buffer, handle->buffer + sz * ni,
+	      bytes_read - sz * ni);
+      handle->buffer_end = handle->buffer + bytes_read - sz * ni;
+    }
     return bytes_read;
   }
 }
