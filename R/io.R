@@ -29,9 +29,9 @@ process_is_incompelete_error <- function(self, private) {
 
 process_poll_io <- function(self, private, ms) {
   res <- .Call("processx_poll_io", private$status, as.integer(ms),
-               PACKAGE = "processx")
+               private$stdout_pipe, private$stderr_pipe, PACKAGE = "processx")
   structure(
-    c("closed", "pollin", "timeout")[res],
+    c("nopipe", "ready", "timeout", "closed", "silent")[res],
     names = c("output", "error")
   )
 }

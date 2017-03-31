@@ -942,42 +942,21 @@ SEXP processx_get_pid(SEXP status) {
   return ScalarInteger(handle->pid);
 }
 
-/* Various OSes and OS versions return various poll codes when the
-   child's end of the pipe is closed, so we cannot provide a more
-   elaborate API. See e.g. http://www.greenend.org.uk/rjk/tech/poll.html
-   In particular, (recent) macOS return both POLLIN and POLLHUP,
-   Cygwin return POLLHUP, and most others return just POLLIN, so there
-   is not way to distinguish. Essentially, if a read would not block,
-   then we return with PXPOLLIN.
-
-   So for us, we just have
-   * PXCLOSED  - fd was already closed when started polling
-   * PXPOLLIN  - fd has sg to read or was closed
-   * PXTIMEOUT - timed out
-*/
-
-#define PXCLOSED  1
-#define PXPOLLIN  2
-#define PXTIMEOUT 3
-
 static int processx__poll_decode(short code) {
   if (code & POLLNVAL) return PXCLOSED;
-  if (code & POLLIN || code & POLLHUP) return PXPOLLIN;
+  if (code & POLLIN || code & POLLHUP) return PXDATA;
   return 0;
 }
 
-SEXP processx_poll_io(SEXP status, SEXP ms) {
+SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe, SEXP stderr_pipe) {
   int cms = INTEGER(ms)[0];
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   struct pollfd fds[2];
-  int idx = 0, num, ret;
+  int idx = 0, num = 0, ret;
   SEXP result;
   int ptr1 = -1, ptr2 = -1;
 
   if (!handle) { error("Internal processx error, handle already removed"); }
-
-  num = (handle->fd1 >= 0) + (handle->fd2 >= 0);
-  if (num == 0) { error("No stdout or stderr pipe for this process"); }
 
   if (handle->fd1 >= 0) {
     fds[idx].fd = handle->fd1;
@@ -994,7 +973,28 @@ SEXP processx_poll_io(SEXP status, SEXP ms) {
   }
 
   result = PROTECT(allocVector(INTSXP, 2));
-  INTEGER(result)[0] = INTEGER(result)[1] = PXCLOSED;
+  if (isNull(stdout_pipe)) {
+    INTEGER(result)[0] = PXNOPIPE;
+  } else if (handle->fd1 < 0) {
+    INTEGER(result)[0] = PXCLOSED;
+  } else {
+    num++;
+    INTEGER(result)[0] = PXSILENT;
+  }
+  if (isNull(stderr_pipe)) {
+    INTEGER(result)[1] = PXNOPIPE;
+  } else {
+    INTEGER(result)[1] = PXCLOSED;
+  } else {
+    num++;
+    INTEGER(result)[1] = PXSILENT;
+  }
+
+  /* Nothing to poll? */
+  if (num == 0) {
+    UNPROTECT(1);
+    return result;
+  }
 
   do {
     ret = poll(fds, num, cms);

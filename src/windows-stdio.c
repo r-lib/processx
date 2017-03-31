@@ -3,7 +3,11 @@
 
 #include "windows-stdio.h"
 
-HANDLE processx__iocp = NULL;
+/* Why is this not defined??? */
+BOOL WINAPI CancelIoEx(
+  _In_     HANDLE       hFile,
+  _In_opt_ LPOVERLAPPED lpOverlapped
+);
 
 void processx__error(DWORD errorcode);
 
@@ -148,9 +152,20 @@ int processx__create_pipe(processx_handle_t *handle,
 }
 
 void processx__con_destroy(Rconnection con) {
-  if (con->status >= 0) {
-    processx_pipe_handle_t *handle = con->private;
+  processx_pipe_handle_t *handle = con->private;
+  if (handle && handle->pipe) {
+
+    /* Cancel pending IO and wait until cancellation is done */
+    if (handle->read_pending) {
+      if (CancelIoEx(handle->pipe, &handle->overlapped)) {
+	DWORD bytes;
+	GetOverlappedResult(handle->pipe, &handle->overlapped, &bytes, TRUE);
+      }
+    }
+    handle->read_pending = FALSE;
+
     CloseHandle(handle->pipe);
+    CloseHandle(handle->overlapped.hEvent);
     handle->pipe = NULL;
     if (handle->buffer) {
       free(handle->buffer);
@@ -165,15 +180,17 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
   HANDLE pipe = handle->pipe;
   DWORD bytes_read = 0;
   BOOLEAN result;
-  OVERLAPPED *ov, *ovres;
-  ULONG_PTR key;
   size_t have_already;
 
   if (!pipe) error("Connection was closed already");
   if (sz != 1) error("Can only read bytes from processx connections");
 
-  /* Already seen an EOF? */
-  if (con->EOF_signalled) return 0;
+  /* Already seen an EOF? Maybe in the poll, which does not update con? */
+  if (handle->EOF_signalled) {
+    con->EOF_signalled = 1;
+    con->incomplete = 0;
+    return 0;
+  }
 
   con->incomplete = 1;
 
@@ -197,7 +214,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
   /* We don't have anything. If there is no read pending, we
      start one. It might return synchronously, the little bastard. */
   if (! handle->read_pending) {
-    memset(&handle->overlapped, 0, sizeof(handle->overlapped));
+    ResetEvent(handle->overlapped.hEvent);
     result = ReadFile(
       pipe,
       handle->buffer,
@@ -210,6 +227,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
       if (err == ERROR_BROKEN_PIPE) {
 	con->incomplete = 0;
 	con->EOF_signalled = 1;
+	handle->EOF_signalled = 1;
 	return 0;
       } else if (err == ERROR_IO_PENDING) {
 	handle->read_pending = TRUE;
@@ -239,6 +257,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
       handle->read_pending = FALSE;
       con->incomplete = 0;
       con->EOF_signalled = 1;
+      handle->EOF_signalled = 1;
       return 0;
 
     } else if (err == ERROR_IO_INCOMPLETE) {
@@ -335,6 +354,7 @@ int processx__stdio_create(processx_handle_t *handle,
       /* piped output */
       processx_pipe_handle_t *pipe = handle->pipes[i] = malloc(sizeof(processx_pipe_handle_t));
       const char *r_pipe_name = i == 1 ? "stdout_pipe" : "stderr_pipe";
+      pipe->EOF_signalled = 0;
       err = processx__create_pipe(
         handle, &pipe->pipe, &CHILD_STDIO_HANDLE(buffer, i)
       );
@@ -347,6 +367,20 @@ int processx__stdio_create(processx_handle_t *handle,
       if (!pipe->buffer) { goto error; }
       pipe->buffer_end = pipe->buffer;
       pipe->read_pending = FALSE;
+
+      /* Need a manual event for async IO */
+      pipe->overlapped.hEvent = CreateEvent(
+        /* lpEventAttributes = */ NULL,
+	/* bManualReset = */ TRUE,
+	/* bInitialState = */ FALSE,
+	/* lpName = */ NULL);
+
+      if (pipe->overlapped.hEvent == NULL) {
+	err = GetLastError();
+	goto error;
+      }
+
+      /* Create R connection for it */
       processx__create_connection(pipe, r_pipe_name, private);
     }
   }
@@ -359,6 +393,9 @@ int processx__stdio_create(processx_handle_t *handle,
   for (i = 0; i < count; i++) {
     if (handle->pipes[i]) {
       if (handle->pipes[i]->buffer) free(handle->pipes[i]->buffer);
+      if (handle->pipes[i]->overlapped.hEvent) {
+	CloseHandle(handle->pipes[i]->overlapped.hEvent);
+      }
       free(handle->pipes[i]);
     }
   }
@@ -385,6 +422,149 @@ WORD processx__stdio_size(BYTE* buffer) {
 
 HANDLE processx__stdio_handle(BYTE* buffer, int fd) {
   return CHILD_STDIO_HANDLE(buffer, fd);
+}
+
+int processx__poll_start_read(processx_pipe_handle_t *handle, int *result) {
+  DWORD bytes_read = 0;
+  BOOLEAN res;
+  //    REprintf("read from stdout\n");
+  ResetEvent(handle->overlapped.hEvent);
+  res = ReadFile(
+    handle->pipe,
+    handle->buffer,
+    handle->buffer_size,
+    &bytes_read,
+    &handle->overlapped);
+
+  if (!res) {
+    DWORD err = GetLastError();
+    if (err == ERROR_BROKEN_PIPE) {
+      //	REprintf("EOF\n");
+      handle->EOF_signalled = 1;
+      *result = PXREADY;
+    } else if (err == ERROR_IO_PENDING) {
+      //	REprintf("read pending\n");
+      handle->read_pending = TRUE;
+    } else {
+      return err;
+    }
+  } else {
+    /* returnd synchronously */
+    //      REprintf("read returned synch\n");
+    handle->buffer_end = handle->buffer + bytes_read;
+    *result = PXREADY;
+  }
+
+  return 0;
+}
+
+SEXP processx_poll_io(SEXP status, SEXP ms, SEXP rstdout_pipe, SEXP rstderr_pipe) {
+  int cms = INTEGER(ms)[0];
+  processx_handle_t *px = R_ExternalPtrAddr(status);
+  SEXP result;
+  DWORD err = 0;
+  DWORD waitres;
+  HANDLE wait_handles[2];
+  DWORD nCount = 0;
+  int ptr1 = -1, ptr2 = -1;
+
+  if (!px) { error("Internal processx error, handle already removed"); }
+
+  result = PROTECT(allocVector(INTSXP, 2));
+
+  /* See if there is anything to do */
+  if (isNull(rstdout_pipe)) {
+    INTEGER(result)[0] = PXNOPIPE;
+  } else if (! px->pipes[1] || ! px->pipes[1]->pipe || !px->pipes[1]->buffer) {
+    INTEGER(result)[0] = PXCLOSED;
+  } else {
+    nCount ++;
+    INTEGER(result)[0] = PXSILENT;
+  }
+
+  if (isNull(rstderr_pipe)) {
+    INTEGER(result)[1] = PXNOPIPE;
+  } else if (! px->pipes[2] || ! px->pipes[2]->pipe || !px->pipes[2]->buffer) {
+    INTEGER(result)[1] = PXCLOSED;
+  } else {
+    nCount ++;
+    INTEGER(result)[1] = PXSILENT;
+  }
+
+  if (nCount == 0) {
+    UNPROTECT(1);
+    return result;
+  }
+
+  /* -------------------------------------------------------------------- */
+  /* Check if there is anything available in the buffers */
+  if (INTEGER(result)[0] == PXSILENT) {
+    processx_pipe_handle_t *handle = px->pipes[1];
+    if (handle->buffer_end > handle->buffer) INTEGER(result)[0] = PXREADY;
+  }
+  if (INTEGER(result)[1] == PXSILENT) {
+    processx_pipe_handle_t *handle = px->pipes[2];
+    if (handle->buffer_end > handle->buffer) INTEGER(result)[1] = PXREADY;
+  }
+
+  if (INTEGER(result)[0] == PXREADY || INTEGER(result)[1] == PXREADY) {
+    UNPROTECT(1);
+    return result;
+  }
+
+  /* For each pipe that does not have IO pending, start an async read */
+  if (INTEGER(result)[0] == PXSILENT && ! px->pipes[1]->read_pending) {
+    err = processx__poll_start_read(px->pipes[1], INTEGER(result));
+    if (err) goto laberror;
+  }
+
+  if (INTEGER(result)[1] == PXSILENT && ! px->pipes[2]->read_pending) {
+    err = processx__poll_start_read(px->pipes[2], INTEGER(result) + 1);
+    if (err) goto laberror;
+  }
+
+  if (INTEGER(result)[0] == PXREADY || INTEGER(result)[1] == PXREADY) {
+    UNPROTECT(1);
+    return result;
+  }
+
+  /* If we are still alive, then we have some pending reads. Wait on them. */
+  nCount = 0;
+  if (INTEGER(result)[0] == PXSILENT) {
+    ptr1 = nCount;
+    wait_handles[nCount++] = px->pipes[1]->overlapped.hEvent;
+  }
+  if (INTEGER(result)[1] == PXSILENT) {
+    ptr2 = nCount;
+    wait_handles[nCount++] = px->pipes[2]->overlapped.hEvent;
+  }
+  //    REprintf("waiting\n");
+  waitres = WaitForMultipleObjects(
+    nCount,
+    wait_handles,
+    /* bWaitAll = */ FALSE,
+    cms >= 0 ? cms : INFINITE);
+
+  //    REprintf("done\n");
+
+  if (waitres == WAIT_FAILED) {
+    err = GetLastError();
+    goto laberror;
+  } else if (waitres == WAIT_TIMEOUT) {
+    if (ptr1 >= 0) INTEGER(result)[0] = PXTIMEOUT;
+    if (ptr2 >= 0) INTEGER(result)[1] = PXTIMEOUT;
+  } else {
+    int ready = waitres - WAIT_OBJECT_0;
+    if (ptr1 == ready) INTEGER(result)[0] = PXREADY;
+    if (ptr2 == ready) INTEGER(result)[1] = PXREADY;
+  }
+
+  UNPROTECT(1);
+  return result;
+
+ laberror:
+  processx__error(err);
+  return R_NilValue;		/* never called */
 }
 
 #endif

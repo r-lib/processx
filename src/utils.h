@@ -17,6 +17,24 @@
 
 #include <string.h>
 
+/* Various OSes and OS versions return various poll codes when the
+   child's end of the pipe is closed, so we cannot provide a more
+   elaborate API. See e.g. http://www.greenend.org.uk/rjk/tech/poll.html
+   In particular, (recent) macOS return both POLLIN and POLLHUP,
+   Cygwin return POLLHUP, and most others return just POLLIN, so there
+   is not way to distinguish. Essentially, if a read would not block,
+   and the fd is still open, then we return with PXREADY.
+
+   So for us, we just have:
+*/
+
+#define PXNOPIPE  1		/* we never captured this output */
+#define PXREADY   2		/* one fd is ready, or got EOF */
+#define PXTIMEOUT 3		/* no fd is ready before the timeout */
+#define PXCLOSED  4		/* fd was already closed when started polling */
+#define PXSILENT  5		/* still open, but no data or EOF for now. No timeout, either,
+				   but there were events on other fds*/
+
 typedef struct {
   int detached;
   int windows_verbatim_args;
@@ -32,6 +50,7 @@ typedef struct processx_pipe_handle_s {
   DWORD buffer_size;
   BYTE *buffer_end;
   BOOLEAN read_pending;
+  BOOLEAN EOF_signalled;
 } processx_pipe_handle_t;
 
 typedef struct processx_handle_s {
@@ -43,8 +62,6 @@ typedef struct processx_handle_s {
   HANDLE waitObject;
   processx_pipe_handle_t *pipes[3];
 } processx_handle_t;
-
-extern HANDLE processx__iocp;
 
 #else
 

@@ -12,7 +12,6 @@ void processx_win_dummy() { }
 
 void R_unload_mylib(DllInfo *info)
 {
-  CloseHandle(processx__iocp);
 }
 
 int uv_utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr) {
