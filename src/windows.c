@@ -508,10 +508,12 @@ void processx__finalizer(SEXP status) {
 
   if (!handle) return;
 
-  /* Just in case it is running */
-  err = TerminateProcess(handle->hProcess, 1);
-  if (err) processx__collect_exit_status(status, 1);
-  WaitForSingleObject(handle->hProcess, INFINITE);
+  if (handle->cleanup) {
+    /* Just in case it is running */
+    err = TerminateProcess(handle->hProcess, 1);
+    if (err) processx__collect_exit_status(status, 1);
+    WaitForSingleObject(handle->hProcess, INFINITE);
+  }
 
   /* Copy over pid and exit status */
   private = R_ExternalPtrTag(status);
@@ -540,7 +542,7 @@ static void CALLBACK processx__exit_callback(void* data, BOOLEAN didTimeout) {
   handle->collected = 1;
 }
 
-SEXP processx__make_handle(SEXP private) {
+SEXP processx__make_handle(SEXP private, int cleanup) {
   processx_handle_t * handle;
   SEXP result;
 
@@ -550,6 +552,7 @@ SEXP processx__make_handle(SEXP private) {
 
   result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
   R_RegisterCFinalizerEx(result, processx__finalizer, 1);
+  handle->cleanup = cleanup;
 
   UNPROTECT(1);
   return result;
@@ -557,7 +560,7 @@ SEXP processx__make_handle(SEXP private) {
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 		   SEXP detached, SEXP windows_verbatim_args, SEXP windows_hide,
-		   SEXP private) {
+		   SEXP private, SEXP cleanup) {
 
   const char *cstd_out = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
   const char *cstd_err = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
@@ -572,6 +575,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   DWORD process_flags;
 
   processx_handle_t *handle;
+  int ccleanup = INTEGER(cleanup)[0];
   SEXP result;
   BOOL regerr;
 
@@ -614,7 +618,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     if (r == 0 || r >= path_len) { processx__error(GetLastError()); }
   }
 
-  result = PROTECT(processx__make_handle(private));
+  result = PROTECT(processx__make_handle(private, ccleanup));
   handle = R_ExternalPtrAddr(result);
 
   err = processx__stdio_create(handle, cstd_out, cstd_err,

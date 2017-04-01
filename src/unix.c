@@ -22,7 +22,7 @@ void processx_unix_dummy() { }
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 		   SEXP detached, SEXP windows_verbatim_args,
-		   SEXP windows_hide_window, SEXP private);
+		   SEXP windows_hide_window, SEXP private, SEXP cleanup);
 SEXP processx_wait(SEXP status, SEXP timeout);
 SEXP processx_is_alive(SEXP status);
 SEXP processx_get_exit_status(SEXP status);
@@ -61,7 +61,7 @@ static void processx__child_init(processx_handle_t *handle, int pipes[3][2],
 static void processx__collect_exit_status(SEXP status, int wstat);
 static void processx__finalizer(SEXP status);
 
-SEXP processx__make_handle(SEXP private);
+SEXP processx__make_handle(SEXP private, int cleanup);
 
 /* Define BSWAP_32 on Big Endian systems */
 #ifdef WORDS_BIGENDIAN
@@ -190,25 +190,31 @@ static void processx__finalizer(SEXP status) {
   /* Already freed? */
   if (!handle) goto cleanup;
 
-  /* Do a non-blocking waitpid() to see if it is running */
   pid = handle->pid;
-  do {
-    wp = waitpid(pid, &wstat, WNOHANG);
-  } while (wp == -1 && errno == EINTR);
 
-  /* Maybe just waited on it? Then collect status */
-  if (wp == pid) processx__collect_exit_status(status, wstat);
-
-  /* If it is running, we need to kill it, and wait for the exit status */
-  if (wp == 0) {
-    kill(pid, SIGKILL);
+  if (handle->cleanup) {
+    /* Do a non-blocking waitpid() to see if it is running */
     do {
-      wp = waitpid(pid, &wstat, 0);
+      wp = waitpid(pid, &wstat, WNOHANG);
     } while (wp == -1 && errno == EINTR);
-    processx__collect_exit_status(status, wstat);
+
+    /* Maybe just waited on it? Then collect status */
+    if (wp == pid) processx__collect_exit_status(status, wstat);
+
+    /* If it is running, we need to kill it, and wait for the exit status */
+    if (wp == 0) {
+      kill(pid, SIGKILL);
+      do {
+	wp = waitpid(pid, &wstat, 0);
+      } while (wp == -1 && errno == EINTR);
+      processx__collect_exit_status(status, wstat);
+    }
+  } else {
+    /* No SIGCHLD handler for this process */
+    processx__child_remove(pid);
   }
 
-  /* It is dead now, copy over pid and exit status */
+  /* Copy over pid and exit status */
   private = R_ExternalPtrTag(status);
   defineVar(install("exited"), ScalarLogical(1), private);
   defineVar(install("pid"), ScalarInteger(pid), private);
@@ -222,7 +228,7 @@ static void processx__finalizer(SEXP status) {
   processx__unblock_sigchld();
 }
 
-SEXP processx__make_handle(SEXP private) {
+SEXP processx__make_handle(SEXP private, int cleanup) {
   processx_handle_t * handle;
   SEXP result;
 
@@ -233,6 +239,7 @@ SEXP processx__make_handle(SEXP private) {
 
   result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
   R_RegisterCFinalizerEx(result, processx__finalizer, 1);
+  handle->cleanup = cleanup;
 
   UNPROTECT(1);
   return result;
@@ -480,10 +487,11 @@ void processx__create_connections(processx_handle_t *handle, SEXP private) {
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 		   SEXP detached, SEXP windows_verbatim_args,
-		   SEXP windows_hide_window, SEXP private) {
+		   SEXP windows_hide_window, SEXP private, SEXP cleanup) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
+  int ccleanup = INTEGER(cleanup)[0];
   const char *cstdout = isNull(stdout) ? 0 : CHAR(STRING_ELT(stdout, 0));
   const char *cstderr = isNull(stderr) ? 0 : CHAR(STRING_ELT(stderr, 0));
   processx_options_t options = { 0 };
@@ -505,7 +513,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 
   processx__setup_sigchld();
 
-  result = PROTECT(processx__make_handle(private));
+  result = PROTECT(processx__make_handle(private, ccleanup));
   handle = R_ExternalPtrAddr(result);
 
   /* Create pipes, if requested. TODO: stdin */
@@ -1043,6 +1051,19 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe, SEXP stderr_pipe) 
 
   UNPROTECT(1);
   return result;
+}
+
+SEXP processx__process_exists(SEXP pid) {
+  pid_t cpid = INTEGER(pid)[0];
+  int res = kill(cpid, 0);
+  if (res == 0) {
+    return ScalarLogical(1);
+  } else if (errno == ESRCH) {
+    return ScalarLogical(0);
+  } else {
+    error("kill syscall error: %s", strerror(errno));
+    return R_NilValue;
+  }
 }
 
 #endif

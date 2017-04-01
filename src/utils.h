@@ -62,9 +62,10 @@ typedef struct processx_handle_s {
   BYTE *child_stdio_buffer;
   HANDLE waitObject;
   processx_pipe_handle_t *pipes[3];
+  int cleanup;
 } processx_handle_t;
 
-#else
+#else // Unix
 
 typedef struct processx_handle_s {
   int exitcode;
@@ -75,6 +76,7 @@ typedef struct processx_handle_s {
   int fd2;			/* readable */
   char tails[3];
   int waitpipe[2];		/* use it for wait() with timeout */
+  int cleanup;
 } processx_handle_t;
 #endif
 

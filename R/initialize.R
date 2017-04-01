@@ -80,7 +80,7 @@ process_initialize <- function(self, private, command, args,
     "processx_exec",
     command, c(command, args), stdout, stderr,
     detached, windows_verbatim_args, windows_hide_window,
-    private
+    private, cleanup
   )
   private$starttime <- Sys.time()
 
