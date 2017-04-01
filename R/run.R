@@ -9,8 +9,9 @@
 #' * Specifying a timeout for the command. If the specified time has
 #'   passed, and the process is still running, it will be killed
 #'   (with all its child processes).
-#' * Calling a callback function for each line of the standard output
-#'   and/or error.
+#' * Calling a callback function for each line or each chunk of the
+#'   standard output and/or error. A chunk may contain multiple lines, and
+#'   can be as short as a single character.
 #'
 #' @section Callbacks:
 #'
@@ -40,10 +41,20 @@
 #'   is running.
 #' @param timeout Timeout for the process, in seconds, or as a `difftime`
 #'   object. If it is not finished before this, it will be killed.
-#' @param stdout_callback `NULL`, or a function to call for every line
-#'   of the standard output. See more below.
-#' @param stderr_callback `NULL`, or a function to call for every line
-#'   of the standard error. See more below.
+#' @param stdout_line_callback `NULL`, or a function to call for every
+#'   line of the standard output. See `stdout_callback` and also more
+#'   below.
+#' @param stdout_callback `NULL`, or a function to call for every chunk
+#'   of the standard output. A chunk can be as small as a single character.
+#'   At most one of `stdout_line_callback` and `stdout_callback` can be
+#'   non-`NULL`.
+#' @param stderr_line_callback `NULL`, or a function to call for every
+#'   line of the standard error. See `stderr_callback` and also more
+#'   below.
+#' @param stderr_callback `NULL`, or a function to call for every chunk
+#'   of the standard error. A chunk can be as small as a single character.
+#'   At most one of `stderr_line_callback` and `stderr_callback` can be
+#'   non-`NULL`.
 #' @param windows_verbatim_args Whether to omit the escaping of the
 #'   command and the arguments on windows. Ignored on other platforms.
 #' @param windows_hide_window Whether to hide the window of the
@@ -78,14 +89,21 @@
 run <- function(
   command = NULL, args = character(), commandline = NULL,
   error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
-  stdout_callback = NULL, stderr_callback = NULL,
+  stdout_line_callback = NULL, stdout_callback = NULL,
+  stderr_line_callback = NULL, stderr_callback = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = TRUE) {
 
   assert_that(is_flag(error_on_status))
   assert_that(is_time_interval(timeout))
   assert_that(is_flag(spinner))
+  assert_that(is.null(stdout_line_callback) ||
+              is.function(stdout_line_callback))
+  assert_that(is.null(stderr_line_callback) ||
+              is.function(stderr_line_callback))
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
   assert_that(is.null(stderr_callback) || is.function(stderr_callback))
+  assert_that(is.null(stdout_callback) || is.null(stdout_line_callback))
+  assert_that(is.null(stderr_callback) || is.null(stderr_line_callback))
   ## The rest is checked by process$new()
 
   if (!interactive()) spinner <- FALSE
@@ -104,7 +122,9 @@ run <- function(
     stderr_callback <- echo_callback(stderr_callback, "stderr")
   }
 
-  res <- run_manage(pr, timeout, spinner, stdout_callback, stderr_callback)
+  res <- run_manage(pr, timeout, spinner, stdout_line_callback,
+                    stdout_callback, stderr_line_callback,
+                    stderr_callback)
 
   if (error_on_status && (is.na(res$status) || res$status > 0)) {
     stop(make_condition(res, call = sys.call()))
@@ -119,40 +139,58 @@ echo_callback <- function(user_callback, type) {
   force(user_callback)
   force(type)
   function(x, ...) {
-    out <- paste0(if (type == "stdout") "- " else "x ", x)
-    if (type == "stderr") out <- red(out)
-    cat(out, "\n", sep = "")
+    if (type == "stderr") x <- red(x)
+    cat(x, sep = "")
     if (!is.null(user_callback)) user_callback(x, ...)
   }
 }
 
-run_manage <- function(proc, timeout, spinner, stdout_callback,
+run_manage <- function(proc, timeout, spinner, stdout_line_callback,
+                       stdout_callback, stderr_line_callback,
                        stderr_callback) {
 
   timeout <- as.difftime(timeout, units = "secs")
   start_time <- proc$get_start_time()
 
-  stdout <- character()
-  stderr <- character()
+  stdout <- ""
+  stderr <- ""
+
+  pushback_out <- ""
+  pushback_err <- ""
 
   do_output <- function() {
-    had_output <- FALSE
 
-    newout <- proc$read_output_lines()
-    if (!is.null(stdout_callback)) {
-      lapply(newout, function(x) stdout_callback(x, proc))
+    newout <- readChar(proc$get_output_connection(), 2000)
+    if (length(newout) && nzchar(newout)) {
+      if (!is.null(stdout_callback)) stdout_callback(newout, proc)
+      stdout <<- paste0(stdout, newout)
+      if (!is.null(stdout_line_callback)) {
+        newout <- paste0(pushback_out, newout)
+        pushback_out <- ""
+        lines <- strsplit(newout, "\r?\n")[[1]]
+        if (last_char(newout) != "\n") {
+          pushback_out <- tail(lines, 1)
+          lines <- head(lines, -1)
+        }
+        lapply(lines, function(x) stdout_line_callback(x, proc))
+      }
     }
-    stdout <<- c(stdout, newout)
-    had_output <- had_output || length(newout) > 0
 
-    newerr <- proc$read_error_lines()
-    if (!is.null(stderr_callback)) {
-      lapply(newerr, function(x) stderr_callback(x, proc))
+    newerr <- readChar(proc$get_error_connection(), 2000)
+    if (length(newerr) && nzchar(newerr)) {
+      stderr <<- paste0(stderr, newerr)
+      if (!is.null(stderr_callback)) stderr_callback(newerr, proc)
+      if (!is.null(stderr_line_callback)) {
+        newerr <- paste0(pushback_err, newerr)
+        pushback_err <- ""
+        lines <- strsplit(newerr, "\r?\n")[[1]]
+        if (last_char(newerr) != "\n") {
+          pushback_err <- tail(lines, 1)
+          lines <- head(lines, -1)
+        }
+        lapply(lines, function(x) stderr_line_callback(x, proc))
+      }
     }
-    stderr <<- c(stderr, newerr)
-    had_output <- had_output || length(newerr) > 0
-
-    had_output
   }
 
   spin <- (function() {
@@ -201,8 +239,8 @@ run_manage <- function(proc, timeout, spinner, stdout_callback,
 
   list(
     status = proc$get_exit_status(),
-    stdout = stdout,
-    stderr = stderr
+    stdout = strsplit(paste(stdout, collapse = ""), "\n", fixed = TRUE)[[1]],
+    stderr = strsplit(paste(stderr, collapse = ""), "\n", fixed = TRUE)[[1]]
   )
 }
 

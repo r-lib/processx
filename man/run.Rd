@@ -6,7 +6,8 @@
 \usage{
 run(command = NULL, args = character(), commandline = NULL,
   error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
-  stdout_callback = NULL, stderr_callback = NULL,
+  stdout_line_callback = NULL, stdout_callback = NULL,
+  stderr_line_callback = NULL, stderr_callback = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = TRUE)
 }
 \arguments{
@@ -36,11 +37,23 @@ is running.}
 \item{timeout}{Timeout for the process, in seconds, or as a \code{difftime}
 object. If it is not finished before this, it will be killed.}
 
-\item{stdout_callback}{\code{NULL}, or a function to call for every line
-of the standard output. See more below.}
+\item{stdout_line_callback}{\code{NULL}, or a function to call for every
+line of the standard output. See \code{stdout_callback} and also more
+below.}
 
-\item{stderr_callback}{\code{NULL}, or a function to call for every line
-of the standard error. See more below.}
+\item{stdout_callback}{\code{NULL}, or a function to call for every chunk
+of the standard output. A chunk can be as small as a single character.
+At most one of \code{stdout_line_callback} and \code{stdout_callback} can be
+non-\code{NULL}.}
+
+\item{stderr_line_callback}{\code{NULL}, or a function to call for every
+line of the standard error. See \code{stderr_callback} and also more
+below.}
+
+\item{stderr_callback}{\code{NULL}, or a function to call for every chunk
+of the standard error. A chunk can be as small as a single character.
+At most one of \code{stderr_line_callback} and \code{stderr_callback} can be
+non-\code{NULL}.}
 
 \item{windows_verbatim_args}{Whether to omit the escaping of the
 command and the arguments on windows. Ignored on other platforms.}
@@ -68,8 +81,9 @@ extra features, see below.
 \item Specifying a timeout for the command. If the specified time has
 passed, and the process is still running, it will be killed
 (with all its child processes).
-\item Calling a callback function for each line of the standard output
-and/or error.
+\item Calling a callback function for each line or each chunk of the
+standard output and/or error. A chunk may contain multiple lines, and
+can be as short as a single character.
 }
 }
 \section{Callbacks}{
