@@ -871,4 +871,23 @@ SEXP processx_get_pid(SEXP status) {
   return ScalarInteger(handle->dwProcessId);
 }
 
+SEXP processx__process_exists(SEXP pid) {
+  DWORD cpid = INTEGER(pid)[0];
+  HANDLE proc = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, cpid);
+  if (proc == NULL) {
+    DWORD err = GetLastError();
+    if (err == ERROR_INVALID_PARAMETER) return ScalarLogical(0);
+    processx__error(err);
+    return R_NilValue;
+  } else {
+    /* Maybe just finished, and in that case we still have a valid handle. 
+       Let's see if this is the case. */
+    DWORD exitcode;
+    DWORD err = GetExitCodeProcess(proc, &exitcode);
+    CloseHandle(proc);
+    if (!err) processx__error(GetLastError());
+    return ScalarLogical(exitcode == STILL_ACTIVE);
+  }
+}
+
 #endif
