@@ -253,6 +253,8 @@ static void processx__child_remove(pid_t pid) {
       if (prev) {
 	prev->next = ptr->next;
 	free(ptr);
+      } else {
+	child_list = 0;
       }
       return;
     }
