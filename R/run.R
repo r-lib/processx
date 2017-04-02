@@ -239,8 +239,8 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 
   list(
     status = proc$get_exit_status(),
-    stdout = strsplit(paste(stdout, collapse = ""), "\n", fixed = TRUE)[[1]],
-    stderr = strsplit(paste(stderr, collapse = ""), "\n", fixed = TRUE)[[1]]
+    stdout = strsplit(paste(stdout, collapse = ""), "\r?\n")[[1]],
+    stderr = strsplit(paste(stderr, collapse = ""), "\r?\n")[[1]]
   )
 }
 
