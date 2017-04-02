@@ -510,6 +510,7 @@ void processx__finalizer(SEXP status) {
 
   if (handle->cleanup) {
     /* Just in case it is running */
+    if (handle->job) TerminateJobObject(handle->job, 1);
     err = TerminateProcess(handle->hProcess, 1);
     if (err) processx__collect_exit_status(status, 1);
     WaitForSingleObject(handle->hProcess, INFINITE);
@@ -522,6 +523,7 @@ void processx__finalizer(SEXP status) {
   defineVar(install("exitcode"), ScalarInteger(handle->exitcode), private);
 
   if (handle->hProcess) CloseHandle(handle->hProcess);
+  if (handle->job) CloseHandle(handle->job);
   processx__handle_destroy(handle);
   R_ClearExternalPtr(status);
 }
@@ -577,7 +579,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   processx_handle_t *handle;
   int ccleanup = INTEGER(cleanup)[0];
   SEXP result;
-  BOOL regerr;
+  BOOLEAN regerr;
+  DWORD dwerr;
 
   options.detached = LOGICAL(detached)[0];
   options.windows_verbatim_args = LOGICAL(windows_verbatim_args)[0];
@@ -642,7 +645,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   startup.hStdError = processx__stdio_handle(handle->child_stdio_buffer, 2);
   startup.wShowWindow = options.windows_hide ? SW_HIDE : SW_SHOWDEFAULT;
 
-  process_flags = CREATE_UNICODE_ENVIRONMENT;
+  process_flags = CREATE_UNICODE_ENVIRONMENT |
+    CREATE_BREAKAWAY_FROM_JOB |
+    CREATE_SUSPENDED |
+    CREATE_NO_WINDOW;
 
   if (options.detached) {
     /* Note that we're not setting the CREATE_BREAKAWAY_FROM_JOB flag. That
@@ -674,7 +680,14 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 
   handle->hProcess = info.hProcess;
   handle->dwProcessId = info.dwProcessId;
+  handle->job = CreateJobObject(NULL, NULL);
+  if (!handle->job) processx__error(GetLastError());
 
+  regerr = AssignProcessToJobObject(handle->job, handle->hProcess);
+  if (!regerr) processx__error(GetLastError());
+
+  dwerr = ResumeThread(info.hThread);
+  if (dwerr == (DWORD) -1) processx__error(GetLastError());
   CloseHandle(info.hThread);
 
   regerr = RegisterWaitForSingleObject(
@@ -827,6 +840,8 @@ SEXP processx_signal(SEXP status, SEXP signal) {
     if (!err) { processx__error(GetLastError()); }
 
     if (exitcode == STILL_ACTIVE) {
+      TerminateJobObject(handle->job, 1);
+      handle->job = NULL;
       err = TerminateProcess(handle->hProcess, 1);
       if (err) {
 	processx__collect_exit_status(status, 1);

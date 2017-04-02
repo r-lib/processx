@@ -57,6 +57,7 @@ typedef struct processx_pipe_handle_s {
 typedef struct processx_handle_s {
   int exitcode;
   int collected;	 /* Whether exit code was collected already */
+  HANDLE job;
   HANDLE hProcess;
   DWORD  dwProcessId;
   BYTE *child_stdio_buffer;

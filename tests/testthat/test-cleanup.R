@@ -14,8 +14,12 @@ test_that("process is cleaned up", {
 
 test_that("process can stay alive", {
 
+  ## We cannot use 'commandline' because then there is an intermediate
+  ## shell, and we cannot clean up the ping process with tools::pskill
+  cmd <- sleep(60, commandline = FALSE)
+
   on.exit(tools::pskill(pid), add = TRUE)
-  p <- process$new(commandline = sleep(60), cleanup = FALSE)
+  p <- process$new(cmd[1], cmd[-1], cleanup = FALSE)
   pid <- p$get_pid()
 
   rm(p)
