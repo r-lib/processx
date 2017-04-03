@@ -120,7 +120,7 @@ test_that("can read after process was finalized, windows", {
 
   skip_other_platforms("windows")
 
-  p <- process$new(commandline = "dir /b", stdout = "|")
+  p <- process$new(commandline = "dir /b /A", stdout = "|")
   con <- p$get_output_connection()
   p$wait()
   rm(p) ; gc()
