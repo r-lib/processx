@@ -446,7 +446,7 @@ HANDLE processx__stdio_handle(BYTE* buffer, int fd) {
   return CHILD_STDIO_HANDLE(buffer, fd);
 }
 
-int processx__poll_start_read(processx_pipe_handle_t *handle, int *result) {
+DWORD processx__poll_start_read(processx_pipe_handle_t *handle, int *result) {
   DWORD bytes_read = 0;
   BOOLEAN res;
   ResetEvent(handle->overlapped.hEvent);
