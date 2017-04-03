@@ -209,9 +209,6 @@ static void processx__finalizer(SEXP status) {
       } while (wp == -1 && errno == EINTR);
       processx__collect_exit_status(status, wstat);
     }
-  } else {
-    /* No SIGCHLD handler for this process */
-    processx__child_remove(pid);
   }
 
   /* Copy over pid and exit status */
@@ -219,6 +216,10 @@ static void processx__finalizer(SEXP status) {
   defineVar(install("exited"), ScalarLogical(1), private);
   defineVar(install("pid"), ScalarInteger(pid), private);
   defineVar(install("exitcode"), ScalarInteger(handle->exitcode), private);
+
+  /* Note: if no cleanup is requested, then we still have a sigchld
+     handler, to read out the exit code via waitpid, but no handle
+     any more. */
 
   /* Deallocate memory */
   R_ClearExternalPtr(status);
