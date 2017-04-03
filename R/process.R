@@ -1,5 +1,5 @@
 
-#' @useDynLib processx
+#' @useDynLib processx, .registration = TRUE, .fixes = "c_"
 NULL
 
 #' External process
@@ -305,7 +305,7 @@ process_wait <- function(self, private, timeout) {
   if (private$exited) {
     ## Nothing
   } else {
-    .Call("processx_wait", private$status, as.integer(timeout))
+    .Call(c_processx_wait, private$status, as.integer(timeout))
   }
   invisible(self)
 }
@@ -315,7 +315,7 @@ process_is_alive <- function(self, private) {
   if (private$exited) {
     FALSE
   } else {
-    .Call("processx_is_alive", private$status)
+    .Call(c_processx_is_alive, private$status)
   }
 }
 
@@ -324,7 +324,7 @@ process_get_exit_status <- function(self, private) {
   if (private$exited) {
     private$exitcode
   } else {
-    .Call("processx_get_exit_status", private$status)
+    .Call(c_processx_get_exit_status, private$status)
   }
 }
 
@@ -333,7 +333,7 @@ process_signal <- function(self, private, signal) {
   if (private$exited) {
     FALSE
   } else {
-    .Call("processx_signal", private$status, as.integer(signal))
+    .Call(c_processx_signal, private$status, as.integer(signal))
   }
 }
 
@@ -342,7 +342,7 @@ process_kill <- function(self, private, grace) {
   if (private$exited) {
     FALSE
   } else {
-    .Call("processx_kill", private$status, as.numeric(grace))
+    .Call(c_processx_kill, private$status, as.numeric(grace))
   }
 }
 
@@ -354,6 +354,6 @@ process_get_pid <- function(self, private) {
   if (private$exited) {
     private$pid
   } else {
-    .Call("processx_get_pid", private$status)
+    .Call(c_processx_get_pid, private$status)
   }
 }

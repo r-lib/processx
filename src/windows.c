@@ -7,6 +7,7 @@ void processx_win_dummy() { }
 
 #include "utils.h"
 #include "windows-stdio.h"
+#include "processx.h"
 
 #include <R_ext/Rdynload.h>
 

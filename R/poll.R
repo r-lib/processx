@@ -82,8 +82,7 @@ poll <- function(processes, ms) {
   std_errs <- lapply(processes, function(p) p$get_error_connection())
 
   res <- lapply(
-    .Call("processx_poll", statuses, as.integer(ms), std_outs, std_errs,
-          PACKAGE = "processx"),
+    .Call(c_processx_poll, statuses, as.integer(ms), std_outs, std_errs),
     function(x) structure(poll_codes[x], names = c("output", "error"))
   )
 

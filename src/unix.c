@@ -16,19 +16,8 @@ void processx_unix_dummy() { }
 #include <sys/wait.h>
 #include <poll.h>
 
+#include "processx.h"
 #include "utils.h"
-
-/* API from R */
-
-SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
-		   SEXP windows_verbatim_args,
-		   SEXP windows_hide_window, SEXP private, SEXP cleanup);
-SEXP processx_wait(SEXP status, SEXP timeout);
-SEXP processx_is_alive(SEXP status);
-SEXP processx_get_exit_status(SEXP status);
-SEXP processx_signal(SEXP status, SEXP signal);
-SEXP processx_kill(SEXP status, SEXP grace);
-SEXP processx_get_pid(SEXP status);
 
 /* Child list and its functions */
 
@@ -987,7 +976,8 @@ int processx__poll_decode(short code) {
   return 0;
 }
 
-SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe, SEXP stderr_pipe) {
+SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
+		      SEXP stderr_pipe) {
   int cms = INTEGER(ms)[0];
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   struct pollfd fds[2];

@@ -74,7 +74,7 @@ process_initialize <- function(self, private, command, args,
   if (isFALSE(stdout)) stdout <- NULL
   if (isFALSE(stderr)) stderr <- NULL
   private$status <- .Call(
-    "processx_exec",
+    c_processx_exec,
     command, c(command, args), stdout, stderr,
     windows_verbatim_args, windows_hide_window,
     private, cleanup
