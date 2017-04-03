@@ -649,8 +649,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     CREATE_SUSPENDED |
     CREATE_NO_WINDOW;
 
-  process_flags |= DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP;
-
   err = CreateProcessW(
     /* lpApplicationName =    */ application_path,
     /* lpCommandLine =        */ arguments,
