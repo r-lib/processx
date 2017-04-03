@@ -21,7 +21,7 @@ void processx_unix_dummy() { }
 /* API from R */
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
-		   SEXP detached, SEXP windows_verbatim_args,
+		   SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private, SEXP cleanup);
 SEXP processx_wait(SEXP status, SEXP timeout);
 SEXP processx_is_alive(SEXP status);
@@ -130,7 +130,7 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
 
   int fd0, fd1, fd2;
 
-  if (options->detached) setsid();
+  setsid();
 
   /* stdin is coming from /dev/null */
 
@@ -203,7 +203,7 @@ static void processx__finalizer(SEXP status) {
 
     /* If it is running, we need to kill it, and wait for the exit status */
     if (wp == 0) {
-      kill(pid, SIGKILL);
+      kill(-pid, SIGKILL);
       do {
 	wp = waitpid(pid, &wstat, 0);
       } while (wp == -1 && errno == EINTR);
@@ -492,7 +492,7 @@ void processx__create_connections(processx_handle_t *handle, SEXP private) {
 }
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
-		   SEXP detached, SEXP windows_verbatim_args,
+		   SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private, SEXP cleanup) {
 
   char *ccommand = processx__tmp_string(command, 0);
@@ -510,8 +510,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 
   processx_handle_t *handle = NULL;
   SEXP result;
-
-  options.detached = LOGICAL(detached)[0];
 
   if (pipe(signal_pipe)) { goto cleanup; }
   processx__cloexec_fcntl(signal_pipe[0], 1);
@@ -952,7 +950,7 @@ SEXP processx_kill(SEXP status, SEXP grace) {
   if (wp != 0) { goto cleanup; }
 
   /* It is still running, so a SIGKILL */
-  int ret = kill(pid, SIGKILL);
+  int ret = kill(-pid, SIGKILL);
   if (ret == -1 && errno == ESRCH) { goto cleanup; }
   if (ret == -1) {
     processx__unblock_sigchld();

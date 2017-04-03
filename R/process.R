@@ -128,11 +128,10 @@ process <- R6Class(
     initialize = function(command = NULL, args = character(),
       commandline = NULL, stdout = TRUE, stderr = TRUE, cleanup = TRUE,
       echo_cmd = FALSE, windows_verbatim_args = FALSE,
-      windows_hide_window = FALSE, detached = TRUE)
+      windows_hide_window = FALSE)
       process_initialize(self, private, command, args, commandline,
                          stdout, stderr, cleanup, echo_cmd,
-                         windows_verbatim_args, windows_hide_window,
-                         detached),
+                         windows_verbatim_args, windows_hide_window),
 
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
@@ -200,7 +199,6 @@ process <- R6Class(
     echo_cmd = NULL,      # whether to echo the command
     windows_verbatim_args = NULL,
     windows_hide_window = NULL,
-    detached = FALSE,
 
     status = NULL,        # C file handle
     exited = FALSE,       # Whether pid & exitcode was copied over here
@@ -242,8 +240,7 @@ process_restart <- function(self, private) {
     private$cleanup,
     private$echo_cmd,
     private$windows_verbatim_args,
-    private$windows_hide_window,
-    private$detached
+    private$windows_hide_window
   )
 
   invisible(self)

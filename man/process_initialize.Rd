@@ -5,7 +5,7 @@
 \title{Start a process}
 \usage{
 process_initialize(self, private, command, args, commandline, stdout, stderr,
-  cleanup, echo_cmd, windows_verbatim_args, windows_hide_window, detached)
+  cleanup, echo_cmd, windows_verbatim_args, windows_hide_window)
 }
 \arguments{
 \item{self}{this}
@@ -25,8 +25,6 @@ process_initialize(self, private, command, args, commandline, stdout, stderr,
 \item{cleanup}{Kill on GC?}
 
 \item{echo_cmd}{Echo command before starting it?}
-
-\item{detached}{Whether to create a new process group for the child.}
 }
 \description{
 Start a process

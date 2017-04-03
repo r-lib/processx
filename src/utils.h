@@ -36,7 +36,6 @@
                                 /* but there were events on other fds */
 
 typedef struct {
-  int detached;
   int windows_verbatim_args;
   int windows_hide;
 } processx_options_t;

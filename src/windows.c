@@ -561,7 +561,7 @@ SEXP processx__make_handle(SEXP private, int cleanup) {
 }
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
-		   SEXP detached, SEXP windows_verbatim_args, SEXP windows_hide,
+		   SEXP windows_verbatim_args, SEXP windows_hide,
 		   SEXP private, SEXP cleanup) {
 
   const char *cstd_out = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
@@ -582,7 +582,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   BOOLEAN regerr;
   DWORD dwerr;
 
-  options.detached = LOGICAL(detached)[0];
   options.windows_verbatim_args = LOGICAL(windows_verbatim_args)[0];
   options.windows_hide = LOGICAL(windows_hide)[0];
 
@@ -650,19 +649,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     CREATE_SUSPENDED |
     CREATE_NO_WINDOW;
 
-  if (options.detached) {
-    /* Note that we're not setting the CREATE_BREAKAWAY_FROM_JOB flag. That
-     * means that libuv might not let you create a fully daemonized process
-     * when run under job control. However the type of job control that libuv
-     * itself creates doesn't trickle down to subprocesses so they can still
-     * daemonize.
-     *
-     * A reason to not do this is that CREATE_BREAKAWAY_FROM_JOB makes the
-     * CreateProcess call fail if we're under job control that doesn't allow
-     * breakaway.
-     */
-    process_flags |= DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP;
-  }
+  process_flags |= DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP;
 
   err = CreateProcessW(
     /* lpApplicationName =    */ application_path,
