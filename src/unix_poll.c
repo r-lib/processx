@@ -61,14 +61,14 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
     SET_VECTOR_ELT(result, i, allocVector(INTSXP, 2));
     if (isNull(out)) {
       INTEGER(VECTOR_ELT(result, i))[0] = PXNOPIPE;
-    } else if (handle->fd1 < 0) {
+    } else if (!handle || handle->fd1 < 0) {
       INTEGER(VECTOR_ELT(result, i))[0] = PXCLOSED;
     } else {
       INTEGER(VECTOR_ELT(result, i))[0] = PXSILENT;
     }
     if (isNull(err)) {
       INTEGER(VECTOR_ELT(result, i))[1] = PXNOPIPE;
-    } else if (handle->fd2 < 0) {
+    } else if (!handle || handle->fd2 < 0) {
       INTEGER(VECTOR_ELT(result, i))[1] = PXCLOSED;
     } else {
       INTEGER(VECTOR_ELT(result, i))[1] = PXSILENT;
