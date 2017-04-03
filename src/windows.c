@@ -572,8 +572,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   WCHAR *application_path = NULL, *application = NULL, *arguments = NULL,
     *cwd = NULL;
   processx_options_t options;
-  STARTUPINFOW startup;
-  PROCESS_INFORMATION info;
+  STARTUPINFOW startup = { 0 };
+  PROCESS_INFORMATION info = { 0 };
   DWORD process_flags;
 
   processx_handle_t *handle;
