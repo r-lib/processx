@@ -27,11 +27,11 @@ process_is_incompelete_error <- function(self, private) {
   isIncomplete(process_get_error_connection(self, private))
 }
 
+poll_codes <- c("nopipe", "ready", "timeout", "closed", "silent")
+
 process_poll_io <- function(self, private, ms) {
   res <- .Call("processx_poll_io", private$status, as.integer(ms),
                private$stdout_pipe, private$stderr_pipe, PACKAGE = "processx")
-  structure(
-    c("nopipe", "ready", "timeout", "closed", "silent")[res],
-    names = c("output", "error")
-  )
+
+  structure(poll_codes[res], names = c("output", "error"))
 }

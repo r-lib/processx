@@ -382,6 +382,11 @@ skip:
 
 void processx__con_destroy(Rconnection con) {
   if (con->status >= 0) {
+    processx_handle_t *handle = con->private;
+    if (handle) {
+      if (handle->fd1 == con->status) handle->fd1 = -1;
+      if (handle->fd2 == con->status) handle->fd2 = -1;
+    }
     close(con->status);
     con->status = -1;
     con->isopen = 0;
@@ -975,7 +980,7 @@ SEXP processx_get_pid(SEXP status) {
   return ScalarInteger(handle->pid);
 }
 
-static int processx__poll_decode(short code) {
+int processx__poll_decode(short code) {
   if (code & POLLNVAL) return PXCLOSED;
   if (code & POLLIN || code & POLLHUP) return PXREADY;
   return 0;
