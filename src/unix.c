@@ -749,6 +749,7 @@ SEXP processx__wait_timeout(SEXP status, SEXP timeout) {
 
   /* Make sure this is active, in case another package replaced it... */
   processx__setup_sigchld();
+  processx__block_sigchld();
 
   /* Setup the self-pipe that we can poll */
   if (pipe(handle->waitpipe)) {
