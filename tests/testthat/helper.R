@@ -47,33 +47,7 @@ get_pid_by_name <- function(name) {
 }
 
 get_pid_by_name_windows <- function(name) {
-  cmd <- paste0(
-    "wmic process where (CommandLine Like '%", name, "%') ",
-    "get CommandLine,ProcessId /format:list 2>&1"
-  )
-
-  wmic_out <- shell(cmd, intern = TRUE)
-  parsed <- parse_wmic_list(wmic_out)
-
-  ## To drop the wmic process itself
-  parsed <- parsed[! grepl("wmic[ ]+process", parsed$CommandLine), ,
-                   drop = FALSE]
-
-  ## Just to be safe
-  parsed <- parsed[grepl(name, parsed$CommandLine, fixed = TRUE), ,
-                   drop = FALSE]
-
-  if (nrow(parsed) == 0) {
-    NULL
-  } else {
-    parsed$ProcessId[1]
-  }
-}
-
-get_pid_by_name_unix <- function(name) {
-  out <- safe_system("pgrep", c("-f", name))$stdout
-  pid <- scan(text = out, quiet = TRUE)[1]
-  if (is.na(pid)) NULL else pid
+  ## TODO
 }
 
 ## Linux does not exclude the ancestors of the pgrep process
@@ -90,22 +64,5 @@ get_pid_by_name_unix <- function(name) {
 ## result for 'name'
 
 get_pid_by_name_linux <- function(name) {
-
-  ## All matching processes, including pgrep's ancestor shell(s)
-  allproc <- str_trim(safe_system("pgrep", c("-d,", "-f", name))$stdout)
-
-  ## List their full command lines
-  out <- safe_system(
-    "ps",
-    c("-p", allproc, "--no-header", "-o", "pid=,command=")
-  )$stdout
-
-  ## Keep the ones that have 'name'
-  out <- str_trim(strsplit(out, "\n", fixed = TRUE)[[1]])
-  out <- grep(name, out, value = TRUE, fixed = TRUE)
-
-  ## First field is process id
-  first <- vapply(strsplit(out, " ", fixed = TRUE), "[[", "", 1L)
-  pid <- scan(text = first, quiet = TRUE)[1]
-  if (is.na(pid)) NULL else pid
+  ## TODO
 }

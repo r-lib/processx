@@ -30,12 +30,12 @@ on_failure(is_flag) <- function(call, env) {
   paste0(deparse(call$x), " is not a flag (length 1 logical)")
 }
 
-is_count <- function(x) {
+is_integerish_scalar <- function(x) {
   is.numeric(x) && length(x) == 1 && !is.na(x) && round(x) == x
 }
 
-on_failure(is_count) <- function(call, env) {
-  paste0(deparse(call$x), " is not a count (length 1 integer)")
+on_failure(is_integerish_scalar) <- function(call, env) {
+  paste0(deparse(call$x), " is not a length 1 integer")
 }
 
 is_pid <- function(x) {
@@ -69,4 +69,12 @@ is_time_interval <- function(x) {
 
 on_failure(is_time_interval) <- function(call, env) {
   paste0(deparse(call$x), " is not a valid time interval")
+}
+
+is_list_of_processes <- function(x) {
+  is.list(x) && vapply(x, inherits, FUN.VALUE = logical(1), "process")
+}
+
+on_failure(is_list_of_processes) <- function(call, env) {
+  paste0(deparse(call$x), " is not a list of process objects")
 }

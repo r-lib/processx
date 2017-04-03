@@ -20,7 +20,8 @@ test_that("'commandline' works", {
   unix <- "echo kuku; >&2 echo kuku2; sleep 1"
 
   p <- process$new(
-    commandline = if (os_type() == "windows") win else unix
+    commandline = if (os_type() == "windows") win else unix,
+    stdout = "|", stderr = "|", windows_verbatim_args = TRUE
   )
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
