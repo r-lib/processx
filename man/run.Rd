@@ -8,7 +8,7 @@ run(command = NULL, args = character(), commandline = NULL,
   error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
   stdout_line_callback = NULL, stdout_callback = NULL,
   stderr_line_callback = NULL, stderr_callback = NULL,
-  windows_verbatim_args = FALSE, windows_hide_window = TRUE)
+  windows_verbatim_args = FALSE, windows_hide_window = FALSE)
 }
 \arguments{
 \item{command}{Character scalar, the command to run. It will be
