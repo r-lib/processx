@@ -52,29 +52,32 @@ test_that("is_flag", {
   }
 })
 
-counts <- list(1, 0, -1, 1L, 0L, -1L, 1.0, 42.0)
-not_counts <- list(1.2, 0.1, "foo", numeric(), integer(), NULL,
-                   NA_integer_, NA_real_)
+ints <- list(1, 0, -1, 1L, 0L, -1L, 1.0, 42.0)
+not_ints <- list(1.2, 0.1, "foo", numeric(), integer(), NULL,
+                 NA_integer_, NA_real_)
 
-test_that("is_count", {
-  for (p in counts) {
-    expect_true(is_count(p))
-    expect_silent(assert_that(is_count(p)))
+test_that("is_integerish_scalar", {
+  for (p in ints) {
+    expect_true(is_integerish_scalar(p))
+    expect_silent(assert_that(is_integerish_scalar(p)))
   }
 
-  for (n in not_counts) {
-    expect_false(is_count(n))
-    expect_error(assert_that(is_count(n)), "is not a count")
+  for (n in not_ints) {
+    expect_false(is_integerish_scalar(n))
+    expect_error(
+      assert_that(is_integerish_scalar(n)),
+      "is not a length 1 integer"
+    )
   }
 })
 
 test_that("is_pid", {
-  for (p in counts) {
+  for (p in ints) {
     expect_true(is_pid(p))
     expect_silent(assert_that(is_pid(p)))
   }
 
-  for (n in not_counts) {
+  for (n in not_ints) {
     expect_false(is_pid(n))
     expect_error(assert_that(is_pid(n)), "is not a process id")
   }
