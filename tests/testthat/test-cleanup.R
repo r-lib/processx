@@ -18,7 +18,7 @@ test_that("process can stay alive", {
   ## shell, and we cannot clean up the ping process with tools::pskill
   cmd <- sleep(60, commandline = FALSE)
 
-  on.exit(tools::pskill(pid), add = TRUE)
+  on.exit(tools::pskill(pid, 9), add = TRUE)
   p <- process$new(cmd[1], cmd[-1], cleanup = FALSE)
   pid <- p$get_pid()
 
