@@ -67,13 +67,9 @@ test_that("multiple processes", {
 
   p1$wait()
   res <- poll(list(p1 = p1, p2 = p2), -1)
-  expect_equal(
-    res,
-    list(
-      p1 = c(output = "ready", error = "nopipe"),
-      p2 = c(output = "nopipe", error = "silent")
-    )
-  )
+  expect_equal(res$p1, c(output = "ready", error = "nopipe"))
+  expect_equal(res$p2[["output"]], "nopipe")
+  expect_true(res$p2[["error"]] %in% c("silent", "ready"))
 
   close(p1$get_output_connection())
   p2$wait()
