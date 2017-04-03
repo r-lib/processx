@@ -775,6 +775,7 @@ SEXP processx__wait_timeout(SEXP status, SEXP timeout) {
   }
 
   close(handle->waitpipe[0]);
+  close(handle->waitpipe[1]);
   handle->waitpipe[0] = -1;
 
   return ScalarLogical(ret != 0);
