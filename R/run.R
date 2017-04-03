@@ -91,7 +91,7 @@ run <- function(
   error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
   stdout_line_callback = NULL, stdout_callback = NULL,
   stderr_line_callback = NULL, stderr_callback = NULL,
-  windows_verbatim_args = FALSE, windows_hide_window = TRUE) {
+  windows_verbatim_args = FALSE, windows_hide_window = FALSE) {
 
   assert_that(is_flag(error_on_status))
   assert_that(is_time_interval(timeout))
