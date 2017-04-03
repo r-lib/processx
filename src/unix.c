@@ -312,7 +312,7 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
     if (!child_list) processx__remove_sigchld();
 
     /* If there is an active wait() with a timeout, then stop it */
-    if (handle->waitpipe[1] >= 0) {
+    if (handle && handle->waitpipe[1] >= 0) {
       close(handle->waitpipe[1]);
       handle->waitpipe[1] = -1;
     }
