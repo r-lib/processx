@@ -40,12 +40,12 @@
 #' @examples
 #' ## Different commands to run for windows and unix
 #' cmd1 <- switch(
-#'   os_type(),
+#'   .Platform$OS.type,
 #'   "unix" = "sleep 1; ls",
 #'   "ping -n 2 127.0.0.1 && dir /b"
 #' )
 #' cmd2 <- switch(
-#'   os_type(),
+#'   .Platform$OS.type,
 #'   "unix" = "sleep 2; ls 1>&2",
 #'   "ping -n 2 127.0.0.1 && dir /b 1>&2"
 #' )
