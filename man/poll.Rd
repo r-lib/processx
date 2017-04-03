@@ -53,5 +53,34 @@ will not be notified when it exits.
 }
 
 \examples{
-# TODO
+## Different commands to run for windows and unix
+cmd1 <- switch(
+  os_type(),
+  "unix" = "sleep 1; ls",
+  "ping -n 2 127.0.0.1 && dir /b"
+)
+cmd2 <- switch(
+  os_type(),
+  "unix" = "sleep 2; ls 1>&2",
+  "ping -n 2 127.0.0.1 && dir /b 1>&2"
+)
+
+## Run them. p1 writes to stdout, p2 to stderr, after some sleep
+p1 <- process$new(commandline = cmd1, stdout = "|")
+p2 <- process$new(commandline = cmd1, stderr = "|")
+
+## Nothing to read initially
+poll(list(p1 = p1, p2 = p2), 0)
+
+## Wait until p1 finishes. Now p1 has some output
+p1$wait()
+poll(list(p1 = p1, p2 = p2), -1)
+
+## Close p1's connection, p2 will have output on stderr, eventually
+close(p1$get_output_connection())
+poll(list(p1 = p1, p2 = p2), -1)
+
+## Close p2's connection as well, no nothing to poll
+close(p2$get_error_connection())
+poll(list(p1 = p1, p2 = p2), 0)
 }
