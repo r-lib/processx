@@ -112,6 +112,7 @@ run <- function(
   pr <- process$new(
     command, args, commandline, echo_cmd = echo,
     windows_verbatim_args = windows_verbatim_args,
+    windows_hide_window = windows_hide_window,
     stdout = "|", stderr = "|"
   )
 
