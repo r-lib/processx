@@ -14,6 +14,10 @@
 Portable tools to run system processes in the background,
 read their standard output and error, kill and restart them.
 
+`processx` can poll the standard output and error of a single process,
+or multiple processes, using the operating system's polling and waiting
+facilities, with a timeout.
+
 ---
 
   - [Features](#features)
@@ -32,6 +36,10 @@ read their standard output and error, kill and restart them.
 
 * Start system processes in the background and find their
   process id.
+* Read the standard output and error, using non-blocking R connection
+  objects.
+* Poll the standard output and error connections of a single process or
+  multiple processes.
 * Check if a background process is running.
 * Wait on a background process.
 * Get the exit status of a background process, if it has already
@@ -40,15 +48,9 @@ read their standard output and error, kill and restart them.
 * Kill background process, when its associated object is garbage
   collected.
 * Restart background processes.
-* Read the standard output and error, using non-blocking connections.
 * Portable, works on Linux, macOS and Windows.
 * Lightweight, it only depends on the also lightweight
   `R6`, `assertthat`, `crayon` and `debugme` packages.
-
-## Caveats
-
-* There is no way of doing a *blocking* read from the standard
-  output or error stream of the process.
 
 ## Installation
 
@@ -71,8 +73,8 @@ library(processx)
 
 `processx` provides two ways to start processes. The first one
 requires a single command, and a character vector of arguments.
-Both the command and the arguments will be shell quoted, so it is safe
-to include spaces and other special characters:
+You don't need to quote the command or the arguments, as they are
+passed directly to the operating system, without an intermediate shell.
 
 
 ```r
@@ -87,13 +89,15 @@ The other way is to supply a full shell command line via the
 p2 <- process$new(commandline = "sleep 20")
 ```
 
-Both methods will run the specified command or command line via the
-`system` base R function, which currently uses a shell to start them.
+This methods starts up a shell, i.e. on Unix-like systems it runs
+`sh -c <command>` and on Windows `cmd /c <command>`. (If you need a
+different shell, then specify that directly in the `command` argument.
 
 ### Killing and restarting a process
 
 A process can be killed via the `kill` method. This also kills
-all child processes.
+all child processes (unless they created a new process group on Unix,
+or a new job object on Windows).
 
 
 ```r
@@ -117,7 +121,7 @@ p1$kill()
 ```
 
 ```
-#> [1] FALSE
+#> [1] TRUE
 ```
 
 ```r
@@ -125,7 +129,7 @@ p2$kill()
 ```
 
 ```
-#> [1] FALSE
+#> [1] TRUE
 ```
 
 ```r
@@ -160,15 +164,21 @@ p1$is_alive()
 
 ### Standard output and error
 
-By default the standard output and error of the processes are redirected
-to temporary files. You can set the `stdout` and `stderr` constructor
-arguments to `FALSE` to force discarding them, in case you have a long
-running process with a lot of output. You can also set them to file names,
-if you want the output and/or error streams in some specific files.
+By default the standard output and error of the processes are ignored.
+You can set the `stdout` and `stderr` constructor arguments to a file name,
+and then they are redirected there, or to `"|"`, and then `processx` creates
+R connections to them.
+
+Note, that the R connections have a buffer, which can fill up, if R does
+not read out the output, and then the process will stop, until R reads the
+connection and the buffer is freed.
 
 The `read_output_lines` and `read_error_lines` methods can be used
-to read the standard output or error. They work the same way as the
-`readLines` base function.
+to read from the standard output or error connections. They work the same
+way as the `readLines` base function.
+
+Alternatively, you can query the connections via the `get_output_connection`
+and `get_error_connection` functions, and work with them directly.
 
 Note that the connections used for reading the output and error streams
 are non-blocking text connections, so the read functions will return
@@ -176,7 +186,8 @@ immediately, even if there is no text to read from them.
 
 
 ```r
-p <- process$new(commandline = "echo foo; >&2 echo bar; echo foobar")
+p <- process$new(commandline = "echo foo; >&2 echo bar; echo foobar",
+                 stdout = "|", stderr = "|")
 p$read_output_lines()
 ```
 
@@ -193,15 +204,15 @@ p$read_error_lines()
 ```
 
 To check if there is anything available for reading on the standard output
-or error streams, use the `can_read_output` and `can_read_error` functions:
+or error streams, you can poll the R connections:
 
 
 ```r
-p <- process$new(commandline = "echo foo; sleep 2; echo bar")
+p <- process$new(commandline = "echo foo; sleep 2; echo bar", stdout = "|")
 
 Sys.sleep(1)
 ## There must be output now
-p$can_read_output()
+p$is_incomplete_output()
 ```
 
 ```
@@ -218,11 +229,11 @@ p$read_output_lines()
 
 ```r
 ## There is no more output now
-p$can_read_output()
+p$is_incomplete_output()
 ```
 
 ```
-#> [1] FALSE
+#> [1] TRUE
 ```
 
 ```r
@@ -236,7 +247,7 @@ p$read_output_lines()
 ```r
 Sys.sleep(2)
 ## There is output again
-p$can_read_output()
+p$is_incomplete_output()
 ```
 
 ```
@@ -253,7 +264,7 @@ p$read_output_lines()
 
 ```r
 ## There is no more output
-p$can_read_output()
+p$is_incomplete_output()
 ```
 
 ```
@@ -275,17 +286,17 @@ unfortunately. Most R I/O is blocking, and the end of file is reached when
 nothing can be read from the connection. This clearly does not work for
 non-blocking connections.
 
-For `process` standard output and error streams, you can use the
-`is_eof_output` and `is_eof_error` functions to check if there is any
-chance that more output will arrive on them later.
+For `processx` standard output and error streams, you can use the
+`is_incomplete_output` and `is_incomplete_error` functions to check if
+there is any chance that more output will arrive on them later.
 
 
 ### Waiting on a process
 
 As seen before, `is_alive` checks if a process is running. The `wait`
-method can be used to wait until it has finished. E.g. in the following
-code `wait` needs to wait about 2 seconds for the `sleep` shell command
-to finish.
+method can be used to wait until it has finished (or a specified timeout
+expires).. E.g. in the following code `wait` needs to wait about 2 seconds
+for the `sleep` shell command to finish.
 
 
 ```r
@@ -302,7 +313,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2017-03-17 11:30:17 GMT"
+#> [1] "2017-04-03 22:26:35 BST"
 ```
 
 ```r
@@ -311,7 +322,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2017-03-17 11:30:19 GMT"
+#> [1] "2017-04-03 22:26:37 BST"
 ```
 
 It is safe to call `wait` multiple times:
@@ -346,46 +357,12 @@ p$get_exit_status()
 #> [1] 0
 ```
 
-Note that even if the process has finished, `get_exit_status` might report
-`NULL` if `wait` was not called. If you know that the process has finished,
-call `wait` first, and only then `get_exit_status`.
-
-
-```r
-p <- process$new(commandline = "true")
-
-# wait until it surely finishes
-Sys.sleep(1)
-p$is_alive()
-```
-
-```
-#> [1] FALSE
-```
-
-```r
-p$get_exit_status()
-```
-
-```
-#> [1] 0
-```
-
-```r
-p$wait()
-p$get_exit_status()
-```
-
-```
-#> [1] 0
-```
-
 ### Errors
 
-Errors are typically signalled via non-zero exits statuses. `processx`
-fails to intialize the `process` object if the external program cannot
-be started, but it does not deal with errors that happen after the
-program has started running.
+Errors are typically signalled via non-zero exits statuses. The `processx`
+constructor fails if the external program cannot be started,
+but it does not deal with errors that happen after the
+program has successfully started running.
 
 
 ```r
@@ -393,7 +370,7 @@ p <- process$new("nonexistant-command-for-sure")
 ```
 
 ```
-#> Error in exec(command, args, stdout = stdout, stderr = stderr, windows_verbatim_args = windows_verbatim_args, : processx error
+#> Error in process_initialize(self, private, command, args, commandline, : processx error
 ```
 
 ## License
