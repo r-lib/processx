@@ -3,7 +3,7 @@
 
 /* API from R */
 
-SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
+SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 		   SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private, SEXP cleanup);
 SEXP processx_wait(SEXP status, SEXP timeout);
