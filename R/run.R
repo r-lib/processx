@@ -103,8 +103,6 @@ run <- function(
               is.function(stderr_line_callback))
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
   assert_that(is.null(stderr_callback) || is.function(stderr_callback))
-  assert_that(is.null(stdout_callback) || is.null(stdout_line_callback))
-  assert_that(is.null(stderr_callback) || is.null(stderr_line_callback))
   ## The rest is checked by process$new()
 
   if (!interactive()) spinner <- FALSE
