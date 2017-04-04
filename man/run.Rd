@@ -5,10 +5,11 @@
 \title{Run external command, and wait until finishes}
 \usage{
 run(command = NULL, args = character(), commandline = NULL,
-  error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
-  stdout_line_callback = NULL, stdout_callback = NULL,
-  stderr_line_callback = NULL, stderr_callback = NULL,
-  windows_verbatim_args = FALSE, windows_hide_window = FALSE)
+  error_on_status = TRUE, echo_cmd = FALSE, echo = FALSE,
+  spinner = FALSE, timeout = Inf, stdout_line_callback = NULL,
+  stdout_callback = NULL, stderr_line_callback = NULL,
+  stderr_callback = NULL, windows_verbatim_args = FALSE,
+  windows_hide_window = FALSE)
 }
 \arguments{
 \item{command}{Character scalar, the command to run. It will be
@@ -26,7 +27,9 @@ with a non-zero status, or it is interrupted. The error clases are
 respectively, and both errors have class \code{system_command_error} as
 well.}
 
-\item{echo}{Whether to print the command, the standard output and error
+\item{echo_cmd}{Whether to print the command to run to the screen.}
+
+\item{echo}{Whether to print the standard output and error
 to the screen. Note that the order of the standard output and error
 lines are not necessarily correct, as standard output is typically
 buffered.}

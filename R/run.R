@@ -33,7 +33,8 @@
 #'   well.
 #' @param commandline A character scalar, a full command line.
 #'   No escaping will be performed on it.
-#' @param echo Whether to print the command, the standard output and error
+#' @param echo_cmd Whether to print the command to run to the screen.
+#' @param echo Whether to print the standard output and error
 #'   to the screen. Note that the order of the standard output and error
 #'   lines are not necessarily correct, as standard output is typically
 #'   buffered.
@@ -88,8 +89,8 @@
 
 run <- function(
   command = NULL, args = character(), commandline = NULL,
-  error_on_status = TRUE, echo = FALSE, spinner = FALSE, timeout = Inf,
-  stdout_line_callback = NULL, stdout_callback = NULL,
+  error_on_status = TRUE, echo_cmd = FALSE, echo = FALSE, spinner = FALSE,
+  timeout = Inf, stdout_line_callback = NULL, stdout_callback = NULL,
   stderr_line_callback = NULL, stderr_callback = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = FALSE) {
 
@@ -110,7 +111,7 @@ run <- function(
 
   ## Run the process
   pr <- process$new(
-    command, args, commandline, echo_cmd = echo,
+    command, args, commandline, echo_cmd = echo_cmd,
     windows_verbatim_args = windows_verbatim_args,
     windows_hide_window = windows_hide_window,
     stdout = "|", stderr = "|"
