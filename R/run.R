@@ -63,8 +63,8 @@
 #' @return A list with components:
 #'   * status The exit status of the process. If this is `NA`, then the
 #'     process was killed and had no exit status.
-#'   * stdout The standard output of the command, in a character vector.
-#'   * stderr The standard error of the command, in a character vector.
+#'   * stdout The standard output of the command, in a character scalar.
+#'   * stderr The standard error of the command, in a character scalar.
 #'
 #' @export
 #' @examples
@@ -241,8 +241,8 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 
   list(
     status = proc$get_exit_status(),
-    stdout = strsplit(paste(stdout, collapse = ""), "\r?\n")[[1]],
-    stderr = strsplit(paste(stderr, collapse = ""), "\r?\n")[[1]]
+    stdout = stdout,
+    stderr = stderr
   )
 }
 

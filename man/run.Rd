@@ -69,8 +69,8 @@ A list with components:
 \itemize{
 \item status The exit status of the process. If this is \code{NA}, then the
 process was killed and had no exit status.
-\item stdout The standard output of the command, in a character vector.
-\item stderr The standard error of the command, in a character vector.
+\item stdout The standard output of the command, in a character scalar.
+\item stderr The standard error of the command, in a character scalar.
 }
 }
 \description{

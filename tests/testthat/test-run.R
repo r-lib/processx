@@ -5,7 +5,7 @@ test_that("run can run, unix", {
 
   skip_other_platforms("unix")
   expect_equal(
-    sort(run("ls")$stdout),
+    sort(strsplit(run("ls")$stdout, "\n")[[1]]),
     sort(list.files())
   )
 })
