@@ -168,10 +168,10 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
       stdout <<- paste0(stdout, newout)
       if (!is.null(stdout_line_callback)) {
         newout <- paste0(pushback_out, newout)
-        pushback_out <- ""
+        pushback_out <<- ""
         lines <- strsplit(newout, "\r?\n")[[1]]
         if (last_char(newout) != "\n") {
-          pushback_out <- tail(lines, 1)
+          pushback_out <<- tail(lines, 1)
           lines <- head(lines, -1)
         }
         lapply(lines, function(x) stdout_line_callback(x, proc))
@@ -184,10 +184,10 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
       if (!is.null(stderr_callback)) stderr_callback(newerr, proc)
       if (!is.null(stderr_line_callback)) {
         newerr <- paste0(pushback_err, newerr)
-        pushback_err <- ""
+        pushback_err <<- ""
         lines <- strsplit(newerr, "\r?\n")[[1]]
         if (last_char(newerr) != "\n") {
-          pushback_err <- tail(lines, 1)
+          pushback_err <<- tail(lines, 1)
           lines <- head(lines, -1)
         }
         lapply(lines, function(x) stderr_line_callback(x, proc))
