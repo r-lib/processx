@@ -250,7 +250,7 @@ static void processx__child_remove(pid_t pid) {
       if (prev) {
 	prev->next = ptr->next;
       } else {
-	child_list = 0;
+	child_list = ptr->next;
       }
       free(ptr);
       return;
