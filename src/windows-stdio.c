@@ -5,8 +5,8 @@
 
 /* Why is this not defined??? */
 BOOL WINAPI CancelIoEx(
-  _In_     HANDLE       hFile,
-  _In_opt_ LPOVERLAPPED lpOverlapped
+  HANDLE       hFile,
+  LPOVERLAPPED lpOverlapped
 );
 
 void processx__error(DWORD errorcode);
