@@ -298,8 +298,9 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
 
     processx__child_remove(pid);
 
-    /* If no more children, then we do not need a SIGCHLD handler */
-    if (!child_list) processx__remove_sigchld();
+    /* If no more children, then we could remove the SIGCHLD handler,
+       but that leads to strange interactions with system(), at least
+       on macOS. So we don't do that. */
 
     /* If there is an active wait() with a timeout, then stop it */
     if (handle && handle->waitpipe[1] >= 0) {
