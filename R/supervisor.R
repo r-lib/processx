@@ -13,25 +13,38 @@ reg.finalizer(supervisor_info, function(s) {
 # This takes an object s, because a new `supervisor_info` object could have been
 # created.
 supervisor_kill <- function(s = supervisor_info) {
+  cat("supervisor_kill\n", file = stderr())
+  print(as.list(s))
   if (is.null(s$pid))
     return()
 
-  if (!is.null(s$stdin) && is_pipe_open(s$stdin))
+  if (!is.null(s$stdin) && is_pipe_open(s$stdin)) {
+    cat("Writing kill\n", file = stderr())
     write_lines_named_pipe(s$stdin, "kill")
+    cat("Written kill\n", file = stderr())
+  }
 
-  if (!is.null(s$stdin) && is_pipe_open(s$stdin))
+  if (!is.null(s$stdin) && is_pipe_open(s$stdin)) {
+    cat("closing stdin\n", file = stderr())
     close_named_pipe(s$stdin)
-  if (!is.null(s$stdout) && is_pipe_open(s$stdout))
+    cat("closed stdin\n", file = stderr())
+  }
+  if (!is.null(s$stdout) && is_pipe_open(s$stdout)) {
+    cat("closing stdout\n", file = stderr())
     close_named_pipe(s$stdout)
+    cat("closed stdout\n", file = stderr())
+  }
 
   s$pid <- NULL
 }
 
 
 supervisor_reset <- function() {
+  cat("supervisor_reset\n", file = stderr())
   if (supervisor_running()) {
     supervisor_kill()
   }
+  cat("supervisor_reset: Nulling values\n", file = stderr())
 
   supervisor_info$pid         <- NULL
   supervisor_info$stdin       <- NULL

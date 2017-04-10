@@ -9,12 +9,17 @@
 
 SEXP C_closeNamedPipe(SEXP pipe_ext) {
     if (pipe_ext == R_NilValue || R_ExternalPtrAddr(pipe_ext) == NULL)
-        return R_NilValue;;
+        return R_NilValue;
 
     HANDLE h = (HANDLE)R_ExternalPtrAddr(pipe_ext);
+    // TODO: Figure out why crashing on quit or reload!
+    fprintf(stderr, "Handle address: %08lx\n", HandleToUlong(h));
     DisconnectNamedPipe(h);
+    fprintf(stderr, "Disconnected named pipe\n");
     CloseHandle(h);
+    fprintf(stderr, "Closed handle\n");
     R_ClearExternalPtr(pipe_ext);
+    fprintf(stderr, "Cleared external pointer\n");
 
     return R_NilValue;
 }
@@ -22,7 +27,18 @@ SEXP C_closeNamedPipe(SEXP pipe_ext) {
 
 // For the finalizer, we need to wrap the SEXP function with a void function.
 void namedPipeFinalizer(SEXP pipe_ext) {
-    C_closeNamedPipe(pipe_ext);
+    if (pipe_ext == R_NilValue || R_ExternalPtrAddr(pipe_ext) == NULL)
+        return;
+
+    HANDLE h = (HANDLE)R_ExternalPtrAddr(pipe_ext);
+    // TODO: Figure out why crashing on quit or reload!
+    fprintf(stderr, "Handle address: %08lx\n", HandleToUlong(h));
+    DisconnectNamedPipe(h);
+    fprintf(stderr, "Disconnected named pipe\n");
+    CloseHandle(h);
+    fprintf(stderr, "Closed handle\n");
+    R_ClearExternalPtr(pipe_ext);
+    fprintf(stderr, "Cleared external pointer\n");
 }
 
 
@@ -80,7 +96,7 @@ SEXP C_createNamedPipe(SEXP name, SEXP mode) {
 }
 
     
-SEXP C_writeNamedPipe(SEXP text, SEXP pipe_ext) {
+SEXP C_writeNamedPipe(SEXP pipe_ext, SEXP text) {
     if (!isString(text) || text == R_NilValue || length(text) != 1) {
         error("`text` must be a character vector of length 1.");
     }
@@ -97,6 +113,7 @@ SEXP C_writeNamedPipe(SEXP text, SEXP pipe_ext) {
 
     const char* text_str = CHAR(STRING_ELT(text, 0));
 
+fprintf(stderr, "C writing named pipe: %s\n", text_str);
     DWORD n_written;
     BOOL success = WriteFile(
         hPipe,
@@ -105,6 +122,7 @@ SEXP C_writeNamedPipe(SEXP text, SEXP pipe_ext) {
         &n_written,
         NULL
     );
+fprintf(stderr, "C written named pipe. Value: %d\n", success);
 
     if (!success || strlen(text_str) != n_written) {
 
@@ -139,7 +157,7 @@ SEXP C_createNamedPipe(SEXP name, SEXP mode) {
     return R_NilValue;
 }
 
-SEXP C_writeNamedPipe(SEXP text, SEXP pipe_ext) {
+SEXP C_writeNamedPipe(SEXP pipe_ext, SEXP text) {
     error("C_writeNamedPipe only valid on Windows.");
     return R_NilValue;
 }

@@ -92,7 +92,7 @@ write_lines_named_pipe.windows_named_pipe <- function(pipe, text) {
   if (substr(text, len, len) != "\n")
     text <- paste0(text, "\n")
 
-  .Call(C_writeNamedPipe, text, pipe$handle)
+  .Call(C_writeNamedPipe, pipe$handle, text)
 }
 
 #' @useDynLib processx C_writeNamedPipe
