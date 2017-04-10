@@ -41,12 +41,11 @@ is_pipe_open.unix_named_pipe <- function(pipe) {
 # These functions are an abstraction layer for named pipes. They're necessary
 # because fifo() on Windows doesn't seem to work (as of R 3.3.3).
 
-#' @useDynLib processx C_createNamedPipe
 create_named_pipe <- function(name) {
   if (is_windows()) {
     structure(
       list(
-        handle = .Call(C_createNamedPipe, name, "")
+        handle = .Call(c_processx_create_named_pipe, name, "")
       ),
       class = c("windows_named_pipe", "named_pipe")
     )
@@ -66,10 +65,9 @@ close_named_pipe <- function(pipe) {
   UseMethod("close_named_pipe")
 }
 
-#' @useDynLib processx C_closeNamedPipe
 #' @export
 close_named_pipe.windows_named_pipe <- function(pipe) {
-  .Call(C_closeNamedPipe, pipe$handle)
+  .Call(c_processx_close_named_pipe, pipe$handle)
 }
 
 #' @export
@@ -82,7 +80,6 @@ write_lines_named_pipe <- function(pipe, text) {
   UseMethod("write_lines_named_pipe")
 }
 
-#' @useDynLib processx C_writeNamedPipe
 #' @export
 write_lines_named_pipe.windows_named_pipe <- function(pipe, text) {
   text <- paste(text, collapse = "\n")
@@ -92,10 +89,9 @@ write_lines_named_pipe.windows_named_pipe <- function(pipe, text) {
   if (substr(text, len, len) != "\n")
     text <- paste0(text, "\n")
 
-  .Call(C_writeNamedPipe, pipe$handle, text)
+  .Call(c_processx_write_named_pipe, pipe$handle, text)
 }
 
-#' @useDynLib processx C_writeNamedPipe
 #' @export
 write_lines_named_pipe.unix_named_pipe <- function(pipe, text) {
   writeLines(text, pipe$handle)

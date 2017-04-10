@@ -18,3 +18,8 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
 SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors);
 
 SEXP processx__process_exists(SEXP pid);
+
+
+SEXP processx_close_named_pipe(SEXP pipe_ext);
+SEXP processx_create_named_pipe(SEXP name, SEXP mode);
+SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text);

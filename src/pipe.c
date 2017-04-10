@@ -7,7 +7,7 @@
 #include <windows.h>
 
 
-SEXP C_closeNamedPipe(SEXP pipe_ext) {
+SEXP processx_close_named_pipe(SEXP pipe_ext) {
     if (pipe_ext == R_NilValue || R_ExternalPtrAddr(pipe_ext) == NULL)
         return R_NilValue;
 
@@ -26,7 +26,7 @@ SEXP C_closeNamedPipe(SEXP pipe_ext) {
 
 
 // For the finalizer, we need to wrap the SEXP function with a void function.
-void namedPipeFinalizer(SEXP pipe_ext) {
+void named_pipe_finalizer(SEXP pipe_ext) {
     if (pipe_ext == R_NilValue || R_ExternalPtrAddr(pipe_ext) == NULL)
         return;
 
@@ -42,7 +42,7 @@ void namedPipeFinalizer(SEXP pipe_ext) {
 }
 
 
-SEXP C_createNamedPipe(SEXP name, SEXP mode) {
+SEXP processx_create_named_pipe(SEXP name, SEXP mode) {
     if (!isString(name) || name == R_NilValue || length(name) != 1) {
         error("`name` must be a character vector of length 1.");
     }
@@ -90,13 +90,13 @@ SEXP C_createNamedPipe(SEXP name, SEXP mode) {
 
     // Wrap it in an external pointer
     SEXP pipe_ext = PROTECT(R_MakeExternalPtr(hPipe, R_NilValue, R_NilValue));
-    R_RegisterCFinalizerEx(pipe_ext, namedPipeFinalizer, TRUE);
+    R_RegisterCFinalizerEx(pipe_ext, named_pipe_finalizer, TRUE);
     UNPROTECT(1);
     return pipe_ext;
 }
 
     
-SEXP C_writeNamedPipe(SEXP pipe_ext, SEXP text) {
+SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text) {
     if (!isString(text) || text == R_NilValue || length(text) != 1) {
         error("`text` must be a character vector of length 1.");
     }
@@ -147,18 +147,18 @@ fprintf(stderr, "C written named pipe. Value: %d\n", success);
 // give errors.
 #include <Rdefines.h>
 
-SEXP C_closeNamedPipe(SEXP pipe_ext) {
-    error("C_closeNamedPipe only valid on Windows.");
+SEXP processx_close_named_pipe(SEXP pipe_ext) {
+    error("processx_close_named_pipe only valid on Windows.");
     return R_NilValue;
 }
 
-SEXP C_createNamedPipe(SEXP name, SEXP mode) {
-    error("C_createNamedPipe only valid on Windows.");
+SEXP processx_create_named_pipe(SEXP name, SEXP mode) {
+    error("processx_create_named_pipe only valid on Windows.");
     return R_NilValue;
 }
 
-SEXP C_writeNamedPipe(SEXP pipe_ext, SEXP text) {
-    error("C_writeNamedPipe only valid on Windows.");
+SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text) {
+    error("processx_write_named_pipe only valid on Windows.");
     return R_NilValue;
 }
 
