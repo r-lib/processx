@@ -13,13 +13,9 @@ SEXP processx_close_named_pipe(SEXP pipe_ext) {
 
     HANDLE h = (HANDLE)R_ExternalPtrAddr(pipe_ext);
     // TODO: Figure out why crashing on quit or reload!
-    fprintf(stderr, "Handle address: %08lx\n", HandleToUlong(h));
     DisconnectNamedPipe(h);
-    fprintf(stderr, "Disconnected named pipe\n");
     CloseHandle(h);
-    fprintf(stderr, "Closed handle\n");
     R_ClearExternalPtr(pipe_ext);
-    fprintf(stderr, "Cleared external pointer\n");
 
     return R_NilValue;
 }
@@ -27,18 +23,7 @@ SEXP processx_close_named_pipe(SEXP pipe_ext) {
 
 // For the finalizer, we need to wrap the SEXP function with a void function.
 void named_pipe_finalizer(SEXP pipe_ext) {
-    if (pipe_ext == R_NilValue || R_ExternalPtrAddr(pipe_ext) == NULL)
-        return;
-
-    HANDLE h = (HANDLE)R_ExternalPtrAddr(pipe_ext);
-    // TODO: Figure out why crashing on quit or reload!
-    fprintf(stderr, "Handle address: %08lx\n", HandleToUlong(h));
-    DisconnectNamedPipe(h);
-    fprintf(stderr, "Disconnected named pipe\n");
-    CloseHandle(h);
-    fprintf(stderr, "Closed handle\n");
-    R_ClearExternalPtr(pipe_ext);
-    fprintf(stderr, "Cleared external pointer\n");
+    processx_close_named_pipe(pipe_ext);
 }
 
 
@@ -113,7 +98,6 @@ SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text) {
 
     const char* text_str = CHAR(STRING_ELT(text, 0));
 
-fprintf(stderr, "C writing named pipe: %s\n", text_str);
     DWORD n_written;
     BOOL success = WriteFile(
         hPipe,
@@ -122,7 +106,6 @@ fprintf(stderr, "C writing named pipe: %s\n", text_str);
         &n_written,
         NULL
     );
-fprintf(stderr, "C written named pipe. Value: %d\n", success);
 
     if (!success || strlen(text_str) != n_written) {
 

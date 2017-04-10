@@ -7,7 +7,5 @@
 
 .onUnload <- function(libpath) {
   supervisor_reset()
-  cat("unloading dll", file=stderr())
   library.dynam.unload("processx", libpath)
-  cat("unloaded dll", file=stderr())
 }
