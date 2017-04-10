@@ -10,10 +10,13 @@ test_that("process works", {
   p <- process$new(cmd[1], cmd[-1])
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
+  Sys.sleep(.1)
   expect_true(p$is_alive())
 })
 
 test_that("children are removed on kill()", {
+
+  skip("get_pid_by_name not implemented")
 
   ## tmp1 will call tmp2, and we'll start tmp1 from process$new
   ## Then we kill the process and see if tmp2 was removed as well
@@ -60,6 +63,8 @@ test_that("children are removed on kill()", {
 
 test_that("process is cleaned up on GC", {
 
+  skip("get_pid_by_name not implemented")
+
   win  <- c("ping", "-n", "6", "127.0.0.1")
   unix <- c("sleep", "5")
   cmd <- if (os_type() == "windows") win else unix
@@ -85,7 +90,7 @@ test_that("get_exit_status", {
   }
   p <- process$new(commandline = cmd)
   p$wait()
-  expect_identical(p$get_exit_status(), 1)
+  expect_identical(p$get_exit_status(), 1L)
 })
 
 test_that("restart", {
@@ -93,7 +98,6 @@ test_that("restart", {
   p <- process$new(commandline = sleep(5))
   expect_true(p$is_alive())
 
-  Sys.sleep(0.1)
   p$kill(grace = 0)
 
   expect_false(p$is_alive())

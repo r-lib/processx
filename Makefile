@@ -2,4 +2,4 @@
 all: README.md
 
 README.md: README.Rmd
-	Rscript -e "library(knitr); knit('$<', output = '$@', quiet = TRUE)"
+	R -e "library(knitr); knit('$<', output = '$@', quiet = FALSE)"

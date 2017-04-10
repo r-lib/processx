@@ -4,3 +4,5 @@
 ^README.Rmd$
 ^.travis.yml$
 ^appveyor.yml$
+^src/processx\.so$
+^src/.*\.o$

@@ -5,7 +5,7 @@
 \title{Start a process}
 \usage{
 process_initialize(self, private, command, args, commandline, stdout, stderr,
-  cleanup, echo_cmd)
+  cleanup, echo_cmd, windows_verbatim_args, windows_hide_window)
 }
 \arguments{
 \item{self}{this}
@@ -30,4 +30,3 @@ process_initialize(self, private, command, args, commandline, stdout, stderr,
 Start a process
 }
 \keyword{internal}
-

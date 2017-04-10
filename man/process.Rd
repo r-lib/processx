@@ -14,22 +14,26 @@ streams. The process id is then used to manage the process.
 
 \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
                  stdout = TRUE, stderr = TRUE, cleanup = TRUE,
-                 echo_cmd = FALSE)
+                 echo_cmd = FALSE, windows_verbatim_args = FALSE,
+                 windows_hide_window = FALSE)
 
 p$is_alive()
+p$signal(signal)
 p$kill(grace = 0.1)
-p$wait()
+p$wait(timeout = -1)
+p$get_pid()
 p$get_exit_status()
 p$restart()
+p$get_start_time()
 
 p$read_output_lines(...)
 p$read_error_lines(...)
-p$can_read_output()
-p$can_read_error()
-p$is_eof_output()
-p$is_eof_error()
 p$get_output_connection()
 p$get_error_connection()
+p$is_incomplete_output()
+p$is_incomplete_error()
+
+p$poll_io(timeout)
 
 print(p)
 }
@@ -39,24 +43,40 @@ print(p)
 
 \describe{
 \item{p}{A \code{process} object.}
-\item{command}{Character scalar, the command to run. It will be
-escaped via \code{\link[base]{shQuote}}.}
+\item{command}{Character scalar, the command to run.
+Note that this argument is not passed to a shell, so no
+tilde-expansion or variable substitution is performed on it.
+It should not be quoted with \code{\link[base]{shQuote}}. See
+\code{\link[base]{normalizePath}} for tilde-expansion.}
 \item{args}{Character vector, arguments to the command. They will be
-escaped via \code{\link[base]{shQuote}}.}
+used as is, without a shell. They don't need to be escaped.}
 \item{commandline}{A character scalar, a full command line.
-No escaping will be performed on it.}
+On Unix systems it runs the a shell: \code{sh -c <commandline>}.
+On Windows it uses the \code{cmd} shell:
+\code{cmd /c <commandline>}. If you want more control, then call
+your chosen shell directly.}
 \item{stdout}{What to do with the standard output. Possible values:
 \code{FALSE}: discard it; a string, redirect it to this file,
-\code{TRUE}: redirect it to a temporary file.}
-\item{stdout}{What to do with the standard error. Possible values:
+\code{TRUE}: redirect it to a temporary file, \code{"|"}: create an
+R connection for it.}
+\item{stderr}{What to do with the standard error. Possible values:
 \code{FALSE}: discard it; a string, redirect it to this file,
-\code{TRUE}: redirect it to a temporary file.}
-\item{cleanup}{Whether to kill the process if the \code{process}
-object is garbage collected.}
+\code{TRUE}: redirect it to a temporary file, \code{"|"}: create an
+R connection for it.}
+\item{cleanup}{Whether to kill the process (and its children)
+if the \code{process} object is garbage collected.}
 \item{echo_cmd}{Whether to print the command to the screen before
 running it.}
-\item{grace}{Grace pediod between the TERM and KILL signals, in
-seconds.}
+\item{windows_verbatim_args}{Whether to omit quoting the arguments
+on Windows. It is ignored on other platforms.}
+\item{windows_hide_window}{Whether to hide the application's window
+on Windows. It is ignored on other platforms.}
+\item{signal}{An integer scalar, the id of the signal to send to
+the process. See \code{\link[tools]{pskill}} for the list of
+signals.}
+\item{grace}{Currently not used.}
+\item{timeout}{Timeout in milliseconds, for the wait or the I/O
+polling.}
 \item{...}{Extra arguments are passed to the
 \code{\link[base]{readLines}} function.}
 }
@@ -64,49 +84,46 @@ seconds.}
 
 \section{Details}{
 
-\code{$new()} starts a new process, it uses \code{\link[base]{system}}.
-R does \emph{not} wait for the process to finish, but returns
+\code{$new()} starts a new process in the background, and then returns
 immediately.
 
 \code{$is_alive()} checks if the process is alive. Returns a logical
 scalar.
 
+\code{$signal()} sends a signal to the process. On Windows only the
+\code{SIGINT}, \code{SIGTERM} and \code{SIGKILL} signals are interpreted,
+and the special 0 signal, The first three all kill the process. The 0
+signal return \code{TRUE} if the process is alive, and \code{FALSE}
+otherwise. On Unix all signals are supported that the OS supports, and
+the 0 signal as well.
+
 \code{$kill()} kills the process. It also kills all of its child
-processes. First it sends the child processes a \code{TERM} signal, and
-then after a grace period a \code{KILL} signal. Then it does the same
-for the process itself. A killed process can be restarted using the
-\code{restart} method. It returns the process itself.
+processes, except if they have created a new process group (on Unix),
+or job object (on Windows). It returns \code{TRUE} if the process
+was killed, and \code{FALSE} if it was no killed (because it was
+already finished/dead when \code{processx} tried to kill it).
 
-\code{$wait()} waits until the process finishes. Note that if the
-process never finishes, then R will never regain control. It returns
-the process itself.
+\code{$wait()} waits until the process finishes, or a timeout happens.
+Note that if the process never finishes, and the timeout is infinite
+(the default), then R will never regain control. It returns
+the process itself, invisibly.
 
-\code{$get_exit_code} returns the exit code of the process if it has
-finished and \code{wait} was called on it. Otherwise it will return
-\code{NULL}.
+\code{$get_pid()} returns the process id of the process.
+
+\code{$get_exit_status} returns the exit code of the process if it has
+finished and \code{NULL} otherwise.
 
 \code{$restart()} restarts a process. It returns the process itself.
 
-\code{$read_output_lines()} reads from standard output of the process.
-If the standard output was not requested, then it returns an error.
-It uses a non-blocking text connection.
+\code{$get_start_time()} returns the time when the process was
+started.
+
+\code{$read_output_lines()} reads from standard output connection of
+the process. If the standard output connection was not requested, then
+then it returns an error. It uses a non-blocking text connection.
 
 \code{$read_error_lines()} is similar to \code{$read_output_lines}, but
 it reads from the standard error stream.
-
-\code{$can_read_output()} checks if there is any standard output
-immediately available.
-
-\code{$can_read_error()} checks if there is any standard error
-immediately available.
-
-\code{$is_eof_output()} checks if the standard output stream has
-ended. This means that the process is finished and all output has
-been processed.
-
-\code{$is_eof_error()} checks if the standard error stream has
-ended. This means that the process is finished and all output has
-been processed.
 
 \code{$get_output_connection()} returns a connection object, to the
 standard output stream of the process.
@@ -114,9 +131,34 @@ standard output stream of the process.
 \code{$get_error_conneciton()} returns a connection object, to the
 standard error stream of the process.
 
+\code{$is_incomplete_output()} return \code{FALSE} if the other end of
+the standard output connection was closed (most probably because the
+process exited). It return \code{TRUE} otherwise.
+
+\code{$is_incomplete_error()} return \code{FALSE} if the other end of
+the standard error connection was closed (most probably because the
+process exited). It return \code{TRUE} otherwise.
+
+\code{$poll_io()} polls the process's connections for I/O. See more in
+the \emph{Polling} section, and see also the \code{\link{poll}} function
+to poll on multiple processes.
+
 \code{print(p)} or \code{p$print()} shows some information about the
 process on the screen, whether it is running and it's process id, etc.
 }
+
+\section{Polling}{
+
+The \code{poll_io()} function polls the standard output and standard
+error connections of a process, with a timeout. If there is output
+in either of them, or they are closed (e.g. because the process exits)
+\code{poll_io()} returns immediately.
+
+In addition to polling a single process, the \code{\link{poll}} function
+can poll the output of several processes, and returns as soon as any
+of them has generated output (or exited).
+}
+
 \examples{
 # CRAN does not like long-running examples
 \dontrun{
@@ -133,4 +175,3 @@ p$is_alive()
 }
 
 }
-

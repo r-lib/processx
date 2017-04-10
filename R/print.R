@@ -2,7 +2,8 @@
 process_print <- function(self, private) {
 
   state <- if (self$is_alive()) {
-    paste0("running, pids ", paste(private$pid, collapse = ", "), ".")
+    pid <- self$get_pid()
+    paste0("running, pid ", paste(pid, collapse = ", "), ".")
   } else {
     "finished."
   }
