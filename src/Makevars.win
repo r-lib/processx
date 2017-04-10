@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-all: supervisor $(SHLIB)
+all: supervisor.exe $(SHLIB)
 
 supervisor.exe: supervisor.c
 	$(CC) $(CFLAGS) supervisor.c -o supervisor.exe
