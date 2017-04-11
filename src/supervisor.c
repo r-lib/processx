@@ -618,7 +618,7 @@ int main(int argc, char **argv) {
                         MAX_CHILDREN
                     );
                 } else {
-                    verbose_printf("Adding:%d", pid);
+                    verbose_printf("Adding:%d\n", pid);
                     children[n_children] = pid;
                     n_children++;
                 }
@@ -626,17 +626,16 @@ int main(int argc, char **argv) {
         }
 
         // Remove any children from list that are no longer running.
-        bool had_running_children = (n_children > 0);
+        verbose_printf("Children: ");
         for (int i=0; i<n_children; i++) {
             if (pid_is_running(children[i])) {
-                verbose_printf(" Running:%d", children[i]);
+                verbose_printf("%d ", children[i]);
             } else {
-                verbose_printf(" Stopped:%d", children[i]);
+                verbose_printf("%d(stopped) ", children[i]);
                 n_children = remove_element(children, n_children, i);
             }
         }
-        if (had_running_children)
-            verbose_printf("\n");
+        verbose_printf("\n");
 
         // Check that parent is still running. If not, kill children.
         if (!pid_is_running(parent_pid)) {
