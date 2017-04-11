@@ -326,14 +326,15 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
 }
 
 
+// Send Ctrl-C to a program if it has a console.
 void sendCtrlC(int pid) {
-    verbose_printf("sending ctrl+c to pid %d", pid);
+    verbose_printf("Sending ctrl+c to pid %d", pid);
     FreeConsole();
 
     if (AttachConsole(pid)) {
         GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0);
     } else {
-        printf("Error attaching to console for PID: %d\n", pid);
+        verbose_printf("Error attaching to console for PID: %d\n", pid);
     }
 }
 
@@ -353,6 +354,20 @@ BOOL CALLBACK enumCloseWindowProc(_In_ HWND hwnd, LPARAM lParam) {
 
 void sendWmClose(int pid) {
     EnumWindows(enumCloseWindowProc, (LPARAM)pid);
+}
+
+// Terminate process by pid.
+BOOL kill_pid(DWORD dwProcessId) {
+    HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, dwProcessId);
+
+    if (hProcess == NULL)
+        return FALSE;
+
+    BOOL result = TerminateProcess(hProcess, 1);
+
+    CloseHandle(hProcess);
+
+    return result;
 }
 
 #endif // WIN32
@@ -375,41 +390,39 @@ int extract_pid(char* buf, int len) {
 
 
 // Check if a process is running. Returns 1 if yes, 0 if no.
-int pid_is_running(pid_t pid) {
+bool pid_is_running(pid_t pid) {
     #ifdef WIN32
     HANDLE h_process = OpenProcess(PROCESS_QUERY_INFORMATION, false, pid);
     if (h_process == NULL) {
         printf("Unable to check if process %d is running.\n", (int)pid);
-        return 0;
+        return false;
     }
 
     DWORD exit_code;
     if (!GetExitCodeProcess(h_process, &exit_code)) {
         printf("Unable to check if process %d is running.\n", (int)pid);
-        return 0;
+        return false;
     }
 
     if (exit_code == STILL_ACTIVE) {
-        return 1;
+        return true;
     } else {
-        return 0;
+        return false;
     }
 
     #else
     int res = kill(pid, 0);
     if (res == -1 && errno == ESRCH) {
-        return 0;
+        return false;
     }
-    return 1;
+    return true;
     #endif
 }
 
-// TODO: First try a soft kill, then wait for 5 seconds, then do hard kill if
-// still alive.
-
-// Send SIGTERM to all children.
+// Send a soft kill signal to all children, wait 5 seconds, then hard kill any
+// remaining processes.
 void kill_children() {
-    verbose_printf("Sending kill signal to children: ");
+    verbose_printf("Sending close signal to children: ");
     for (int i=0; i<n_children; i++) {
         verbose_printf("%d ", children[i]);
 
@@ -420,6 +433,33 @@ void kill_children() {
         kill(children[i], SIGTERM);
         #endif
     }
+    verbose_printf("\n");
+
+    sleep_ms(5000);
+
+    // Hard-kill any remaining processes
+    bool kill_message_shown = false;
+
+    for (int i=0; i<n_children; i++) {
+        if (pid_is_running(children[i])) {
+
+            if (!kill_message_shown) {
+                verbose_printf("Sending kill signal to children: ");
+                kill_message_shown = true;
+            }
+
+            verbose_printf("%d ", children[i]);
+
+            #ifdef WIN32
+            kill_pid(children[i]);
+            #else
+            kill(children[i], SIGKILL);
+            #endif
+        }
+    }
+
+    if (kill_message_shown)
+        verbose_printf("\n");
 }
 
 
@@ -567,6 +607,7 @@ int main(int argc, char **argv) {
             if (strncmp(readbuf, "kill", 4) == 0) {
                 verbose_printf("\'kill' command received.\n");
                 kill_children();
+                verbose_printf("\nExiting.\n");
                 return 0;
             }
             int pid = extract_pid(readbuf, INPUT_BUF_LEN);
