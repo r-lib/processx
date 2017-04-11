@@ -13,7 +13,7 @@
 //
 // To test it out in verbose mode, run:
 //   gcc supervisor.c -o supervisor
-//   ./supervisor -v [parent_pid]
+//   ./supervisor -v -p [parent_pid]
 //
 // The parent_pid is optional. If not supplied, the supervisor will auto-
 // detect the parent process.
@@ -235,7 +235,6 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
         };
 
         if (num_peeked == 0) {
-            printf("0 events in console buffer.\n");
             return NULL;
         }
 
@@ -291,7 +290,7 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
 
         if (!PeekNamedPipe(h_input, input_char_buf, WIN_INPUT_BUF_LEN, &num_peeked, NULL, NULL)) {
             printf("Error peeking at pipe input. Error %d", (unsigned)GetLastError());
-            exit(1);
+            return buf;
         };
 
         bool found_newline = false;
@@ -307,7 +306,7 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
             // Clear out pipe
             if (!ReadFile(h_input, input_char_buf, input_char_buf_n, &num_read, NULL)) {
                 printf("Error reading pipe input.");
-                exit(1);
+                return buf;
             }
 
             // Place the content in buf
@@ -361,13 +360,13 @@ int pid_is_running(pid_t pid) {
     #ifdef WIN32
     HANDLE h_process = OpenProcess(PROCESS_QUERY_INFORMATION, false, pid);
     if (h_process == NULL) {
-        printf("Unable to check if process %d is running.", (int)pid);
+        printf("Unable to check if process %d is running.\n", (int)pid);
         return 0;
     }
 
     DWORD exit_code;
     if (!GetExitCodeProcess(h_process, &exit_code)) {
-        printf("Unable to check if process %d is running.", (int)pid);
+        printf("Unable to check if process %d is running.\n", (int)pid);
         return 0;
     }
 
