@@ -336,6 +336,25 @@ void sendCtrlC(int pid) {
         printf("Error attaching to console for PID: %d\n", pid);
     }
 }
+
+// Callback function that closes a window if the PID matches the value passed
+// in to lParam.
+BOOL CALLBACK enumCloseWindowProc(_In_ HWND hwnd, LPARAM lParam) {
+    DWORD current_pid = 0;
+
+    GetWindowThreadProcessId(hwnd, &current_pid);
+
+    if (current_pid == (DWORD) lParam) {
+        PostMessage(hwnd, WM_CLOSE, 0, 0);
+    }
+
+    return true;
+}
+
+void sendWmClose(int pid) {
+    EnumWindows(enumCloseWindowProc, (LPARAM)pid);
+}
+
 #endif // WIN32
 
 
@@ -390,12 +409,13 @@ int pid_is_running(pid_t pid) {
 
 // Send SIGTERM to all children.
 void kill_children() {
-    verbose_printf("Sending SIGTERM to children: ");
+    verbose_printf("Sending kill signal to children: ");
     for (int i=0; i<n_children; i++) {
         verbose_printf("%d ", children[i]);
 
         #ifdef WIN32
         sendCtrlC(children[i]);
+        sendWmClose(children[i]);
         #else
         kill(children[i], SIGTERM);
         #endif
