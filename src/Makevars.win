@@ -1,9 +1,9 @@
 .PHONY: all clean
 
-all: supervisor.exe $(SHLIB)
+all: supervisor/supervisor.exe $(SHLIB)
 
-supervisor.exe: supervisor.c
-	$(CC) $(CFLAGS) supervisor.c -o supervisor.exe
+supervisor/supervisor.exe: supervisor/supervisor.c
+	$(CC) $(CFLAGS) supervisor/supervisor.c -o supervisor/supervisor.exe
 
 clean:
-	rm -rf supervisor supervisor.dSYM supervisor.exe processx.o processx.dll
+	rm -rf supervisor/supervisor supervisor/supervisor.dSYM supervisor/supervisor.exe processx.o processx.dll

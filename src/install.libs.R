@@ -1,5 +1,5 @@
 # Copy supervisor or supervisor.exe binary to correct location
-execs <- "supervisor"
+execs <- file.path("supervisor", "supervisor")
 if (WINDOWS)
   execs <- paste0(execs, ".exe")
 
