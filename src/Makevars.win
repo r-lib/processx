@@ -1,0 +1,7 @@
+
+OBJECTS = init.o win/poll.o win/processx.o win/stdio.o
+
+all: clean
+
+clean:
+	rm -f $(SHLIB) $(OBJECTS)

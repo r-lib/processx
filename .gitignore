@@ -2,5 +2,7 @@
 .Rhistory
 .RData
 /src/*.o
+/src/unix/*.o
+/src/win/*.o
 /src/processx.so
 /src/processx.dll

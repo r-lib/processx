@@ -1,6 +1,4 @@
 
-void processx_unix_poll_dummy() { }
-
 #ifndef _WIN32
 
 #include <Rinternals.h>
@@ -8,9 +6,87 @@ void processx_unix_poll_dummy() { }
 #include <poll.h>
 #include <errno.h>
 
-#include "utils.h"
+#include "../processx.h"
+#include "processx-unix.h"
 
-int processx__poll_decode(short code);
+int processx__poll_decode(short code) {
+  if (code & POLLNVAL) return PXCLOSED;
+  if (code & POLLIN || code & POLLHUP) return PXREADY;
+  return 0;
+}
+
+SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
+		      SEXP stderr_pipe) {
+  int cms = INTEGER(ms)[0];
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
+  struct pollfd fds[2];
+  int idx = 0, num = 0, ret;
+  SEXP result;
+  int ptr1 = -1, ptr2 = -1;
+
+  if (!handle) { error("Internal processx error, handle already removed"); }
+
+  if (handle->fd1 >= 0) {
+    fds[idx].fd = handle->fd1;
+    fds[idx].events = POLLIN;
+    fds[idx].revents = 0;
+    ptr1 = idx;
+    idx++;
+  }
+  if (handle->fd2 >= 0) {
+    fds[idx].fd = handle->fd2;
+    fds[idx].events = POLLIN;
+    fds[idx].revents = 0;
+    ptr2 = idx;
+  }
+
+  result = PROTECT(allocVector(INTSXP, 2));
+  if (isNull(stdout_pipe)) {
+    INTEGER(result)[0] = PXNOPIPE;
+  } else if (handle->fd1 < 0) {
+    INTEGER(result)[0] = PXCLOSED;
+  } else {
+    num++;
+    INTEGER(result)[0] = PXSILENT;
+  }
+  if (isNull(stderr_pipe)) {
+    INTEGER(result)[1] = PXNOPIPE;
+  } else if (handle->fd2 < 0) {
+    INTEGER(result)[1] = PXCLOSED;
+  } else {
+    num++;
+    INTEGER(result)[1] = PXSILENT;
+  }
+
+  /* Nothing to poll? */
+  if (num == 0) {
+    UNPROTECT(1);
+    return result;
+  }
+
+  do {
+    ret = poll(fds, num, cms);
+  } while (ret == -1 && errno == EINTR);
+
+  if (ret == -1) {
+    error("Processx poll error: %s", strerror(errno));
+
+  } else if (ret == 0) {
+    if (ptr1 >= 0) INTEGER(result)[0] = PXTIMEOUT;
+    if (ptr2 >= 0) INTEGER(result)[1] = PXTIMEOUT;
+
+  } else {
+    if (ptr1 >= 0 && fds[ptr1].revents) {
+      INTEGER(result)[0] = processx__poll_decode(fds[ptr1].revents);
+    }
+    if (ptr2 >= 0 && fds[ptr2].revents) {
+      INTEGER(result)[1] = processx__poll_decode(fds[ptr2].revents);
+    }
+  }
+
+  UNPROTECT(1);
+  return result;
+}
 
 SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
   int cms = INTEGER(ms)[0];
