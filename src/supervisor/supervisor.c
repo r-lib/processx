@@ -626,16 +626,22 @@ int main(int argc, char **argv) {
 
     // Poll
     while(1) {
-        // TODO: Handle case where multiple PIDs are entered in one cycle.
         // Look for any new processes IDs from the input
-        char* res;
+        char* res = NULL;
 
-        #ifdef WIN32
-        res = get_line_nonblock(readbuf, INPUT_BUF_LEN, h_input);
-        #else
-        res = fgets(readbuf, INPUT_BUF_LEN, fp_input);
-        #endif
-        if (res != NULL) {
+
+        // Read in the input buffer. There could be multiple lines so we'll
+        // keep reading lines until there's no more content.
+        while(1) {
+            #ifdef WIN32
+            res = get_line_nonblock(readbuf, INPUT_BUF_LEN, h_input);
+            #else
+            res = fgets(readbuf, INPUT_BUF_LEN, fp_input);
+            #endif
+
+            if (res == NULL)
+                break;
+
             if (strncmp(readbuf, "kill", 4) == 0) {
                 verbose_printf("\'kill' command received.\n");
                 kill_children();
