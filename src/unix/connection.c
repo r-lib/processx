@@ -109,4 +109,14 @@ void processx__create_connections(processx_handle_t *handle, SEXP private) {
   if (handle->fd2 >= 0) {
     processx__create_connection(handle, handle->fd2, "stderr_pipe", private);
   }
+
+  if (handle->fd3 >= 0) {
+    processx__create_control_read(handle, handle->fd3, "control_read",
+				  private);
+  }
+
+  if (handle->fd4 >= 0) {
+    processx__create_control_write(handle, handle->fd4, "control_write",
+				   private);
+  }
 }

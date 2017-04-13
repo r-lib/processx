@@ -4,7 +4,7 @@
 #include "processx.h"
 
 static const R_CallMethodDef callMethods[]  = {
-  { "processx_exec",            (DL_FUNC) &processx_exec,            8 },
+  { "processx_exec",            (DL_FUNC) &processx_exec,            9 },
   { "processx_wait",            (DL_FUNC) &processx_wait,            2 },
   { "processx_is_alive",        (DL_FUNC) &processx_is_alive,        1 },
   { "processx_get_exit_status", (DL_FUNC) &processx_get_exit_status, 1 },

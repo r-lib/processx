@@ -179,10 +179,11 @@ process <- R6Class(
     initialize = function(command = NULL, args = character(),
       commandline = NULL, stdout = TRUE, stderr = TRUE, cleanup = TRUE,
       echo_cmd = FALSE, windows_verbatim_args = FALSE,
-      windows_hide_window = FALSE)
+      windows_hide_window = FALSE, controller = FALSE)
       process_initialize(self, private, command, args, commandline,
                          stdout, stderr, cleanup, echo_cmd,
-                         windows_verbatim_args, windows_hide_window),
+                         windows_verbatim_args, windows_hide_window,
+                         controller),
 
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
@@ -232,7 +233,24 @@ process <- R6Class(
       process_get_error_connection(self, private),
 
     poll_io = function(timeout)
-      process_poll_io(self, private, timeout)
+      process_poll_io(self, private, timeout),
+
+    ## Controller
+
+    write_control = function(data)
+      process_write_control(self, private, data),
+
+    read_control = function(bytes = 4096L)
+      process_read_control(self, private, bytes),
+
+    get_control_read_connection = function()
+      process_get_control_read_connection(self, private),
+
+    get_control_write_connection = function()
+      process_get_control_write_connection(self, private),
+
+    is_incomplete_control = function()
+      process_is_incomplete_control(self, private)
   ),
 
   private = list(
@@ -243,8 +261,11 @@ process <- R6Class(
     cleanup = NULL,       # cleanup argument
     stdout = NULL,        # stdout argument or stream
     stderr = NULL,        # stderr argument or stream
+    control_read = NULL,  # read from worker
+    control_write = NULL, # write to worker
     pstdout = NULL,       # the original stdout argument
     pstderr = NULL,       # the original stderr argument
+    pcontroller = NULL,   # the original controller argument
     cleanfiles = NULL,    # which temp stdout/stderr file(s) to clean up
     starttime = NULL,     # timestamp of start
     echo_cmd = NULL,      # whether to echo the command
@@ -291,7 +312,8 @@ process_restart <- function(self, private) {
     private$cleanup,
     private$echo_cmd,
     private$windows_verbatim_args,
-    private$windows_hide_window
+    private$windows_hide_window,
+    private$pcontroller
   )
 
   invisible(self)

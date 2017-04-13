@@ -8,7 +8,8 @@
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 		   SEXP windows_verbatim_args,
-		   SEXP windows_hide_window, SEXP private, SEXP cleanup);
+		   SEXP windows_hide_window, SEXP private, SEXP cleanup,
+		   SEXP controller);
 SEXP processx_wait(SEXP status, SEXP timeout);
 SEXP processx_is_alive(SEXP status);
 SEXP processx_get_exit_status(SEXP status);

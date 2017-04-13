@@ -8,6 +8,7 @@
 static void processx__child_init(processx_handle_t *handle, int pipes[3][2],
 				 char *command, char **args, int error_fd,
 				 const char *stdout, const char *stderr,
+				 int controller,
 				 processx_options_t *options);
 static void processx__finalizer(SEXP status);
 
@@ -41,6 +42,7 @@ void processx__write_int(int fd, int err) {
 static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
 				 char *command, char **args, int error_fd,
 				 const char *stdout, const char *stderr,
+				 int controller,
 				 processx_options_t *options) {
 
   int fd0, fd1, fd2;
@@ -88,6 +90,17 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
   processx__nonblock_fcntl(fd0, 0);
   processx__nonblock_fcntl(fd1, 0);
   processx__nonblock_fcntl(fd2, 0);
+
+  /* controller connection */
+
+  if (controller) {
+    close(pipes[3][0]);
+    close(pipes[4][1]);
+    if (pipes[3][1] != 3) dup2(pipes[3][1], 3);
+    if (pipes[4][0] != 4) dup2(pipes[4][0], 4);
+    processx__nonblock_fcntl(pipes[3][1], 0);
+    processx__nonblock_fcntl(pipes[4][0], 0);
+  }
 
   execvp(command, args);
   processx__write_int(error_fd, - errno);
@@ -199,20 +212,23 @@ skip:
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 		   SEXP windows_verbatim_args,
-		   SEXP windows_hide_window, SEXP private, SEXP cleanup) {
+		   SEXP windows_hide_window, SEXP private, SEXP cleanup,
+		   SEXP controller) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
   int ccleanup = INTEGER(cleanup)[0];
   const char *cstdout = isNull(stdout) ? 0 : CHAR(STRING_ELT(stdout, 0));
   const char *cstderr = isNull(stderr) ? 0 : CHAR(STRING_ELT(stderr, 0));
+  int ccontroller = LOGICAL(controller)[0];
   processx_options_t options = { 0 };
 
   pid_t pid;
   int err, exec_errorno = 0, status;
   ssize_t r;
   int signal_pipe[2] = { -1, -1 };
-  int pipes[3][2] = { { -1, -1 }, { -1, -1 }, { -1, -1 } };
+  int pipes[5][2] = { { -1, -1 }, { -1, -1 }, { -1, -1 },
+		      { -1, -1 }, { -1, -1 } };
 
   processx_handle_t *handle = NULL;
   SEXP result;
@@ -229,6 +245,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   /* Create pipes, if requested. TODO: stdin */
   if (cstdout && !strcmp(cstdout, "|")) processx__make_socketpair(pipes[1]);
   if (cstderr && !strcmp(cstderr, "|")) processx__make_socketpair(pipes[2]);
+  if (ccontroller) {
+    processx__make_socketpair(pipes[3]);
+    processx__make_socketpair(pipes[4]);
+  }
 
   processx__block_sigchld();
 
@@ -245,7 +265,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   /* CHILD */
   if (pid == 0) {
     processx__child_init(handle, pipes, ccommand, cargs, signal_pipe[1],
-			 cstdout, cstderr, &options);
+			 cstdout, cstderr, ccontroller, &options);
     goto cleanup;
   }
 
@@ -287,7 +307,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 
   /* Set fds for standard I/O */
   /* TODO: implement stdin */
-  handle->fd0 = handle->fd1 = handle->fd2 = -1;
+  handle->fd0 = handle->fd1 = handle->fd2 = handle->fd3 = handle->fd4 = -1;
   if (pipes[1][0] >= 0) {
     handle->fd1 = pipes[1][0];
     processx__nonblock_fcntl(handle->fd1, 1);
@@ -296,10 +316,20 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
     handle->fd2 = pipes[2][0];
     processx__nonblock_fcntl(handle->fd2, 1);
   }
+  if (pipes[3][0] >= 0) {
+    handle->fd3 = pipes[3][0];
+    processx__nonblock_fcntl(handle->fd3, 1);
+  }
+  if (pipes[4][1] >= 0) {
+    handle->fd4 = pipes[4][1];
+    processx__nonblock_fcntl(handle->fd4, 1);
+  }
 
   /* Closed unused ends of pipes */
   if (pipes[1][1] >= 0) close(pipes[1][1]);
   if (pipes[2][1] >= 0) close(pipes[2][1]);
+  if (pipes[3][1] >= 0) close(pipes[3][1]);
+  if (pipes[4][0] >= 0) close(pipes[4][0]);
 
   /* Create proper connections */
   processx__create_connections(handle, private);

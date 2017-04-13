@@ -10,6 +10,8 @@
 #' @param stderr Standard error, FALSE to ignore, TRUE for temp file.
 #' @param cleanup Kill on GC?
 #' @param echo_cmd Echo command before starting it?
+#' @param controller Whether to build a controller connection to the
+#'   child.
 #'
 #' @keywords internal
 #' @importFrom utils head tail
@@ -17,7 +19,7 @@
 process_initialize <- function(self, private, command, args,
                                commandline, stdout, stderr, cleanup,
                                echo_cmd, windows_verbatim_args,
-                               windows_hide_window) {
+                               windows_hide_window, controller) {
 
   "!DEBUG process_initialize `command`"
 
@@ -30,6 +32,7 @@ process_initialize <- function(self, private, command, args,
   assert_that(is_flag(echo_cmd))
   assert_that(is_flag(windows_verbatim_args))
   assert_that(is_flag(windows_hide_window))
+  assert_that(is_flag(controller))
 
   if (is.null(command) + is.null(commandline) != 1) {
     stop("Need exactly one of 'command' and 'commandline")
@@ -47,6 +50,7 @@ process_initialize <- function(self, private, command, args,
   private$echo_cmd <- echo_cmd
   private$windows_verbatim_args <- windows_verbatim_args
   private$windows_hide_window <- windows_hide_window
+  private$pcontroller <- controller
 
   if (isTRUE(stdout)) {
     private$cleanfiles <- c(private$cleanfiles, stdout <- tempfile())
@@ -77,7 +81,7 @@ process_initialize <- function(self, private, command, args,
     c_processx_exec,
     command, c(command, args), stdout, stderr,
     windows_verbatim_args, windows_hide_window,
-    private, cleanup
+    private, cleanup, controller
   )
   private$starttime <- Sys.time()
 

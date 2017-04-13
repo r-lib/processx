@@ -24,6 +24,8 @@ typedef struct processx_handle_s {
   int fd0;			/* writeable */
   int fd1;			/* readable */
   int fd2;			/* readable */
+  int fd3;                      /* readable control */
+  int fd4;                      /* writeable control */
   char tails[3];
   int waitpipe[2];		/* use it for wait() with timeout */
   int cleanup;
@@ -60,6 +62,7 @@ int processx__cloexec_fcntl(int fd, int set);
 /* Connections */
 
 void processx__create_connections(processx_handle_t *handle, SEXP private);
+
 void processx__con_destroy(Rconnection con);
 size_t processx__con_read(void *target, size_t sz, size_t ni,
 			  Rconnection con);
