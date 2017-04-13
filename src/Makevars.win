@@ -3,7 +3,7 @@
 all: supervisor/supervisor.exe $(SHLIB)
 
 supervisor/supervisor.exe: supervisor/supervisor.c
-	$(CC) $(CFLAGS) supervisor/supervisor.c -o supervisor/supervisor.exe
+	$(CC) $(CFLAGS) supervisor/supervisor.c supervisor/utils.c supervisor/windows.c -o supervisor/supervisor.exe
 
 clean:
 	rm -rf supervisor/supervisor supervisor/supervisor.dSYM supervisor/supervisor.exe processx.o processx.dll
