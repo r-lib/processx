@@ -495,6 +495,16 @@ int remove_element(int* ar, int len, int idx) {
 }
 
 
+bool array_contains(int* ar, int len, int value) {
+    for (int i=0; i<len; i++) {
+        if (ar[i] == value)
+            return true;
+    }
+
+    return false;
+}
+
+
 int main(int argc, char **argv) {
 
     int parent_pid;
@@ -639,6 +649,10 @@ int main(int argc, char **argv) {
                         "Number of child processes to watch has exceeded limit of %d.",
                         MAX_CHILDREN
                     );
+
+                } else if (array_contains(children, n_children, pid)) {
+                    verbose_printf("Not adding (already present):%d\n", pid);
+
                 } else {
                     verbose_printf("Adding:%d\n", pid);
                     children[n_children] = pid;
