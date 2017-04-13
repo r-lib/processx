@@ -144,7 +144,7 @@ supervisor_path <- function() {
   devtools_loaded <- !is.null(dev_meta)
 
   if (devtools_loaded) {
-    subdir <- "src"
+    subdir <- file.path("src", "supervisor")
   } else {
     subdir <- "bin"
     # Add arch (it may be ""; on Windows it may be "/X64")
