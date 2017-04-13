@@ -571,9 +571,28 @@ int main(int argc, char **argv) {
     configure_input_handle(h_input);
 
     #else
-    // TODO: Support named pipe objects, or if -i is used, give error and tell
-    // them to use shell redirection.
-    fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
+
+    FILE* fp_input;
+
+    if (input_pipe_name == NULL) {
+        fp_input = stdin;
+
+    } else {
+        printf("fopen.\n");
+
+        fp_input = fopen(input_pipe_name, "r");
+        printf("fopened.\n");
+        if (fp_input == NULL) {
+            printf("Unable to open %s for reading.\n", input_pipe_name);
+            exit(1);
+        }
+    }
+
+    if (fcntl(fileno(fp_input), F_SETFL, O_NONBLOCK) == -1) {
+        printf("Error setting input to non-blocking mode.\n");
+        exit(1);
+    }
+
     #endif
 
 
@@ -595,13 +614,13 @@ int main(int argc, char **argv) {
     // Poll
     while(1) {
         // TODO: Handle case where multiple PIDs are entered in one cycle.
-        // Look for any new processes IDs from stdin
+        // Look for any new processes IDs from the input
         char* res;
 
         #ifdef WIN32
         res = get_line_nonblock(readbuf, INPUT_BUF_LEN, h_input);
         #else
-        res = fgets(readbuf, INPUT_BUF_LEN, stdin);
+        res = fgets(readbuf, INPUT_BUF_LEN, fp_input);
         #endif
         if (res != NULL) {
             if (strncmp(readbuf, "kill", 4) == 0) {
