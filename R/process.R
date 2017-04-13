@@ -178,10 +178,10 @@ process <- R6Class(
 
     initialize = function(command = NULL, args = character(),
       commandline = NULL, stdout = TRUE, stderr = TRUE, cleanup = TRUE,
-      echo_cmd = FALSE, windows_verbatim_args = FALSE,
+      echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
       windows_hide_window = FALSE)
       process_initialize(self, private, command, args, commandline,
-                         stdout, stderr, cleanup, echo_cmd,
+                         stdout, stderr, cleanup, echo_cmd, supervise,
                          windows_verbatim_args, windows_hide_window),
 
     kill = function(grace = 0.1)
