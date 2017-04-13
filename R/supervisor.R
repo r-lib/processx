@@ -12,7 +12,6 @@ reg.finalizer(supervisor_info, function(s) {
 # This takes an object s, because a new `supervisor_info` object could have been
 # created.
 supervisor_kill <- function(s = supervisor_info) {
-  print(as.list(s))
   if (is.null(s$pid))
     return()
 
