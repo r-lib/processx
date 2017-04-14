@@ -102,6 +102,9 @@ static void processx__finalizer(SEXP status) {
 
   processx__block_sigchld();
 
+  /* Free child list nodes that are not needed any more. */
+  processx__freelist_free();
+
   /* Already freed? */
   if (!handle) goto cleanup;
 
@@ -247,7 +250,13 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   }
 
   /* We need to know the processx children */
-  processx__child_add(pid, result);
+  if (processx__child_add(pid, result)) {
+    err = -errno;
+    close(signal_pipe[0]);
+    close(signal_pipe[1]);
+    processx__unblock_sigchld();
+    goto cleanup;
+  }
 
   /* SIGCHLD can arrive now */
   processx__unblock_sigchld();
