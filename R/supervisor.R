@@ -98,34 +98,7 @@ supervisor_start <- function() {
     stop("Error starting supervisor process.")
   }
 
-  supervisor_info$pid <- NULL
-
-  # Attempt to read the PID for 5 seconds
-  t0 <- Sys.time()
-  while (is.null(supervisor_info$pid)) {
-    if (as.numeric(Sys.time() - t0, units = "secs") > 5) {
-      stop("Timed out starting supervisor process.")
-    }
-
-    # pid_txt <- readLines(supervisor_info$stdout, n = 1)
-    Sys.sleep(0.5)
-    pid_txt <- "PID: 8888"
-
-    if (length(pid_txt) > 0) {
-      if (!grepl("^PID: \\d+$", pid_txt))
-        stop("Incorrect format for supervisor PID output: \n", pid_txt)
-
-      pid <- as.numeric(sub("^PID: ", "", pid_txt))
-
-      if (is.na(pid))
-        stop("Incorrect format for supervisor PID output: \n", pid_txt)
-
-      supervisor_info$pid <- pid
-
-    } else {
-      Sys.sleep(0.2)
-    }
-  }
+  supervisor_info$pid <- p$get_pid()
 }
 
 
