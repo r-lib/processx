@@ -6,4 +6,5 @@ supervisor/supervisor: supervisor/*.c
 	$(CC) $(CFLAGS) supervisor/*.c -o supervisor/supervisor
 
 clean:
-	rm -rf supervisor/supervisor supervisor/supervisor.dSYM supervisor/supervisor.exe processx.o processx.dll
+	rm -rf supervisor/supervisor supervisor/supervisor.dSYM supervisor/supervisor.exe \
+	    *.o *.dll *.so
