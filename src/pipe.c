@@ -7,6 +7,21 @@
 #include <windows.h>
 
 
+SEXP processx_is_named_pipe_open(SEXP pipe_ext) {
+    if (pipe_ext == R_NilValue)
+        error("Not a named pipe handle.");
+
+    // This function currently only tests if the named pipe has been closed
+    // "properly", by processx_close_named_pipe(). It doesn't test if the
+    // other end of the pipe has been closed.
+
+    if (R_ExternalPtrAddr(pipe_ext) == NULL)
+        return ScalarLogical(0);
+
+    return ScalarLogical(1);
+}
+
+
 SEXP processx_close_named_pipe(SEXP pipe_ext) {
     if (pipe_ext == R_NilValue || R_ExternalPtrAddr(pipe_ext) == NULL)
         return R_NilValue;
@@ -128,6 +143,11 @@ SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text) {
 // On non-windows platforms, we still need the C interfaces, but they simply
 // give errors.
 #include <Rdefines.h>
+
+SEXP processx_is_named_pipe_open(SEXP pipe_ext) {
+    error("processx_is_named_pipe_open only valid on Windows.");
+    return R_NilValue;
+}
 
 SEXP processx_close_named_pipe(SEXP pipe_ext) {
     error("processx_close_named_pipe only valid on Windows.");

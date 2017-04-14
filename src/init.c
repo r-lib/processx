@@ -14,9 +14,10 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_poll_io",         (DL_FUNC) &processx_poll_io,         4 },
   { "processx_poll",            (DL_FUNC) &processx_poll,            4 },
   { "processx__process_exists", (DL_FUNC) &processx__process_exists, 1 },
-  { "processx_close_named_pipe",  (DL_FUNC) &processx_close_named_pipe,  1 },
-  { "processx_create_named_pipe", (DL_FUNC) &processx_create_named_pipe, 2 },
-  { "processx_write_named_pipe",  (DL_FUNC) &processx_write_named_pipe,  2 },
+  { "processx_is_named_pipe_open", (DL_FUNC) &processx_is_named_pipe_open, 1 },
+  { "processx_close_named_pipe",   (DL_FUNC) &processx_close_named_pipe,   1 },
+  { "processx_create_named_pipe",  (DL_FUNC) &processx_create_named_pipe,  2 },
+  { "processx_write_named_pipe",   (DL_FUNC) &processx_write_named_pipe,   2 },
   { NULL, NULL, 0 }
 };
 

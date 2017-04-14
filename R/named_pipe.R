@@ -17,8 +17,7 @@ is_pipe_open <- function(pipe) {
 
 #' @export
 is_pipe_open.windows_named_pipe <- function(pipe) {
-  # TODO: Implement this
-  TRUE
+  .Call(c_processx_is_named_pipe_open, pipe$handle)
 }
 
 #' @export
