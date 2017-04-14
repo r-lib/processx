@@ -1,3 +1,6 @@
+# These functions are an abstraction layer for named pipes. They're necessary
+# because fifo() on Windows doesn't seem to work (as of R 3.3.3).
+
 named_pipe_tempfile <- function(prefix = "pipe") {
   if (is_windows()) {
     # For some reason, calling tempfile("foo", tmpdir = "\\\\pipe\\.\\") takes
@@ -36,9 +39,6 @@ is_pipe_open.unix_named_pipe <- function(pipe) {
   is_open
 }
 
-
-# These functions are an abstraction layer for named pipes. They're necessary
-# because fifo() on Windows doesn't seem to work (as of R 3.3.3).
 
 create_named_pipe <- function(name) {
   if (is_windows()) {

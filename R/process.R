@@ -13,8 +13,8 @@ NULL
 #' @section Usage:
 #' \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
 #'                  stdout = TRUE, stderr = TRUE, cleanup = TRUE,
-#'                  echo_cmd = FALSE, windows_verbatim_args = FALSE,
-#'                  windows_hide_window = FALSE)
+#'                  echo_cmd = FALSE, supervise = FALSE,
+#'                  windows_verbatim_args = FALSE, windows_hide_window = FALSE)
 #'
 #' p$is_alive()
 #' p$signal(signal)
@@ -64,6 +64,9 @@ NULL
 #'     if the \code{process} object is garbage collected.}
 #'   \item{echo_cmd}{Whether to print the command to the screen before
 #'     running it.}
+#'   \item{supervise}{Whether to register the process with a supervisor.
+#'     If \code{TRUE}, the supervisor will ensure that the process is
+#'     killed when the R process exits.}
 #'   \item{windows_verbatim_args}{Whether to omit quoting the arguments
 #'     on Windows. It is ignored on other platforms.}
 #'   \item{windows_hide_window}{Whether to hide the application's window

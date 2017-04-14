@@ -6,7 +6,8 @@
 //
 // Every 0.2 seconds, it does the following:
 // * Checks for any new process IDs on standard input, and adds them to the list
-//   of child processes to track.
+//   of child processes to track. If the PID is negative, as in "-1234", then
+//   that value will be negated and removed from the list of processes to track.
 // * Checks if any child processes have died. If so, remove them from the list
 //   of child processes to track.
 // * Checks if the parent process has died. If so, kill all children and exit.
@@ -15,7 +16,7 @@
 //   gcc supervisor.c -o supervisor
 //   ./supervisor -v -p [parent_pid]
 //
-// The parent_pid is optional. If not supplied, the supervisor will auto-
+// The [parent_pid] is optional. If not supplied, the supervisor will auto-
 // detect the parent process.
 //
 // After it is started, you can enter pids for child processes. Then you can
