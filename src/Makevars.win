@@ -1,4 +1,4 @@
-OBJECTS = init.o win/poll.o win/processx.o win/stdio.o
+OBJECTS = init.o win/poll.o win/processx.o win/stdio.o win/named_pipe.o
 
 .PHONY: all clean
 
