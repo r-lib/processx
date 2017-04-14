@@ -20,7 +20,10 @@ void processx__child_remove(pid_t pid) {
       } else {
 	child_list = ptr->next;
       }
-      free(ptr);
+      /* This is a memory leak, but freeing here results in
+	 crashes, so we leave the leak open for now, and will
+	 fix it later. */
+      /* free(ptr); */
       return;
     }
     prev = ptr;
