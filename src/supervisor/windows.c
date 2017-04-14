@@ -131,8 +131,8 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
         // First use PeekConsoleInput to make sure some char is available,
         // because ReadConsoleInput will block if there's no input.
         if (!PeekConsoleInput(h_input, in_record_buf, WIN_INPUT_BUF_LEN, &num_peeked)) {
-            printf("Error peeking at console input.");
-            exit(1);
+            printf("Error peeking at console input.\n");
+            return NULL;
         };
 
         if (num_peeked == 0) {
@@ -172,8 +172,8 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
             DWORD num_events_read2;
             // Clear out console buffer up to the '\n' event
             if (!ReadConsoleInput(h_input, in_record_buf, num_events_read , &num_events_read2)) {
-                printf("Error reading console input.");
-                exit(1);
+                printf("Error reading console input.\n");
+                return NULL;
             }
 
             // Place the content in buf
@@ -190,8 +190,8 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
         int input_char_buf_n = 0;
 
         if (!PeekNamedPipe(h_input, input_char_buf, WIN_INPUT_BUF_LEN, &num_peeked, NULL, NULL)) {
-            printf("Error peeking at pipe input. Error %d", (unsigned)GetLastError());
-            return buf;
+            printf("Error peeking at pipe input. Error %d.\n", (unsigned)GetLastError());
+            return NULL;
         };
 
         bool found_newline = false;
@@ -206,8 +206,8 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
         if (found_newline) {
             // Clear out pipe
             if (!ReadFile(h_input, input_char_buf, input_char_buf_n, &num_read, NULL)) {
-                printf("Error reading pipe input.");
-                return buf;
+                printf("Error reading pipe input.\n");
+                return NULL;
             }
 
             // Place the content in buf
@@ -219,7 +219,7 @@ char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input) {
         }
 
     } else {
-        printf("Unsupported input type: %s", input_type_name);
+        printf("Unsupported input type: %s\n", input_type_name);
         exit(1);
     }
 

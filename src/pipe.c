@@ -12,7 +12,6 @@ SEXP processx_close_named_pipe(SEXP pipe_ext) {
         return R_NilValue;
 
     HANDLE h = (HANDLE)R_ExternalPtrAddr(pipe_ext);
-    // TODO: Figure out why crashing on quit or reload!
     DisconnectNamedPipe(h);
     CloseHandle(h);
     R_ClearExternalPtr(pipe_ext);
