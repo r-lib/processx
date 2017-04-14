@@ -2,9 +2,10 @@
 supervisor_info <- new.env()
 
 reg.finalizer(supervisor_info, function(s) {
-  # Call the functions on s directly, in case the GC event happens _after_ a new
-  # `processx:::supervisor_info` has been created and the name `supervisor_info`
-  # is bound to the new object.
+  # Pass s to `supervisor_kill`, in case the GC event happens _after_ a new
+  # `processx:::supervisor_info` has been created and the name
+  # `supervisor_info` is bound to the new object. This could happen if the
+  # package is unloaded and reloaded.
   supervisor_kill(s)
 }, onexit = TRUE)
 
@@ -77,12 +78,9 @@ supervisor_start <- function() {
 
   # Start the supervisor, passing the R process's PID to it.
   if (is_windows()) {
-    # TODO: fix stdout
     p <- process$new(
       supervisor_path(),
       args   = c("-v", "-p", Sys.getpid(), "-i", supervisor_info$stdin_file),
-      # stdout = supervisor_info$stdout_file,
-      stdout = "supervisor_out.txt",
       cleanup = FALSE,
       commandline = NULL
     )
@@ -91,7 +89,6 @@ supervisor_start <- function() {
     p <- process$new(
       supervisor_path(),
       args   = c("-p", Sys.getpid(), "-i", supervisor_info$stdin_file, "-v"),
-      # stdout = supervisor_info$stdout_file,
       cleanup = FALSE,
       commandline = NULL
     )
