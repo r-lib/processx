@@ -2,8 +2,8 @@
 
 all: supervisor/supervisor $(SHLIB)
 
-supervisor/supervisor: supervisor/supervisor.c
-	$(CC) $(CFLAGS) supervisor/supervisor.c supervisor/utils.c -o supervisor/supervisor
+supervisor/supervisor: supervisor/*.c
+	$(CC) $(CFLAGS) supervisor/*.c -o supervisor/supervisor
 
 clean:
 	rm -rf supervisor/supervisor supervisor/supervisor.dSYM supervisor/supervisor.exe processx.o processx.dll
