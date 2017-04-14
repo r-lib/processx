@@ -5,6 +5,8 @@
 
 #include <Rinternals.h>
 
+#include "../processx.h"
+
 struct processx_handle_s;
 typedef struct processx_pipe_handle_s {
   HANDLE pipe;
@@ -39,3 +41,7 @@ int processx__stdio_create(processx_handle_t *handle,
 WORD processx__stdio_size(BYTE* buffer);
 HANDLE processx__stdio_handle(BYTE* buffer, int fd);
 void processx__stdio_destroy(BYTE* buffer);
+
+void processx__handle_destroy(processx_handle_t *handle);
+
+#endif

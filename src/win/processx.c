@@ -3,7 +3,6 @@
 
 #include <windows.h>
 
-#include "processx.h"
 #include "processx-win.h"
 
 #include <R_ext/Rdynload.h>
