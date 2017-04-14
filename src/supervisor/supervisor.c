@@ -48,12 +48,9 @@
 // Size of stdin input buffer
 #define INPUT_BUF_LEN 1024
 // Maximum number of children to keep track of
-#define MAX_CHILDREN 2048
+#define MAX_CHILDREN 1024
 // Milliseconds to sleep in polling loop
 #define POLL_MS 200
-// Windows input event buffer size. Will read this many console events each
-// time.
-#define WIN_INPUT_BUF_LEN 1024
 
 // Globals --------------------------------------------------------------------
 
@@ -225,7 +222,7 @@ int main(int argc, char **argv) {
     int parent_pid_detected;
     char* input_pipe_name = NULL;
 
-    // Process arguments
+    // Process arguments ------------------------------------------------------
     if (argc >= 2) {
         for (int i=1; i<argc; i++) {
             if (strcmp(argv[i], "-v") == 0) {
@@ -281,11 +278,14 @@ int main(int argc, char **argv) {
         verbose_printf("Reading input from %s.\n", input_pipe_name);
     }
 
+
+    // Open and configure input source ----------------------------------------
+
     // Input buffer for messages from the R process
     char readbuf[INPUT_BUF_LEN];
 
-    // Open input source and make it nonblocking
     #ifdef WIN32
+
     HANDLE h_input;
 
     if (input_pipe_name == NULL) {
@@ -322,11 +322,14 @@ int main(int argc, char **argv) {
     #endif
 
 
-    // Register signal handler
+    // Register signal handler ------------------------------------------------
     #ifdef WIN32
+
     signal(SIGINT, sig_handler);
     signal(SIGTERM, sig_handler);
+
     #else
+
     struct sigaction sa;
     sa.sa_handler = sig_handler;
     sigemptyset(&sa.sa_mask);
@@ -335,9 +338,11 @@ int main(int argc, char **argv) {
         printf("Error setting up signal handler.\n");
         exit(1);
     }
+
     #endif
 
-    // Poll
+
+    // Poll -------------------------------------------------------------------
     while(1) {
         // Look for any new processes IDs from the input
         char* res = NULL;
@@ -362,7 +367,7 @@ int main(int argc, char **argv) {
                 return 0;
             }
             int pid = extract_pid(readbuf, INPUT_BUF_LEN);
-            if (pid != 0) {
+            if (pid > 0) {
                 if (n_children == MAX_CHILDREN) {
                     printf(
                         "Number of child processes to watch has exceeded limit of %d.",
@@ -376,6 +381,17 @@ int main(int argc, char **argv) {
                     verbose_printf("Adding:%d\n", pid);
                     children[n_children] = pid;
                     n_children++;
+                }
+
+            } else if (pid < 0) {
+                // Remove pids that start with '-'
+                pid = -pid;
+                for (int i=0; i<n_children; i++) {
+                    if (children[i] == pid) {
+                        verbose_printf("Removing:%d\n", pid);
+                        n_children = remove_element(children, n_children, i);
+                        break;
+                    }
                 }
             }
         }
