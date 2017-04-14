@@ -66,6 +66,12 @@ supervisor_watch_pid <- function(pid) {
 }
 
 
+# Tell the supervisor to un-watch a PID
+supervisor_unwatch_pid <- function(pid) {
+  write_lines_named_pipe(supervisor_info$stdin, as.character(-pid))
+}
+
+
 # Start the supervisor process. Information about the process will be stored in
 # supervisor_info. If startup fails, this function will throw an error.
 supervisor_start <- function() {

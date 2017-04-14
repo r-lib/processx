@@ -88,6 +88,7 @@ process_initialize <- function(self, private, command, args,
 
   if (supervise) {
     supervisor_watch_pid(self$get_pid())
+    private$supervised <- TRUE
   }
 
   invisible(self)

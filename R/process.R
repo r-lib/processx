@@ -116,6 +116,15 @@ NULL
 #' \code{$get_start_time()} returns the time when the process was
 #' started.
 #'
+#' \code{$is_supervised()} returns whether the process is being tracked by
+#' supervisor process.
+#'
+#' \code{$supervise()} if passed \code{TRUE}, tells the supervisor to start
+#' tracking the process. If \code{FALSE}, tells the supervisor to stop
+#' tracking the process. Note that even if the supervisor is disabled for a
+#' process, if it was started with \code{cleanup=TRUE}, the process will
+#' still be killed when the object is garbage collected.
+#'
 #' \code{$read_output_lines()} reads from standard output connection of
 #' the process. If the standard output connection was not requested, then
 #' then it returns an error. It uses a non-blocking text connection.
@@ -214,6 +223,12 @@ process <- R6Class(
     get_start_time = function()
       process_get_start_time(self, private),
 
+    is_supervised = function()
+      process_is_supervised(self, private),
+
+    supervise = function(status)
+      process_supervise(self, private, status),
+
     ## Output
 
     read_output_lines = function(...)
@@ -258,6 +273,8 @@ process <- R6Class(
     exited = FALSE,       # Whether pid & exitcode was copied over here
     pid = NULL,           # pid, if finished, otherwise in status!
     exitcode = NULL,      # exit code, if finished, otherwise in status!
+
+    supervised = FALSE,   # Whether process is tracked by supervisor
 
     stdout_pipe = NULL,
     stderr_pipe = NULL,
@@ -358,5 +375,20 @@ process_get_pid <- function(self, private) {
     private$pid
   } else {
     .Call(c_processx_get_pid, private$status)
+  }
+}
+
+process_is_supervised <- function(self, private) {
+  private$supervised
+}
+
+process_supervise <- function(self, private, status) {
+  if (status && !self$is_supervised()) {
+    supervisor_watch_pid(self$get_pid())
+    private$supervised <- TRUE
+
+  } else if (!status && self$is_supervised()) {
+    supervisor_unwatch_pid(self$get_pid())
+    private$supervised <- FALSE
   }
 }

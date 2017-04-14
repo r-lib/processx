@@ -121,6 +121,15 @@ finished and \code{NULL} otherwise.
 \code{$get_start_time()} returns the time when the process was
 started.
 
+\code{$is_supervised()} returns whether the process is being tracked by
+supervisor process.
+
+\code{$supervise()} if passed \code{TRUE}, tells the supervisor to start
+tracking the process. If \code{FALSE}, tells the supervisor to stop
+tracking the process. Note that even if the supervisor is disabled for a
+process, if it was started with \code{cleanup=TRUE}, the process will
+still be killed when the object is garbage collected.
+
 \code{$read_output_lines()} reads from standard output connection of
 the process. If the standard output connection was not requested, then
 then it returns an error. It uses a non-blocking text connection.
