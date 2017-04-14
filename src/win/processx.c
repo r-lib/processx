@@ -1,13 +1,9 @@
 
-void processx_win_dummy() { }
-
 #ifdef WIN32
 
 #include <windows.h>
 
-#include "utils.h"
-#include "windows-stdio.h"
-#include "processx.h"
+#include "processx-win.h"
 
 #include <R_ext/Rdynload.h>
 
@@ -561,6 +557,12 @@ SEXP processx__make_handle(SEXP private, int cleanup) {
   return result;
 }
 
+void processx__handle_destroy(processx_handle_t *handle) {
+  if (!handle) return;
+  if (handle->child_stdio_buffer) free(handle->child_stdio_buffer);
+  free(handle);
+}
+
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 		   SEXP windows_verbatim_args, SEXP windows_hide,
 		   SEXP private, SEXP cleanup) {
@@ -881,7 +883,7 @@ SEXP processx__process_exists(SEXP pid) {
     processx__error(err);
     return R_NilValue;
   } else {
-    /* Maybe just finished, and in that case we still have a valid handle. 
+    /* Maybe just finished, and in that case we still have a valid handle.
        Let's see if this is the case. */
     DWORD exitcode;
     DWORD err = GetExitCodeProcess(proc, &exitcode);

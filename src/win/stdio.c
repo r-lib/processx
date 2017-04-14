@@ -1,7 +1,7 @@
 
 #ifdef _WIN32
 
-#include "windows-stdio.h"
+#include "processx-win.h"
 
 /* Why is this not defined??? */
 BOOL WINAPI CancelIoEx(

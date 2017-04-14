@@ -1,56 +1,18 @@
 
-void processx_unix_dummy() { }
-
 #ifndef _WIN32
 
-#include <Rinternals.h>
-#include <R_ext/Rdynload.h>
+#include "processx-unix.h"
 
-#include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <signal.h>
-#include <sys/wait.h>
-#include <poll.h>
+/* Internals */
 
-#include "processx.h"
-#include "utils.h"
-
-/* Child list and its functions */
-
-typedef struct processx__child_list_s {
-  pid_t pid;
-  SEXP status;
-  struct processx__child_list_s *next;
-} processx__child_list_t;
-
-static processx__child_list_t *child_list = NULL;
-
-static void processx__child_add(pid_t pid, SEXP status);
-static void processx__child_remove(pid_t pid);
-static processx__child_list_t *processx__child_find(pid_t pid);
-
-void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx);
-static void processx__setup_sigchld();
-static void processx__remove_sigchld();
-static void processx__block_sigchld();
-static void processx__unblock_sigchld();
-
-/* Other internals */
-
-static int processx__nonblock_fcntl(int fd, int set);
-static int processx__cloexec_fcntl(int fd, int set);
 static void processx__child_init(processx_handle_t *handle, int pipes[3][2],
 				 char *command, char **args, int error_fd,
 				 const char *stdout, const char *stderr,
 				 processx_options_t *options);
-static void processx__collect_exit_status(SEXP status, int wstat);
 static void processx__finalizer(SEXP status);
 
-SEXP processx__make_handle(SEXP private, int cleanup);
+static SEXP processx__make_handle(SEXP private, int cleanup);
+static void processx__handle_destroy(processx_handle_t *handle);
 
 /* Define BSWAP_32 on Big Endian systems */
 #ifdef WORDS_BIGENDIAN
@@ -69,42 +31,6 @@ SEXP processx__make_handle(SEXP private, int cleanup);
 
 void R_unload_processx(DllInfo *dll) {
   processx__remove_sigchld();
-}
-
-static int processx__nonblock_fcntl(int fd, int set) {
-  int flags;
-  int r;
-
-  do { r = fcntl(fd, F_GETFL); } while (r == -1 && errno == EINTR);
-  if (r == -1) { return -errno; }
-
-  /* Bail out now if already set/clear. */
-  if (!!(r & O_NONBLOCK) == !!set) { return 0; }
-
-  if (set) { flags = r | O_NONBLOCK; } else { flags = r & ~O_NONBLOCK; }
-
-  do { r = fcntl(fd, F_SETFL, flags); } while (r == -1 && errno == EINTR);
-  if (r) { return -errno; }
-
-  return 0;
-}
-
-static int processx__cloexec_fcntl(int fd, int set) {
-  int flags;
-  int r;
-
-  do { r = fcntl(fd, F_GETFD); } while (r == -1 && errno == EINTR);
-  if (r == -1) { return -errno; }
-
-  /* Bail out now if already set/clear. */
-  if (!!(r & FD_CLOEXEC) == !!set) { return 0; }
-
-  if (set) { flags = r | FD_CLOEXEC; } else { flags = r & ~FD_CLOEXEC; }
-
-  do { r = fcntl(fd, F_SETFD, flags); } while (r == -1 && errno == EINTR);
-  if (r) { return -errno; }
-
-  return 0;
 }
 
 void processx__write_int(int fd, int err) {
@@ -176,6 +102,9 @@ static void processx__finalizer(SEXP status) {
 
   processx__block_sigchld();
 
+  /* Free child list nodes that are not needed any more. */
+  processx__freelist_free();
+
   /* Already freed? */
   if (!handle) goto cleanup;
 
@@ -218,7 +147,7 @@ static void processx__finalizer(SEXP status) {
   processx__unblock_sigchld();
 }
 
-SEXP processx__make_handle(SEXP private, int cleanup) {
+static SEXP processx__make_handle(SEXP private, int cleanup) {
   processx_handle_t * handle;
   SEXP result;
 
@@ -235,112 +164,9 @@ SEXP processx__make_handle(SEXP private, int cleanup) {
   return result;
 }
 
-static void processx__child_add(pid_t pid, SEXP status) {
-  processx__child_list_t *child = malloc(sizeof(processx__child_list_t));
-  child->pid = pid;
-  child->status = status;
-  child->next = child_list;
-  child_list = child;
-}
-
-static void processx__child_remove(pid_t pid) {
-  processx__child_list_t *ptr = child_list, *prev = 0;
-  while (ptr) {
-    if (ptr->pid == pid) {
-      if (prev) {
-	prev->next = ptr->next;
-      } else {
-	child_list = ptr->next;
-      }
-      free(ptr);
-      return;
-    }
-    prev = ptr;
-    ptr = ptr->next;
-  }
-}
-
-static processx__child_list_t *processx__child_find(pid_t pid) {
-  processx__child_list_t *ptr = child_list;
-  while (ptr) {
-    if (ptr->pid == pid) return ptr;
-    ptr = ptr->next;
-  }
-  return 0;
-}
-
-void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
-  if (sig != SIGCHLD) return;
-  pid_t pid = info->si_pid;
-  processx__child_list_t *child = processx__child_find(pid);
-
-  if (child) {
-    /* We deliberately do not call the finalizer here, because that
-       moves the exit code and pid to R, and we might have just checked
-       that these are not in R, before calling C. So finalizing here
-       would be a race condition.
-
-       OTOH, we need to check if the handle is null, because a finalizer
-       might actually run before the SIGCHLD handler. Or the finalizer
-       might even trigger the SIGCHLD handler...
-    */
-    int wp, wstat;
-    processx_handle_t *handle = R_ExternalPtrAddr(child->status);
-
-    /* This might not be necessary, if the handle was finalized,
-       but it does not hurt... */
-    do {
-      wp = waitpid(pid, &wstat, 0);
-    } while (wp == -1 && errno == EINTR);
-
-    /* If handle is NULL, then the exit status was collected already */
-    if (handle) processx__collect_exit_status(child->status, wstat);
-
-    processx__child_remove(pid);
-
-    /* If no more children, then we could remove the SIGCHLD handler,
-       but that leads to strange interactions with system(), at least
-       on macOS. So we don't do that. */
-
-    /* If there is an active wait() with a timeout, then stop it */
-    if (handle && handle->waitpipe[1] >= 0) {
-      close(handle->waitpipe[1]);
-      handle->waitpipe[1] = -1;
-    }
-  }
-}
-
-/* TODO: use oldact */
-
-static void processx__setup_sigchld() {
-  struct sigaction action;
-  action.sa_sigaction = processx__sigchld_callback;
-  action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NOCLDSTOP;
-  sigaction(SIGCHLD, &action, /* oldact= */ NULL);
-}
-
-static void processx__remove_sigchld() {
-  struct sigaction action;
-  action.sa_handler = SIG_DFL;
-  sigaction(SIGCHLD, &action, /* oldact= */ NULL);
-}
-
-static void processx__block_sigchld() {
-  sigset_t blockMask;
-  sigemptyset(&blockMask);
-  sigaddset(&blockMask, SIGCHLD);
-  if (sigprocmask(SIG_BLOCK, &blockMask, NULL) == -1) {
-    error("processx error setting up signal handlers");
-  }
-}
-
-static void processx__unblock_sigchld() {
-  sigset_t unblockMask;
-  sigemptyset(&unblockMask);
-  sigaddset(&unblockMask, SIGCHLD);
-  if (sigprocmask(SIG_UNBLOCK, &unblockMask, NULL) == -1) {
-    error("processx error setting up signal handlers");
-  }
+static void processx__handle_destroy(processx_handle_t *handle) {
+  if (!handle) return;
+  free(handle);
 }
 
 void processx__make_socketpair(int pipe[2]) {
@@ -369,116 +195,6 @@ skip:
 
   processx__cloexec_fcntl(pipe[0], 1);
   processx__cloexec_fcntl(pipe[1], 1);
-}
-
-void processx__con_destroy(Rconnection con) {
-  if (con->status >= 0) {
-    processx_handle_t *handle = con->private;
-    if (handle) {
-      if (handle->fd1 == con->status) handle->fd1 = -1;
-      if (handle->fd2 == con->status) handle->fd2 = -1;
-    }
-    close(con->status);
-    con->status = -1;
-    con->isopen = 0;
-  }
-}
-
-size_t processx__con_read(void *target, size_t sz, size_t ni,
-			  Rconnection con) {
-  int num;
-  int fd = con->status;
-  int whichfd;
-  processx_handle_t *handle = con->private;
-
-  if (fd < 0) error("Connection was already closed");
-  if (sz != 1) error("Can only read bytes from processx connections");
-
-  if (fd == handle->fd1) whichfd = 1; else whichfd = 2;
-
-  /* Already got EOF? */
-  if (con->EOF_signalled) return 0;
-
-  num = read(fd, target, ni);
-
-  con->incomplete = 1;
-
-  if (num < 0 && errno == EAGAIN) {
-    num = 0;			/* cannot return negative number */
-
-  } else if (num < 0) {
-    error("Cannot read from processx pipe");
-
-  } else if (num == 0) {
-    con->incomplete = 0;
-    con->EOF_signalled = 1;
-    /* If the last line does not have a trailing '\n', then
-       we add one manually, because otherwise readLines() will
-       never read this line. */
-    if (handle->tails[whichfd] != '\n') {
-      ((char*)target)[0] = '\n';
-      num = 1;
-    }
-
-  } else {
-    /* Make note of the last character, to know if the last line
-       was incomplete or not. */
-    handle->tails[whichfd] = ((char*)target)[num - 1];
-  }
-
-  return (size_t) num;
-}
-
-int processx__con_fgetc(Rconnection con) {
-  int x = 0;
-#ifdef WORDS_BIGENDIAN
-  return processx__con_read(&x, 1, 1, con) ? BSWAP_32(x) : -1;
-#else
-  return processx__con_read(&x, 1, 1, con) ? x : -1;
-#endif
-}
-
-void processx__create_connection(processx_handle_t *handle,
-				 int fd, const char *membername,
-				 SEXP private) {
-
-  Rconnection con;
-  SEXP res =
-    PROTECT(R_new_custom_connection("processx", "r", "textConnection", &con));
-
-  int whichfd;
-  if (fd == handle->fd1) whichfd = 1; else whichfd = 2;
-  handle->tails[whichfd] = '\n';
-
-  con->incomplete = 1;
-  con->EOF_signalled = 0;
-  con->private = handle;
-  con->status = fd;		/* slight abuse */
-  con->canseek = 0;
-  con->canwrite = 0;
-  con->canread = 1;
-  con->isopen = 1;
-  con->blocking = 0;
-  con->text = 1;
-  con->UTF8out = 1;
-  con->destroy = &processx__con_destroy;
-  con->read = &processx__con_read;
-  con->fgetc = &processx__con_fgetc;
-  con->fgetc_internal = &processx__con_fgetc;
-
-  defineVar(install(membername), res, private);
-  UNPROTECT(1);
-}
-
-void processx__create_connections(processx_handle_t *handle, SEXP private) {
-
-  if (handle->fd1 >= 0) {
-    processx__create_connection(handle, handle->fd1, "stdout_pipe", private);
-  }
-
-  if (handle->fd2 >= 0) {
-    processx__create_connection(handle, handle->fd2, "stderr_pipe", private);
-  }
 }
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
@@ -534,7 +250,13 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   }
 
   /* We need to know the processx children */
-  processx__child_add(pid, result);
+  if (processx__child_add(pid, result)) {
+    err = -errno;
+    close(signal_pipe[0]);
+    close(signal_pipe[1]);
+    processx__unblock_sigchld();
+    goto cleanup;
+  }
 
   /* SIGCHLD can arrive now */
   processx__unblock_sigchld();
@@ -969,85 +691,6 @@ SEXP processx_get_pid(SEXP status) {
   if (!handle) { error("Internal processx error, handle already removed"); }
 
   return ScalarInteger(handle->pid);
-}
-
-int processx__poll_decode(short code) {
-  if (code & POLLNVAL) return PXCLOSED;
-  if (code & POLLIN || code & POLLHUP) return PXREADY;
-  return 0;
-}
-
-SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
-		      SEXP stderr_pipe) {
-  int cms = INTEGER(ms)[0];
-  processx_handle_t *handle = R_ExternalPtrAddr(status);
-  struct pollfd fds[2];
-  int idx = 0, num = 0, ret;
-  SEXP result;
-  int ptr1 = -1, ptr2 = -1;
-
-  if (!handle) { error("Internal processx error, handle already removed"); }
-
-  if (handle->fd1 >= 0) {
-    fds[idx].fd = handle->fd1;
-    fds[idx].events = POLLIN;
-    fds[idx].revents = 0;
-    ptr1 = idx;
-    idx++;
-  }
-  if (handle->fd2 >= 0) {
-    fds[idx].fd = handle->fd2;
-    fds[idx].events = POLLIN;
-    fds[idx].revents = 0;
-    ptr2 = idx;
-  }
-
-  result = PROTECT(allocVector(INTSXP, 2));
-  if (isNull(stdout_pipe)) {
-    INTEGER(result)[0] = PXNOPIPE;
-  } else if (handle->fd1 < 0) {
-    INTEGER(result)[0] = PXCLOSED;
-  } else {
-    num++;
-    INTEGER(result)[0] = PXSILENT;
-  }
-  if (isNull(stderr_pipe)) {
-    INTEGER(result)[1] = PXNOPIPE;
-  } else if (handle->fd2 < 0) {
-    INTEGER(result)[1] = PXCLOSED;
-  } else {
-    num++;
-    INTEGER(result)[1] = PXSILENT;
-  }
-
-  /* Nothing to poll? */
-  if (num == 0) {
-    UNPROTECT(1);
-    return result;
-  }
-
-  do {
-    ret = poll(fds, num, cms);
-  } while (ret == -1 && errno == EINTR);
-
-  if (ret == -1) {
-    error("Processx poll error: %s", strerror(errno));
-
-  } else if (ret == 0) {
-    if (ptr1 >= 0) INTEGER(result)[0] = PXTIMEOUT;
-    if (ptr2 >= 0) INTEGER(result)[1] = PXTIMEOUT;
-
-  } else {
-    if (ptr1 >= 0 && fds[ptr1].revents) {
-      INTEGER(result)[0] = processx__poll_decode(fds[ptr1].revents);
-    }
-    if (ptr2 >= 0 && fds[ptr2].revents) {
-      INTEGER(result)[1] = processx__poll_decode(fds[ptr2].revents);
-    }
-  }
-
-  UNPROTECT(1);
-  return result;
 }
 
 SEXP processx__process_exists(SEXP pid) {

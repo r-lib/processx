@@ -1,11 +1,8 @@
 
-void processx_windows_poll_dummy() { }
-
 #ifdef _WIN32
 
 #include <Rinternals.h>
-
-#include "utils.h"
+#include "processx-win.h"
 
 void processx__error(DWORD errorcode);
 DWORD processx__poll_start_read(processx_pipe_handle_t *handle, int *result);

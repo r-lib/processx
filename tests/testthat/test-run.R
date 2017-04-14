@@ -34,8 +34,12 @@ test_that("callbacks work, unix", {
 
   skip_other_platforms("unix")
 
-  out <- NULL
-  run("ls", stdout_line_callback = function(x, ...) out <<- c(out, x))
+  ## This typically freezes on Unix, if there is a malloc/free race
+  ## condition in the SIGCHLD handler.
+  for (i in 1:30) {
+    out <- NULL
+    run("ls", stdout_line_callback = function(x, ...) out <<- c(out, x))
+  }
   expect_equal(sort(out), sort(list.files()))
 
   err <- NULL

@@ -1,3 +1,6 @@
+OBJECTS = init.o unix/childlist.o unix/connection.o unix/poll.o \
+          unix/processx.o unix/sigchld.o unix/utils.o
+
 .PHONY: all clean
 
 all: supervisor/supervisor $(SHLIB)
@@ -6,5 +9,5 @@ supervisor/supervisor: supervisor/*.c
 	$(CC) $(CFLAGS) supervisor/*.c -o supervisor/supervisor
 
 clean:
-	rm -rf supervisor/supervisor supervisor/supervisor.dSYM supervisor/supervisor.exe \
-	    *.o *.dll *.so
+	rm -rf $(SHLIB) $(OBJECTS) \
+	    supervisor/supervisor supervisor/supervisor.dSYM supervisor/supervisor.exe
