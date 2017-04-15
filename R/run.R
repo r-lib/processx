@@ -126,7 +126,7 @@ run <- function(
                     stdout_callback, stderr_line_callback,
                     stderr_callback)
 
-  if (error_on_status && (is.na(res$status) || res$status > 0)) {
+  if (error_on_status && (is.na(res$status) || res$status != 0)) {
     stop(make_condition(res, call = sys.call()))
   }
 
