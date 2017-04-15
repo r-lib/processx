@@ -65,6 +65,7 @@
 #'     process was killed and had no exit status.
 #'   * stdout The standard output of the command, in a character scalar.
 #'   * stderr The standard error of the command, in a character scalar.
+#'   * timeout Whether the process was killed because of a timeout.
 #'
 #' @export
 #' @examples
@@ -202,10 +203,12 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
     }
   })()
 
+  timeout_happened <- FALSE
+
   while (proc$is_alive()) {
     ## Timeout? Maybe finished by now...
     if (!is.null(timeout) && Sys.time() - start_time > timeout) {
-      proc$kill()
+      if (proc$kill()) timeout_happened <- TRUE
       break
     }
 
@@ -240,12 +243,13 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
   list(
     status = proc$get_exit_status(),
     stdout = stdout,
-    stderr = stderr
+    stderr = stderr,
+    timeout = timeout_happened
   )
 }
 
 make_condition <- function(result, call) {
-  if (is.na(result$status)) {
+  if (result$timeout) {
     structure(
       list(
         message = "System command timeout",

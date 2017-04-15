@@ -28,6 +28,19 @@ test_that("timeout works, unix", {
   toc <- Sys.time()
 
   expect_true(toc - tic < as.difftime(3, units = "secs"))
+  expect_true(x$timeout)
+})
+
+test_that("timeout throws right error", {
+
+  skip_other_platforms("unix")
+
+  e <- tryCatch(
+    run("sleep", "5", timeout = 0.01, error_on_status = TRUE),
+    error = function(e) e
+  )
+
+  expect_true("system_command_timeout_error" %in% class(e))
 })
 
 test_that("callbacks work, unix", {

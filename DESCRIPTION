@@ -13,7 +13,7 @@ License: MIT + file LICENSE
 LazyData: true
 URL: https://github.com/r-pkgs/processx#readme
 BugReports: https://github.com/r-pkgs/processx/issues
-RoxygenNote: 6.0.1
+RoxygenNote: 6.0.1.9000
 Roxygen: list(markdown = TRUE)
 Suggests:
     covr,
