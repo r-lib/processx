@@ -36,6 +36,7 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <sys/types.h>
+#include <time.h>
 #include <signal.h>
 
 #ifdef WIN32
@@ -149,7 +150,31 @@ void kill_children() {
     }
     verbose_printf("\n");
 
-    sleep_ms(5000);
+
+    // Poll, checking that child processes have exited. Using `time()` isn't
+    // the most accurate way to get time, since it only has a resolution of 1
+    // second, but it is cross-platform and good enough for this purpose.
+    time_t stop_time = time(NULL) + 5;
+
+    do {
+        sleep_ms(POLL_MS);
+
+        verbose_printf("Checking status of children: ");
+        for (int i=0; i<n_children; i++) {
+            if (pid_is_running(children[i])) {
+                verbose_printf("%d ", children[i]);
+            } else {
+                verbose_printf("%d(stopped) ", children[i]);
+                n_children = remove_element(children, n_children, i);
+            }
+        }
+        verbose_printf("\n");
+
+        if (n_children == 0) {
+            return;
+        }
+    } while(time(NULL) < stop_time);
+
 
     // Hard-kill any remaining processes
     bool kill_message_shown = false;
