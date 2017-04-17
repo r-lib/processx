@@ -60,6 +60,9 @@
 int children[MAX_CHILDREN];
 int n_children = 0;
 
+int sigint_received  = false;
+int sigterm_received = false;
+
 // Utility functions ----------------------------------------------------------
 
 // Cross-platform sleep function
@@ -204,19 +207,19 @@ void kill_children() {
 
 static void sig_handler(int signum) {
     char* signame;
-    if (signum == SIGTERM)
+    if (signum == SIGTERM) {
         signame = "SIGTERM";
-    else if (signum == SIGINT)
+        sigterm_received = true;
+
+    } else if (signum == SIGINT) {
         signame = "SIGINT";
-    else
-        signame = "Unkown signal";
+        sigint_received = true;
+
+    } else {
+        signame = "Unknown signal";
+    }
 
     verbose_printf("%s received.\n", signame);
-
-    kill_children();
-
-    verbose_printf("\n");
-    exit(0);
 }
 
 
@@ -349,9 +352,21 @@ int main(int argc, char **argv) {
 
     // Poll -------------------------------------------------------------------
     while(1) {
+
+        // Check if a sigint or sigterm has been received. If so, then kill
+        // the child processes and quit. Do the work here instead of in the
+        // signal handler, because the signal handler can itself be
+        // interrupted by another call to the same handler if another signal
+        // is received, and that could result in some unsafe operations.
+        if (sigint_received || sigterm_received) {
+            kill_children();
+            verbose_printf("\nExiting.\n");
+            exit(0);
+        }
+
+
         // Look for any new processes IDs from the input
         char* res = NULL;
-
 
         // Read in the input buffer. There could be multiple lines so we'll
         // keep reading lines until there's no more content.
