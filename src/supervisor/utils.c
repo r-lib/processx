@@ -22,13 +22,11 @@ void verbose_printf(const char *format, ...) {
 }
 
 
-// Remove an element from an array and shift all items down. The last item
-// gets a 0. Returns new length of array.
+// Remove an element from an array by replacing it with the last element. Note
+// that this can alter the order of elements in the array. Returns new length
+// of array.
 int remove_element(int* ar, int len, int idx) {
-    for (int i=idx; i<len-1; i++) {
-        ar[i] = ar[i+1];
-    }
-    ar[len-1] = 0;
+    ar[idx] = ar[len-1];
     return len-1;
 }
 

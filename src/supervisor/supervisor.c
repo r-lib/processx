@@ -274,6 +274,8 @@ int main(int argc, char **argv) {
     if (parent_pid_arg != 0) {
         verbose_printf("Parent PID (argument): %d\n", parent_pid_arg);
         parent_pid = parent_pid_arg;
+
+        // This check is really only useful for testing.
         if (parent_pid_arg != parent_pid_detected) {
             verbose_printf("Note: detected parent PID differs from argument parent PID.\n");
             verbose_printf("Using parent PID from argument (%d).\n", parent_pid_arg);

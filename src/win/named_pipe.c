@@ -117,7 +117,7 @@ SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text) {
     BOOL success = WriteFile(
         hPipe,
         text_str,
-        strlen(text_str),       // Maybe need to subtract 1?
+        strlen(text_str),
         &n_written,
         NULL
     );

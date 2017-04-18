@@ -83,26 +83,13 @@ supervisor_start <- function() {
   supervisor_info$stdout <- create_named_pipe(supervisor_info$stdout_file)
 
   # Start the supervisor, passing the R process's PID to it.
-  if (is_windows()) {
-    p <- process$new(
-      supervisor_path(),
-      args   = c("-v", "-p", Sys.getpid(), "-i", supervisor_info$stdin_file),
-      cleanup = FALSE,
-      commandline = NULL
-    )
-
-  } else {
-    p <- process$new(
-      supervisor_path(),
-      args   = c("-p", Sys.getpid(), "-i", supervisor_info$stdin_file, "-v"),
-      cleanup = FALSE,
-      commandline = NULL
-    )
-  }
-
-  if (!p$is_alive()) {
-    stop("Error starting supervisor process.")
-  }
+  # Note: for debugging, you can add "-v" to args and use stdout="log.txt".
+  p <- process$new(
+    supervisor_path(),
+    args = c("-p", Sys.getpid(), "-i", supervisor_info$stdin_file),
+    cleanup = FALSE,
+    commandline = NULL
+  )
 
   supervisor_info$pid <- p$get_pid()
 }
