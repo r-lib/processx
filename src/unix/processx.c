@@ -43,7 +43,8 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
 				 const char *stdout, const char *stderr,
 				 processx_options_t *options) {
 
-  int fd0, fd1, fd2, i;
+  int fd0, fd1, fd2;
+  int max_fds, i;
 
   setsid();
 
@@ -89,7 +90,8 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
   processx__nonblock_fcntl(fd1, 0);
   processx__nonblock_fcntl(fd2, 0);
 
-  for (i = 3; i < sysconf(_SC_OPEN_MAX); i++) {
+  max_fds = sysconf(_SC_OPEN_MAX);
+  for (i = 3; i < max_fds; i++) {
     if(i != error_fd) close(i);
   }
 
