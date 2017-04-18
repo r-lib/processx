@@ -43,7 +43,7 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
 				 const char *stdout, const char *stderr,
 				 processx_options_t *options) {
 
-  int fd0, fd1, fd2;
+  int fd0, fd1, fd2, i;
 
   setsid();
 
@@ -88,6 +88,10 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
   processx__nonblock_fcntl(fd0, 0);
   processx__nonblock_fcntl(fd1, 0);
   processx__nonblock_fcntl(fd2, 0);
+
+  for (i = 3; i < sysconf(_SC_OPEN_MAX); i++) {
+    if(i != error_fd) close(i);
+  }
 
   execvp(command, args);
   processx__write_int(error_fd, - errno);
