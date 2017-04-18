@@ -100,10 +100,6 @@ supervisor_start <- function() {
     )
   }
 
-  if (!p$is_alive()) {
-    stop("Error starting supervisor process.")
-  }
-
   supervisor_info$pid <- p$get_pid()
 }
 
