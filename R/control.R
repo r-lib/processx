@@ -18,3 +18,10 @@ process_get_control_write_connection <- function(self, private) {
 process_is_incomplete_control <- function(self, private) {
   isIncomplete(private$control_read)
 }
+
+process_poll_control <- function(self, private, timeout) {
+  res <- .Call(c_processx_poll_control, private$status, as.integer(timeout),
+               private$control_read)
+
+  poll_codes[res]
+}

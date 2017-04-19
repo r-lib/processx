@@ -98,3 +98,32 @@ void processx__create_control_write(processx_handle_t *handle,
   defineVar(install(membername), res, private);
   UNPROTECT(1);
 }
+
+SEXP processx_poll_control(SEXP status, SEXP ms, SEXP conn_pipe) {
+
+  int cms = INTEGER(ms)[0];
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
+  struct pollfd fd;
+  int ret;
+
+  if (!handle) error("Internal processx error, handle already removed");
+
+  fd.fd = handle->fd3;
+  fd.events = POLLIN;
+  fd.revents = 0;
+
+  do {
+    ret = poll(&fd, 1, cms);
+  } while (ret == -1 && errno == EINTR);
+
+  if (ret == -1) {
+    error("Processx control poll error: %s", strerror(errno));
+    return R_NilValue;
+
+  } else if (ret == 0) {
+    return ScalarInteger(PXTIMEOUT);
+
+  } else {
+    return ScalarInteger(processx__poll_decode(fd.revents));
+  }
+}

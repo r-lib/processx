@@ -54,8 +54,8 @@ test_that("child inherits fds, can read, write, windows", {
 
   Sys.sleep(0.1);
   p$write_control(charToRaw("hello!\n"))
-  ans <- ""
 
+  ans <- ""
   while (p$is_incomplete_control()) {
     ans <- paste0(ans, rawToChar(p$read_control()))
   }
@@ -91,4 +91,28 @@ test_that("non-blocking reads in the child, windows", {
   expect_identical(p$read_output_lines(), "Read 7 bytes")
   expect_identical(p$read_error_lines(), character())
   expect_identical(p$get_exit_status(), 0L);
+})
+
+test_that("polling the control connection", {
+
+  skip_other_platforms("unix")
+
+  t1 <- Sys.time()
+  expect_silent(
+    p <- process$new(
+      "sh", c("-c", "sleep 1;echo foobar >&3"),
+      stdout = "|", stderr = "|", controller = TRUE
+    )
+  )
+
+  expect_equal(p$poll_control(10), "timeout")
+  expect_equal(p$poll_control(2000), "ready")
+
+  expect_true(Sys.time() - t1 > as.difftime(1, units = "secs"))
+
+  ans <- ""
+  while (p$is_incomplete_control()) {
+    ans <- paste0(ans, rawToChar(p$read_control()))
+  }
+  expect_identical(ans, "foobar\n");
 })

@@ -250,7 +250,10 @@ process <- R6Class(
       process_get_control_write_connection(self, private),
 
     is_incomplete_control = function()
-      process_is_incomplete_control(self, private)
+      process_is_incomplete_control(self, private),
+
+    poll_control = function(timeout)
+      process_poll_control(self, private, timeout)
   ),
 
   private = list(

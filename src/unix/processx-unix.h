@@ -59,6 +59,8 @@ void processx__collect_exit_status(SEXP status, int wstat);
 int processx__nonblock_fcntl(int fd, int set);
 int processx__cloexec_fcntl(int fd, int set);
 
+int processx__poll_decode(short code);
+
 /* Connections */
 
 void processx__create_connections(processx_handle_t *handle, SEXP private);
