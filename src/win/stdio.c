@@ -160,7 +160,7 @@ int processx__create_write_pipe(processx_handle_t *handle,
     0,
     &sa,
     OPEN_EXISTING,
-    FILE_ATTRIBUTE_NORMAL,
+    FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
     NULL);
   if (hOutputRead == INVALID_HANDLE_VALUE) { err = GetLastError(); goto error; }
 

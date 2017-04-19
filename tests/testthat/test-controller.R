@@ -47,11 +47,12 @@ test_that("child inherits fds, can read, write, windows", {
 
   skip_other_platforms("windows")
 
-  ## This is just to check that the file descriptors are OK
   expect_silent(
-    p <- process$new("fixtures/puppet.exe", controller = TRUE)
+    p <- process$new("fixtures/puppet.exe", controller = TRUE,
+                     stdout = "|", stderr = "|")
   )
 
+  Sys.sleep(0.1);
   p$write_control(charToRaw("hello!\n"))
   ans <- ""
 
@@ -61,5 +62,33 @@ test_that("child inherits fds, can read, write, windows", {
   expect_identical(ans, "hello!\n")
 
   p$wait()
+  expect_identical(p$read_output_lines(), "Read 7 bytes")
+  expect_identical(p$read_error_lines(), character())
+  expect_identical(p$get_exit_status(), 0L);
+})
+
+test_that("non-blocking reads in the child, windows", {
+
+  skip_other_platforms("windows")
+
+  expect_silent(
+    p <- process$new("fixtures/puppet.exe", controller = TRUE,
+                     stdout = "|", stderr = "|")
+  )
+
+  Sys.sleep(0.1);
+  p$write_control(charToRaw("hel"))
+  Sys.sleep(0.1);
+  p$write_control(charToRaw("lo!\n"))
+
+  ans <- ""
+  while (p$is_incomplete_control()) {
+    ans <- paste0(ans, rawToChar(p$read_control()))
+  }
+  expect_identical(ans, "hello!\n")
+
+  p$wait()
+  expect_identical(p$read_output_lines(), "Read 7 bytes")
+  expect_identical(p$read_error_lines(), character())
   expect_identical(p$get_exit_status(), 0L);
 })

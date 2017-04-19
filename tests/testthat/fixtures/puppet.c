@@ -4,7 +4,7 @@
 
 #include "stdio-buffer.h"
 
-void error(DWORD errorcode) {
+void error(const char *msg, DWORD errorcode) {
   LPVOID lpMsgBuf;
 
   FormatMessage(
@@ -17,7 +17,7 @@ void error(DWORD errorcode) {
     (LPTSTR) &lpMsgBuf,
     0, NULL );
 
-  fprintf(stderr, "Error: %s\n", (char*) lpMsgBuf);
+  fprintf(stderr, "%s error: %s\n", msg, (char*) lpMsgBuf);
   exit(1);
 }
 
@@ -27,9 +27,10 @@ int main() {
   HANDLE read, write;
   STARTUPINFO si = { sizeof(si) };
 
-  char readBuffer[10];
+  char readBuffer[1024], *pos = readBuffer;
   DWORD bytes_read, bytes_written;
   BOOL ret;
+  OVERLAPPED ov = { 0 };
 
   GetStartupInfo(&si);
 
@@ -37,15 +38,29 @@ int main() {
   write = CHILD_STDIO_HANDLE(buffer, 3);
   read = CHILD_STDIO_HANDLE(buffer, 4);
 
-  ret = ReadFile(read, readBuffer, 10, &bytes_read,
-		 /* lpOverlapped = */ 0);
-  if (!ret) error(GetLastError());
+  /* Nonblocking read, wait until there is data, and we
+     also make sure that we got a whole line, closed by \n */
+  readBuffer[0] = '\0';
+  pos = readBuffer;
+  while (! strchr(readBuffer, '\n') && pos - readBuffer < sizeof(readBuffer)) {
+    ret = ReadFile(read, pos, sizeof(readBuffer) - (pos - readBuffer), &bytes_read, &ov);
+    if (!ret) {
+      DWORD err = GetLastError();
+      if (err == ERROR_IO_PENDING) {
+	WaitForSingleObject(ov.hEvent, 1000);
+	GetOverlappedResult(read, &ov, &bytes_read, TRUE);
+      } else {
+	error("ReadFile", err);
+      }
+    }
+    pos += bytes_read;
+  }
 
-  printf("Read %d bytes\n", (int) bytes_read);
+  printf("Read %d bytes\n", pos - readBuffer);
 
-  ret = WriteFile(write, readBuffer, bytes_read, &bytes_written,
+  ret = WriteFile(write, readBuffer, pos - readBuffer, &bytes_written,
 		  /* lpOverlapped = */ 0);
-  if (!ret) error(GetLastError());
+  if (!ret) error("WriteFile", GetLastError());
 
   return 0;
 }
