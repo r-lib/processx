@@ -65,13 +65,20 @@ void processx__create_control_read(processx_handle_t *handle,
   UNPROTECT(1);
 }
 
+extern int R_ignore_SIGPIPE;
+
 size_t processx__control_write(const void *ptr, size_t size, size_t nitems,
 			       Rconnection con) {
   int fd = con->status;
+  size_t ret;
 
   if (fd < 0) error("Connection was already closed");
 
-  return write(fd, ptr, size * nitems);
+  R_ignore_SIGPIPE = 1;
+  ret = write(fd, ptr, size * nitems);
+  R_ignore_SIGPIPE = 0;
+
+  return ret;
 }
 
 void processx__create_control_write(processx_handle_t *handle,
