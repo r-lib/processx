@@ -5,6 +5,80 @@
 void processx__error(DWORD errorcode);
 DWORD processx__poll_start_read(processx_pipe_handle_t *handle, int *result);
 
+int processx__poll_internal(processx_pipe_handle_t **handles, int num_handles, int ms,
+			    int *result) {
+
+  int i, j;
+  int has_buffered = 0, num_active = 0;
+  HANDLE *wait_handles;
+  int *ptr;
+  DWORD err, waitres;
+
+  /* Check buffered data */
+  for (i = 0; i < num_handles; i++) {
+    if (!handles[i] || !handles[i]->buffer) {
+      result[i] = PXCLOSED;
+    } else {
+      num_active ++;
+      if (handles[i]->buffer_end > handles[i]->buffer) {
+	result[i] = PXREADY;
+	has_buffered = 1;
+      } else {
+	result[i] = PXSILENT;
+      }
+    }
+  }
+
+  if (num_active == 0 || has_buffered) return 0;
+
+  /* For each open pipe that does not have IO pending, start an async read */
+  for (i = 0; i < num_handles; i++) {
+    if (result[i] == PXSILENT && ! handles[i]->read_pending) {
+      err = processx__poll_start_read(handles[i], result + i);
+      if (err) goto error;
+      if (result[i] == PXREADY) has_buffered = 1;
+    }
+  }
+
+  if (has_buffered) return 0;
+
+  /* If we are still alive, then we have some pending reads. Wait on them. */
+  wait_handles = (HANDLE*) R_alloc(num_active, sizeof(HANDLE));
+  ptr = (int*) R_alloc(num_active, sizeof(int));
+  for (i = 0, j = 0; i < num_handles; i++) {
+    if (result[i] == PXSILENT) {
+      wait_handles[j] = handles[i]->overlapped.hEvent;
+      ptr[j++] = i;
+    }
+  }
+
+  waitres = WaitForMultipleObjects(
+    num_active,
+    wait_handles,
+    /* bWaitAll = */ FALSE,
+    ms >= 0 ? ms : INFINITE);
+
+  if (waitres == WAIT_FAILED) {
+    err = GetLastError();
+    goto error;
+
+  } else if (waitres == WAIT_TIMEOUT) {
+    for (i = 0; i < num_handles; i++) {
+      if (result[i] == PXSILENT) result[i] = PXTIMEOUT;
+    }
+
+  } else {
+    int ready = waitres - WAIT_OBJECT_0;
+    result[ptr[ready]] = PXREADY;
+  }
+
+  return 0;
+
+ error:
+  processx__error(err);
+  return 1;			/* never called */
+}
+
 SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
   int cms = INTEGER(ms)[0];
   int i, j, num_proc = LENGTH(statuses);
@@ -135,4 +209,20 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
  error:
   processx__error(err);
   return R_NilValue;		/* never called */
+}
+
+SEXP processx_poll_control(SEXP status, SEXP ms, SEXP conn_pipe) {
+
+  int cms = INTEGER(ms)[0];
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
+  processx_pipe_handle_t *pipe = handle->pipes[3];
+  int result;
+
+  if (isNull(conn_pipe) || !pipe || !pipe->buffer) {
+    error("No control conncetion, or it was closed");
+  }
+
+  processx__poll_internal(&pipe, 1, cms, &result);
+
+  return ScalarInteger(result);
 }

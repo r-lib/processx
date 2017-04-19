@@ -119,3 +119,25 @@ test_that("polling the control connection", {
   }
   expect_identical(ans, "foobar\n");
 })
+
+test_that("polling the control connection, windows", {
+
+  skip_other_platforms("windows")
+
+  t1 <- Sys.time()
+  expect_silent(
+    p <- process$new("fixtures/puppet.exe", args = "-w", controller = TRUE,
+                     stdout = "|", stderr = "|")
+  )
+
+  expect_equal(p$poll_control(10), "timeout")
+  expect_equal(p$poll_control(2000), "ready")
+
+  expect_true(Sys.time() - t1 > as.difftime(1, units = "secs"))
+
+  ans <- ""
+  while (p$is_incomplete_control()) {
+    ans <- paste0(ans, rawToChar(p$read_control()))
+  }
+  expect_identical(ans, "foobar\n");
+})
