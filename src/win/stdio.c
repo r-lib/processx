@@ -2,6 +2,7 @@
 #ifdef _WIN32
 
 #include "processx-win.h"
+#include "stdio-buffer.h"
 
 /* Why is this not defined??? */
 BOOL WINAPI CancelIoEx(
@@ -10,30 +11,6 @@ BOOL WINAPI CancelIoEx(
 );
 
 void processx__error(DWORD errorcode);
-
-/*
- * The `child_stdio_buffer` buffer has the following layout:
- *   int number_of_fds
- *   unsigned char crt_flags[number_of_fds]
- *   HANDLE os_handle[number_of_fds]
- */
-#define CHILD_STDIO_SIZE(count)                     \
-    (sizeof(int) +                                  \
-     sizeof(unsigned char) * (count) +              \
-     sizeof(uintptr_t) * (count))
-
-#define CHILD_STDIO_COUNT(buffer)                   \
-    *((unsigned int*) (buffer))
-
-#define CHILD_STDIO_CRT_FLAGS(buffer, fd)           \
-    *((unsigned char*) (buffer) + sizeof(int) + fd)
-
-#define CHILD_STDIO_HANDLE(buffer, fd)              \
-    *((HANDLE*) ((unsigned char*) (buffer) +        \
-                 sizeof(int) +                      \
-                 sizeof(unsigned char) *            \
-                 CHILD_STDIO_COUNT((buffer)) +      \
-                 sizeof(HANDLE) * (fd)))
 
 /* CRT file descriptor mode flags */
 #define FOPEN       0x01
@@ -141,6 +118,54 @@ int processx__create_pipe(processx_handle_t *handle,
 
   *parent_pipe_ptr = hOutputRead;
   *child_pipe_ptr  = hOutputWrite;
+
+  return 0;
+
+ error:
+  if (hOutputRead != INVALID_HANDLE_VALUE) CloseHandle(hOutputRead);
+  if (hOutputWrite != INVALID_HANDLE_VALUE) CloseHandle(hOutputWrite);
+  processx__error(err);
+  return 0;			/* never reached */
+}
+
+int processx__create_write_pipe(processx_handle_t *handle,
+				HANDLE* parent_pipe_ptr,
+				HANDLE* child_pipe_ptr) {
+  char pipe_name[40];
+  HANDLE hOutputRead = INVALID_HANDLE_VALUE;
+  HANDLE hOutputWrite = INVALID_HANDLE_VALUE;
+  SECURITY_ATTRIBUTES sa;
+  DWORD err;
+
+  sa.nLength = sizeof(sa);
+  sa.lpSecurityDescriptor = NULL;
+  sa.bInheritHandle = TRUE;
+
+  processx__unique_pipe_name((char*) parent_pipe_ptr, pipe_name, sizeof(pipe_name));
+
+  hOutputWrite = CreateNamedPipeA(
+    pipe_name,
+    PIPE_ACCESS_OUTBOUND,
+    PIPE_TYPE_BYTE | PIPE_WAIT,
+    1,
+    4096,
+    4096,
+    0,
+    NULL);
+  if (hOutputWrite == INVALID_HANDLE_VALUE) { err = GetLastError(); goto error; }
+
+  hOutputRead = CreateFileA(
+    pipe_name,
+    GENERIC_READ,
+    0,
+    &sa,
+    OPEN_EXISTING,
+    FILE_ATTRIBUTE_NORMAL,
+    NULL);
+  if (hOutputRead == INVALID_HANDLE_VALUE) { err = GetLastError(); goto error; }
+
+  *parent_pipe_ptr = hOutputWrite;
+  *child_pipe_ptr  = hOutputRead;
 
   return 0;
 
@@ -334,14 +359,82 @@ void processx__create_connection(processx_pipe_handle_t *handle,
   UNPROTECT(1);
 }
 
+void processx__control_destroy(Rconnection con) {
+  processx_pipe_handle_t *handle = con->private;
+  CloseHandle(handle->pipe);
+  handle->pipe = 0;
+}
+
+size_t processx__control_write(const void *ptr, size_t size, size_t nitems,
+			       Rconnection con) {
+  processx_pipe_handle_t *handle = con->private;
+  HANDLE pipe = handle->pipe;
+  DWORD bytes_written;
+  BOOL ret;
+
+  ret = WriteFile(pipe, ptr, size * nitems, &bytes_written, 0);
+  if (!ret) processx__error(GetLastError());
+
+  return bytes_written;
+}
+
+void processx__create_control_read(processx_pipe_handle_t *handle,
+				   const char *membername, SEXP private) {
+  Rconnection con;
+  SEXP res = PROTECT(R_new_custom_connection("processx_control", "r",
+					     "textConnection", &con));
+
+  con->incomplete = 1;
+  con->EOF_signalled = 0;
+  con->private = handle;
+  con->canseek = 0;
+  con->canwrite = 0;
+  con->canread = 1;
+  con->isopen = 1;
+  con->blocking = 0;
+  con->text = 0;
+  con->UTF8out = 0;
+  con->destroy = &processx__control_destroy;
+  con->read = &processx__con_read; /* This is just as good */
+  con->fgetc = &processx__con_fgetc;
+  con->fgetc_internal = &processx__con_fgetc;
+
+  defineVar(install(membername), res, private);
+  UNPROTECT(1);
+}
+
+void processx__create_control_write(processx_pipe_handle_t *handle,
+				    const char * membername, SEXP private) {
+  Rconnection con;
+  SEXP res = PROTECT(R_new_custom_connection("processx_control", "w",
+					     "textConnection", &con));
+
+  con->incomplete = 1;
+  con->EOF_signalled = 0;
+  con->private = handle;
+  con->canseek = 0;
+  con->canwrite = 1;
+  con->canread = 0;
+  con->isopen = 1;
+  con->blocking = 0;
+  con->text = 0;
+  con->UTF8out = 0;
+  con->destroy = &processx__control_destroy;
+  con->write = &processx__control_write;
+
+  defineVar(install(membername), res, private);
+  UNPROTECT(1);
+}
+
 int processx__stdio_create(processx_handle_t *handle,
 			   const char *std_out, const char *std_err,
-			   BYTE** buffer_ptr, SEXP private) {
+			   BYTE** buffer_ptr, SEXP private,
+			   int controller) {
   BYTE* buffer;
   int count, i;
   int err;
 
-  count = 3;
+  count = controller ? 5 : 3;
 
   buffer = malloc(CHILD_STDIO_SIZE(count));
   if (!buffer) { error("Out of memory"); }
@@ -355,7 +448,19 @@ int processx__stdio_create(processx_handle_t *handle,
   for (i = 0; i < count; i++) {
     DWORD access = (i == 0) ? FILE_GENERIC_READ :
       FILE_GENERIC_WRITE | FILE_READ_ATTRIBUTES;
-    const char *output = i == 0 ? 0 : (i == 1 ? std_out : std_err);
+    char *output = "|";
+
+    switch (i) {
+    case 0:
+      output = 0;
+      break;
+    case 1:
+      output = (char *) std_out;
+      break;
+    case 2:
+      output = (char *) std_err;
+      break;
+    }
 
     handle->pipes[i] = 0;
 
@@ -375,11 +480,16 @@ int processx__stdio_create(processx_handle_t *handle,
     } else {
       /* piped output */
       processx_pipe_handle_t *pipe = handle->pipes[i] = malloc(sizeof(processx_pipe_handle_t));
-      const char *r_pipe_name = i == 1 ? "stdout_pipe" : "stderr_pipe";
+      const char *r_pipe_names[] = { "stdin_pipe", "stdout_pipe", "stderr_pipe",
+				     "control_read", "control_write" };
       pipe->EOF_signalled = 0;
-      err = processx__create_pipe(
-        handle, &pipe->pipe, &CHILD_STDIO_HANDLE(buffer, i)
-      );
+      if (i == 0 || i == 4) {
+	err = processx__create_write_pipe(
+	  handle, &pipe->pipe, &CHILD_STDIO_HANDLE(buffer, i));
+      } else {
+	err = processx__create_pipe(
+          handle, &pipe->pipe, &CHILD_STDIO_HANDLE(buffer, i));
+      }
       if (err) { goto error; }
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FPIPE;
 
@@ -403,7 +513,13 @@ int processx__stdio_create(processx_handle_t *handle,
       }
 
       /* Create R connection for it */
-      processx__create_connection(pipe, r_pipe_name, private);
+      if (i == 1 || i == 2) {
+	processx__create_connection(pipe, r_pipe_names[i], private);
+      } else if (i == 3) {
+	processx__create_control_read(pipe, r_pipe_names[i], private);
+      } else if (i == 4) {
+	processx__create_control_write(pipe, r_pipe_names[i], private);
+      }
     }
   }
 

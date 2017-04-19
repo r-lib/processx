@@ -1,7 +1,12 @@
 
 OBJECTS = init.o win/poll.o win/processx.o win/stdio.o
 
-all: clean
+all: $(SHLIB) ../tests/testthat/fixtures/puppet.exe
+
+../tests/testthat/fixtures/puppet.exe: ../tests/testthat/fixtures/puppet.c
+	$(CC) $(CFLAGS) $< -o $@ -I win
 
 clean:
-	rm -f $(SHLIB) $(OBJECTS)
+	rm -f $(SHLIB) $(OBJECTS) ../tests/testthat/fixtures/puppet.exe
+
+.PHONY: all clean

@@ -42,3 +42,24 @@ test_that("simple echo using bash", {
   expect_identical(p$read_error_lines(), character())
   expect_identical(p$get_exit_status(), 0L)
 })
+
+test_that("child inherits fds, can read, write, windows", {
+
+  skip_other_platforms("windows")
+
+  ## This is just to check that the file descriptors are OK
+  expect_silent(
+    p <- process$new("fixtures/puppet.exe", controller = TRUE)
+  )
+
+  p$write_control(charToRaw("hello!\n"))
+  ans <- ""
+
+  while (p$is_incomplete_control()) {
+    ans <- paste0(ans, rawToChar(p$read_control()))
+  }
+  expect_identical(ans, "hello!\n")
+
+  p$wait()
+  expect_identical(p$get_exit_status(), 0L);
+})
