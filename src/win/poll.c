@@ -1,6 +1,4 @@
 
-#ifdef _WIN32
-
 #include <Rinternals.h>
 #include "processx-win.h"
 
@@ -138,5 +136,3 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
   processx__error(err);
   return R_NilValue;		/* never called */
 }
-
-#endif
