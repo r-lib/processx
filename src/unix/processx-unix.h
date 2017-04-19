@@ -82,4 +82,7 @@ void processx__create_control_write(processx_handle_t *handle,
 				    int fd, const char *membername,
 				    SEXP private);
 
+void processx__ignore_sigpipe();
+void processx__restore_sigpipe();
+
 #endif

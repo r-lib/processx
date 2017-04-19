@@ -65,8 +65,6 @@ void processx__create_control_read(processx_handle_t *handle,
   UNPROTECT(1);
 }
 
-extern int R_ignore_SIGPIPE;
-
 size_t processx__control_write(const void *ptr, size_t size, size_t nitems,
 			       Rconnection con) {
   int fd = con->status;
@@ -74,9 +72,9 @@ size_t processx__control_write(const void *ptr, size_t size, size_t nitems,
 
   if (fd < 0) error("Connection was already closed");
 
-  R_ignore_SIGPIPE = 1;
+  processx__ignore_sigpipe();
   ret = write(fd, ptr, size * nitems);
-  R_ignore_SIGPIPE = 0;
+  processx__restore_sigpipe();
 
   return ret;
 }
@@ -133,4 +131,17 @@ SEXP processx_poll_control(SEXP status, SEXP ms, SEXP conn_pipe) {
   } else {
     return ScalarInteger(processx__poll_decode(fd.revents));
   }
+}
+
+static struct sigaction processx__sigpipe_old;
+
+void processx__ignore_sigpipe() {
+  struct sigaction action;
+  action.sa_handler = SIG_IGN;
+  action.sa_flags = 0;
+  sigaction(SIGPIPE, &action, &processx__sigpipe_old);
+}
+
+void processx__restore_sigpipe() {
+  sigaction(SIGPIPE, &processx__sigpipe_old, NULL);
 }
