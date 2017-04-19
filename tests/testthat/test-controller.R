@@ -21,10 +21,13 @@ test_that("simple echo using bash", {
 
   skip_other_platforms("unix")
 
+  ## NEed bash for the -t option
+  if (Sys.which("bash") == "") skip("Needs bash")
+
   ## Check that we can write / read the control channel
   expect_silent(
     p <- process$new(
-      "sh", c("-c", "read -t 3 line <&4; echo $line >&3"),
+      "bash", c("-c", "read -t 3 line <&4; echo $line >&3"),
       stdout = "|", stderr = "|", controller = TRUE
     )
   )
