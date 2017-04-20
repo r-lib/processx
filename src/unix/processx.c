@@ -91,8 +91,11 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
   processx__nonblock_fcntl(fd2, 0);
 
   max_fds = sysconf(_SC_OPEN_MAX);
-  for (i = 3; i < max_fds; i++) {
-    if(i != error_fd) close(i);
+  for (i = 3; i < error_fd; i++) {
+    close(i);
+  }
+  for (i = error_fd + 1; ; i++) {
+    if (-1 == close(i) && i > 15) break;
   }
 
   execvp(command, args);
