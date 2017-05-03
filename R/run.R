@@ -212,15 +212,16 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
       break
     }
 
-    ## Otherwise just poll for the remaining time
+    ## Otherwise just poll for 200ms, or less if a timeout is sooner.
+    ## We cannot poll until the end, even if there is not spinner,
+    ## because RStudio does not send a SIGINT to the R process,
+    ## so interruption does not work.
     if (!is.null(timeout) && timeout < Inf) {
       remains <- timeout - (Sys.time() - start_time)
       remains <- as.integer(as.numeric(remains) * 1000)
       if (spinner) remains <- min(remains, 200)
-    } else if (spinner) {
-      remains <- 200
     } else {
-      remains <- -1L
+      remains <- 200
     }
     polled <- proc$poll_io(remains)
 
