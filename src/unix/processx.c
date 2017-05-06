@@ -433,9 +433,11 @@ SEXP processx__wait(SEXP status) {
   /* If we already have the status, then return now. */
   if (handle->collected) goto cleanup;
 
-  /* Otherwise do a blocking waitpid. This is interruptible */
+  /* Otherwise do a blocking waitpid */
   pid = handle->pid;
-  wp = waitpid(pid, &wstat, 0);
+  do {
+    wp = waitpid(pid, &wstat, 0);
+  } while (wp == -1 && errno == EINTR);
 
   /* Error? */
   if (wp == -1) {
@@ -483,8 +485,9 @@ SEXP processx__wait_timeout(SEXP status, SEXP timeout) {
 
   processx__unblock_sigchld();
 
-  /* This is interruptible */
-  ret = poll(&fd, 1, ctimeout);
+  do {
+    ret = poll(&fd, 1, ctimeout);
+  } while (ret == -1 && errno == EINTR);
 
   if (ret == -1) {
     error("processx wait with timeout error: %s", strerror(errno));

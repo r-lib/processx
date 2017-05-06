@@ -64,7 +64,9 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
     return result;
   }
 
-  ret = poll(fds, num, cms);
+  do {
+    ret = poll(fds, num, cms);
+  } while (ret == -1 && errno == EINTR);
 
   if (ret == -1) {
     error("Processx poll error: %s", strerror(errno));
@@ -155,7 +157,9 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
     return result;
   }
 
-  ret = poll(fds, num_fds, cms);
+  do {
+    ret = poll(fds, num_fds, cms);
+  } while (ret == -1 && errno == EINTR);
 
   /* Create result object */
 
