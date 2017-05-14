@@ -17,9 +17,6 @@
 
 #include "../processx.h"
 
-/* Interruption interval in ms */
-#define PROCESSX_INTERRUPT_INTERVAL 200
-
 typedef struct processx_handle_s {
   int exitcode;
   int collected;	 /* Whether exit code was collected already */

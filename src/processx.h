@@ -31,6 +31,9 @@ SEXP processx__process_exists(SEXP pid);
 #error "Unsupported connections API version"
 #endif
 
+/* Interruption interval in ms */
+#define PROCESSX_INTERRUPT_INTERVAL 200
+
 /* Various OSes and OS versions return various poll codes when the
    child's end of the pipe is closed, so we cannot provide a more
    elaborate API. See e.g. http://www.greenend.org.uk/rjk/tech/poll.html

@@ -752,13 +752,25 @@ void processx__collect_exit_status(SEXP status, DWORD exitcode) {
 }
 
 SEXP processx_wait(SEXP status, SEXP timeout) {
-  int ctimeout = INTEGER(timeout)[0];
+  int ctimeout = INTEGER(timeout)[0], timeleft = ctimeout;
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   DWORD err, err2, exitcode;
 
   if (handle->collected) return R_NilValue;
 
-  err2 = WaitForSingleObject(handle->hProcess, ctimeout < 0 ? INFINITE : ctimeout);
+  err2 = WAIT_TIMEOUT;
+  while (ctimeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
+    err2 = WaitForSingleObject(handle->hProcess, PROCESSX_INTERRUPT_INTERVAL);
+    if (err2 != WAIT_TIMEOUT) break;
+    R_CheckUserInterrupt();
+    timeleft -= PROCESSX_INTERRUPT_INTERVAL;
+  }
+
+  /* Maybe there is some time left from the timeout */
+  if (err2 == WAIT_TIMEOUT && timeleft > 0) {
+    err2 = WaitForSingleObject(handle->hProcess, timeleft);
+  }
+
   if (err2 == WAIT_FAILED) {
     processx__error(GetLastError());
   } else if (err2 == WAIT_TIMEOUT) {

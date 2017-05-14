@@ -477,7 +477,7 @@ DWORD processx__poll_start_read(processx_pipe_handle_t *handle, int *result) {
 }
 
 SEXP processx_poll_io(SEXP status, SEXP ms, SEXP rstdout_pipe, SEXP rstderr_pipe) {
-  int cms = INTEGER(ms)[0];
+  int cms = INTEGER(ms)[0], timeleft = cms;
   processx_handle_t *px = R_ExternalPtrAddr(status);
   SEXP result;
   DWORD err = 0;
@@ -556,11 +556,30 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP rstdout_pipe, SEXP rstderr_pipe
     ptr2 = nCount;
     wait_handles[nCount++] = px->pipes[2]->overlapped.hEvent;
   }
-  waitres = WaitForMultipleObjects(
-    nCount,
-    wait_handles,
-    /* bWaitAll = */ FALSE,
-    cms >= 0 ? cms : INFINITE);
+
+  /* We need to wait in small intervals, to allow interruption from R */
+  waitres = WAIT_TIMEOUT;
+  while (cms < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
+    waitres = WaitForMultipleObjects(
+      nCount,
+      wait_handles,
+      /* bWaitAll = */ FALSE,
+      PROCESSX_INTERRUPT_INTERVAL);
+
+    if (waitres != WAIT_TIMEOUT) break;
+
+    R_CheckUserInterrupt();
+    timeleft -= PROCESSX_INTERRUPT_INTERVAL;
+  }
+
+  /* Maybe we are not done, and there is a little left from the timeout */
+  if (waitres == WAIT_TIMEOUT && timeleft > 0) {
+    waitres = WaitForMultipleObjects(
+      nCount,
+      wait_handles,
+      /* bWaitAll = */ FALSE,
+      timeleft);
+  }
 
   if (waitres == WAIT_FAILED) {
     err = GetLastError();

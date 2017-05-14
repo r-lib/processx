@@ -8,7 +8,7 @@ void processx__error(DWORD errorcode);
 DWORD processx__poll_start_read(processx_pipe_handle_t *handle, int *result);
 
 SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
-  int cms = INTEGER(ms)[0];
+  int cms = INTEGER(ms)[0], timeleft = cms;
   int i, j, num_proc = LENGTH(statuses);
   int num_fds = 0;
   HANDLE *wait_handles;
@@ -108,11 +108,28 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
     }
   }
 
-  waitres = WaitForMultipleObjects(
-    num_fds,
-    wait_handles,
-    /* bWaitAll = */ FALSE,
-    cms >= 0 ? cms : INFINITE);
+  waitres = WAIT_TIMEOUT;
+  while (cms < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
+    waitres = WaitForMultipleObjects(
+      num_fds,
+      wait_handles,
+      /* bWaitAll = */ FALSE,
+      PROCESSX_INTERRUPT_INTERVAL);
+
+    if (waitres != WAIT_TIMEOUT) break;
+
+    R_CheckUserInterrupt();
+    timeleft -= PROCESSX_INTERRUPT_INTERVAL;
+  }
+
+  /* Maybe some time left from the timeout */
+  if (waitres == WAIT_TIMEOUT && timeleft > 0) {
+    waitres = WaitForMultipleObjects(
+      num_fds,
+      wait_handles,
+      /* bWaitAll = */ FALSE,
+      timeleft);
+  }
 
   if (waitres == WAIT_FAILED) {
     err = GetLastError();
