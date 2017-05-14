@@ -418,46 +418,11 @@ void processx__collect_exit_status(SEXP status, int wstat) {
   handle->collected = 1;
 }
 
-SEXP processx__wait(SEXP status) {
+SEXP processx_wait(SEXP status, SEXP timeout) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
-  pid_t pid;
-  int wstat, wp;
-
-  processx__block_sigchld();
-
-  if (!handle) {
-    processx__unblock_sigchld();
-    error("Internal processx error, handle already removed");
-  }
-
-  /* If we already have the status, then return now. */
-  if (handle->collected) goto cleanup;
-
-  /* Otherwise do a blocking waitpid */
-  pid = handle->pid;
-  do {
-    wp = waitpid(pid, &wstat, 0);
-  } while (wp == -1 && errno == EINTR);
-
-  /* Error? */
-  if (wp == -1) {
-    processx__unblock_sigchld();
-    error("processx_wait: %s", strerror(errno));
-  }
-
-  /* Collect exit status */
-  processx__collect_exit_status(status, wstat);
-
- cleanup:
-  processx__unblock_sigchld();
-  return ScalarLogical(1);
-}
-
-SEXP processx__wait_timeout(SEXP status, SEXP timeout) {
-  processx_handle_t *handle = R_ExternalPtrAddr(status);
-  int ctimeout = INTEGER(timeout)[0];
+  int ctimeout = INTEGER(timeout)[0], timeleft = ctimeout;
   struct pollfd fd;
-  int ret;
+  int ret = 0;
 
   processx__block_sigchld();
 
@@ -491,9 +456,24 @@ SEXP processx__wait_timeout(SEXP status, SEXP timeout) {
 
   processx__unblock_sigchld();
 
-  do {
-    ret = poll(&fd, 1, ctimeout);
-  } while (ret == -1 && errno == EINTR);
+  while (ctimeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
+    do {
+      ret = poll(&fd, 1, PROCESSX_INTERRUPT_INTERVAL);
+    } while (ret == -1 && errno == EINTR);
+
+    /* If not a timeout, then we are done */
+    if (ret != 0) break;
+
+    R_CheckUserInterrupt();
+    if (ctimeout >= 0) timeleft -= PROCESSX_INTERRUPT_INTERVAL;
+  }
+
+  /* Maybe we are not done, and there is a little left from the timeout */
+  if (ret == 0 && timeleft > 0) {
+    do {
+      ret = poll(&fd, 1, timeleft);
+    } while (ret == -1 && errno == EINTR);
+  }
 
   if (ret == -1) {
     error("processx wait with timeout error: %s", strerror(errno));
@@ -504,15 +484,6 @@ SEXP processx__wait_timeout(SEXP status, SEXP timeout) {
   handle->waitpipe[0] = -1;
 
   return ScalarLogical(ret != 0);
-}
-
-SEXP processx_wait(SEXP status, SEXP timeout) {
-  if (INTEGER(timeout)[0] < 0) {
-    return processx__wait(status);
-
-  } else {
-    return processx__wait_timeout(status, timeout);
-  }
 }
 
 SEXP processx_is_alive(SEXP status) {

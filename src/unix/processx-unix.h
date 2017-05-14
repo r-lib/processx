@@ -85,7 +85,4 @@ void processx__create_control_write(processx_handle_t *handle,
 int processx__interruptible_poll(struct pollfd fds[],
 				 nfds_t nfds, int timeout);
 
-pid_t processx__interruptible_waitpid(pid_t pid, int *stat_loc,
-				      int options);
-
 #endif
