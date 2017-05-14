@@ -10,8 +10,9 @@
 int processx__interruptible_poll(struct pollfd fds[],
                           nfds_t nfds, int timeout) {
   int ret;
+  int timeleft = timeout;
 
-  while (timeout > PROCESSX_INTERRUPT_INTERVAL) {
+  while (timeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
     do {
       ret = poll(fds, nfds, PROCESSX_INTERRUPT_INTERVAL);
     } while (ret == -1 && errno == EINTR);
@@ -20,13 +21,15 @@ int processx__interruptible_poll(struct pollfd fds[],
     if (ret != 0) return ret;
 
     R_CheckUserInterrupt();
-    timeout -= PROCESSX_INTERRUPT_INTERVAL;
+    timeleft -= PROCESSX_INTERRUPT_INTERVAL;
   }
 
-  if (timeout < 0) timeout = 0;
-  do {
-    ret = poll(fds, nfds, timeout);
-  } while (ret == -1 && errno == EINTR);
+  /* Maybe we are not done, and there is a little left from the timeout */
+  if (ret == 0 && timeleft > 0) {
+    do {
+      ret = poll(fds, nfds, timeleft);
+    } while (ret == -1 && errno == EINTR);
+  }
 
   return ret;
 }
