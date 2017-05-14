@@ -14,7 +14,6 @@ int processx__interruptible_poll(struct pollfd fds[],
   while (timeout > PROCESSX_INTERRUPT_INTERVAL) {
     do {
       ret = poll(fds, nfds, PROCESSX_INTERRUPT_INTERVAL);
-      REprintf("ret: %d, errno: %d\n", (int) ret, (int) errno);
     } while (ret == -1 && errno == EINTR);
 
     /* If not a timeout, then return */
