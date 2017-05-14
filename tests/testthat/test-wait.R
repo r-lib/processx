@@ -25,3 +25,17 @@ test_that("wait with timeout", {
   p$kill()
   expect_false(p$is_alive())
 })
+
+test_that("wait after process already exited", {
+
+  cmd <- if (os_type() == "windows") "dir /b /A" else "ls -A"
+  p <- process$new(commandline = cmd)
+
+  ## Make sure it is done, wait a bit, so that exit status is collected
+  p$wait()
+  Sys.sleep(1)
+
+  ## Now wait() should return immediately, regardless of timeout
+  expect_true(system.time(p$wait())[["elapsed"]] < 1)
+  expect_true(system.time(p$wait(3000))[["elapsed"]] < 1)
+})

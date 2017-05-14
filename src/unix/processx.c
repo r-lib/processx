@@ -466,6 +466,12 @@ SEXP processx__wait_timeout(SEXP status, SEXP timeout) {
     error("Internal processx error, handle already removed");
   }
 
+  /* If we already have the status, then return now. */
+  if (handle->collected) {
+    processx__unblock_sigchld();
+    return ScalarLogical(1);
+  }
+
   /* Make sure this is active, in case another package replaced it... */
   processx__setup_sigchld();
   processx__block_sigchld();
