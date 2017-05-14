@@ -17,6 +17,9 @@
 
 #include "../processx.h"
 
+/* Interruption interval in ms */
+#define PROCESSX_INTERRUPT_INTERVAL 200
+
 typedef struct processx_handle_s {
   int exitcode;
   int collected;	 /* Whether exit code was collected already */
@@ -76,5 +79,13 @@ void processx__create_control_read(processx_handle_t *handle,
 void processx__create_control_write(processx_handle_t *handle,
 				    int fd, const char *membername,
 				    SEXP private);
+
+/* Interruptible system calls */
+
+int processx__interruptible_poll(struct pollfd fds[],
+				 nfds_t nfds, int timeout);
+
+pid_t processx__interruptible_waitpid(pid_t pid, int *stat_loc,
+				      int options);
 
 #endif

@@ -64,9 +64,8 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
     return result;
   }
 
-  do {
-    ret = poll(fds, num, cms);
-  } while (ret == -1 && errno == EINTR);
+  /* Interruptible poll */
+  ret = processx__interruptible_poll(fds, num, cms);
 
   if (ret == -1) {
     error("Processx poll error: %s", strerror(errno));
@@ -157,12 +156,10 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
     return result;
   }
 
-  do {
-    ret = poll(fds, num_fds, cms);
-  } while (ret == -1 && errno == EINTR);
+  /* Interruptible poll */
+  ret = processx__interruptible_poll(fds, num_fds, cms);
 
   /* Create result object */
-
   if (ret == -1) {
     error("Processx poll error: %s", strerror(errno));
 
