@@ -5,5 +5,4 @@
 
 .onUnload <- function(libpath) {
   .Call(c_processx__killem_all)
-  print("done")
 }

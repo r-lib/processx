@@ -57,8 +57,9 @@ processx__child_list_t *processx__child_find(pid_t pid) {
   return 0;
 }
 
-void processx__killem_all() {
+SEXP processx__killem_all() {
   processx__child_list_t *ptr = child_list->next;
+  int killed = 0;
 
   processx__remove_sigchld();
 
@@ -69,15 +70,14 @@ void processx__killem_all() {
       (processx_handle_t*) R_ExternalPtrAddr(status);
     int wp, wstat;
 
-    REprintf("killing %d\n", (int) ptr->pid);
-    kill(ptr->pid, SIGKILL);
+    if (handle && handle->cleanup) {
+      killed++;
+      kill(ptr->pid, SIGKILL);
+      do {
+	wp = waitpid(ptr->pid, &wstat, 0);
+      } while (wp == -1 && errno == EINTR);
+    }
 
-    REprintf("waiting %d\n", (int) ptr->pid);
-    do {
-      wp = waitpid(ptr->pid, &wstat, 0);
-    } while (wp == -1 && errno == EINTR);
-
-    REprintf("clearing %d\n", (int) ptr->pid);
     R_ClearExternalPtr(status);
     if (handle) free(handle);
 
@@ -89,6 +89,10 @@ void processx__killem_all() {
   child_list->next = 0;
   processx__freelist_free();
 
+  if (killed > 0) {
+    REprintf("Unloading processx shared library, killed %d processes",
+	     killed);
+  }
 
-  REprintf("DONE\n", (int) ptr->pid);
+  return R_NilValue;
 }

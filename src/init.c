@@ -4,7 +4,7 @@
 #include "processx.h"
 
 #ifndef _WIN32
-void processx__killem_all();
+SEXP processx__killem_all();
 void R_init_processx_unix();
 #endif
 
@@ -24,7 +24,6 @@ static const R_CallMethodDef callMethods[]  = {
 };
 
 void R_init_processx(DllInfo *dll) {
-  REprintf("Init!\n");
   R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
   R_forceSymbols(dll, TRUE);
