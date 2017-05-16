@@ -475,7 +475,8 @@ static WCHAR* processx__search_path(const WCHAR *file,
   return result;
 }
 
-void processx__error(DWORD errorcode) {
+void processx__error(const char *message, DWORD errorcode,
+		     const char *file, int line) {
   LPVOID lpMsgBuf;
   char *msg;
 
@@ -493,7 +494,8 @@ void processx__error(DWORD errorcode) {
   strcpy(msg, lpMsgBuf);
   LocalFree(lpMsgBuf);
 
-  error("processx error: %s", msg);
+  error("processx error, %s: #%d %s at '%s:%d'", message,
+	(int) errorcode, msg, file, line);
 }
 
 void processx__collect_exit_status(SEXP status, DWORD exitcode);
@@ -589,25 +591,29 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   options.windows_hide = LOGICAL(windows_hide)[0];
 
   err = uv_utf8_to_utf16_alloc(CHAR(STRING_ELT(command, 0)), &application);
-  if (err) { processx__error(err); }
+  if (err) { PROCESSX_ERROR("utf8 -> utf16 conversion", err); }
 
   err = processx__make_program_args(
       args,
       options.windows_verbatim_args,
       &arguments);
-  if (err) { processx__error(err); }
+  if (err) { PROCESSX_ERROR("making program args", err); }
 
   /* Inherit cwd */
   {
     DWORD cwd_len, r;
 
     cwd_len = GetCurrentDirectoryW(0, NULL);
-    if (!cwd_len) { processx__error(GetLastError()); }
+    if (!cwd_len) {
+      PROCESSX_ERROR("get current directory length", GetLastError());
+    }
 
     cwd = (WCHAR*) R_alloc(cwd_len, sizeof(WCHAR));
 
     r = GetCurrentDirectoryW(cwd_len, cwd);
-    if (r == 0 || r >= cwd_len) { processx__error(GetLastError()); }
+    if (r == 0 || r >= cwd_len) {
+      PROCESSX_ERROR("get current directory", GetLastError());
+    }
   }
 
   /* Get PATH environment variable */
@@ -615,12 +621,16 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     DWORD path_len, r;
 
     path_len = GetEnvironmentVariableW(L"PATH", NULL, 0);
-    if (!path_len) { processx__error(GetLastError()); }
+    if (!path_len) {
+      PROCESSX_ERROR("get env var length", GetLastError());
+    }
 
     path = (WCHAR*) R_alloc(path_len, sizeof(WCHAR));
 
     r = GetEnvironmentVariableW(L"PATH", path, path_len);
-    if (r == 0 || r >= path_len) { processx__error(GetLastError()); }
+    if (r == 0 || r >= path_len) {
+      PROCESSX_ERROR("get env var", GetLastError());
+    }
   }
 
   result = PROTECT(processx__make_handle(private, ccleanup));
@@ -628,7 +638,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 
   err = processx__stdio_create(handle, cstd_out, cstd_err,
 			       &handle->child_stdio_buffer, private);
-  if (err) { processx__error(err); }
+  if (err) { PROCESSX_ERROR("setup stdio", err); }
 
   application_path = processx__search_path(application, cwd, path);
   if (!application_path) { free(handle); error("Command not found"); }
@@ -664,18 +674,18 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     /* lpStartupInfo =        */ &startup,
     /* lpProcessInformation = */ &info);
 
-  if (!err) { processx__error(err); }
+  if (!err) { PROCESSX_ERROR("create process", err); }
 
   handle->hProcess = info.hProcess;
   handle->dwProcessId = info.dwProcessId;
   handle->job = CreateJobObject(NULL, NULL);
-  if (!handle->job) processx__error(GetLastError());
+  if (!handle->job) PROCESSX_ERROR("create job object", GetLastError());
 
   regerr = AssignProcessToJobObject(handle->job, handle->hProcess);
-  if (!regerr) processx__error(GetLastError());
+  if (!regerr) PROCESSX_ERROR("assign job to job object", GetLastError());
 
   dwerr = ResumeThread(info.hThread);
-  if (dwerr == (DWORD) -1) processx__error(GetLastError());
+  if (dwerr == (DWORD) -1) PROCESSX_ERROR("resume thread", GetLastError());
   CloseHandle(info.hThread);
 
   regerr = RegisterWaitForSingleObject(
@@ -688,7 +698,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 
   if (!regerr) {
     /* This also kills the process, in the finalizer */
-    processx__error(GetLastError());
+    PROCESSX_ERROR("register wait for process object", GetLastError());
   }
 
   processx__stdio_destroy(handle->child_stdio_buffer);
@@ -772,14 +782,14 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   }
 
   if (err2 == WAIT_FAILED) {
-    processx__error(GetLastError());
+    PROCESSX_ERROR("wait on process", GetLastError());
   } else if (err2 == WAIT_TIMEOUT) {
     return ScalarLogical(FALSE);
   }
 
   /* Collect  */
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
-  if (!err) { processx__error(GetLastError()); }
+  if (!err) { PROCESSX_ERROR("get exit code after wait", GetLastError()); }
 
   processx__collect_exit_status(status, exitcode);
 
@@ -794,7 +804,9 @@ SEXP processx_is_alive(SEXP status) {
 
   /* Otherwise try to get exit code */
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
-  if (!err) { processx__error(GetLastError()); }
+  if (!err) {
+    PROCESSX_ERROR("get exit code to check if alive", GetLastError());
+  }
 
   if (exitcode == STILL_ACTIVE) {
     return ScalarLogical(1);
@@ -812,7 +824,7 @@ SEXP processx_get_exit_status(SEXP status) {
 
   /* Otherwise try to get exit code */
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
-  if (!err) {processx__error(GetLastError()); }
+  if (!err) {PROCESSX_ERROR("get exit status", GetLastError()); }
 
   if (exitcode == STILL_ACTIVE) {
     return R_NilValue;
@@ -837,7 +849,9 @@ SEXP processx_signal(SEXP status, SEXP signal) {
     /* TODO: there is a race condition here, might finish right before
        we are terminating it... */
     err = GetExitCodeProcess(handle->hProcess, &exitcode);
-    if (!err) { processx__error(GetLastError()); }
+    if (!err) {
+      PROCESSX_ERROR("get exit code after signal", GetLastError());
+    }
 
     if (exitcode == STILL_ACTIVE) {
       TerminateJobObject(handle->job, 1);
@@ -859,7 +873,9 @@ SEXP processx_signal(SEXP status, SEXP signal) {
   case 0: {
     /* Health check: is the process still alive? */
     err = GetExitCodeProcess(handle->hProcess, &exitcode);
-    if (!err) { processx__error(GetLastError()); }
+    if (!err) {
+      PROCESSX_ERROR("get exit code for signal 0", GetLastError());
+    }
 
     if (exitcode == STILL_ACTIVE) {
       return ScalarLogical(1);
@@ -892,7 +908,7 @@ SEXP processx__process_exists(SEXP pid) {
   if (proc == NULL) {
     DWORD err = GetLastError();
     if (err == ERROR_INVALID_PARAMETER) return ScalarLogical(0);
-    processx__error(err);
+    PROCESSX_ERROR("open process to check if it exists", err);
     return R_NilValue;
   } else {
     /* Maybe just finished, and in that case we still have a valid handle.
@@ -900,7 +916,11 @@ SEXP processx__process_exists(SEXP pid) {
     DWORD exitcode;
     DWORD err = GetExitCodeProcess(proc, &exitcode);
     CloseHandle(proc);
-    if (!err) processx__error(GetLastError());
+    if (!err) {
+      PROCESSX_ERROR(
+	"get exit code to check if it exists",
+	GetLastError());
+    }
     return ScalarLogical(exitcode == STILL_ACTIVE);
   }
 }

@@ -9,8 +9,6 @@ BOOL WINAPI CancelIoEx(
   LPOVERLAPPED lpOverlapped
 );
 
-void processx__error(DWORD errorcode);
-
 /*
  * The `child_stdio_buffer` buffer has the following layout:
  *   int number_of_fds
@@ -111,6 +109,7 @@ int processx__create_pipe(processx_handle_t *handle,
   HANDLE hOutputWrite = INVALID_HANDLE_VALUE;
   SECURITY_ATTRIBUTES sa;
   DWORD err;
+  char *errmessage = "";
 
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
@@ -127,7 +126,11 @@ int processx__create_pipe(processx_handle_t *handle,
     4096,
     0,
     NULL);
-  if (hOutputRead == INVALID_HANDLE_VALUE) { err = GetLastError(); goto error; }
+  if (hOutputRead == INVALID_HANDLE_VALUE) {
+    err = GetLastError();
+    errmessage = "creating read pipe";
+    goto error;
+  }
 
   hOutputWrite = CreateFileA(
     pipe_name,
@@ -137,7 +140,11 @@ int processx__create_pipe(processx_handle_t *handle,
     OPEN_EXISTING,
     FILE_ATTRIBUTE_NORMAL,
     NULL);
-  if (hOutputWrite == INVALID_HANDLE_VALUE) { err = GetLastError(); goto error; }
+  if (hOutputWrite == INVALID_HANDLE_VALUE) {
+    err = GetLastError();
+    errmessage = "creating write pipe";
+    goto error;
+  }
 
   *parent_pipe_ptr = hOutputRead;
   *child_pipe_ptr  = hOutputWrite;
@@ -147,7 +154,7 @@ int processx__create_pipe(processx_handle_t *handle,
  error:
   if (hOutputRead != INVALID_HANDLE_VALUE) CloseHandle(hOutputRead);
   if (hOutputWrite != INVALID_HANDLE_VALUE) CloseHandle(hOutputWrite);
-  processx__error(err);
+  PROCESSX_ERROR(errmessage, err);
   return 0;			/* never reached */
 }
 
@@ -238,7 +245,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
       } else if (err == ERROR_IO_PENDING) {
 	handle->read_pending = TRUE;
       } else {
-	processx__error(err);
+	PROCESSX_ERROR("reading from connection", err);
 	return 0;		/* neve called */
       }
     } else {
@@ -276,7 +283,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
 
     } else {
       handle->read_pending = FALSE;
-      processx__error(err);
+      PROCESSX_ERROR("getting overlapped result in connection read", err);
       return 0;			/* never called */
     }
 
@@ -485,6 +492,7 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP rstdout_pipe, SEXP rstderr_pipe
   HANDLE wait_handles[2];
   DWORD nCount = 0;
   int ptr1 = -1, ptr2 = -1;
+  char *errmessage = "";
 
   if (!px) { error("Internal processx error, handle already removed"); }
 
@@ -533,12 +541,12 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP rstdout_pipe, SEXP rstderr_pipe
   /* For each pipe that does not have IO pending, start an async read */
   if (INTEGER(result)[0] == PXSILENT && ! px->pipes[1]->read_pending) {
     err = processx__poll_start_read(px->pipes[1], INTEGER(result));
-    if (err) goto laberror;
+    if (err) { errmessage = "start read for poll stdout"; goto laberror; }
   }
 
   if (INTEGER(result)[1] == PXSILENT && ! px->pipes[2]->read_pending) {
     err = processx__poll_start_read(px->pipes[2], INTEGER(result) + 1);
-    if (err) goto laberror;
+    if (err) { errmessage = "start read for poll stderr"; goto laberror; }
   }
 
   if (INTEGER(result)[0] == PXREADY || INTEGER(result)[1] == PXREADY) {
@@ -583,6 +591,7 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP rstdout_pipe, SEXP rstderr_pipe
 
   if (waitres == WAIT_FAILED) {
     err = GetLastError();
+    errmessage = "wait when polling for io";
     goto laberror;
   } else if (waitres == WAIT_TIMEOUT) {
     if (ptr1 >= 0) INTEGER(result)[0] = PXTIMEOUT;
@@ -597,7 +606,7 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP rstdout_pipe, SEXP rstderr_pipe
   return result;
 
  laberror:
-  processx__error(err);
+  PROCESSX_ERROR(errmessage, err);
   return R_NilValue;		/* never called */
 }
 
