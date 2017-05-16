@@ -4,9 +4,10 @@
 #include "processx.h"
 
 #ifndef _WIN32
-SEXP processx__killem_all();
 void R_init_processx_unix();
 #endif
+
+SEXP processx__killem_all();
 
 static const R_CallMethodDef callMethods[]  = {
   { "processx_exec",            (DL_FUNC) &processx_exec,            8 },

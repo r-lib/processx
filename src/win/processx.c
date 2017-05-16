@@ -7,8 +7,9 @@
 
 #include <R_ext/Rdynload.h>
 
-void R_unload_mylib(DllInfo *info)
-{
+SEXP processx__killem_all() {
+  /* TODO */
+  return R_NilValue;
 }
 
 int uv_utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr) {
