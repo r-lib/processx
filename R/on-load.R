@@ -4,5 +4,5 @@
 }
 
 .onUnload <- function(libpath) {
-  .Call(c_processx__killem_all)
+  if (os_type() != "windows") .Call(c_processx__killem_all)
 }
