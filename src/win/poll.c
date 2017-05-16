@@ -4,7 +4,6 @@
 #include <Rinternals.h>
 #include "processx-win.h"
 
-void processx__error(DWORD errorcode);
 DWORD processx__poll_start_read(processx_pipe_handle_t *handle, int *result);
 
 SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
@@ -16,6 +15,7 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
   SEXP result;
   int has_buffered = 0;
   DWORD err, waitres;
+  char *errmessage = "";
 
   /* Count the number of handles to listen on */
   for (i = 0; i < num_proc; i++) {
@@ -76,12 +76,12 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
     int *ii = INTEGER(VECTOR_ELT(result, i));
     if (ii[0] == PXSILENT && ! px->pipes[1]->read_pending) {
       err = processx__poll_start_read(px->pipes[1], ii);
-      if (err) goto error;
+      if (err) { errmessage = "start async poll read (stdout)"; goto error; }
       if (ii[0] == PXREADY) has_buffered = 1;
     }
     if (ii[1] == PXSILENT && ! px->pipes[2]->read_pending) {
       err = processx__poll_start_read(px->pipes[2], ii + 1);
-      if (err) goto error;
+      if (err) { errmessage = "start async poll read (stderr)"; goto error; }
       if (ii[1] == PXREADY) has_buffered = 1;
     }
   }
@@ -133,6 +133,7 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
 
   if (waitres == WAIT_FAILED) {
     err = GetLastError();
+    errmessage = "waiting in poll";
     goto error;
 
   } else if (waitres == WAIT_TIMEOUT) {
@@ -152,7 +153,7 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
   return result;
 
  error:
-  processx__error(err);
+  PROCESSX_ERROR(errmessage, err);
   return R_NilValue;		/* never called */
 }
 
