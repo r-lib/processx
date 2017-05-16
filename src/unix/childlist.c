@@ -56,3 +56,39 @@ processx__child_list_t *processx__child_find(pid_t pid) {
   }
   return 0;
 }
+
+void processx__killem_all() {
+  processx__child_list_t *ptr = child_list->next;
+
+  processx__remove_sigchld();
+
+  while (ptr) {
+    processx__child_list_t *next = ptr->next;
+    SEXP status = ptr->status;
+    processx_handle_t *handle =
+      (processx_handle_t*) R_ExternalPtrAddr(status);
+    int wp, wstat;
+
+    REprintf("killing %d\n", (int) ptr->pid);
+    kill(ptr->pid, SIGKILL);
+
+    REprintf("waiting %d\n", (int) ptr->pid);
+    do {
+      wp = waitpid(ptr->pid, &wstat, 0);
+    } while (wp == -1 && errno == EINTR);
+
+    REprintf("clearing %d\n", (int) ptr->pid);
+    R_ClearExternalPtr(status);
+    if (handle) free(handle);
+
+    free(ptr);
+
+    ptr = next;
+  }
+
+  child_list->next = 0;
+  processx__freelist_free();
+
+
+  REprintf("DONE\n", (int) ptr->pid);
+}

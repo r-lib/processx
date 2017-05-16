@@ -38,6 +38,9 @@ void processx__remove_sigchld();
 void processx__block_sigchld();
 void processx__unblock_sigchld();
 
+void processx__finalizer(SEXP status);
+void processx__killem_all();
+
 /* Child list and its functions */
 
 typedef struct processx__child_list_s {

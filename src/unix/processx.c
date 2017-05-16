@@ -9,7 +9,6 @@ static void processx__child_init(processx_handle_t *handle, int pipes[3][2],
 				 char *command, char **args, int error_fd,
 				 const char *stdout, const char *stderr,
 				 processx_options_t *options);
-static void processx__finalizer(SEXP status);
 
 static SEXP processx__make_handle(SEXP private, int cleanup);
 static void processx__handle_destroy(processx_handle_t *handle);
@@ -29,8 +28,22 @@ static void processx__handle_destroy(processx_handle_t *handle);
 #endif
 #endif
 
-void R_unload_processx(DllInfo *dll) {
-  processx__remove_sigchld();
+extern processx__child_list_t child_list_head;
+extern processx__child_list_t *child_list;
+extern processx__child_list_t child_free_list_head;
+extern processx__child_list_t *child_free_list;
+
+
+void R_init_processx_unix() {
+  child_list_head.pid = 0;
+  child_list_head.status = 0;
+  child_list_head.next = 0;
+  child_list = &child_list_head;
+
+  child_free_list_head.pid = 0;
+  child_free_list_head.status = 0;
+  child_free_list_head.next = 0;
+  child_free_list = &child_free_list_head;
 }
 
 void processx__write_int(int fd, int err) {
@@ -103,7 +116,7 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
   raise(SIGKILL);
 }
 
-static void processx__finalizer(SEXP status) {
+void processx__finalizer(SEXP status) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
   pid_t pid;
   int wp, wstat;
