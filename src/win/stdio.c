@@ -248,10 +248,10 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
 	return 0;		/* neve called */
       }
     } else {
-      /* returned synchronously (!) */
-      memcpy(target, handle->buffer, bytes_read);
-      if (bytes_read > 0) handle->tail = ((char*)target)[bytes_read - 1];
-      return bytes_read;
+      /* Returned without ERROR_IO_PENDING. Anyway, still must be pending,
+	 because we set lpNumberOfBytesRead to a NULL pointer, so there is
+	 no way to return the result synchronously. */
+      handle->read_pending = TRUE;
     }
   }
 
@@ -453,7 +453,6 @@ HANDLE processx__stdio_handle(BYTE* buffer, int fd) {
 }
 
 DWORD processx__poll_start_read(processx_pipe_handle_t *handle, int *result) {
-  DWORD bytes_read = 0;
   BOOLEAN res;
   res = ReadFile(
     handle->pipe,
@@ -473,9 +472,11 @@ DWORD processx__poll_start_read(processx_pipe_handle_t *handle, int *result) {
       return err;
     }
   } else {
+    /* Returned without ERROR_IO_PENDING. Anyway, still must be pending,
+       because we set lpNumberOfBytesRead to a NULL pointer, so there is
+       no way to return the result synchronously. */
     /* returnd synchronously */
-    handle->buffer_end = handle->buffer + bytes_read;
-    *result = PXREADY;
+    handle->read_pending = TRUE;
   }
 
   return 0;
