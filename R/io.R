@@ -27,6 +27,48 @@ process_is_incompelete_error <- function(self, private) {
   isIncomplete(process_get_error_connection(self, private))
 }
 
+process_read_all_output <- function(self, private) {
+  self$wait()
+  con <- self$get_output_connection()
+  result <- ""
+  while (self$is_incomplete_output()) {
+    self$poll_io(-1)
+    result <- paste0(result, readChar(con, 1024))
+  }
+  result
+}
+
+process_read_all_error <- function(self, private) {
+  self$wait()
+  con <- self$get_error_connection()
+  result <- ""
+  while (self$is_incomplete_error()) {
+    self$poll_io(-1)
+    result <- paste0(result, readChar(con, 1024))
+  }
+  result
+}
+
+process_read_all_output_lines <- function(self, private, ...) {
+  self$wait()
+  results <- character()
+  while (self$is_incomplete_output()) {
+    self$poll_io(-1)
+    results <- c(results, self$read_output_lines(...))
+  }
+  results
+}
+
+process_read_all_error_lines <- function(self, private, ...) {
+  self$wait()
+  results <- character()
+  while (self$is_incomplete_error()) {
+    self$poll_io(-1)
+    results <- c(results, self$read_error_lines(...))
+  }
+  results
+}
+
 poll_codes <- c("nopipe", "ready", "timeout", "closed", "silent")
 
 process_poll_io <- function(self, private, ms) {
