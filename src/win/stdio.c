@@ -223,11 +223,6 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
   /* We don't have anything. If there is no read pending, we
      start one. It might return synchronously, the little bastard. */
   if (! handle->read_pending) {
-    result = ResetEvent(handle->overlapped.hEvent);
-    if (!result) {
-      PROCESSX_ERROR("reset event for connection reading", GetLastError());
-    }
-
     result = ReadFile(
       pipe,
       handle->buffer,
@@ -404,7 +399,7 @@ int processx__stdio_create(processx_handle_t *handle,
       /* Need a manual event for async IO */
       pipe->overlapped.hEvent = CreateEvent(
         /* lpEventAttributes = */ NULL,
-	/* bManualReset = */ TRUE,
+	/* bManualReset = */ FALSE,
 	/* bInitialState = */ FALSE,
 	/* lpName = */ NULL);
 
@@ -460,9 +455,6 @@ HANDLE processx__stdio_handle(BYTE* buffer, int fd) {
 DWORD processx__poll_start_read(processx_pipe_handle_t *handle, int *result) {
   DWORD bytes_read = 0;
   BOOLEAN res;
-  res = ResetEvent(handle->overlapped.hEvent);
-  if (!res) { return GetLastError(); }
-
   res = ReadFile(
     handle->pipe,
     handle->buffer,
