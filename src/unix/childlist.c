@@ -80,7 +80,7 @@ SEXP processx__killem_all() {
     }
 
     R_ClearExternalPtr(status);
-    if (handle) free(handle);
+    /* if (handle) free(handle); */
 
     free(ptr);
 
