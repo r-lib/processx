@@ -12,8 +12,7 @@ test_that("We can get the output", {
   )
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
-  p$wait()
-  out <- sort(p$read_output_lines())
+  out <- sort(p$read_all_output_lines())
   expect_identical(sort(out), sort(dir(no..=TRUE, all.files=TRUE)))
 })
 
@@ -28,8 +27,7 @@ test_that("We can get the error stream", {
   p <- process$new(tmp, stderr = "|")
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
-  p$wait()
-  out <- sort(p$read_error_lines())
+  out <- sort(p$read_all_error_lines())
   expect_identical(out, c("hello", "world"))
 })
 
@@ -51,11 +49,10 @@ test_that("Output & error at the same time", {
   p <- process$new(tmp, stdout = "|", stderr = "|")
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
-  p$wait()
-  out <- p$read_output_lines()
+  out <- p$read_all_output_lines()
   expect_identical(out, c("wow", "wooow"))
 
-  err <- p$read_error_lines()
+  err <- p$read_all_error_lines()
   expect_identical(err, c("hello", "world"))
 })
 
@@ -82,6 +79,9 @@ test_that("Output and error to specific files", {
 
   p$wait()
 
+  ## In theory this is a race condition, because the OS might be still
+  ## writing the files. But it is hard to wait until they are done.
+  ## We'll see if this fails in practice, hopefully not.
   expect_identical(readLines(tmpout), c("wow", "wooow"))
   expect_identical(readLines(tmperr), c("hello", "world"))
 })
@@ -98,8 +98,7 @@ test_that("isIncomplete", {
   p$read_output_lines(n = 1)
   expect_true(isIncomplete(con))
 
-  p$wait()
-  p$read_output_lines()
+  p$read_all_output_lines()
   expect_false(isIncomplete(con))
 
   close(con)
@@ -125,7 +124,10 @@ test_that("can read after process was finalized, windows", {
   p$wait()
   rm(p) ; gc()
 
-  expect_equal(sort(readLines(con)), sort(dir()))
+  out <- character()
+  while (isIncomplete(con)) out <- c(out, readLines(con))
+
+  expect_equal(sort(out), sort(dir()))
 })
 
 test_that("readChar on IO, unix", {
@@ -136,8 +138,11 @@ test_that("readChar on IO, unix", {
   con <- p$get_output_connection()
   p$wait()
 
+  p$poll_io(-1)
   expect_equal(readChar(con, 5), "hello")
+  p$poll_io(-1)
   expect_equal(readChar(con, 5), " worl")
+  p$poll_io(-1)
   expect_equal(readChar(con, 5), "d!\n")
 })
 
@@ -149,7 +154,10 @@ test_that("readChar on IO, windows", {
   con <- p$get_output_connection()
   p$wait()
 
+  p$poll_io(-1)
   expect_equal(readChar(con, 5), "hello")
+  p$poll_io(-1)
   expect_equal(readChar(con, 5), " worl")
+  p$poll_io(-1)
   expect_equal(readChar(con, 5), "d!\r\n")
 })

@@ -10,8 +10,8 @@ test_that("Can read last line without trailing newline", {
   }
 
   p <- process$new(commandline = cmd, stdout = "|")
-  p$wait()
-  expect_equal(p$read_output_lines(), "foobar")
+  out <- p$read_all_output_lines()
+  expect_equal(out, "foobar")
 })
 
 test_that("Can read single characters", {
@@ -26,9 +26,13 @@ test_that("Can read single characters", {
   p$wait()
   con <- p$get_output_connection()
 
+  p$poll_io(-1)
   expect_equal(readChar(con, 1), "1")
+  p$poll_io(-1)
   expect_equal(readChar(con, 1), "2")
+  p$poll_io(-1)
   expect_equal(readChar(con, 1), "3")
+  p$poll_io(-1)
   expect_equal(readChar(con, 1), "\n")
 })
 
@@ -44,8 +48,12 @@ test_that("Can read multiple characters", {
   p$wait()
   con <- p$get_output_connection()
 
+  p$poll_io(-1)
   expect_equal(readChar(con, 3), "123")
+  p$poll_io(-1)
   expect_equal(readChar(con, 4), "4567")
+  p$poll_io(-1)
   expect_equal(readChar(con, 2), "89")
+  p$poll_io(-1)
   expect_equal(readChar(con, 10), "\n")
 })

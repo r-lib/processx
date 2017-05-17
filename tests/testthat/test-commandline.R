@@ -27,8 +27,8 @@ test_that("'commandline' works", {
 
   expect_true(p$is_alive())
 
-  p$wait()
-
-  expect_equal(p$read_output_lines(), "kuku")
-  expect_equal(p$read_error_lines(), "kuku2")
+  out <- p$read_all_output_lines()
+  err <- p$read_all_error_lines()
+  expect_equal(out, "kuku")
+  expect_equal(err, "kuku2")
 })

@@ -31,6 +31,10 @@ NULL
 #' p$get_error_connection()
 #' p$is_incomplete_output()
 #' p$is_incomplete_error()
+#' p$read_all_output()
+#' p$read_all_error()
+#' p$read_all_output_lines(...)
+#' p$read_all_error_lines(...)
 #'
 #' p$poll_io(timeout)
 #'
@@ -134,6 +138,30 @@ NULL
 #' the standard error connection was closed (most probably because the
 #' process exited). It return \code{TRUE} otherwise.
 #'
+#' \code{$read_all_output()} waits for all standard output from the process.
+#' It does not return until the process has finished.
+#' Note that this process involves waiting for the process to finish,
+#' polling for I/O and potentically several `readLines()` calls.
+#' It returns a character scalar.
+#'
+#' \code{$read_all_error()} waits for all standard error from the process.
+#' It does not return until the process has finished.
+#' Note that this process involves waiting for the process to finish,
+#' polling for I/O and potentically several `readLines()` calls.
+#' It returns a character scalar.
+#'
+#' \code{$read_all_output_lines()} waits for all standard output lines
+#' from a process. It does not return until the process has finished.
+#' Note that this process involves waiting for the process to finish,
+#' polling for I/O and potentically several `readLines()` calls.
+#' It returns a character vector.
+#'
+#' \code{$read_all_error_lines()} waits for all standard error lines from
+#' a process. It does not return until the process has finished.
+#' Note that this process involves waiting for the process to finish,
+#' polling for I/O and potentically several `readLines()` calls.
+#' It returns a character vector.
+#'
 #' \code{$poll_io()} polls the process's connections for I/O. See more in
 #' the \emph{Polling} section, and see also the \code{\link{poll}} function
 #' to poll on multiple processes.
@@ -230,6 +258,18 @@ process <- R6Class(
 
     get_error_connection = function()
       process_get_error_connection(self, private),
+
+    read_all_output = function()
+      process_read_all_output(self, private),
+
+    read_all_error = function()
+      process_read_all_error(self, private),
+
+    read_all_output_lines = function(...)
+      process_read_all_output_lines(self, private, ...),
+
+    read_all_error_lines = function(...)
+      process_read_all_error_lines(self, private, ...),
 
     poll_io = function(timeout)
       process_poll_io(self, private, timeout)
