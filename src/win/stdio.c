@@ -223,6 +223,8 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
   /* We don't have anything. If there is no read pending, we
      start one. It might return synchronously, the little bastard. */
   if (! handle->read_pending) {
+    handle->overlapped.Offset = 0;
+    handle->overlapped.OffsetHigh = 0;
     result = ReadFile(
       pipe,
       handle->buffer,
@@ -454,6 +456,8 @@ HANDLE processx__stdio_handle(BYTE* buffer, int fd) {
 
 DWORD processx__poll_start_read(processx_pipe_handle_t *handle, int *result) {
   BOOLEAN res;
+  handle->overlapped.Offset = 0;
+  handle->overlapped.OffsetHigh = 0;
   res = ReadFile(
     handle->pipe,
     handle->buffer,

@@ -140,9 +140,7 @@ test_that("readChar on IO, unix", {
 
   p$poll_io(-1)
   expect_equal(readChar(con, 5), "hello")
-  p$poll_io(-1)
   expect_equal(readChar(con, 5), " worl")
-  p$poll_io(-1)
   expect_equal(readChar(con, 5), "d!\n")
 })
 
