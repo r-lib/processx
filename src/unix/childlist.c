@@ -42,6 +42,7 @@ void processx__child_remove(pid_t pid) {
 	 crashes. The test case in test-run.R (see comments there)
 	 typically brings this out. */
       processx__freelist_add(ptr);
+      return;
     }
     prev = ptr;
     ptr = ptr->next;
