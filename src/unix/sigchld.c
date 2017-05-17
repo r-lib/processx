@@ -1,43 +1,68 @@
 
 #include "processx-unix.h"
 
+extern processx__child_list_t *child_list;
+
 void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
   if (sig != SIGCHLD) return;
-  pid_t pid = info->si_pid;
-  processx__child_list_t *child = processx__child_find(pid);
 
-  if (child) {
-    /* We deliberately do not call the finalizer here, because that
-       moves the exit code and pid to R, and we might have just checked
-       that these are not in R, before calling C. So finalizing here
-       would be a race condition.
+  /* While we get a pid in info, this is basically useless, as
+     (on some platforms at least) a single signal might be delivered
+     for multiple children exiting around the same time. So we need to
+     iterate over all children to see which one has exited. */
 
-       OTOH, we need to check if the handle is null, because a finalizer
-       might actually run before the SIGCHLD handler. Or the finalizer
-       might even trigger the SIGCHLD handler...
-    */
+  processx__child_list_t *ptr = child_list->next;
+  processx__child_list_t *prev = child_list;
+
+  while (ptr) {
+    processx__child_list_t *next = ptr->next;
     int wp, wstat;
-    processx_handle_t *handle = R_ExternalPtrAddr(child->status);
 
-    /* This might not be necessary, if the handle was finalized,
-       but it does not hurt... */
+    /* Check if this child has exited */
     do {
-      wp = waitpid(pid, &wstat, 0);
+      wp = waitpid(ptr->pid, &wstat, WNOHANG);
     } while (wp == -1 && errno == EINTR);
 
-    /* If handle is NULL, then the exit status was collected already */
-    if (handle) processx__collect_exit_status(child->status, wstat);
+    if (wp <= 0) {
+      /* If it is still running (or an error happened), we do nothing */
+      prev = ptr;
+      ptr = next;
 
-    processx__child_remove(pid);
+    } else {
+      /* Remove the child from the list */
 
-    /* If no more children, then we could remove the SIGCHLD handler,
-       but that leads to strange interactions with system(), at least
-       on macOS. So we don't do that. */
+      /* We deliberately do not call the finalizer here, because that
+	 moves the exit code and pid to R, and we might have just checked
+	 that these are not in R, before calling C. So finalizing here
+	 would be a race condition.
 
-    /* If there is an active wait() with a timeout, then stop it */
-    if (handle && handle->waitpipe[1] >= 0) {
-      close(handle->waitpipe[1]);
-      handle->waitpipe[1] = -1;
+	 OTOH, we need to check if the handle is null, because a finalizer
+	 might actually run before the SIGCHLD handler. Or the finalizer
+	 might even trigger the SIGCHLD handler...
+      */
+
+      processx_handle_t *handle = R_ExternalPtrAddr(ptr->status);
+
+      /* If handle is NULL, then the exit status was collected already */
+      if (handle) processx__collect_exit_status(ptr->status, wstat);
+
+      /* Defer freeing the memory, because malloc/free are typically not
+	 reentrant, and if we free in the SIGCHLD handler, that can cause
+	 crashes. The test case in test-run.R (see comments there)
+	 typically brings this out. */
+      memset(ptr, 0, sizeof(*ptr));
+      processx__freelist_add(ptr);
+
+      /* If there is an active wait() with a timeout, then stop it */
+      if (handle && handle->waitpipe[1] >= 0) {
+	close(handle->waitpipe[1]);
+	handle->waitpipe[1] = -1;
+      }
+
+      /* If we remove the current list node, then prev stays the same,
+	 we only need to update ptr. */
+      prev->next = next;
+      ptr = next;
     }
   }
 }
