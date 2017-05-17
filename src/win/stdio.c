@@ -227,7 +227,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
       pipe,
       handle->buffer,
       sz * ni < handle->buffer_size ? sz * ni : handle->buffer_size,
-      &bytes_read,
+      NULL,
       &handle->overlapped);
 
     if (!result) {
@@ -459,7 +459,7 @@ DWORD processx__poll_start_read(processx_pipe_handle_t *handle, int *result) {
     handle->pipe,
     handle->buffer,
     handle->buffer_size,
-    &bytes_read,
+    NULL,
     &handle->overlapped);
 
   if (!res) {
