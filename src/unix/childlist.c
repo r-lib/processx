@@ -92,7 +92,7 @@ SEXP processx__killem_all() {
   processx__freelist_free();
 
   if (killed > 0) {
-    REprintf("Unloading processx shared library, killed %d processes",
+    REprintf("Unloading processx shared library, killed %d processes\n",
 	     killed);
   }
 
