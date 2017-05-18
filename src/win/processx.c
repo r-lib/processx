@@ -709,53 +709,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   return result;
 }
 
-/* Process status and related functions.
-
- * `process_wait`:
-    1. If we already have its exit status, return immediately.
-    2. Othewise do a blocking WaitForSingleObject.
-    3. Then collect exit status.
-
- * `process_is_alive`:
-    1. If we already have its exit status, then return `FALSE`.
-    2. Otherwise do a GetExitCodeProcess.
-    3. If it is running return `TRUE`, otherwise `FALSE`.
-
- * `process_get_exit_status`:
-    1. If we already have the exit status, then return that.
-    2. Otherwise do a GetExitCodeProcess.
-    3. If the process has finished, then collect the exit status, and return it.
-    4. Otherwise return `NULL`, the process is still running.
-
- * `process_signal`:
-    1. If we already have its exit status, return with `FALSE`.
-    2. Otherwise deliver the signal. If successful, return `TRUE`, otherwise
-       `FALSE`. Only a limited set of signals are supported.
-
- * `process_kill`:
-    1. If we already have its exit status, return with `FALSE`.
-    2. Otherwise call GetExitCodeProcess.
-    3. If the process is not running, collect the exit status, and
-       return `FALSE`.
-    4. Otherwise kill the process, and collect the exit status.
-    5. If the killing was successful, return `TRUE`, otherwise `FALSE`.
-
-    The return value of `process_kill()` is `TRUE` if the process was
-    indeed killed by the signal. It is `FALSE` otherwise, i.e. if the
-    process finished.
-
- * Finalizers (`processx__finalizer`):
-
-   Finalizers are called on the handle only, so we do not know if the
-   process has already finished or not.
-
-   1. Run `GetExitCodeProcess` to see if it has finished already.
-   2. If yes, then free memory.
-   3. Otherwise terminate it.
-   4. Free memory.
-
- */
-
 void processx__collect_exit_status(SEXP status, DWORD exitcode) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   handle->exitcode = exitcode;
