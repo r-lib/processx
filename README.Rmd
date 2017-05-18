@@ -191,7 +191,9 @@ result <- run(
     "echo this; echo that; echo done;",
     "echo still here;",
 	"sleep 10; echo dead by now"),
-  stdout_line_callback = cb)
+  stdout_line_callback = cb,
+  error_on_status = FALSE,
+)
 result
 ```
 
@@ -437,4 +439,4 @@ p2$get_exit_status()
 
 ## License
 
-MIT © Mango Solutions, Gábor Csárdi
+MIT © Mango Solutions, RStudio, Gábor Csárdi

@@ -98,6 +98,9 @@ run("echo", "Hello R!")
 #> 
 #> $stderr
 #> [1] ""
+#> 
+#> $timeout
+#> [1] FALSE
 ```
 
 The other way is to supply a full shell command line via the
@@ -117,6 +120,9 @@ run(commandline = "echo Hello R!")
 #> 
 #> $stderr
 #> [1] ""
+#> 
+#> $timeout
+#> [1] FALSE
 ```
 
 This methods starts up a shell, i.e. on Unix-like systems it runs
@@ -143,6 +149,9 @@ run(commandline = "echo error >&2; exit 2", error_on_status = FALSE)
 #> 
 #> $stderr
 #> [1] "error\n"
+#> 
+#> $timeout
+#> [1] FALSE
 ```
 
 #### Showing output
@@ -184,6 +193,9 @@ result
 #> 
 #> $stderr
 #> [1] "err\n"
+#> 
+#> $timeout
+#> [1] FALSE
 ```
 
 Note that `run` is different from `system`, and it always shows the output
@@ -213,7 +225,8 @@ out2
 ```
 #>  [1] "DESCRIPTION"  "LICENSE"      "Makefile"     "NAMESPACE"   
 #>  [5] "NEWS.md"      "R"            "README.Rmd"   "README.md"   
-#>  [9] "appveyor.yml" "man"          "src"          "tests"
+#>  [9] "appveyor.yml" "inst"         "man"          "src"         
+#> [13] "tests"
 ```
 
 #### Spinner
@@ -234,7 +247,7 @@ result <- run(
 	"printf '\rX foobar\n'"),
   echo = TRUE, spinner = TRUE)
 ```
-  
+
 #### Callbacks for I/O
 
 `run` can call an R function for each line of the standard output or
@@ -257,7 +270,9 @@ result <- run(
     "echo this; echo that; echo done;",
     "echo still here;",
 	"sleep 10; echo dead by now"),
-  stdout_line_callback = cb)
+  stdout_line_callback = cb,
+  error_on_status = FALSE,
+)
 ```
 
 ```
@@ -280,6 +295,9 @@ result
 #> 
 #> $stderr
 #> [1] ""
+#> 
+#> $timeout
+#> [1] FALSE
 ```
 
 Keep in mind, that while the R callback is running, the background process
@@ -296,7 +314,7 @@ lines (separated by `\n` or `\r\n`), or even incomplete lines.
 ### Managing external processes
 
 If you need better control over possibly multiple background processes,
-then you can use the R6 `process` class directly. 
+then you can use the R6 `process` class directly.
 
 #### Starting processes
 
@@ -377,7 +395,7 @@ p1$is_alive()
 ```
 
 ```
-#> [1] FALSE
+#> [1] TRUE
 ```
 
 Note that processes are finalized (and killed) automatically if the
@@ -393,8 +411,8 @@ gc()
 
 ```
 #>          used (Mb) gc trigger (Mb) max used (Mb)
-#> Ncells 303021 16.2     592000 31.7   460000 24.6
-#> Vcells 499850  3.9    1023718  7.9   786411  6.0
+#> Ncells 303179 16.2     592000 31.7   460000 24.6
+#> Vcells 500110  3.9    1023718  7.9   786411  6.0
 ```
 
 Here, the direct call to the garbage collector kills the `sleep` process
@@ -433,7 +451,7 @@ p$read_output_lines()
 ```
 
 ```
-#> [1] "foo"    "foobar"
+#> character(0)
 ```
 
 ```r
@@ -577,7 +595,8 @@ p$read_output_lines()
 ```
 #>  [1] "DESCRIPTION"  "LICENSE"      "Makefile"     "NAMESPACE"   
 #>  [5] "NEWS.md"      "R"            "README.Rmd"   "README.md"   
-#>  [9] "appveyor.yml" "man"          "src"          "tests"
+#>  [9] "appveyor.yml" "inst"         "man"          "src"         
+#> [13] "tests"
 ```
 
 #### Polling multiple processes
@@ -629,7 +648,8 @@ p1$read_output_lines()
 ```
 #>  [1] "DESCRIPTION"  "LICENSE"      "Makefile"     "NAMESPACE"   
 #>  [5] "NEWS.md"      "R"            "README.Rmd"   "README.md"   
-#>  [9] "appveyor.yml" "man"          "src"          "tests"
+#>  [9] "appveyor.yml" "inst"         "man"          "src"         
+#> [13] "tests"
 ```
 
 ```r
@@ -657,7 +677,8 @@ p2$read_error_lines()
 ```
 #>  [1] "DESCRIPTION"  "LICENSE"      "Makefile"     "NAMESPACE"   
 #>  [5] "NEWS.md"      "R"            "README.Rmd"   "README.md"   
-#>  [9] "appveyor.yml" "man"          "src"          "tests"
+#>  [9] "appveyor.yml" "inst"         "man"          "src"         
+#> [13] "tests"
 ```
 
 #### Waiting on a process
@@ -682,7 +703,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2017-04-07 12:16:23 BST"
+#> [1] "2017-05-18 14:16:55 BST"
 ```
 
 ```r
@@ -691,7 +712,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2017-04-07 12:16:25 BST"
+#> [1] "2017-05-18 14:16:57 BST"
 ```
 
 It is safe to call `wait` multiple times:
@@ -755,4 +776,4 @@ p2$get_exit_status()
 
 ## License
 
-MIT © Mango Solutions, Gábor Csárdi
+MIT © Mango Solutions, RStudio, Gábor Csárdi
