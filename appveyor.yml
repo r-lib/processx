@@ -17,6 +17,7 @@ environment:
 
 build_script:
   - travis-tool.sh install_deps
+  - travis-tool.sh github_package jimhester/covr
 
 test_script:
   - travis-tool.sh run_tests
