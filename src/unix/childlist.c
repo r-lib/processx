@@ -80,7 +80,8 @@ SEXP processx__killem_all() {
     }
 
     R_ClearExternalPtr(status);
-    /* if (handle) free(handle); */
+    /* The handle will be freed in the finalizer, otherwise there is
+       a race condition here. */
 
     free(ptr);
 
