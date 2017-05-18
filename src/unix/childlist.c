@@ -31,6 +31,8 @@ int processx__child_add(pid_t pid, SEXP status) {
   return 0;
 }
 
+/* This is actually not used currently. But it should work fine. */
+
 void processx__child_remove(pid_t pid) {
   processx__child_list_t *prev = child_list, *ptr = child_list->next;
   while (ptr) {
@@ -48,6 +50,8 @@ void processx__child_remove(pid_t pid) {
     ptr = ptr->next;
   }
 }
+
+/* This is actually not used currently. But it should work fine. */
 
 processx__child_list_t *processx__child_find(pid_t pid) {
   processx__child_list_t *ptr = child_list->next;
