@@ -9,7 +9,7 @@
 
 int processx__interruptible_poll(struct pollfd fds[],
                           nfds_t nfds, int timeout) {
-  int ret;
+  int ret = 0;
   int timeleft = timeout;
 
   while (timeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
@@ -25,7 +25,7 @@ int processx__interruptible_poll(struct pollfd fds[],
   }
 
   /* Maybe we are not done, and there is a little left from the timeout */
-  if (ret == 0 && timeleft > 0) {
+  if (timeleft >= 0) {
     do {
       ret = poll(fds, nfds, timeleft);
     } while (ret == -1 && errno == EINTR);

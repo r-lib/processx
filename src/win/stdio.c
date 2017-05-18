@@ -584,7 +584,7 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP rstdout_pipe, SEXP rstderr_pipe
   }
 
   /* Maybe we are not done, and there is a little left from the timeout */
-  if (waitres == WAIT_TIMEOUT && timeleft > 0) {
+  if (waitres == WAIT_TIMEOUT && timeleft >= 0) {
     waitres = WaitForMultipleObjects(
       nCount,
       wait_handles,

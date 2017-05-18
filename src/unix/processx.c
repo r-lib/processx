@@ -440,7 +440,7 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   }
 
   /* Maybe we are not done, and there is a little left from the timeout */
-  if (ret == 0 && timeleft > 0) {
+  if (ret == 0 && timeleft >= 0) {
     do {
       ret = poll(&fd, 1, timeleft);
     } while (ret == -1 && errno == EINTR);

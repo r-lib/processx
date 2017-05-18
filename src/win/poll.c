@@ -123,7 +123,7 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
   }
 
   /* Maybe some time left from the timeout */
-  if (waitres == WAIT_TIMEOUT && timeleft > 0) {
+  if (waitres == WAIT_TIMEOUT && timeleft >= 0) {
     waitres = WaitForMultipleObjects(
       num_fds,
       wait_handles,

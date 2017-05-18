@@ -731,7 +731,7 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   }
 
   /* Maybe there is some time left from the timeout */
-  if (err2 == WAIT_TIMEOUT && timeleft > 0) {
+  if (err2 == WAIT_TIMEOUT && timeleft >= 0) {
     err2 = WaitForSingleObject(handle->hProcess, timeleft);
   }
 
