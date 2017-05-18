@@ -17,12 +17,13 @@ environment:
 
 build_script:
   - travis-tool.sh install_deps
+  - travis-tool.sh github_package jimhester/covr
 
 test_script:
   - travis-tool.sh run_tests
 
 on_success:
-  - Rscript -e covr::codecov()
+  - Rscript -e "options(covr.gcov = 'C:/Rtools/mingw_64/bin/gcov.exe');covr::codecov()"
 
 on_failure:
   - travis-tool.sh dump_logs
