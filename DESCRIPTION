@@ -8,7 +8,8 @@ Description: Portable tools to run system processes in the background.
     process to finish; get the exit status of finished processes; kill
     background processes and their children; restart processes. It can read
     the standard output and error of the processes, using non-blocking
-    connections. 'processx' is lightweight and contains no compiled code.
+    connections. 'processx' can poll a process for standard output or
+    error, with a timeout. It can also poll several processes at once.
 License: MIT + file LICENSE
 LazyData: true
 URL: https://github.com/r-pkgs/processx#readme
