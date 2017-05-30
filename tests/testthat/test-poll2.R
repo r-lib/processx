@@ -53,7 +53,7 @@ test_that("multiple processes", {
   )
 
   p1 <- process$new(commandline = cmd1, stdout = "|")
-  p2 <- process$new(commandline = cmd1, stderr = "|")
+  p2 <- process$new(commandline = cmd2, stderr = "|")
 
   ## Timeout
   res <- poll(list(p1 = p1, p2 = p2), 0)

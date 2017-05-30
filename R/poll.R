@@ -39,6 +39,7 @@
 #' @export
 #' @examples
 #' ## Different commands to run for windows and unix
+#' \dontrun{
 #' cmd1 <- switch(
 #'   .Platform$OS.type,
 #'   "unix" = "sleep 1; ls",
@@ -52,7 +53,7 @@
 #'
 #' ## Run them. p1 writes to stdout, p2 to stderr, after some sleep
 #' p1 <- process$new(commandline = cmd1, stdout = "|")
-#' p2 <- process$new(commandline = cmd1, stderr = "|")
+#' p2 <- process$new(commandline = cmd2, stderr = "|")
 #'
 #' ## Nothing to read initially
 #' poll(list(p1 = p1, p2 = p2), 0)
@@ -68,6 +69,7 @@
 #' ## Close p2's connection as well, no nothing to poll
 #' close(p2$get_error_connection())
 #' poll(list(p1 = p1, p2 = p2), 0)
+#' }
 
 poll <- function(processes, ms) {
   assert_that(is_list_of_processes(processes))
