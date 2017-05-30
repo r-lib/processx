@@ -2,6 +2,7 @@
 ^\.Rproj\.user$
 ^Makefile$
 ^README.Rmd$
+^README.markdown$
 ^.travis.yml$
 ^appveyor.yml$
 ^src/processx\.so$
