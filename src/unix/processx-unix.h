@@ -17,6 +17,8 @@
 
 #include "../processx.h"
 
+struct processx_conn_handle_s;
+
 typedef struct processx_handle_s {
   int exitcode;
   int collected;	 /* Whether exit code was collected already */
@@ -24,10 +26,16 @@ typedef struct processx_handle_s {
   int fd0;			/* writeable */
   int fd1;			/* readable */
   int fd2;			/* readable */
-  char tails[3];
   int waitpipe[2];		/* use it for wait() with timeout */
   int cleanup;
+  struct processx_conn_handle_s *stdout;
+  struct processx_conn_handle_s *stderr;
 } processx_handle_t;
+
+typedef struct processx_conn_handle_s {
+  processx_handle_t *process;
+  char tail;
+} processx_conn_handle_t;
 
 char *processx__tmp_string(SEXP str, int i);
 char **processx__tmp_character(SEXP chr);
@@ -67,7 +75,8 @@ void processx__con_destroy(Rconnection con);
 size_t processx__con_read(void *target, size_t sz, size_t ni,
 			  Rconnection con);
 int processx__con_fgetc(Rconnection con);
-void processx__create_connection(processx_handle_t *handle,
+processx_conn_handle_t *processx__create_connection(
+				 processx_handle_t *handle,
 				 int fd, const char *membername,
 				 SEXP private);
 

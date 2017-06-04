@@ -2,29 +2,36 @@
 #include "processx-unix.h"
 
 void processx__con_destroy(Rconnection con) {
-  if (con->status >= 0) {
-    processx_handle_t *handle = con->private;
-    if (handle) {
-      if (handle->fd1 == con->status) handle->fd1 = -1;
-      if (handle->fd2 == con->status) handle->fd2 = -1;
+  processx_conn_handle_t *handle = con->private;
+  if (handle) {
+    processx_handle_t *process = handle->process;
+    if (process) {
+      if (process->fd1 == con->status) {
+	process->fd1 = -1;
+	process->stdout = NULL;
+      }
+      if (process->fd2 == con->status) {
+	process->fd2 = -1;
+	process->stderr = NULL;
+      }
     }
-    if (con->status >= 0) close(con->status);
-    con->status = -1;
-    con->isopen = 0;
   }
+  if (con->status >= 0) close(con->status);
+  con->status = -1;
+  con->isopen = 0;
+
+  if (handle) free(handle);
+  con->private = 0;
 }
 
 size_t processx__con_read(void *target, size_t sz, size_t ni,
 			  Rconnection con) {
   int num;
   int fd = con->status;
-  int whichfd;
-  processx_handle_t *handle = con->private;
+  processx_conn_handle_t *handle = con->private;
 
   if (fd < 0) error("Connection was already closed");
   if (sz != 1) error("Can only read bytes from processx connections");
-
-  if (fd == handle->fd1) whichfd = 1; else whichfd = 2;
 
   /* Already got EOF? */
   if (con->EOF_signalled) return 0;
@@ -45,7 +52,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
     /* If the last line does not have a trailing '\n', then
        we add one manually, because otherwise readLines() will
        never read this line. */
-    if (handle->tails[whichfd] != '\n') {
+    if (handle->tail != '\n') {
       ((char*)target)[0] = '\n';
       num = 1;
     }
@@ -53,7 +60,7 @@ size_t processx__con_read(void *target, size_t sz, size_t ni,
   } else {
     /* Make note of the last character, to know if the last line
        was incomplete or not. */
-    handle->tails[whichfd] = ((char*)target)[num - 1];
+    handle->tail = ((char*)target)[num - 1];
   }
 
   return (size_t) num;
@@ -68,21 +75,24 @@ int processx__con_fgetc(Rconnection con) {
 #endif
 }
 
-void processx__create_connection(processx_handle_t *handle,
-				 int fd, const char *membername,
-				 SEXP private) {
+processx_conn_handle_t* processx__create_connection(
+  processx_handle_t *handle,
+  int fd, const char *membername,
+  SEXP private) {
 
   Rconnection con;
   SEXP res =
     PROTECT(R_new_custom_connection("processx", "r", "textConnection", &con));
 
-  int whichfd;
-  if (fd == handle->fd1) whichfd = 1; else whichfd = 2;
-  handle->tails[whichfd] = '\n';
+  processx_conn_handle_t *conn_handle =
+    (processx_conn_handle_t*) malloc(sizeof(processx_conn_handle_t));
+  if (!conn_handle) error("out of memory");
+  conn_handle->tail = '\n';
+  conn_handle->process = handle;
 
   con->incomplete = 1;
   con->EOF_signalled = 0;
-  con->private = handle;
+  con->private = conn_handle;
   con->status = fd;		/* slight abuse */
   con->canseek = 0;
   con->canwrite = 0;
@@ -98,15 +108,19 @@ void processx__create_connection(processx_handle_t *handle,
 
   defineVar(install(membername), res, private);
   UNPROTECT(1);
+
+  return conn_handle;
 }
 
 void processx__create_connections(processx_handle_t *handle, SEXP private) {
 
   if (handle->fd1 >= 0) {
-    processx__create_connection(handle, handle->fd1, "stdout_pipe", private);
+    handle->stdout = processx__create_connection(handle, handle->fd1,
+						 "stdout_pipe", private);
   }
 
   if (handle->fd2 >= 0) {
-    processx__create_connection(handle, handle->fd2, "stderr_pipe", private);
+    handle->stderr = processx__create_connection(handle, handle->fd2,
+						 "stderr_pipe", private);
   }
 }

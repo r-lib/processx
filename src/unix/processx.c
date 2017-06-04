@@ -167,6 +167,10 @@ void processx__finalizer(SEXP status) {
      handler, to read out the exit code via waitpid, but no handle
      any more. */
 
+  /* Let the connection(s) know that the process is gone */
+  if (handle->stdout) handle->stdout->process = NULL;
+  if (handle->stderr) handle->stderr->process = NULL;
+
   /* Deallocate memory */
   R_ClearExternalPtr(status);
   processx__handle_destroy(handle);
