@@ -71,6 +71,7 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
 
 void processx__setup_sigchld() {
   struct sigaction action;
+  memset(&action, 0, sizeof(action));
   action.sa_sigaction = processx__sigchld_callback;
   action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NOCLDSTOP;
   sigaction(SIGCHLD, &action, /* oldact= */ NULL);
@@ -78,6 +79,7 @@ void processx__setup_sigchld() {
 
 void processx__remove_sigchld() {
   struct sigaction action;
+  memset(&action, 0, sizeof(action));
   action.sa_handler = SIG_DFL;
   sigaction(SIGCHLD, &action, /* oldact= */ NULL);
 }
