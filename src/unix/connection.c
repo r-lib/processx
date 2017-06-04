@@ -8,7 +8,7 @@ void processx__con_destroy(Rconnection con) {
       if (handle->fd1 == con->status) handle->fd1 = -1;
       if (handle->fd2 == con->status) handle->fd2 = -1;
     }
-    close(con->status);
+    if (con->status >= 0) close(con->status);
     con->status = -1;
     con->isopen = 0;
   }

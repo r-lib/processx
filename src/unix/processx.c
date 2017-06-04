@@ -264,8 +264,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
 
   if (pid == -1) {		/* ERROR */
     err = -errno;
-    close(signal_pipe[0]);
-    close(signal_pipe[1]);
+    if (signal_pipe[0] >= 0) close(signal_pipe[0]);
+    if (signal_pipe[1] >= 0) close(signal_pipe[1]);
     processx__unblock_sigchld();
     goto cleanup;
   }
@@ -280,8 +280,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   /* We need to know the processx children */
   if (processx__child_add(pid, result)) {
     err = -errno;
-    close(signal_pipe[0]);
-    close(signal_pipe[1]);
+    if (signal_pipe[0] >= 0) close(signal_pipe[0]);
+    if (signal_pipe[1] >= 0) close(signal_pipe[1]);
     processx__unblock_sigchld();
     goto cleanup;
   }
@@ -289,7 +289,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
   /* SIGCHLD can arrive now */
   processx__unblock_sigchld();
 
-  close(signal_pipe[1]);
+  if (signal_pipe[1] >= 0) close(signal_pipe[1]);
 
   do {
     r = read(signal_pipe[0], &exec_errorno, sizeof(exec_errorno));
@@ -311,7 +311,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP stdout, SEXP stderr,
     goto cleanup;
   }
 
-  close(signal_pipe[0]);
+  if (signal_pipe[0] >= 0) close(signal_pipe[0]);
 
   /* Set fds for standard I/O */
   /* TODO: implement stdin */
@@ -450,8 +450,8 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
     error("processx wait with timeout error: %s", strerror(errno));
   }
 
-  close(handle->waitpipe[0]);
-  close(handle->waitpipe[1]);
+  if (handle->waitpipe[0] >= 0) close(handle->waitpipe[0]);
+  if (handle->waitpipe[1] >= 0) close(handle->waitpipe[1]);
   handle->waitpipe[0] = -1;
 
   return ScalarLogical(ret != 0);
