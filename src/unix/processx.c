@@ -398,6 +398,7 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   int ctimeout = INTEGER(timeout)[0], timeleft = ctimeout;
   struct pollfd fd;
   int ret = 0;
+  pid_t pid;
 
   processx__block_sigchld();
 
@@ -405,6 +406,8 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
     processx__unblock_sigchld();
     error("Internal processx error, handle already removed");
   }
+
+  pid = handle->pid;
 
   /* If we already have the status, then return now. */
   if (handle->collected) {
@@ -440,6 +443,12 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
     if (ret != 0) break;
 
     R_CheckUserInterrupt();
+
+    /* We also check if the process is alive, because the SIGCHLD is
+       not delivered in valgrind :( */
+    ret = kill(pid, 0);
+    if (ret != 0) return ScalarLogical(1);
+
     if (ctimeout >= 0) timeleft -= PROCESSX_INTERRUPT_INTERVAL;
   }
 
