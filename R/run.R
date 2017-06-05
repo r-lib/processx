@@ -123,9 +123,20 @@ run <- function(
     stderr_callback <- echo_callback(stderr_callback, "stderr")
   }
 
-  res <- run_manage(pr, timeout, spinner, stdout_line_callback,
-                    stdout_callback, stderr_line_callback,
-                    stderr_callback)
+  ## Make the process interruptible, and kill it on interrupt
+  runcall <- sys.call()
+  res <- tryCatch(
+    run_manage(pr, timeout, spinner, stdout_line_callback,
+               stdout_callback, stderr_line_callback,
+               stderr_callback),
+    interrupt = function(e) {
+      tryCatch(pr$kill(), error = function(e) NULL)
+      stop(make_condition(
+        list(interrupt = TRUE),
+        runcall
+      ))
+    }
+  )
 
   if (error_on_status && (is.na(res$status) || res$status != 0)) {
     stop(make_condition(res, call = sys.call()))
@@ -250,7 +261,18 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 }
 
 make_condition <- function(result, call) {
-  if (result$timeout) {
+
+  if (isTRUE(result$interrupt)) {
+    structure(
+      list(
+        message = "System command interrupted",
+        stderr = NULL,
+        call = call
+      ),
+      class = c("system_command_interrupt", "condition")
+    )
+
+  } else if (isTRUE(result$timeout)) {
     structure(
       list(
         message = "System command timeout",
