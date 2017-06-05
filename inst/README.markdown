@@ -11,7 +11,7 @@
 [![CRAN RStudio mirror downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
 [![Coverage Status](https://img.shields.io/codecov/c/github/r-pkgs/processx/master.svg)](https://codecov.io/github/r-pkgs/processx?branch=master)
 
-Portable tools to run system processes in the background,
+Tools to run system processes in the background,
 read their standard output and error, kill and restart them.
 
 `processx` can poll the standard output and error of a single process,
@@ -56,7 +56,7 @@ facilities, with a timeout.
 * Kill background process, when its associated object is garbage
   collected.
 * Restart background processes.
-* Portable, works on Linux, macOS and Windows.
+* Works on Linux, macOS and Windows.
 * Lightweight, it only depends on the also lightweight
   `R6`, `assertthat`, `crayon` and `debugme` packages.
 
