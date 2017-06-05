@@ -6,7 +6,10 @@ if (WINDOWS) {
   file.copy(progs, dest, overwrite = TRUE)
 }
 
-dlls <- paste0("processx", .Platform$dynlib.ext)
-dest <- file.path(R_PACKAGE_DIR, paste0("libs", R_ARCH))
+files <- Sys.glob(paste0("*", SHLIB_EXT))
+dest <- file.path(R_PACKAGE_DIR, paste0('libs', R_ARCH))
 dir.create(dest, recursive = TRUE, showWarnings = FALSE)
-file.copy(dlls, dest, overwrite = TRUE)
+file.copy(files, dest, overwrite = TRUE)
+if (file.exists("symbols.rds")) {
+  file.copy("symbols.rds", dest, overwrite = TRUE)
+}
