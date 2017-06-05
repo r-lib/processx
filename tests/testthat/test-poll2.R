@@ -5,7 +5,7 @@ test_that("single process", {
   cmd <- switch(
     os_type(),
     "unix" = "sleep 1; ls",
-    "ping -n 2 127.0.0.1 && dir /b"
+    paste0(sleep(1), " && dir /b")
   )
   p <- process$new(commandline = cmd, stdout = "|")
 
@@ -44,12 +44,12 @@ test_that("multiple processes", {
   cmd1 <- switch(
     os_type(),
     "unix" = "sleep 1; ls",
-    "ping -n 2 127.0.0.1 && dir /b"
+    paste0(sleep(1), " && dir /b")
   )
   cmd2 <- switch(
     os_type(),
     "unix" = "sleep 2; ls 1>&2",
-    "ping -n 2 127.0.0.1 && dir /b 1>&2"
+    paste0(sleep(1), " && dir /b 1>&2")
   )
 
   p1 <- process$new(commandline = cmd1, stdout = "|")

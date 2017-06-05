@@ -6,3 +6,6 @@
 /src/win/*.o
 /src/processx.so
 /src/processx.dll
+/src/wintools/*.exe
+/src-i386
+/src-x64

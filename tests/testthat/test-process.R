@@ -3,7 +3,7 @@ context("process")
 
 test_that("process works", {
 
-  win  <- c("ping", "-n", "6", "127.0.0.1")
+  win  <- sleep(5, commandline = FALSE)
   unix <- c("sleep", "5")
   cmd <- if (os_type() == "windows") win else unix
 

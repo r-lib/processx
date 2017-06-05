@@ -18,13 +18,22 @@ try_silently <- function(expr) {
   )
 }
 
+get_wintool <- function(prog) {
+  exe <- system.file(package = "processx", "bin", .Platform$r_arch, prog)
+  if (exe == "") {
+    exe <- system.file(package = "processx", "..", "src", "wintools", prog)
+  }
+  exe
+}
+
 sleep <- function(n, commandline = TRUE) {
 
   if (os_type() == "windows") {
+    sleepexe <- get_wintool("sleep.exe")
     if (commandline) {
-      paste("ping -n", n + 1L, "127.0.0.1 > NUL")
+      paste(sleepexe, n)
     } else {
-      c("ping", "-n", as.character(n + 1L), "127.0.0.1")
+      c(sleepexe, as.character(n))
     }
 
   } else {

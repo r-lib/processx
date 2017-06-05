@@ -14,9 +14,10 @@ test_that("run can run, windows", {
 
   skip_other_platforms("windows")
 
-  expect_silent(
-    run("ping", c("-n", "1", "127.0.0.1"))
-  )
+  expect_silent({
+    cmd <- sleep(0, commandline = FALSE)
+    run(cmd[1], cmd[-1])
+  })
 })
 
 test_that("timeout works, unix", {

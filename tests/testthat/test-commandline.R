@@ -16,7 +16,7 @@ test_that("One of command & commandline or error", {
 
 test_that("'commandline' works", {
 
-  win  <- "(echo kuku) && (>&2 echo kuku2) && (ping -n 2 127.0.0.1 > NUL)"
+  win  <- paste0("(echo kuku) && (>&2 echo kuku2) && (", sleep(2), ")")
   unix <- "echo kuku; >&2 echo kuku2; sleep 1"
 
   p <- process$new(

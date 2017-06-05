@@ -1,7 +1,12 @@
 
 OBJECTS = init.o win/poll.o win/processx.o win/stdio.o
 
-all: clean
+.PHONY: all clean
+
+all: wintools/sleep.exe $(SHLIB)
+
+wintools/sleep.exe: wintools/sleep.c
+	$(CC) $(CFLAGS) -Wall $< -o $@
 
 clean:
-	rm -f $(SHLIB) $(OBJECTS)
+	rm -f $(SHLIB) $(OBJECTS) wintools/sleep.exe

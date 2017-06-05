@@ -2,7 +2,7 @@
 context("poll")
 
 test_that("polling for output available", {
-  cmd <- if (os_type() == "unix") "sleep 1; ls" else "ping -n 2 127.0.0.1 && dir /b"
+  cmd <- if (os_type() == "unix") "sleep 1; ls" else paste0(sleep(1), " && dir /b")
   p <- process$new(commandline = cmd, stdout = "|")
 
   ## Timeout
@@ -25,7 +25,7 @@ test_that("polling for stderr", {
   cmd <- if (os_type() == "unix") {
     "sleep 1; ls 1>&2"
   } else {
-    "ping -n 2 127.0.0.1 && dir /b 1>&2"
+    paste0(sleep(1), " && dir /b 1>&2")
   }
   p <- process$new(commandline = cmd, stderr = "|")
 
@@ -50,7 +50,7 @@ test_that("polling for both stdout and stderr", {
   cmd <- if (os_type() == "unix") {
     "sleep 1; ls 1>&2; ls"
   } else {
-    "ping -n 2 127.0.0.1 && dir /b 1>&2 && dir /b"
+    paste0(sleep(1), " && dir /b 1>&2 && dir /b")
   }
 
   p <- process$new(commandline = cmd, stdout = "|", stderr = "|")
