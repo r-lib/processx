@@ -76,11 +76,11 @@ SEXP processx__killem_all() {
     int wp, wstat;
 
     if (handle && handle->cleanup) {
-      killed++;
-      kill(ptr->pid, SIGKILL);
+      int ret = kill(ptr->pid, SIGKILL);
       do {
 	wp = waitpid(ptr->pid, &wstat, 0);
       } while (wp == -1 && errno == EINTR);
+      if (ret == 0) killed++;
     }
 
     R_ClearExternalPtr(status);
