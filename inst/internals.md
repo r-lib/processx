@@ -49,7 +49,7 @@ over the pipe.
 
 The child process closes all file descriptors above 3, because they
 can cause hangs in RStudio and elsewhere.
-See https://github.com/r-pkgs/processx/issues/52
+See https://github.com/r-lib/processx/issues/52
 
 ### The handle
 
@@ -118,7 +118,7 @@ about SIGCHLD, except for the fork type clusters in the `parallel` package.
 This package defines its own SIGCHLD handler, which removes the one
 installed by `processx`. This means that `processx` cannot be used
 together with `parallel` fork clusters. We will probably improve this
-later, see https://github.com/r-pkgs/processx/issues/45
+later, see https://github.com/r-lib/processx/issues/45
 
 ### Finalizer
 
@@ -333,7 +333,7 @@ directly.
 
 The `buffer`, `buffer_size` and `buffer_end` implement buffering and
 will be probably eliminated in the future.
-See https://github.com/r-pkgs/processx/issues/57
+See https://github.com/r-lib/processx/issues/57
 
 Here is the story for why we have buffering. For async reading from a file,
 I mostly followed the example at
@@ -381,7 +381,7 @@ While it does not details what errors might happen, and we have never seen
 actually seen any such errors, this is a hint that if we set this argument
 to `NULL`, then we can force `ReadFile` to be asyncronous and not return
 any data. We already use this in `processx`, but the buffers have not been
-eliminated yet, unless https://github.com/r-pkgs/processx/issues/57
+eliminated yet, unless https://github.com/r-lib/processx/issues/57
 states otherwise.
 
 `read_pending` is true (non-zero) if there is a pending read on the file.
@@ -427,4 +427,4 @@ and check for interrupts.
 This does not seem to be a problem on windows, so we don't do anything
 special here. Still in the future we will implement a procedure that
 kills processes on unload, similarly to Unix:
-https://github.com/r-pkgs/processx/issues/58
+https://github.com/r-lib/processx/issues/58

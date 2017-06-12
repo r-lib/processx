@@ -12,11 +12,11 @@ knitr::opts_chunk$set(
 
 > Execute and Control System Processes
 
-[![Linux Build Status](https://travis-ci.org/r-pkgs/processx.svg?branch=master)](https://travis-ci.org/r-pkgs/processx)
+[![Linux Build Status](https://travis-ci.org/r-lib/processx.svg?branch=master)](https://travis-ci.org/r-lib/processx)
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/15sfg3l9mm4aseyf/branch/master?svg=true)](https://ci.appveyor.com/project/gaborcsardi/processx)
 [![](https://www.r-pkg.org/badges/version/processx)](https://www.r-pkg.org/pkg/processx)
 [![CRAN RStudio mirror downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
-[![Coverage Status](https://img.shields.io/codecov/c/github/r-pkgs/processx/master.svg)](https://codecov.io/github/r-pkgs/processx?branch=master)
+[![Coverage Status](https://img.shields.io/codecov/c/github/r-lib/processx/master.svg)](https://codecov.io/github/r-lib/processx?branch=master)
 
 Tools to run system processes in the background,
 read their standard output and error, kill and restart them.
@@ -70,7 +70,7 @@ facilities, with a timeout.
 ## Installation
 
 ```{r eval = FALSE}
-source("https://install-github.me/r-pkgs/processx")
+source("https://install-github.me/r-lib/processx")
 ```
 
 ## Usage
