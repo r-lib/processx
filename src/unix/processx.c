@@ -92,7 +92,7 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
 
   /* stderr, to file or a pipe */
 
-  if (!stderr) {
+  if (!std_err) {
     fd2 = open("/dev/null", O_RDWR);
   } else if (!strcmp(std_err, "|")) {
     fd2 = pipes[2][1];
