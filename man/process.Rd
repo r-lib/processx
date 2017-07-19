@@ -14,8 +14,8 @@ streams. The process id is then used to manage the process.
 
 \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
                  stdout = TRUE, stderr = TRUE, cleanup = TRUE,
-                 echo_cmd = FALSE, windows_verbatim_args = FALSE,
-                 windows_hide_window = FALSE)
+                 echo_cmd = FALSE, supervise = FALSE,
+                 windows_verbatim_args = FALSE, windows_hide_window = FALSE)
 
 p$is_alive()
 p$signal(signal)
@@ -71,6 +71,9 @@ R connection for it.}
 if the \code{process} object is garbage collected.}
 \item{echo_cmd}{Whether to print the command to the screen before
 running it.}
+\item{supervise}{Whether to register the process with a supervisor.
+If \code{TRUE}, the supervisor will ensure that the process is
+killed when the R process exits.}
 \item{windows_verbatim_args}{Whether to omit quoting the arguments
 on Windows. It is ignored on other platforms.}
 \item{windows_hide_window}{Whether to hide the application's window
@@ -121,6 +124,15 @@ finished and \code{NULL} otherwise.
 
 \code{$get_start_time()} returns the time when the process was
 started.
+
+\code{$is_supervised()} returns whether the process is being tracked by
+supervisor process.
+
+\code{$supervise()} if passed \code{TRUE}, tells the supervisor to start
+tracking the process. If \code{FALSE}, tells the supervisor to stop
+tracking the process. Note that even if the supervisor is disabled for a
+process, if it was started with \code{cleanup=TRUE}, the process will
+still be killed when the object is garbage collected.
 
 \code{$read_output_lines()} reads from standard output connection of
 the process. If the standard output connection was not requested, then

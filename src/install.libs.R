@@ -1,10 +1,14 @@
 
-if (WINDOWS) {
-  progs <- file.path("wintools", "sleep.exe")
-  dest <- file.path(R_PACKAGE_DIR, paste0("bin", R_ARCH))
-  dir.create(dest, recursive = TRUE, showWarnings = FALSE)
-  file.copy(progs, dest, overwrite = TRUE)
+progs <- if (WINDOWS) {
+  c(file.path("wintools", "sleep.exe"),
+    file.path("supervisor", "supervisor.exe"))
+} else {
+  file.path("supervisor", "supervisor")
 }
+
+dest <- file.path(R_PACKAGE_DIR, paste0("bin", R_ARCH))
+dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+file.copy(progs, dest, overwrite = TRUE)
 
 files <- Sys.glob(paste0("*", SHLIB_EXT))
 dest <- file.path(R_PACKAGE_DIR, paste0('libs', R_ARCH))

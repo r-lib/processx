@@ -10,13 +10,14 @@
 #' @param stderr Standard error, FALSE to ignore, TRUE for temp file.
 #' @param cleanup Kill on GC?
 #' @param echo_cmd Echo command before starting it?
+#' @param supervise Should the process be supervised?
 #'
 #' @keywords internal
 #' @importFrom utils head tail
 
 process_initialize <- function(self, private, command, args,
                                commandline, stdout, stderr, cleanup,
-                               echo_cmd, windows_verbatim_args,
+                               echo_cmd, supervise, windows_verbatim_args,
                                windows_hide_window) {
 
   "!DEBUG process_initialize `command`"
@@ -84,6 +85,11 @@ process_initialize <- function(self, private, command, args,
   ## Store the output and error files, we'll open them later if needed
   private$stdout <- stdout
   private$stderr <- stderr
+
+  if (supervise) {
+    supervisor_watch_pid(self$get_pid())
+    private$supervised <- TRUE
+  }
 
   invisible(self)
 }

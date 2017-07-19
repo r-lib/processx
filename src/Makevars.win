@@ -1,12 +1,16 @@
-
-OBJECTS = init.o win/poll.o win/processx.o win/stdio.o
+OBJECTS = init.o win/poll.o win/processx.o win/stdio.o win/named_pipe.o
 
 .PHONY: all clean
 
-all: wintools/sleep.exe $(SHLIB)
+all: wintools/sleep.exe supervisor/supervisor.exe $(SHLIB)
 
 wintools/sleep.exe: wintools/sleep.c
 	$(CC) $(CFLAGS) -Wall $< -o $@
 
+supervisor/supervisor.exe: supervisor/*.c
+	$(CC) $(CFLAGS) supervisor/*.c -o supervisor/supervisor.exe
+
 clean:
-	rm -f $(SHLIB) $(OBJECTS) wintools/sleep.exe
+	rm -rf $(SHLIB) $(OBJECTS) \
+	    supervisor/supervisor supervisor/supervisor.dSYM \
+	    supervisor/supervisor.exe wintools/sleep.exe
