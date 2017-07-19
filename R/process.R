@@ -202,6 +202,7 @@ NULL
 
 process <- R6Class(
   "process",
+  cloneable = FALSE,
   public = list(
 
     initialize = function(command = NULL, args = character(),
