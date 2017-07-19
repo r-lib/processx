@@ -351,6 +351,7 @@ process_restart <- function(self, private) {
     private$pstderr,
     private$cleanup,
     private$echo_cmd,
+    private$supervised,
     private$windows_verbatim_args,
     private$windows_hide_window
   )
