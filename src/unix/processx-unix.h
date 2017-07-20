@@ -28,8 +28,8 @@ typedef struct processx_handle_s {
   int fd2;			/* readable */
   int waitpipe[2];		/* use it for wait() with timeout */
   int cleanup;
-  struct processx_conn_handle_s *stdout;
-  struct processx_conn_handle_s *stderr;
+  struct processx_conn_handle_s *std_out;
+  struct processx_conn_handle_s *std_err;
 } processx_handle_t;
 
 typedef struct processx_conn_handle_s {

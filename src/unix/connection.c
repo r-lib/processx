@@ -8,11 +8,11 @@ void processx__con_destroy(Rconnection con) {
     if (process) {
       if (process->fd1 == con->status) {
 	process->fd1 = -1;
-	process->stdout = NULL;
+	process->std_out = NULL;
       }
       if (process->fd2 == con->status) {
 	process->fd2 = -1;
-	process->stderr = NULL;
+	process->std_err = NULL;
       }
     }
   }
@@ -115,12 +115,12 @@ processx_conn_handle_t* processx__create_connection(
 void processx__create_connections(processx_handle_t *handle, SEXP private) {
 
   if (handle->fd1 >= 0) {
-    handle->stdout = processx__create_connection(handle, handle->fd1,
+    handle->std_out = processx__create_connection(handle, handle->fd1,
 						 "stdout_pipe", private);
   }
 
   if (handle->fd2 >= 0) {
-    handle->stderr = processx__create_connection(handle, handle->fd2,
+    handle->std_err = processx__create_connection(handle, handle->fd2,
 						 "stderr_pipe", private);
   }
 }

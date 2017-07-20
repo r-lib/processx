@@ -168,8 +168,8 @@ void processx__finalizer(SEXP status) {
      any more. */
 
   /* Let the connection(s) know that the process is gone */
-  if (handle->stdout) handle->stdout->process = NULL;
-  if (handle->stderr) handle->stderr->process = NULL;
+  if (handle->std_out) handle->std_out->process = NULL;
+  if (handle->std_err) handle->std_err->process = NULL;
 
   /* Deallocate memory */
   R_ClearExternalPtr(status);
