@@ -1,11 +1,15 @@
 
 process_get_output_connection <- function(self, private) {
   "!DEBUG process_get_output_connection `private$get_short_name()`"
+  if (is.null(private$stdout_pipe))
+    stop("stdout is not a pipe.")
   private$stdout_pipe
 }
 
 process_get_error_connection <- function(self, private) {
   "!DEBUG process_get_error_connection `private$get_short_name()`"
+  if (is.null(private$stderr_pipe))
+    stop("stderr is not a pipe.")
   private$stderr_pipe
 }
 
