@@ -141,6 +141,14 @@ error.
 \code{$read_error_lines()} is similar to \code{$read_output_lines}, but
 it reads from the standard error stream.
 
+\code{$has_output_connection()} returns \code{TRUE} if there is a connection
+object for standard output; in other words, if \code{stdout="|"}. It returns
+\code{FALSE} otherwise.
+
+\code{$has_error_connection()} returns \code{TRUE} if there is a connection
+object for standard error; in other words, if \code{stderr="|"}. It returns
+\code{FALSE} otherwise.
+
 \code{$get_output_connection()} returns a connection object, to the
 standard output stream of the process.
 

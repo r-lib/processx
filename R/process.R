@@ -136,6 +136,14 @@ NULL
 #' \code{$read_error_lines()} is similar to \code{$read_output_lines}, but
 #' it reads from the standard error stream.
 #'
+#' \code{$has_output_connection()} returns `TRUE` if there is a connection
+#' object for standard output; in other words, if `stdout="|"`. It returns
+#' `FALSE` otherwise.
+#'
+#' \code{$has_error_connection()} returns `TRUE` if there is a connection
+#' object for standard error; in other words, if `stderr="|"`. It returns
+#' `FALSE` otherwise.
+#'
 #' \code{$get_output_connection()} returns a connection object, to the
 #' standard output stream of the process.
 #'
@@ -275,6 +283,12 @@ process <- R6Class(
 
     is_incomplete_error = function()
       process_is_incompelete_error(self, private),
+
+    has_output_connection = function()
+      process_has_output_connection(self, private),
+
+    has_error_connection = function()
+      process_has_error_connection(self, private),
 
     get_output_connection = function()
       process_get_output_connection(self, private),

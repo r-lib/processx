@@ -1,14 +1,23 @@
+process_has_output_connection <- function(self, private) {
+  "!DEBUG process_has_output_connection `private$get_short_name()`"
+  !is.null(private$stdout_pipe)
+}
+
+process_has_error_connection <- function(self, private) {
+  "!DEBUG process_has_error_connection `private$get_short_name()`"
+  !is.null(private$stderr_pipe)
+}
 
 process_get_output_connection <- function(self, private) {
   "!DEBUG process_get_output_connection `private$get_short_name()`"
-  if (is.null(private$stdout_pipe))
+  if (!self$has_output_connection())
     stop("stdout is not a pipe.")
   private$stdout_pipe
 }
 
 process_get_error_connection <- function(self, private) {
   "!DEBUG process_get_error_connection `private$get_short_name()`"
-  if (is.null(private$stderr_pipe))
+  if (!self$has_error_connection())
     stop("stderr is not a pipe.")
   private$stderr_pipe
 }
