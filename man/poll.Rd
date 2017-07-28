@@ -46,10 +46,11 @@ connection was.
 \section{Known issues}{
 
 
-You cannot wait on the termination of a process directly. It is only
-signalled through the closed stdout and stderr pipes. This means that
-if both stdout and stderr are ignored or closed for a process, then you
-will not be notified when it exits.
+\code{poll()} cannot wait on the termination of a process directly. It is
+only signalled through the closed stdout and stderr pipes. This means
+that if both stdout and stderr are ignored or closed for a process,
+then you will not be notified when it exits. If you want to wait for
+just a single process to end, it can be done with the \code{$wait()} method.
 }
 
 \examples{
