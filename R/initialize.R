@@ -50,10 +50,10 @@ process_initialize <- function(self, private, command, args,
   private$windows_hide_window <- windows_hide_window
 
   if (isTRUE(stdout)) {
-    private$cleanfiles <- c(private$cleanfiles, stdout <- tempfile())
+    private$cleanfiles <- c(private$cleanfiles, stdout <- tempfile("process-stdout-"))
   }
   if (isTRUE(stderr)) {
-    private$cleanfiles <- c(private$cleanfiles, stderr <- tempfile())
+    private$cleanfiles <- c(private$cleanfiles, stderr <- tempfile("process-stderr-"))
   }
 
   if (is.null(command)) {
