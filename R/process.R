@@ -267,10 +267,10 @@ process <- R6Class(
       process_read_error_lines(self, private, ...),
 
     is_incomplete_output = function()
-      process_is_incompelete_output(self, private),
+      process_is_incomplete_output(self, private),
 
     is_incomplete_error = function()
-      process_is_incompelete_error(self, private),
+      process_is_incomplete_error(self, private),
 
     get_output_connection = function()
       process_get_output_connection(self, private),
