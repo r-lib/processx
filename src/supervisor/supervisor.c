@@ -38,6 +38,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <signal.h>
+#include <unistd.h>
 
 #ifdef WIN32
 #include "windows.h"

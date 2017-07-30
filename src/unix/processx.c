@@ -109,7 +109,6 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
   processx__nonblock_fcntl(fd1, 0);
   processx__nonblock_fcntl(fd2, 0);
 
-  max_fds = sysconf(_SC_OPEN_MAX);
   for (i = 3; i < error_fd; i++) {
     close(i);
   }
