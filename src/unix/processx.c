@@ -60,7 +60,7 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
 				 processx_options_t *options) {
 
   int fd0, fd1, fd2;
-  int max_fds, i;
+  int i;
 
   setsid();
 
