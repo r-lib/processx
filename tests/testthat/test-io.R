@@ -1,15 +1,26 @@
 
 context("io")
 
+test_that("Output and error are discarded by default", {
+
+  cmd <- if (os_type() == "windows") "dir /b /A" else "ls -A"
+
+  p <- process$new(commandline = cmd)
+  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+
+  expect_error(p$read_output_lines(n=1),  "not a pipe")
+  expect_error(p$read_all_output_lines(), "not a pipe")
+  expect_error(p$read_all_output(),       "not a pipe")
+  expect_error(p$read_error_lines(n=1),   "not a pipe")
+  expect_error(p$read_all_error_lines(),  "not a pipe")
+  expect_error(p$read_all_error(),        "not a pipe")
+})
+
 test_that("We can get the output", {
 
-  win  <- "dir /b /A"
-  unix <- "ls -A"
+  cmd <- if (os_type() == "windows") "dir /b /A" else "ls -A"
 
-  p <- process$new(
-    commandline = if (os_type() == "windows") win else unix,
-    stdout = "|", stderr = "|"
-  )
+  p <- process$new(commandline = cmd, stdout = "|", stderr = "|")
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   out <- sort(p$read_all_output_lines())

@@ -24,8 +24,8 @@ process_initialize <- function(self, private, command, args,
 
   assert_that(is_string_or_null(command))
   assert_that(is.character(args))
-  assert_that(is_flag_or_string(stdout))
-  assert_that(is_flag_or_string(stderr))
+  assert_that(is_string_or_null(stdout))
+  assert_that(is_string_or_null(stderr))
   assert_that(is_string_or_null(commandline))
   assert_that(is_flag(cleanup))
   assert_that(is_flag(echo_cmd))
@@ -49,13 +49,6 @@ process_initialize <- function(self, private, command, args,
   private$windows_verbatim_args <- windows_verbatim_args
   private$windows_hide_window <- windows_hide_window
 
-  if (isTRUE(stdout)) {
-    private$cleanfiles <- c(private$cleanfiles, stdout <- tempfile())
-  }
-  if (isTRUE(stderr)) {
-    private$cleanfiles <- c(private$cleanfiles, stderr <- tempfile())
-  }
-
   if (is.null(command)) {
     if (os_type() == "unix") {
       command <- "sh"
@@ -72,8 +65,6 @@ process_initialize <- function(self, private, command, args,
   }
 
   "!DEBUG process_initialize exec()"
-  if (isFALSE(stdout)) stdout <- NULL
-  if (isFALSE(stderr)) stderr <- NULL
   private$status <- .Call(
     c_processx_exec,
     command, c(command, args), stdout, stderr,

@@ -13,7 +13,7 @@ streams. The process id is then used to manage the process.
 \section{Usage}{
 
 \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
-                 stdout = TRUE, stderr = TRUE, cleanup = TRUE,
+                 stdout = NULL, stderr = NULL, cleanup = TRUE,
                  echo_cmd = FALSE, supervise = FALSE,
                  windows_verbatim_args = FALSE, windows_hide_window = FALSE)
 
@@ -60,13 +60,11 @@ On Windows it uses the \code{cmd} shell:
 \code{cmd /c <commandline>}. If you want more control, then call
 your chosen shell directly.}
 \item{stdout}{What to do with the standard output. Possible values:
-\code{FALSE}: discard it; a string, redirect it to this file,
-\code{TRUE}: redirect it to a temporary file, \code{"|"}: create an
-R connection for it.}
+\code{NULL}: discard it; a string, redirect it to this file,
+\code{"|"}: create an R connection for it.}
 \item{stderr}{What to do with the standard error. Possible values:
-\code{FALSE}: discard it; a string, redirect it to this file,
-\code{TRUE}: redirect it to a temporary file, \code{"|"}: create an
-R connection for it.}
+\code{NULL}: discard it; a string, redirect it to this file,
+\code{"|"}: create an R connection for it.}
 \item{cleanup}{Whether to kill the process (and its children)
 if the \code{process} object is garbage collected.}
 \item{echo_cmd}{Whether to print the command to the screen before
@@ -136,10 +134,20 @@ still be killed when the object is garbage collected.
 
 \code{$read_output_lines()} reads from standard output connection of
 the process. If the standard output connection was not requested, then
-then it returns an error. It uses a non-blocking text connection.
+then it returns an error. It uses a non-blocking text connection. This
+will work only if \code{stdout="|"} was used. Otherwise, it will throw an
+error.
 
 \code{$read_error_lines()} is similar to \code{$read_output_lines}, but
 it reads from the standard error stream.
+
+\code{$has_output_connection()} returns \code{TRUE} if there is a connection
+object for standard output; in other words, if \code{stdout="|"}. It returns
+\code{FALSE} otherwise.
+
+\code{$has_error_connection()} returns \code{TRUE} if there is a connection
+object for standard error; in other words, if \code{stderr="|"}. It returns
+\code{FALSE} otherwise.
 
 \code{$get_output_connection()} returns a connection object, to the
 standard output stream of the process.
@@ -159,25 +167,29 @@ process exited). It return \code{TRUE} otherwise.
 It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several \code{readLines()} calls.
-It returns a character scalar.
+It returns a character scalar. This will return content only if
+\code{stdout="|"} was used. Otherwise, it will throw an error.
 
 \code{$read_all_error()} waits for all standard error from the process.
 It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several \code{readLines()} calls.
-It returns a character scalar.
+It returns a character scalar. This will return content only if
+\code{stderr="|"} was used. Otherwise, it will throw an error.
 
 \code{$read_all_output_lines()} waits for all standard output lines
 from a process. It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several \code{readLines()} calls.
-It returns a character vector.
+It returns a character vector. This will return content only if
+\code{stdout="|"} was used. Otherwise, it will throw an error.
 
 \code{$read_all_error_lines()} waits for all standard error lines from
 a process. It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several \code{readLines()} calls.
-It returns a character vector.
+It returns a character vector. This will return content only if
+\code{stderr="|"} was used. Otherwise, it will throw an error.
 
 \code{$poll_io()} polls the process's connections for I/O. See more in
 the \emph{Polling} section, and see also the \code{\link{poll}} function

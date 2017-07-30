@@ -19,10 +19,11 @@
 #'
 #' @section Known issues:
 #'
-#' You cannot wait on the termination of a process directly. It is only
-#' signalled through the closed stdout and stderr pipes. This means that
-#' if both stdout and stderr are ignored or closed for a process, then you
-#' will not be notified when it exits.
+#' `poll()` cannot wait on the termination of a process directly. It is
+#' only signalled through the closed stdout and stderr pipes. This means
+#' that if both stdout and stderr are ignored or closed for a process,
+#' then you will not be notified when it exits. If you want to wait for
+#' just a single process to end, it can be done with the `$wait()` method.
 #'
 #' @param processes A list of `process` objects to wait on. If this is a
 #'   named list, then the returned list will have the same names. This
@@ -80,8 +81,18 @@ poll <- function(processes, ms) {
   statuses <- lapply(processes, function(p) {
     p$.__enclos_env__$private$status
   })
-  std_outs <- lapply(processes, function(p) p$get_output_connection())
-  std_errs <- lapply(processes, function(p) p$get_error_connection())
+  std_outs <- lapply(processes, function(p) {
+    if (p$has_output_connection())
+      p$get_output_connection()
+    else
+      NULL
+  })
+  std_errs <- lapply(processes, function(p) {
+    if (p$has_error_connection())
+      p$get_error_connection()
+    else
+      NULL
+  })
 
   res <- lapply(
     .Call(c_processx_poll, statuses, as.integer(ms), std_outs, std_errs),
