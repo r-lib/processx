@@ -82,6 +82,14 @@ process_read_all_error_lines <- function(self, private, ...) {
   results
 }
 
+process_get_output_file <- function(self, private) {
+  private$stdout
+}
+
+process_get_error_file <- function(self, private) {
+  private$stderr
+}
+
 poll_codes <- c("nopipe", "ready", "timeout", "closed", "silent")
 
 process_poll_io <- function(self, private, ms) {
