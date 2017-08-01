@@ -30,6 +30,13 @@ test_that("full_path gives correct values", {
 test_that("full_path gives correct values, windows", {
   skip_other_platforms("windows")
 
+  # Backslash separators
+  expect_identical(full_path("f:\\a/b"), "f:/a/b")
+  expect_identical(full_path("a\\b"), file.path(getwd(), "a/b"))
+  expect_identical(full_path("a\\\\b"), file.path(getwd(), "a/b"))
+  expect_identical(full_path("\\\\a\\b"), "//a/b")
+  expect_identical(full_path("\\\\a/b/..\\c"), "//a/c")
+
   # Drives
   expect_identical(full_path("f:/a/b"), "f:/a/b")
   expect_identical(full_path("f:/a/b/../../.."), "f:/")

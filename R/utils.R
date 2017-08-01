@@ -33,7 +33,7 @@ last_char <- function(x) {
 # short names.
 #
 # On Windows, the returned path includes the drive ("C:") or network server
-# ("//myserver"). Only "/" is supported as a path separator (no backslashes).
+# ("//myserver").
 full_path <- function(path) {
   assert_that(is_string(path))
 
@@ -43,6 +43,8 @@ full_path <- function(path) {
   # If relative path, prepend current dir. On Windows, also record current
   # drive.
   if (is_windows()) {
+    path <- gsub("\\", "/", path, fixed = TRUE)
+
     if (grepl("^[a-zA-Z]:", path)) {
       drive <- substring(path, 1, 2)
       path <- substring(path, 3)
