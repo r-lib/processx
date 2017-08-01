@@ -21,7 +21,11 @@ test_that("full_path gives correct values", {
   expect_identical(full_path("/a/./b/../c"), file.path(drive, "a/c"))
 
   expect_identical(full_path("~nonexistent_user"), file.path(getwd(), "~nonexistent_user"))
-  expect_identical(full_path("~/a/../b"), path.expand("~/b"))
+  expect_identical(
+    full_path("~/a/../b"),
+    # On Windows, path.expand() can return a path with backslashes
+    gsub("\\", "/", path.expand("~/b"), fixed = TRUE)
+  )
 
   expect_identical(full_path("a//b"), file.path(getwd(), "a/b"))
   expect_identical(full_path("/a//b"), file.path(drive, "a/b"))
