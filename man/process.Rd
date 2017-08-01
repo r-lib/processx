@@ -191,6 +191,14 @@ polling for I/O and potentically several \code{readLines()} calls.
 It returns a character vector. This will return content only if
 \code{stderr="|"} was used. Otherwise, it will throw an error.
 
+\code{$get_output_file()} if the \code{stdout} argument was a filename,
+this returns the absolute path to the file. If \code{stdout} was \code{"|"} or
+\code{NULL}, this simply returns that value.
+
+\code{$get_error_file()} if the \code{stderr} argument was a filename,
+this returns the absolute path to the file. If \code{stderr} was \code{"|"} or
+\code{NULL}, this simply returns that value.
+
 \code{$poll_io()} polls the process's connections for I/O. See more in
 the \emph{Polling} section, and see also the \code{\link{poll}} function
 to poll on multiple processes.

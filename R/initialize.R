@@ -73,6 +73,11 @@ process_initialize <- function(self, private, command, args,
   )
   private$starttime <- Sys.time()
 
+  if (is.character(stdout) && stdout != "|")
+    stdout <- full_path(stdout)
+  if (is.character(stderr) && stderr != "|")
+    stderr <- full_path(stderr)
+
   ## Store the output and error files, we'll open them later if needed
   private$stdout <- stdout
   private$stderr <- stderr

@@ -186,6 +186,14 @@ NULL
 #' It returns a character vector. This will return content only if
 #' `stderr="|"` was used. Otherwise, it will throw an error.
 #'
+#' \code{$get_output_file()} if the `stdout` argument was a filename,
+#' this returns the absolute path to the file. If `stdout` was `"|"` or
+#' `NULL`, this simply returns that value.
+#'
+#' \code{$get_error_file()} if the `stderr` argument was a filename,
+#' this returns the absolute path to the file. If `stderr` was `"|"` or
+#' `NULL`, this simply returns that value.
+#'
 #' \code{$poll_io()} polls the process's connections for I/O. See more in
 #' the \emph{Polling} section, and see also the \code{\link{poll}} function
 #' to poll on multiple processes.
@@ -307,6 +315,12 @@ process <- R6Class(
 
     read_all_error_lines = function(...)
       process_read_all_error_lines(self, private, ...),
+
+    get_output_file = function()
+      process_get_output_file(self, private),
+
+    get_error_file = function()
+      process_get_error_file(self, private),
 
     poll_io = function(timeout)
       process_poll_io(self, private, timeout)
