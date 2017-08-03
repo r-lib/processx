@@ -113,7 +113,7 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
     close(i);
   }
   for (i = error_fd + 1; ; i++) {
-    if (-1 == close(i) && i > 15) break;
+    if (-1 == close(i) && i > 200) break;
   }
 
   execvp(command, args);
