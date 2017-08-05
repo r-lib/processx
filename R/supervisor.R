@@ -87,30 +87,37 @@ supervisor_start <- function() {
   p <- process$new(
     supervisor_path(),
     args = c("-p", Sys.getpid(), "-i", supervisor_info$stdin_file),
-    # Only need to get stdout on Windows, to check that supervisor is ready.
-    stdout = if (is_windows()) "|" else NULL,
+    stdout = "|",
     cleanup = FALSE,
     commandline = NULL
   )
 
-  if (is_windows()) {
-    # Wait for supervisor to emit the line "Ready", which indicates it is ready
-    # to receive information over the named pipe. This is needed on Windows
-    # because if we attempt to write to a named pipe before it's ready, it will
-    # throw an error.
-    ready <- FALSE
-    for (i in 1:50) {
-      lines <- p$read_output_lines()
-      if (any(lines == "Ready")) {
-        ready <- TRUE
-        break
-      }
-      Sys.sleep(0.1)
+  # Wait for supervisor to emit the line "Ready", which indicates it is ready
+  # to receive information.
+  ready <- FALSE
+  cur_time <- Sys.time()
+  end_time <- cur_time + 5
+  while (cur_time < end_time) {
+    p$poll_io(as.numeric(end_time - cur_time, units = "secs") * 1000)
+
+    if (!p$is_alive())
+      break
+
+    if (any(p$read_output_lines() == "Ready")) {
+      ready <- TRUE
+      break
     }
-    if (!ready) {
-      stop("processx supervisor was not ready after 5 seconds.")
-    }
+
+    cur_time <- Sys.time()
   }
+
+  if (p$is_alive())
+    close(p$get_output_connection())
+
+  # Two ways of reaching this: if process has died, or if it hasn't emitted
+  # "Ready" after 5 seconds.
+  if (!ready)
+    stop("processx supervisor was not ready after 5 seconds.")
 
   supervisor_info$pid <- p$get_pid()
 }
