@@ -520,6 +520,9 @@ void processx__finalizer(SEXP status) {
     WaitForSingleObject(handle->hProcess, INFINITE);
   }
 
+  if (handle->job) CloseHandle(handle->job);
+  handle->job = 0;
+
   /* Copy over pid and exit status */
   private = R_ExternalPtrTag(status);
   defineVar(install("exited"), ScalarLogical(1), private);
@@ -527,7 +530,6 @@ void processx__finalizer(SEXP status) {
   defineVar(install("exitcode"), ScalarInteger(handle->exitcode), private);
 
   if (handle->hProcess) CloseHandle(handle->hProcess);
-  if (handle->job) CloseHandle(handle->job);
   R_ClearExternalPtr(status);
   processx__handle_destroy(handle);
 }
@@ -550,6 +552,9 @@ SEXP processx__make_handle(SEXP private, int cleanup) {
 
 void processx__handle_destroy(processx_handle_t *handle) {
   if (!handle) return;
+  if (handle->pipes[0]) handle->pipes[0]->process = 0;
+  if (handle->pipes[1]) handle->pipes[1]->process = 0;
+  if (handle->pipes[2]) handle->pipes[2]->process = 0;
   if (handle->child_stdio_buffer) free(handle->child_stdio_buffer);
   free(handle);
 }

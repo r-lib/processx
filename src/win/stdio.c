@@ -179,6 +179,12 @@ void processx__con_destroy(Rconnection con) {
       handle->buffer = 0;
     }
   }
+  if (handle) {
+    processx_handle_t *process = handle->process;
+    if (process) process->pipes[handle->which] = 0;
+    free(handle);
+  }
+  con->private = 0;
 }
 
 size_t processx__con_read(void *target, size_t sz, size_t ni,
@@ -388,6 +394,8 @@ int processx__stdio_create(processx_handle_t *handle,
       err = processx__create_pipe(
         handle, &pipe->pipe, &CHILD_STDIO_HANDLE(buffer, i)
       );
+      pipe->process = handle;
+      pipe->which = i;
       if (err) { goto error; }
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FPIPE;
 
