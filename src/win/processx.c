@@ -528,24 +528,8 @@ void processx__finalizer(SEXP status) {
 
   if (handle->hProcess) CloseHandle(handle->hProcess);
   if (handle->job) CloseHandle(handle->job);
-  processx__handle_destroy(handle);
   R_ClearExternalPtr(status);
-}
-
-/* This is not strictly necessary, but we might as well do it.... */
-
-static void CALLBACK processx__exit_callback(void* data, BOOLEAN didTimeout) {
-  processx_handle_t *handle = (processx_handle_t *) data;
-  DWORD err, exitcode;
-
-  /* Still need to wait a bit, otherwise we might crash.... */
-  WaitForSingleObject(handle->hProcess, INFINITE);
-  err = GetExitCodeProcess(handle->hProcess, &exitcode);
-  if (!err) return;
-
-  if (handle->collected) return;
-  handle->exitcode = exitcode;
-  handle->collected = 1;
+  processx__handle_destroy(handle);
 }
 
 SEXP processx__make_handle(SEXP private, int cleanup) {
@@ -692,19 +676,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   dwerr = ResumeThread(info.hThread);
   if (dwerr == (DWORD) -1) PROCESSX_ERROR("resume thread", GetLastError());
   CloseHandle(info.hThread);
-
-  regerr = RegisterWaitForSingleObject(
-    &handle->waitObject,
-    handle->hProcess,
-    processx__exit_callback,
-    (void*) handle,
-    /* dwMilliseconds = */ INFINITE,
-    WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE);
-
-  if (!regerr) {
-    /* This also kills the process, in the finalizer */
-    PROCESSX_ERROR("register wait for process object", GetLastError());
-  }
 
   processx__stdio_destroy(handle->child_stdio_buffer);
   handle->child_stdio_buffer = NULL;
