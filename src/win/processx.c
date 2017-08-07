@@ -663,7 +663,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     /* lpStartupInfo =        */ &startup,
     /* lpProcessInformation = */ &info);
 
-  if (!err) { PROCESSX_ERROR("create process", err); }
+  if (!err) { PROCESSX_ERROR("create process", GetLastError()); }
 
   handle->hProcess = info.hProcess;
   handle->dwProcessId = info.dwProcessId;
