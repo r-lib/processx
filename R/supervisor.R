@@ -87,9 +87,37 @@ supervisor_start <- function() {
   p <- process$new(
     supervisor_path(),
     args = c("-p", Sys.getpid(), "-i", supervisor_info$stdin_file),
+    stdout = "|",
     cleanup = FALSE,
     commandline = NULL
   )
+
+  # Wait for supervisor to emit the line "Ready", which indicates it is ready
+  # to receive information.
+  ready <- FALSE
+  cur_time <- Sys.time()
+  end_time <- cur_time + 5
+  while (cur_time < end_time) {
+    p$poll_io(as.numeric(end_time - cur_time, units = "secs") * 1000)
+
+    if (!p$is_alive())
+      break
+
+    if (any(p$read_output_lines() == "Ready")) {
+      ready <- TRUE
+      break
+    }
+
+    cur_time <- Sys.time()
+  }
+
+  if (p$is_alive())
+    close(p$get_output_connection())
+
+  # Two ways of reaching this: if process has died, or if it hasn't emitted
+  # "Ready" after 5 seconds.
+  if (!ready)
+    stop("processx supervisor was not ready after 5 seconds.")
 
   supervisor_info$pid <- p$get_pid()
 }

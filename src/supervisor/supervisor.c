@@ -332,6 +332,9 @@ int main(int argc, char **argv) {
 
     #endif
 
+    printf("Ready\n");
+    fflush(stdout);
+
 
     // Register signal handler ------------------------------------------------
     #ifdef WIN32
