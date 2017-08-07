@@ -204,6 +204,8 @@ static SEXP processx__make_handle(SEXP private, int cleanup) {
 
 static void processx__handle_destroy(processx_handle_t *handle) {
   if (!handle) return;
+  if (handle->std_out) handle->std_out->process = 0;
+  if (handle->std_err) handle->std_err->process = 0;
   free(handle);
 }
 
