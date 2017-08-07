@@ -11,6 +11,9 @@ void processx__freelist_add(processx__child_list_t *ptr) {
   child_free_list->next = ptr;
 }
 
+/* This is not a race condition with the SIGCHLD handler, because this
+   function is only called with the handler blocked, from processx.c */
+
 void processx__freelist_free() {
   processx__child_list_t *ptr = child_free_list->next;
   while (ptr) {
