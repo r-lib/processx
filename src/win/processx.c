@@ -12,6 +12,10 @@ SEXP processx__killem_all() {
   return R_NilValue;
 }
 
+void R_init_processx_win() {
+  /* Nothing to do currently */
+}
+
 int uv_utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr) {
   int ws_len, r;
   WCHAR* ws;

@@ -3,10 +3,8 @@
 
 #include "processx.h"
 
-#ifndef _WIN32
+void R_init_processx_win();
 void R_init_processx_unix();
-#endif
-
 SEXP processx__killem_all();
 
 static const R_CallMethodDef callMethods[]  = {
@@ -32,7 +30,9 @@ void R_init_processx(DllInfo *dll) {
   R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
   R_forceSymbols(dll, TRUE);
-#ifndef _WIN32
+#ifdef _WIN32
+  R_init_processx_win();
+#else
   R_init_processx_unix();
 #endif
 }
