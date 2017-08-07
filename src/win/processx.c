@@ -512,7 +512,7 @@ void processx__finalizer(SEXP status) {
 
   if (!handle) return;
 
-  if (handle->cleanup) {
+  if (handle->cleanup && !handle->collected) {
     /* Just in case it is running */
     if (handle->job) TerminateJobObject(handle->job, 1);
     err = TerminateProcess(handle->hProcess, 1);
