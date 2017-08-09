@@ -76,7 +76,7 @@ static int processx__create_output_handle(HANDLE *handle_ptr, const char *file,
   sa.bInheritHandle = TRUE;
   WCHAR *filew;
 
-  err = uv_utf8_to_utf16_alloc(file, &filew);
+  err = processx__utf8_to_utf16_alloc(file, &filew);
   if (err) return(err);
 
   handle = CreateFileW(

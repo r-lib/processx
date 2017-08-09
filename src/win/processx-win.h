@@ -34,7 +34,7 @@ typedef struct processx_handle_s {
 
 extern HANDLE processx__iocp;
 
-int uv_utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr);
+int processx__utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr);
 
 int processx__stdio_create(processx_handle_t *handle,
 			   const char *std_out, const char *std_err,
