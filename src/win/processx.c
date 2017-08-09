@@ -7,13 +7,62 @@
 
 #include <R_ext/Rdynload.h>
 
-SEXP processx__killem_all() {
-  /* TODO */
-  return R_NilValue;
+static HANDLE processx__global_job_handle = NULL;
+
+static void processx__init_global_job_handle(void) {
+  /* Create a job object and set it up to kill all contained processes when
+   * it's closed. Since this handle is made non-inheritable and we're not
+   * giving it to anyone, we're the only process holding a reference to it.
+   * That means that if this process exits it is closed and all the
+   * processes it contains are killed. All processes created with processx
+   * that are spawned without the cleanup flag are assigned to this job.
+   *
+   * We're setting the JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK flag so only
+   * the processes that we explicitly add are affected, and *their*
+   * subprocesses are not. This ensures that our child processes are not
+   * limited in their ability to use job control on Windows versions that
+   * don't deal with nested jobs (prior to Windows 8 / Server 2012). It
+   * also lets our child processes create detached processes without
+   * explicitly breaking away from job control (which processx_exec
+   * doesn't do, either). */
+
+  SECURITY_ATTRIBUTES attr;
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION info;
+
+  memset(&attr, 0, sizeof attr);
+  attr.bInheritHandle = FALSE;
+
+  memset(&info, 0, sizeof info);
+  info.BasicLimitInformation.LimitFlags =
+      JOB_OBJECT_LIMIT_BREAKAWAY_OK |
+      JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK |
+      JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION |
+      JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+
+  processx__global_job_handle = CreateJobObjectW(&attr, NULL);
+  if (processx__global_job_handle == NULL) {
+    PROCESSX_ERROR("Creating global job object", GetLastError());
+  }
+
+  if (!SetInformationJobObject(processx__global_job_handle,
+                               JobObjectExtendedLimitInformation,
+                               &info,
+                               sizeof info)) {
+    PROCESSX_ERROR("Setting up global job object", GetLastError());
+  }
 }
 
 void R_init_processx_win() {
   /* Nothing to do currently */
+}
+
+SEXP processx__killem_all() {
+  if (processx__global_job_handle) {
+    TerminateJobObject(processx__global_job_handle, 1);
+    CloseHandle(processx__global_job_handle);
+    processx__global_job_handle = NULL;
+  }
+  return R_NilValue;
 }
 
 int uv_utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr) {
@@ -514,14 +563,10 @@ void processx__finalizer(SEXP status) {
 
   if (handle->cleanup && !handle->collected) {
     /* Just in case it is running */
-    if (handle->job) TerminateJobObject(handle->job, 1);
     err = TerminateProcess(handle->hProcess, 1);
     if (err) processx__collect_exit_status(status, 1);
     WaitForSingleObject(handle->hProcess, INFINITE);
   }
-
-  if (handle->job) CloseHandle(handle->job);
-  handle->job = 0;
 
   /* Copy over pid and exit status */
   private = R_ExternalPtrTag(status);
@@ -578,7 +623,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   processx_handle_t *handle;
   int ccleanup = INTEGER(cleanup)[0];
   SEXP result;
-  BOOLEAN regerr;
   DWORD dwerr;
 
   options.windows_verbatim_args = LOGICAL(windows_verbatim_args)[0];
@@ -652,9 +696,23 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   startup.wShowWindow = options.windows_hide ? SW_HIDE : SW_SHOWDEFAULT;
 
   process_flags = CREATE_UNICODE_ENVIRONMENT |
-    CREATE_BREAKAWAY_FROM_JOB |
     CREATE_SUSPENDED |
     CREATE_NO_WINDOW;
+
+  if (!ccleanup) {
+    /* Note that we're not setting the CREATE_BREAKAWAY_FROM_JOB flag. That
+     * means that processx might not let you create a fully deamonized
+     * process when run under job control. However the type of job control
+     * that processx itself creates doesn't trickle down to subprocesses
+     * so they can still daemonize.
+     *
+     * A reason to not do this is that CREATE_BREAKAWAY_FROM_JOB makes the
+     * CreateProcess call fail if we're under job control that doesn't
+     * allow breakaway.
+     */
+
+    process_flags |= DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP;
+  }
 
   err = CreateProcessW(
     /* lpApplicationName =    */ application_path,
@@ -672,11 +730,29 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 
   handle->hProcess = info.hProcess;
   handle->dwProcessId = info.dwProcessId;
-  handle->job = CreateJobObject(NULL, NULL);
-  if (!handle->job) PROCESSX_ERROR("create job object", GetLastError());
 
-  regerr = AssignProcessToJobObject(handle->job, handle->hProcess);
-  if (!regerr) PROCESSX_ERROR("assign job to job object", GetLastError());
+  /* If the process isn't spawned as detached, assign to the global job */
+  /* object so windows will kill it when the parent process dies. */
+  if (!ccleanup) {
+    if (! processx__global_job_handle) processx__init_global_job_handle();
+
+    if (!AssignProcessToJobObject(processx__global_job_handle, info.hProcess)) {
+      /* AssignProcessToJobObject might fail if this process is under job
+       * control and the job doesn't have the
+       * JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK flag set, on a Windows
+       * version that doesn't support nested jobs.
+       *
+       * When that happens we just swallow the error and continue without
+       * establishing a kill-child-on-parent-exit relationship, otherwise
+       * there would be no way for R/processx applications run under job
+       * control to spawn processes at all.
+       */
+      DWORD err = GetLastError();
+      if (err != ERROR_ACCESS_DENIED) {
+	PROCESSX_ERROR("Assign to job object", err);
+      }
+    }
+  }
 
   dwerr = ResumeThread(info.hThread);
   if (dwerr == (DWORD) -1) PROCESSX_ERROR("resume thread", GetLastError());
@@ -788,8 +864,6 @@ SEXP processx_signal(SEXP status, SEXP signal) {
     }
 
     if (exitcode == STILL_ACTIVE) {
-      TerminateJobObject(handle->job, 1);
-      handle->job = NULL;
       err = TerminateProcess(handle->hProcess, 1);
       if (err) {
 	processx__collect_exit_status(status, 1);
