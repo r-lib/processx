@@ -1,7 +1,7 @@
 Package: processx
 Title: Execute and Control System Processes
 Version: 2.1.0
-Author: Gábor Csárdi
+Author: Gábor Csárdi, Winston Chang
 Maintainer: Gábor Csárdi <csardi.gabor@gmail.com>
 Description: Tools to run system processes in the background.
     It can check if a background process is running; wait on a background
