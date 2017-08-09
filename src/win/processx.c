@@ -628,7 +628,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   options.windows_verbatim_args = LOGICAL(windows_verbatim_args)[0];
   options.windows_hide = LOGICAL(windows_hide)[0];
 
-  err = processx_utf8_to_utf16_alloc(CHAR(STRING_ELT(command, 0)), &application);
+  err = processx__utf8_to_utf16_alloc(CHAR(STRING_ELT(command, 0)),
+				      &application);
   if (err) { PROCESSX_ERROR("utf8 -> utf16 conversion", err); }
 
   err = processx__make_program_args(
