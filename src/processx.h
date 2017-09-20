@@ -3,6 +3,7 @@
 #define PROCESSX_H
 
 #include <Rinternals.h>
+#include "processx-connection.h"
 
 /* API from R */
 

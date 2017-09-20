@@ -172,7 +172,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 
   do_output <- function() {
 
-    newout <- readChar(proc$get_output_connection(), 2000)
+    newout <- proc$read_output(2000)
     if (length(newout) && nzchar(newout)) {
       if (!is.null(stdout_callback)) stdout_callback(newout, proc)
       stdout <<- paste0(stdout, newout)
@@ -188,7 +188,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
       }
     }
 
-    newerr <- readChar(proc$get_error_connection(), 2000)
+    newerr <- proc$read_error(2000)
     if (length(newerr) && nzchar(newerr)) {
       stderr <<- paste0(stderr, newerr)
       if (!is.null(stderr_callback)) stderr_callback(newerr, proc)
