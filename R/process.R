@@ -25,16 +25,18 @@ NULL
 #' p$restart()
 #' p$get_start_time()
 #'
-#' p$read_output_lines(...)
-#' p$read_error_lines(...)
+#' p$read_output(n = -1)
+#' p$read_error(n = -1)
+#' p$read_output_lines(n = -1)
+#' p$read_error_lines(n = -1)
 #' p$get_output_connection()
 #' p$get_error_connection()
 #' p$is_incomplete_output()
 #' p$is_incomplete_error()
 #' p$read_all_output()
 #' p$read_all_error()
-#' p$read_all_output_lines(...)
-#' p$read_all_error_lines(...)
+#' p$read_all_output_lines()
+#' p$read_all_error_lines()
 #'
 #' p$poll_io(timeout)
 #'
@@ -79,8 +81,7 @@ NULL
 #'   \item{grace}{Currently not used.}
 #'   \item{timeout}{Timeout in milliseconds, for the wait or the I/O
 #'     polling.}
-#'   \item{...}{Extra arguments are passed to the
-#'     \code{\link[base]{readLines}} function.}
+#'   \item{n}{Number of characters or lines to read.}
 #' }
 #'
 #' @section Details:
@@ -127,8 +128,17 @@ NULL
 #' process, if it was started with \code{cleanup=TRUE}, the process will
 #' still be killed when the object is garbage collected.
 #'
-#' \code{$read_output_lines()} reads from standard output connection of
-#' the process. If the standard output connection was not requested, then
+#' \code{$read_output()} reads from the standard output connection of the
+#' process. If the standard output connection was not requested, then
+#' then it returns an error. It uses a non-blocking text connection. This
+#' will work only if `stdout="|"` was used. Otherwise, it will throw an
+#' error.
+#'
+#' \code{$read_error()} is similar to \code{$read_output}, but it reads
+#' from the standard error stream.
+#'
+#' \code{$read_output_lines()} reads lines from standard output connection
+#' of the process. If the standard output connection was not requested, then
 #' then it returns an error. It uses a non-blocking text connection. This
 #' will work only if `stdout="|"` was used. Otherwise, it will throw an
 #' error.
@@ -280,11 +290,17 @@ process <- R6Class(
 
     ## Output
 
-    read_output_lines = function(...)
-      process_read_output_lines(self, private, ...),
+    read_output = function(n = -1)
+      process_read_output(self, private, n),
 
-    read_error_lines = function(...)
-      process_read_error_lines(self, private, ...),
+    read_error = function(n = -1)
+      process_read_error(self, private, n),
+
+    read_output_lines = function(n = -1)
+      process_read_output_lines(self, private, n),
+
+    read_error_lines = function(n = -1)
+      process_read_error_lines(self, private, n),
 
     is_incomplete_output = function()
       process_is_incompelete_output(self, private),
@@ -310,11 +326,11 @@ process <- R6Class(
     read_all_error = function()
       process_read_all_error(self, private),
 
-    read_all_output_lines = function(...)
-      process_read_all_output_lines(self, private, ...),
+    read_all_output_lines = function()
+      process_read_all_output_lines(self, private),
 
-    read_all_error_lines = function(...)
-      process_read_all_error_lines(self, private, ...),
+    read_all_error_lines = function()
+      process_read_all_error_lines(self, private),
 
     get_output_file = function()
       process_get_output_file(self, private),

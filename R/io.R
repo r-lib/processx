@@ -1,3 +1,4 @@
+
 process_has_output_connection <- function(self, private) {
   "!DEBUG process_has_output_connection `private$get_short_name()`"
   !is.null(private$stdout_pipe)
@@ -22,62 +23,77 @@ process_get_error_connection <- function(self, private) {
   private$stderr_pipe
 }
 
-process_read_output_lines <- function(self, private, ...) {
-  "!DEBUG process_read_output_lines `private$get_short_name()`"
-  readLines(process_get_output_connection(self, private), ...)
+process_read_output <- function(self, private, n) {
+  "!DEBUG process_read_output `private$get_short_name()`"
+  con <- process_get_output_connection(self, private)
+  .Call(c_processx_connection_read_chars, con, n)
 }
 
-process_read_error_lines <- function(self, private, ...) {
+process_read_error <- function(self, private, n) {
+  "!DEBUG process_read_error `private$get_short_name()`"
+  con <- process_get_error_connection(self, private)
+  .Call(c_processx_connection_read_chars, con, n)
+
+}
+
+process_read_output_lines <- function(self, private, n) {
+  "!DEBUG process_read_output_lines `private$get_short_name()`"
+  con <- process_get_output_connection(self, private)
+  .Call(c_processx_connection_read_lines, con, n)
+}
+
+process_read_error_lines <- function(self, private, n) {
   "!DEBUG process_read_error_lines `private$get_short_name()`"
-  readLines(process_get_error_connection(self, private), ...)
+  con <- process_get_error_connection(self, private)
+  .Call(c_processx_connection_read_lines, con, n)
 }
 
 process_is_incompelete_output <- function(self, private) {
-  isIncomplete(process_get_output_connection(self, private))
+  con <- process_get_output_connection(self, private)
+  ! .Call(c_processx_connection_is_eof, con)
 }
 
 process_is_incompelete_error <- function(self, private) {
-  isIncomplete(process_get_error_connection(self, private))
+  con <- process_get_error_connection(self, private)
+  ! .Call(c_processx_connection_is_eof, con)
 }
 
 process_read_all_output <- function(self, private) {
   self$wait()
-  con <- self$get_output_connection()
   result <- ""
   while (self$is_incomplete_output()) {
     self$poll_io(-1)
-    result <- paste0(result, readChar(con, 1024))
+    result <- paste0(result, self$read_output())
   }
   result
 }
 
 process_read_all_error <- function(self, private) {
   self$wait()
-  con <- self$get_error_connection()
   result <- ""
   while (self$is_incomplete_error()) {
     self$poll_io(-1)
-    result <- paste0(result, readChar(con, 1024))
+    result <- paste0(result, self$read_error())
   }
   result
 }
 
-process_read_all_output_lines <- function(self, private, ...) {
+process_read_all_output_lines <- function(self, private) {
   self$wait()
   results <- character()
   while (self$is_incomplete_output()) {
     self$poll_io(-1)
-    results <- c(results, self$read_output_lines(...))
+    results <- c(results, self$read_output_lines())
   }
   results
 }
 
-process_read_all_error_lines <- function(self, private, ...) {
+process_read_all_error_lines <- function(self, private) {
   self$wait()
   results <- character()
   while (self$is_incomplete_error()) {
     self$poll_io(-1)
-    results <- c(results, self$read_error_lines(...))
+    results <- c(results, self$read_error_lines())
   }
   results
 }
@@ -97,4 +113,10 @@ process_poll_io <- function(self, private, ms) {
                private$stdout_pipe, private$stderr_pipe)
 
   structure(poll_codes[res], names = c("output", "error"))
+}
+
+#' @export
+
+close.processx_connection <- function(con, ...) {
+  .Call(c_processx_connection_close, con)
 }
