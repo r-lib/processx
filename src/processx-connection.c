@@ -11,7 +11,6 @@
 /* Internal functions in this file */
 
 static void processx__connection_alloc(processx_connection_t *ccon);
-static int processx__connection_has_valid_chars(processx_connection_t *ccon);
 static ssize_t processx__connection_read(processx_connection_t *ccon);
 static ssize_t processx__find_newline(processx_connection_t *ccon,
 				      size_t start);
@@ -21,60 +20,23 @@ static void processx__connection_xfinalizer(SEXP con);
 static ssize_t processx__connection_to_utf8(processx_connection_t *ccon);
 
 /* Api from R */
-
-SEXP processx_connection_read_bin(SEXP con, SEXP bytes) {
-  processx_connection_t *ccon = R_ExternalPtrAddr(con);
-  size_t cbytes = asInteger(bytes);
-  ssize_t bytes_got;
-  SEXP result;
-
-  if (!ccon) error("Invalid connection object");
-  if (ccon->fd < 0) error("Invalid (uninitialized?) connection object");
-
-  /* Do we need to read at all? */
-  if (ccon->utf8_data_size == 0) processx__connection_read(ccon);
-
-  /* How much do have we got? */
-  bytes_got = cbytes < ccon->utf8_data_size ? cbytes : ccon->utf8_data_size;
-
-  /* OK, we have sg in the utf8 buf, copy it to the result */
-  result = PROTECT(allocVector(RAWSXP, bytes_got));
-  if (bytes_got > 0) {
-    memcpy(RAW(result), ccon->utf8, bytes_got);
-    ccon->utf8_data_size -= bytes_got;
-    memmove(ccon->utf8, ccon->utf8 + bytes_got, ccon->utf8_data_size);
-  }
-
-  UNPROTECT(1);
-  return result;
-}
+/* TODO: UTF-8 characters, not bytes! */
 
 SEXP processx_connection_read_chars(SEXP con, SEXP nchars) {
 
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
   SEXP result;
   int cn = asInteger(nchars);
-  int has_bytes;
-  int has_valid_chars;
   int should_read_more;
   size_t read_bytes;
 
   if (!ccon) error("Invalid connection object");
   if (ccon->fd < 0) error("Invalid (uninitialized?) connection object");
 
-  has_bytes = ccon->utf8_data_size;
-  has_valid_chars = processx__connection_has_valid_chars(ccon);
-  should_read_more = ! ccon->is_eof_ && ! has_valid_chars;
+  should_read_more = ! ccon->is_eof_ && ccon->utf8_data_size == 0;
+  if (should_read_more) read_bytes = processx__connection_read(ccon);
 
-  if (should_read_more) {
-    read_bytes = processx__connection_read(ccon);
-    if (read_bytes > 0) {
-      /* If there is sg new, then we try again */
-      has_valid_chars = processx__connection_has_valid_chars(ccon);
-    }
-  }
-
-  if (!has_valid_chars || cn == 0) return ScalarString(mkChar(""));
+  if (ccon->utf8_data_size == 0 || cn == 0) return ScalarString(mkChar(""));
 
   if (ccon->utf8_data_size < cn) cn = ccon->utf8_data_size;
   result = PROTECT(ScalarString(mkCharLen(ccon->utf8, cn)));
@@ -98,8 +60,11 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
   if (!ccon) error("Invalid connection object");
   if (ccon->fd < 0) error("Invalid (uninitialized?) connection object");
 
+  /* Read until a newline character shows up, or there is nothing more
+     to read (at least for now). */
   newline = processx__connection_read_until_newline(ccon);
 
+  /* Count the number of lines we got. */
   while (newline != -1 && lines_read < cn) {
     lines_read ++;
     newline = processx__find_newline(ccon, /* start = */ newline + 1);
@@ -107,7 +72,8 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
 
   /* If there is no newline at the end of the file, we still add the
      last line. */
-  if (ccon->is_eof_ && ccon->utf8_data_size != 0 &&
+  if (ccon->is_eof_raw_ && ccon->utf8_data_size != 0 &&
+      ccon->buffer_data_size == 0 &&
       ccon->utf8[ccon->utf8_data_size - 1] != '\n') {
     add_eof = 1;
   }
@@ -156,6 +122,7 @@ SEXP processx_connection_close(SEXP con) {
 SEXP processx_connection_new(processx_connection_t *con) {
   SEXP result, class;
   con->is_eof_  = 0;
+  con->is_eof_raw_ = 0;
 
   con->iconv_ctx = 0;
   con->fd = -1;
@@ -193,10 +160,6 @@ static void processx__connection_xfinalizer(SEXP con) {
   free(ccon);
 }
 
-static int processx__connection_has_valid_chars(processx_connection_t *ccon) {
-  return ccon->utf8_data_size > 0;
-}
-
 static ssize_t processx__find_newline(processx_connection_t *ccon,
 				     size_t start) {
 
@@ -215,7 +178,6 @@ static ssize_t processx__connection_read_until_newline
   char *ptr, *end;
 
   /* Make sure we try to have something, unless EOF */
-  if (ccon->is_eof_) return -1;
   if (ccon->utf8_data_size == 0) processx__connection_read(ccon);
   if (ccon->utf8_data_size == 0) return -1;
 
@@ -281,7 +243,11 @@ static void processx__connection_alloc(processx_connection_t *ccon) {
 static ssize_t processx__connection_read(processx_connection_t *ccon) {
   ssize_t todo, bytes_read;
 
-  if (ccon->is_eof_ && ccon->buffer_data_size == 0) return 0;
+  /* Nothing to read, nothing to convert to UTF8 */
+  if (ccon->is_eof_raw_ && ccon->buffer_data_size == 0) {
+    if (ccon->utf8_data_size == 0) ccon->is_eof_ = 1;
+    return 0;
+  }
 
   if (!ccon->buffer) processx__connection_alloc(ccon);
 
@@ -294,7 +260,11 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
 
   if (bytes_read == 0) {
     /* EOF */
-    ccon->is_eof_ = 1;
+    ccon->is_eof_raw_ = 1;
+    if (ccon->utf8_data_size == 0 && ccon->buffer_data_size == 0) {
+      ccon->is_eof_ = 1;
+    }
+
   } else if (bytes_read == -1 && errno == EAGAIN) {
     /* There is still data to read, potentially */
     bytes_read = 0;
