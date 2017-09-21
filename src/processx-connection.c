@@ -76,7 +76,6 @@ SEXP processx_connection_read_chars(SEXP con, SEXP nchars) {
 
   if (!has_valid_chars || cn == 0) return ScalarString(mkChar(""));
 
-  /* TODO: encoding, etc. */
   if (ccon->utf8_data_size < cn) cn = ccon->utf8_data_size;
   result = PROTECT(ScalarString(mkCharLen(ccon->utf8, cn)));
   ccon->utf8_data_size -= cn;
@@ -322,6 +321,7 @@ static ssize_t processx__connection_to_utf8(processx_connection_t *ccon) {
   size_t inbytesleft = ccon->buffer_data_size;
   size_t outbytesleft = ccon->utf8_allocated_size - ccon->utf8_data_size;
   size_t r, indone = 0, outdone = 0;
+  int moved = 0;
 
   inbuf = inbufold = ccon->buffer;
   outbuf = outbufold = ccon->utf8 + ccon->utf8_data_size;
@@ -333,20 +333,32 @@ static ssize_t processx__connection_to_utf8(processx_connection_t *ccon) {
   /* If nothing to do, or no space to do more, just return */
   if (inbytesleft == 0 || outbytesleft == 0) return 0;
 
-  r = Riconv(ccon->iconv_ctx, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+  while (!moved) {
+    r = Riconv(ccon->iconv_ctx, &inbuf, &inbytesleft, &outbuf,
+	       &outbytesleft);
+    moved = 1;
 
-  if (r == (size_t) -1) {
-    /* Error */
-    if (errno == E2BIG) {
-      /* Output buffer is full, that's fine, we try later */
+    if (r == (size_t) -1) {
+      /* Error */
+      if (errno == E2BIG) {
+	/* Output buffer is full, that's fine, we'll try later.
+	   Just use what we have done so far. */
 
-    } else if (errno == EILSEQ) {
-      /* Invalid characters in encoding */
-      /* TODO: how to handle this? */
+      } else if (errno == EILSEQ) {
+	/* Invalid characters in encoding, *inbuf points to the beginning
+	   of the invalid sequence. We can just try to remove this, and
+	   convert again? */
+	inbuf++; inbytesleft--;
+	if (inbytesleft > 0) moved = 0;
 
-    } else if (errno == EINVAL) {
-      /* Does not end with a complete multi-byte character */
-      /* This is fine, we'll handle it later. */
+      } else if (errno == EINVAL) {
+	/* Does not end with a complete multi-byte character */
+	/* This is fine, we'll handle it later, unless we are at the end */
+	if (ccon->is_eof_) {
+	  warning("Invalid multi-byte character at end of stream ignored");
+	  inbuf += inbytesleft; inbytesleft = 0;
+	}
+      }
     }
   }
 
