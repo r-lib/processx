@@ -11,6 +11,7 @@
 /* Internal functions in this file */
 
 static void processx__connection_alloc(processx_connection_t *ccon);
+static void processx__connection_realloc(processx_connection_t *ccon);
 static ssize_t processx__connection_read(processx_connection_t *ccon);
 static ssize_t processx__find_newline(processx_connection_t *ccon,
 				      size_t start);
@@ -18,17 +19,20 @@ static ssize_t processx__connection_read_until_newline(processx_connection_t
 						       *ccon);
 static void processx__connection_xfinalizer(SEXP con);
 static ssize_t processx__connection_to_utf8(processx_connection_t *ccon);
+static void processx__connection_find_utf_chars(processx_connection_t *ccon,
+						size_t max, size_t *chars,
+						size_t *bytes);
 
 /* Api from R */
-/* TODO: UTF-8 characters, not bytes! */
 
 SEXP processx_connection_read_chars(SEXP con, SEXP nchars) {
 
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
   SEXP result;
-  int cn = asInteger(nchars);
+  int cnchars = asInteger(nchars);
   int should_read_more;
   size_t read_bytes;
+  size_t utf8_chars, utf8_bytes;
 
   if (!ccon) error("Invalid connection object");
   if (ccon->fd < 0) error("Invalid (uninitialized?) connection object");
@@ -36,12 +40,18 @@ SEXP processx_connection_read_chars(SEXP con, SEXP nchars) {
   should_read_more = ! ccon->is_eof_ && ccon->utf8_data_size == 0;
   if (should_read_more) read_bytes = processx__connection_read(ccon);
 
-  if (ccon->utf8_data_size == 0 || cn == 0) return ScalarString(mkChar(""));
+  if (ccon->utf8_data_size == 0 || cnchars == 0) {
+    return ScalarString(mkChar(""));
+  }
 
-  if (ccon->utf8_data_size < cn) cn = ccon->utf8_data_size;
-  result = PROTECT(ScalarString(mkCharLen(ccon->utf8, cn)));
-  ccon->utf8_data_size -= cn;
-  memmove(ccon->utf8, ccon->utf8 + cn, ccon->utf8_data_size);
+  /* At at most cnchars characters from the UTF8 buffer */
+  processx__connection_find_utf_chars(ccon, cnchars, &utf8_chars,
+				      &utf8_bytes);
+
+  result = PROTECT(ScalarString(mkCharLenCE(ccon->utf8, utf8_bytes,
+					    CE_UTF8)));
+  ccon->utf8_data_size -= utf8_bytes;
+  memmove(ccon->utf8, ccon->utf8 + utf8_bytes, ccon->utf8_data_size);
 
   UNPROTECT(1);
   return result;
@@ -195,14 +205,14 @@ static ssize_t processx__connection_read_until_newline
     /* No newline, but EOF? */
     if (ccon->is_eof_) return -1;
 
-    /* Maybe we can read more, but might need a bigger utf8 */
-    if (ccon->utf8_data_size == ccon->utf8_allocated_size) {
+    /* Maybe we can read more, but might need a bigger utf8.
+     * The 8 bytes is definitely more than what we need for a UTF8
+     * character, and this makes sure that we don't stop just because
+     * no more UTF8 characters fit in the UTF8 buffer. */
+    if (ccon->utf8_data_size >= ccon->utf8_allocated_size - 8) {
       size_t ptrnum = ptr - ccon->utf8;
       size_t endnum = end - ccon->utf8;
-      void *nb = realloc(ccon->utf8, ccon->utf8_allocated_size * 1.2);
-      if (!nb) error("Cannot allocate memory for processx line");
-      ccon->utf8 = nb;
-      ccon->utf8_allocated_size = ccon->utf8_allocated_size * 1.2;
+      processx__connection_realloc(ccon);
       ptr = ccon->utf8 + ptrnum;
       end = ccon->utf8 + endnum;
     }
@@ -231,6 +241,16 @@ static void processx__connection_alloc(processx_connection_t *ccon) {
   }
   ccon->utf8_allocated_size = 64 * 1024;
   ccon->utf8_data_size = 0;
+}
+
+/* We only really need to re-alloc the UTF8 buffer, because the
+   other buffer is transient, even if there are no newline characters. */
+
+static void processx__connection_realloc(processx_connection_t *ccon) {
+  void *nb = realloc(ccon->utf8, ccon->utf8_allocated_size * 1.2);
+  if (!nb) error("Cannot allocate memory for processx line");
+  ccon->utf8 = nb;
+  ccon->utf8_allocated_size = ccon->utf8_allocated_size * 1.2;
 }
 
 /* Read as much as we can. This is the only function that explicitly
@@ -296,8 +316,7 @@ static ssize_t processx__connection_to_utf8(processx_connection_t *ccon) {
   inbuf = inbufold = ccon->buffer;
   outbuf = outbufold = ccon->utf8 + ccon->utf8_data_size;
 
-  /* If we this is the first time we are here.
-     TODO: we could also use a single instance. */
+  /* If we this is the first time we are here. */
   if (! ccon->iconv_ctx) ccon->iconv_ctx = Riconv_open("UTF-8", "");
 
   /* If nothing to do, or no space to do more, just return */
@@ -342,4 +361,48 @@ static ssize_t processx__connection_to_utf8(processx_connection_t *ccon) {
   }
 
   return outdone;
+}
+
+/* Try to get at max 'max' UTF8 characters from the buffer. Return the
+ * number of characters found, and also the corresponding number of
+ * bytes. */
+
+/* Number of additional bytes */
+static const unsigned char processx__utf8_length[] = {
+  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+  3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+  4,4,4,4,4,4,4,4,5,5,5,5,6,6,6,6 };
+
+static void processx__connection_find_utf_chars(processx_connection_t *ccon,
+						size_t max, size_t *chars,
+						size_t *bytes) {
+
+  char *ptr = ccon->utf8;
+  char *end = ccon->utf8 + ccon->utf8_data_size;
+  size_t length = ccon->utf8_data_size;
+  *chars = *bytes = 0;
+
+  while (max > 0 && ptr < end) {
+    int clen, c = (unsigned char) *ptr;
+
+    /* ASCII byte */
+    if (c < 128) {
+      (*chars) ++; (*bytes) ++; ptr++; max--; length--;
+      continue;
+    }
+
+    /* Catch some errors */
+    if (c <  0xc0) goto invalid;
+    if (c >= 0xfe) goto invalid;
+
+    clen = processx__utf8_length[c & 0x3f];
+    if (length < clen) goto invalid;
+    (*chars) ++; (*bytes) += clen; ptr += clen; max--; length -= clen;
+  }
+
+  return;
+
+ invalid:
+  error("Invalid UTF-8 string, internal error");
 }
