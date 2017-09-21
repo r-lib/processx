@@ -7,7 +7,8 @@
 #include <R_ext/Riconv.h>
 
 typedef struct processx_connection_s {
-  int is_eof_;
+  int is_eof_;			/* the UTF8 buffer */
+  int is_eof_raw_;		/* the raw file */
 
   void *iconv_ctx;
   int fd;			/* This is for simplicity */
@@ -23,9 +24,6 @@ typedef struct processx_connection_s {
 } processx_connection_t;
 
 /* API from R */
-
-/* Read a binary block from the connection */
-SEXP processx_connection_read_bin(SEXP con, SEXP bytes);
 
 /* Read characters in a given encoding from the connection. */
 SEXP processx_connection_read_chars(SEXP con, SEXP nchars);
