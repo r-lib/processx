@@ -16,6 +16,10 @@ typedef struct processx_connection_s {
   size_t buffer_allocated_size;
   size_t buffer_data_size;
 
+  char *utf8;
+  size_t utf8_allocated_size;
+  size_t utf8_data_size;
+
 } processx_connection_t;
 
 /* API from R */
