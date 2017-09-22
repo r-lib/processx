@@ -154,6 +154,27 @@ SEXP processx_connection_new(processx_connection_t *con) {
   return result;
 }
 
+/* Can we read? We can read immediately (without an actual device read) if
+ * 1. there is data in the UTF8 buffer, or
+ * 2. there is data in the raw buffer, and we are at EOF, or
+ * 3. there is data in the raw buffer, and we can convert it to UTF8.
+ */
+
+int processx__connection_ready(processx_connection_t *ccon) {
+  if (!ccon) return 0;
+  if (ccon->fd < 0) return 0;
+
+  if (ccon->utf8_data_size > 0) return 1;
+  if (ccon->buffer_data_size > 0 && ccon->is_eof_) return 1;
+  if (ccon->buffer_data_size > 0) {
+    processx__connection_to_utf8(ccon);
+    if (ccon->utf8_data_size > 0) return 1;
+    if (ccon->buffer_data_size > 0 && ccon->is_eof_) return 1;
+  }
+
+  return 0;
+}
+
 /* Internals ------------------------------------------------------------ */
 
 

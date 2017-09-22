@@ -42,4 +42,8 @@ SEXP processx_connection_close(SEXP con);
 /* Create connection object */
 SEXP processx_connection_new(processx_connection_t *con);
 
+/* Internal API (for now) */
+
+int processx__connection_ready(processx_connection_t *con);
+
 #endif

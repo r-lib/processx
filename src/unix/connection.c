@@ -5,39 +5,6 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-size_t processx__connection_read(processx_connection_t *con, void *buf,
-				 size_t toread) {
-
-  ssize_t num = read(con->fd, buf, toread);
-
-  if (num < 0 && errno == EAGAIN) {
-    /* Nothing to read from non-blocking connection */
-    return 0;
-
-  } else if (num < 0) {
-    error("Cannot read from connection: %s", strerror(errno));
-
-  } else if (num == 0) {
-    con->is_eof_ = 1;
-    return 0;
-
-  } else {
-    return (size_t) num;
-  }
-}
-
-void processx__connection_close(processx_connection_t *con) {
-  close(con->fd);
-}
-
-int processx__connection_is_eof(processx_connection_t *con) {
-  return con->is_eof_;
-}
-
-void processx__connection_finalizer(processx_connection_t *con) {
-  /* Try to close silently */
-  close(con->fd);
-}
 
 processx_conn_handle_t* processx__create_connection(
   processx_handle_t *handle,
@@ -59,6 +26,9 @@ processx_conn_handle_t* processx__create_connection(
   con->fd = fd;
 
   defineVar(install(membername), res, private);
+
+  conn_handle->process = handle;
+  conn_handle->conn = con;
 
   UNPROTECT(1);
   return conn_handle;

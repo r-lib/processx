@@ -34,7 +34,7 @@ typedef struct processx_handle_s {
 
 typedef struct processx_conn_handle_s {
   processx_handle_t *process;
-  char tail;
+  processx_connection_t *conn;
 } processx_conn_handle_t;
 
 char *processx__tmp_string(SEXP str, int i);
