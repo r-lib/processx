@@ -106,7 +106,7 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
 
   if (eol >= 0) {
     ccon->utf8_data_size -= eol + 1;
-    memmove(ccon->utf8, ccon->utf8 + eol + 1, eol + 1);
+    memmove(ccon->utf8, ccon->utf8 + eol + 1, ccon->utf8_data_size);
   }
 
   UNPROTECT(1);
@@ -215,7 +215,7 @@ static ssize_t processx__connection_read_until_newline
   /* We have sg in the utf8 at this point */
 
   ptr = ccon->utf8;
-  end = ccon->utf8 + ccon->utf8_data_size + 1;
+  end = ccon->utf8 + ccon->utf8_data_size;
   while (1) {
     ssize_t new_bytes;
     while (ptr < end && *ptr != '\n') ptr++;
