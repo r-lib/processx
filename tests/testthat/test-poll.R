@@ -71,3 +71,21 @@ test_that("polling for both stdout and stderr", {
   close(p$get_error_connection())
   expect_equal(p$poll_io(-1), c(output = "closed", error = "closed"))
 })
+
+test_that("multiple polls", {
+
+  skip_on_cran()
+  if (os_type() != "unix") skip("Only on Unix")
+
+  cmd <- "sleep 1; echo foo; sleep 1; echo bar"
+
+  p <- process$new(commandline = cmd, stdout = "|", stderr = "|")
+
+  out <- character()
+  while (p$is_alive()) {
+    p$poll_io(2000)
+    out <- c(out, p$read_output_lines())
+  }
+
+  expect_identical(out, c("foo", "bar"))
+})
