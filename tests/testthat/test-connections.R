@@ -3,7 +3,7 @@ context("Connections")
 
 test_that("lot of text", {
   if (os_type() != "unix") skip("Only Unix")
-  txt <- strrep("x", 10000)
+  txt <- strrep("x", 100000)
   cat(txt, file = tmp <- tempfile())
 
   p <- process$new("cat", tmp, stdout = "|")
@@ -16,7 +16,7 @@ test_that("UTF-8", {
   if (!l10n_info()$`UTF-8`) skip("Only on UTF-8 platforms")
   if (os_type() != "unix") skip("Only Unix")
 
-  txt <- strrep("\u2192", 10000)
+  txt <- strrep("\u2192", 100000)
   cat(txt, file = tmp <- tempfile())
 
   p <- process$new("cat", tmp, stdout = "|")
