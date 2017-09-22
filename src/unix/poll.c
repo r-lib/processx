@@ -1,6 +1,4 @@
 
-#ifndef _WIN32
-
 #include <Rinternals.h>
 
 #include <poll.h>
@@ -23,8 +21,13 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
   int idx = 0, num = 0, ret;
   SEXP result;
   int ptr1 = -1, ptr2 = -1;
+  int havedata = 0;
+  processx_connection_t *std_out = 0, *std_err = 0;
 
   if (!handle) { error("Internal processx error, handle already removed"); }
+
+  if (handle->std_out) std_out = handle->std_out->conn;
+  if (handle->std_err) std_err = handle->std_err->conn;
 
   if (handle->fd1 >= 0) {
     fds[idx].fd = handle->fd1;
@@ -45,6 +48,9 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
     INTEGER(result)[0] = PXNOPIPE;
   } else if (handle->fd1 < 0) {
     INTEGER(result)[0] = PXCLOSED;
+  } else if (std_out && processx__connection_ready(std_out)) {
+    INTEGER(result)[0] = PXREADY;
+    havedata = 1;
   } else {
     num++;
     INTEGER(result)[0] = PXSILENT;
@@ -53,9 +59,18 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
     INTEGER(result)[1] = PXNOPIPE;
   } else if (handle->fd2 < 0) {
     INTEGER(result)[1] = PXCLOSED;
+  } else if (std_err && processx__connection_ready(std_err)) {
+    INTEGER(result)[1] = PXREADY;
+    havedata = 1;
   } else {
     num++;
     INTEGER(result)[1] = PXSILENT;
+  }
+
+  /* Have something to read already? */
+  if (havedata) {
+    UNPROTECT(1);
+    return result;
   }
 
   /* Nothing to poll? */
@@ -95,6 +110,7 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
   int *ptr;
   SEXP result;
   int ret;
+  int havedata = 0;
 
   /* Count the number of FDs to listen on */
   for (i = 0; i < num_proc; i++) {
@@ -133,11 +149,18 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
     SEXP err = VECTOR_ELT(errors, i);
     SEXP status = VECTOR_ELT(statuses, i);
     processx_handle_t *handle = R_ExternalPtrAddr(status);
+    processx_connection_t *std_out = 0, *std_err = 0;
+    if (handle->std_out) std_out = handle->std_out->conn;
+    if (handle->std_err) std_err = handle->std_err->conn;
+
     SET_VECTOR_ELT(result, i, allocVector(INTSXP, 2));
     if (isNull(out)) {
       INTEGER(VECTOR_ELT(result, i))[0] = PXNOPIPE;
     } else if (!handle || handle->fd1 < 0) {
       INTEGER(VECTOR_ELT(result, i))[0] = PXCLOSED;
+    } else if (std_out && processx__connection_ready(std_out)) {
+      INTEGER(VECTOR_ELT(result, i))[0] = PXREADY;
+      havedata = 1;
     } else {
       INTEGER(VECTOR_ELT(result, i))[0] = PXSILENT;
     }
@@ -145,6 +168,9 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
       INTEGER(VECTOR_ELT(result, i))[1] = PXNOPIPE;
     } else if (!handle || handle->fd2 < 0) {
       INTEGER(VECTOR_ELT(result, i))[1] = PXCLOSED;
+    } else if (std_err && processx__connection_ready(std_err)) {
+      INTEGER(VECTOR_ELT(result, i))[1] = PXREADY;
+      havedata = 1;
     } else {
       INTEGER(VECTOR_ELT(result, i))[1] = PXSILENT;
     }
@@ -152,6 +178,12 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
 
   /* Poll, if there is anything to poll */
   if (num_fds == 0) {
+    UNPROTECT(1);
+    return result;
+  }
+
+  /* If one connection has something available in the buffer */
+  if (havedata) {
     UNPROTECT(1);
     return result;
   }
@@ -182,5 +214,3 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
   UNPROTECT(1);
   return result;
 }
-
-#endif
