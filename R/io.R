@@ -59,7 +59,6 @@ process_is_incompelete_error <- function(self, private) {
 }
 
 process_read_all_output <- function(self, private) {
-  self$wait()
   result <- ""
   while (self$is_incomplete_output()) {
     self$poll_io(-1)
@@ -69,7 +68,6 @@ process_read_all_output <- function(self, private) {
 }
 
 process_read_all_error <- function(self, private) {
-  self$wait()
   result <- ""
   while (self$is_incomplete_error()) {
     self$poll_io(-1)
@@ -79,7 +77,6 @@ process_read_all_error <- function(self, private) {
 }
 
 process_read_all_output_lines <- function(self, private) {
-  self$wait()
   results <- character()
   while (self$is_incomplete_output()) {
     self$poll_io(-1)
@@ -89,7 +86,6 @@ process_read_all_output_lines <- function(self, private) {
 }
 
 process_read_all_error_lines <- function(self, private) {
-  self$wait()
   results <- character()
   while (self$is_incomplete_error()) {
     self$poll_io(-1)
