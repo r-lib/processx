@@ -41,7 +41,7 @@ SEXP processx_connection_read_chars(SEXP con, SEXP nchars) {
   if (should_read_more) read_bytes = processx__connection_read(ccon);
 
   if (ccon->utf8_data_size == 0 || cnchars == 0) {
-    return ScalarString(mkChar(""));
+    return ScalarString(mkCharCE("", CE_UTF8));
   }
 
   /* At at most cnchars characters from the UTF8 buffer */
@@ -93,7 +93,7 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
     eol = processx__find_newline(ccon, newline + 1);
     SET_STRING_ELT(
       result, l,
-      mkCharLen(ccon->utf8 + newline + 1, eol - newline - 1));
+      mkCharLenCE(ccon->utf8 + newline + 1, eol - newline - 1, CE_UTF8));
     newline = eol;
   }
 
@@ -101,7 +101,7 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
     eol = ccon->utf8_data_size - 1;
     SET_STRING_ELT(
       result, l,
-      mkCharLen(ccon->utf8 + newline + 1, eol - newline));
+      mkCharLenCE(ccon->utf8 + newline + 1, eol - newline, CE_UTF8));
   }
 
   if (eol >= 0) {
