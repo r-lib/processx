@@ -364,7 +364,7 @@ static ssize_t processx__connection_to_utf8(processx_connection_t *ccon) {
       } else if (errno == EINVAL) {
 	/* Does not end with a complete multi-byte character */
 	/* This is fine, we'll handle it later, unless we are at the end */
-	if (ccon->is_eof_) {
+	if (ccon->is_eof_raw_) {
 	  warning("Invalid multi-byte character at end of stream ignored");
 	  inbuf += inbytesleft; inbytesleft = 0;
 	}
