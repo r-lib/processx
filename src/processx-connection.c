@@ -23,6 +23,16 @@ static void processx__connection_find_utf_chars(processx_connection_t *ccon,
 						size_t max, size_t *chars,
 						size_t *bytes);
 
+#ifdef _WIN32
+#define PROCESSX_CHECK_VALID_CONN(x) \
+  TODO
+#else
+#define PROCESSX_CHECK_VALID_CONN(x) do {				\
+    if (!x) error("Invalid connection object");				\
+    if ((x)->fd < 0) error("Invalid (uninitialized?) connection object"); \
+  } while (0)
+#endif
+
 /* Api from R */
 
 SEXP processx_connection_read_chars(SEXP con, SEXP nchars) {
@@ -34,8 +44,7 @@ SEXP processx_connection_read_chars(SEXP con, SEXP nchars) {
   size_t read_bytes;
   size_t utf8_chars, utf8_bytes;
 
-  if (!ccon) error("Invalid connection object");
-  if (ccon->fd < 0) error("Invalid (uninitialized?) connection object");
+  PROCESSX_CHECK_VALID_CONN(ccon);
 
   should_read_more = ! ccon->is_eof_ && ccon->utf8_data_size == 0;
   if (should_read_more) read_bytes = processx__connection_read(ccon);
@@ -67,8 +76,7 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
   int add_eof = 0;
   if (cn < 0) cn = 1000;
 
-  if (!ccon) error("Invalid connection object");
-  if (ccon->fd < 0) error("Invalid (uninitialized?) connection object");
+  PROCESSX_CHECK_VALID_CONN(ccon);
 
   /* Read until a newline character shows up, or there is nothing more
      to read (at least for now). */
@@ -122,8 +130,12 @@ SEXP processx_connection_is_eof(SEXP con) {
 SEXP processx_connection_close(SEXP con) {
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
   if (!ccon) error("Invalid connection object");
+#ifdef _WIN32
+  TODO
+#else
   if (ccon->fd >= 0) close(ccon->fd);
   ccon->fd = -1;
+#endif
   return R_NilValue;
 }
 
@@ -135,7 +147,12 @@ SEXP processx_connection_new(processx_connection_t *con) {
   con->is_eof_raw_ = 0;
 
   con->iconv_ctx = 0;
+
+#ifdef _WIN32
+  TODO
+#else
   con->fd = -1;
+#endif
 
   con->buffer = 0;
   con->buffer_allocated_size = 0;
@@ -162,7 +179,12 @@ SEXP processx_connection_new(processx_connection_t *con) {
 
 int processx__connection_ready(processx_connection_t *ccon) {
   if (!ccon) return 0;
+
+#ifdef _WIN32
+  TODO
+#else
   if (ccon->fd < 0) return 0;
+#endif
 
   if (ccon->utf8_data_size > 0) return 1;
   if (ccon->buffer_data_size > 0 && ccon->is_eof_) return 1;
@@ -281,6 +303,9 @@ static void processx__connection_realloc(processx_connection_t *ccon) {
    When this is called, the UTF8 buffer is probably empty, but the raw
    buffer might not be. */
 
+#ifdef _WIN32
+TODO
+#else
 static ssize_t processx__connection_read(processx_connection_t *ccon) {
   ssize_t todo, bytes_read;
 
@@ -324,6 +349,7 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
 
   return bytes_read;
 }
+#endif
 
 static ssize_t processx__connection_to_utf8(processx_connection_t *ccon) {
 
@@ -427,3 +453,5 @@ static void processx__connection_find_utf_chars(processx_connection_t *ccon,
  invalid:
   error("Invalid UTF-8 string, internal error");
 }
+
+#undef PROCESSX_CHECK_VALID_CONN
