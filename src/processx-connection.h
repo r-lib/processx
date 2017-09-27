@@ -11,7 +11,14 @@ typedef struct processx_connection_s {
   int is_eof_raw_;		/* the raw file */
 
   void *iconv_ctx;
-  int fd;			/* This is for simplicity */
+
+#ifdef _WIN32
+  HANDLE handle;
+  OVERLAPPED overlapped;
+  BOOLEAN read_pending;
+#else
+  int fd;
+#endif
 
   char* buffer;
   size_t buffer_allocated_size;
