@@ -48,7 +48,7 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
     INTEGER(result)[0] = PXNOPIPE;
   } else if (handle->fd1 < 0) {
     INTEGER(result)[0] = PXCLOSED;
-  } else if (std_out && processx__connection_ready(std_out)) {
+  } else if (std_out && processx_connection_ready(std_out)) {
     INTEGER(result)[0] = PXREADY;
     havedata = 1;
   } else {
@@ -59,7 +59,7 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
     INTEGER(result)[1] = PXNOPIPE;
   } else if (handle->fd2 < 0) {
     INTEGER(result)[1] = PXCLOSED;
-  } else if (std_err && processx__connection_ready(std_err)) {
+  } else if (std_err && processx_connection_ready(std_err)) {
     INTEGER(result)[1] = PXREADY;
     havedata = 1;
   } else {
@@ -158,7 +158,7 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
       INTEGER(VECTOR_ELT(result, i))[0] = PXNOPIPE;
     } else if (!handle || handle->fd1 < 0) {
       INTEGER(VECTOR_ELT(result, i))[0] = PXCLOSED;
-    } else if (std_out && processx__connection_ready(std_out)) {
+    } else if (std_out && processx_connection_ready(std_out)) {
       INTEGER(VECTOR_ELT(result, i))[0] = PXREADY;
       havedata = 1;
     } else {
@@ -168,7 +168,7 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
       INTEGER(VECTOR_ELT(result, i))[1] = PXNOPIPE;
     } else if (!handle || handle->fd2 < 0) {
       INTEGER(VECTOR_ELT(result, i))[1] = PXCLOSED;
-    } else if (std_err && processx__connection_ready(std_err)) {
+    } else if (std_err && processx_connection_ready(std_err)) {
       INTEGER(VECTOR_ELT(result, i))[1] = PXREADY;
       havedata = 1;
     } else {
