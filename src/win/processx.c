@@ -1,11 +1,12 @@
 
 #ifdef WIN32
 
+#include <R.h>
+#include <R_ext/Rdynload.h>
+
 #include <windows.h>
 
 #include "processx-win.h"
-
-#include <R_ext/Rdynload.h>
 
 static HANDLE processx__global_job_handle = NULL;
 
@@ -597,9 +598,6 @@ SEXP processx__make_handle(SEXP private, int cleanup) {
 
 void processx__handle_destroy(processx_handle_t *handle) {
   if (!handle) return;
-  if (handle->pipes[0]) handle->pipes[0]->process = 0;
-  if (handle->pipes[1]) handle->pipes[1]->process = 0;
-  if (handle->pipes[2]) handle->pipes[2]->process = 0;
   if (handle->child_stdio_buffer) free(handle->child_stdio_buffer);
   free(handle);
 }

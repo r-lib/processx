@@ -6,6 +6,10 @@
 #include <Rinternals.h>
 #include <R_ext/Riconv.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 typedef struct processx_connection_s {
   int is_eof_;			/* the UTF8 buffer */
   int is_eof_raw_;		/* the raw file */
@@ -49,8 +53,11 @@ SEXP processx_connection_close(SEXP con);
 /* Create connection object */
 SEXP processx_connection_new(processx_connection_t *con);
 
-/* Internal API (for now) */
+/* Start reading from async connection. This is needed for polling
+   on Windows */
+ssize_t processx_connection_start_read(processx_connection_t *con, int *result);
 
-int processx__connection_ready(processx_connection_t *con);
+/* Do we have some data to read? */
+int processx_connection_ready(processx_connection_t *con);
 
 #endif

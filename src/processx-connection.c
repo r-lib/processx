@@ -5,8 +5,16 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
-#include <sys/uio.h>
 #include <unistd.h>
+
+#ifndef _WIN32
+#include <sys/uio.h>
+#else
+#define PROCESSX_ERROR(m,c) processx__error((m),(c),__FILE__,__LINE__)
+void processx__error(const char *message, DWORD errorcode, const char *file, int line);
+#endif
+
+#include "processx.h"
 
 /* Internal functions in this file */
 
@@ -24,8 +32,10 @@ static void processx__connection_find_utf_chars(processx_connection_t *ccon,
 						size_t *bytes);
 
 #ifdef _WIN32
-#define PROCESSX_CHECK_VALID_CONN(x) \
-  TODO
+#define PROCESSX_CHECK_VALID_CONN(x) do {				   \
+    if (!x) error("Invalid connection object");				   \
+    if (!(x)->handle) error("Invalid (uninitialized?) connection object"); \
+  } while (0)
 #else
 #define PROCESSX_CHECK_VALID_CONN(x) do {				\
     if (!x) error("Invalid connection object");				\
@@ -41,13 +51,12 @@ SEXP processx_connection_read_chars(SEXP con, SEXP nchars) {
   SEXP result;
   int cnchars = asInteger(nchars);
   int should_read_more;
-  size_t read_bytes;
   size_t utf8_chars, utf8_bytes;
 
   PROCESSX_CHECK_VALID_CONN(ccon);
 
   should_read_more = ! ccon->is_eof_ && ccon->utf8_data_size == 0;
-  if (should_read_more) read_bytes = processx__connection_read(ccon);
+  if (should_read_more) processx__connection_read(ccon);
 
   if (ccon->utf8_data_size == 0 || cnchars == 0) {
     return ScalarString(mkCharCE("", CE_UTF8));
@@ -74,6 +83,7 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
   ssize_t newline, eol = -1, lines_read = 0;
   size_t l;
   int add_eof = 0;
+  int slashr;
   if (cn < 0) cn = 1000;
 
   PROCESSX_CHECK_VALID_CONN(ccon);
@@ -99,9 +109,10 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
   result = PROTECT(allocVector(STRSXP, lines_read + add_eof));
   for (l = 0, newline = -1; l < lines_read; l++) {
     eol = processx__find_newline(ccon, newline + 1);
+    slashr = ccon->utf8[eol - 1] == '\r';
     SET_STRING_ELT(
       result, l,
-      mkCharLenCE(ccon->utf8 + newline + 1, eol - newline - 1, CE_UTF8));
+      mkCharLenCE(ccon->utf8 + newline + 1, eol - newline - 1 - slashr, CE_UTF8));
     newline = eol;
   }
 
@@ -131,7 +142,10 @@ SEXP processx_connection_close(SEXP con) {
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
   if (!ccon) error("Invalid connection object");
 #ifdef _WIN32
-  TODO
+  if (ccon->handle) CloseHandle(ccon->handle);
+  ccon->handle = 0;
+  if (ccon->overlapped.hEvent) CloseHandle(ccon->overlapped.hEvent);
+  ccon->overlapped.hEvent = 0;
 #else
   if (ccon->fd >= 0) close(ccon->fd);
   ccon->fd = -1;
@@ -149,7 +163,9 @@ SEXP processx_connection_new(processx_connection_t *con) {
   con->iconv_ctx = 0;
 
 #ifdef _WIN32
-  TODO
+  con->handle = 0;
+  memset(&con->overlapped, 0, sizeof(OVERLAPPED));
+  con->read_pending = FALSE;
 #else
   con->fd = -1;
 #endif
@@ -171,17 +187,74 @@ SEXP processx_connection_new(processx_connection_t *con) {
   return result;
 }
 
+#ifdef _WIN32
+
+ssize_t processx_connection_start_read(processx_connection_t *ccon, int *result) {
+
+  DWORD bytes_read;
+  BOOLEAN res;
+  size_t todo;
+
+  if (result) *result = PXSILENT;
+
+  if (!ccon->handle) {
+    if (result) *result = PXCLOSED;
+    return 0;
+  }
+
+  if (ccon->read_pending) return 0;
+
+  if (!ccon->buffer) processx__connection_alloc(ccon);
+
+  todo = ccon->buffer_allocated_size - ccon->buffer_data_size;
+
+  ccon->overlapped.Offset = 0;
+  ccon->overlapped.OffsetHigh = 0;
+  res = ReadFile(
+    /* hfile = */                ccon->handle,
+    /* lpBuffer = */             ccon->buffer + ccon->buffer_data_size,
+    /* nNumberOfBytesToRead = */ todo,
+    /* lpNumberOfBytesRead = */  &bytes_read,
+    /* lpOverlapped = */         &ccon->overlapped);
+
+  if (!res) {
+    DWORD err = GetLastError();
+    if (err == ERROR_BROKEN_PIPE || err == ERROR_HANDLE_EOF) {
+      ccon->is_eof_raw_ = 1;
+      if (ccon->utf8_data_size == 0 && ccon->buffer_data_size == 0) {
+	ccon->is_eof_ = 1;
+	if (result) *result = PXREADY;
+      }
+    } else if (err == ERROR_IO_PENDING) {
+      ccon->read_pending = TRUE;
+    } else {
+      ccon->read_pending = FALSE;
+      PROCESSX_ERROR("reading from connection", err);
+    }
+  } else {
+    /* Returned synchronously. */
+    ccon->read_pending = FALSE;
+    if (result) *result = PXREADY;
+    ccon->buffer_data_size += bytes_read;
+    return (ssize_t) bytes_read;
+  }
+
+  return 0;
+}
+
+#endif
+
 /* Can we read? We can read immediately (without an actual device read) if
  * 1. there is data in the UTF8 buffer, or
  * 2. there is data in the raw buffer, and we are at EOF, or
  * 3. there is data in the raw buffer, and we can convert it to UTF8.
  */
 
-int processx__connection_ready(processx_connection_t *ccon) {
+int processx_connection_ready(processx_connection_t *ccon) {
   if (!ccon) return 0;
 
 #ifdef _WIN32
-  TODO
+  if (!ccon->handle) return 0;
 #else
   if (ccon->fd < 0) return 0;
 #endif
@@ -304,8 +377,69 @@ static void processx__connection_realloc(processx_connection_t *ccon) {
    buffer might not be. */
 
 #ifdef _WIN32
-TODO
+
+static ssize_t processx__connection_read(processx_connection_t *ccon) {
+  DWORD todo, bytes_read = 0;
+  BOOLEAN result;
+
+  /* Nothing to read, nothing to convert to UTF8 */
+  if (ccon->is_eof_raw_ && ccon->buffer_data_size == 0) {
+    if (ccon->utf8_data_size == 0) ccon->is_eof_ = 1;
+    return 0;
+  }
+
+  if (!ccon->buffer) processx__connection_alloc(ccon);
+
+  /* If cannot read anything more, then try to convert to UTF8 */
+  todo = ccon->buffer_allocated_size - ccon->buffer_data_size;
+  if (todo == 0) return processx__connection_to_utf8(ccon);
+
+  /* Otherwise we read. If there is no read pending, we start one. */
+  processx_connection_start_read(ccon, /* result = */ 0);
+
+  /* A read might be pending at this point. See if it has finished. */
+  if (ccon->read_pending) {
+    result = GetOverlappedResult(
+      /* hFile = */                      &ccon->handle,
+      /* lpOverlapped = */               &ccon->overlapped,
+      /* lpNumberOfBytesTransferred = */ &bytes_read,
+      /* bWait = */                      FALSE);
+
+    if (!result) {
+      DWORD err = GetLastError();
+      if (err == ERROR_BROKEN_PIPE || err == ERROR_HANDLE_EOF) {
+	ccon->read_pending = FALSE;
+	ccon->is_eof_raw_ = 1;
+	if (ccon->utf8_data_size == 0 && ccon->buffer_data_size == 0) {
+	  ccon->is_eof_ = 1;
+	}
+	bytes_read = 0;
+
+      } else if (err == ERROR_IO_INCOMPLETE) {
+
+      } else {
+	ccon->read_pending = FALSE;
+	PROCESSX_ERROR("getting overlapped result in connection read", err);
+	return 0;			/* never called */
+      }
+
+    } else {
+      ccon->read_pending = FALSE;
+    }
+  }
+
+  ccon->buffer_data_size += bytes_read;
+
+  /* If there is anything to convert to UTF8, try converting */
+  if (ccon->buffer_data_size > 0) {
+    bytes_read = processx__connection_to_utf8(ccon);
+  }
+
+  return bytes_read;
+}
+
 #else
+
 static ssize_t processx__connection_read(processx_connection_t *ccon) {
   ssize_t todo, bytes_read;
 

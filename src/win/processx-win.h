@@ -7,20 +7,6 @@
 
 #include "../processx.h"
 
-struct processx_handle_s;
-typedef struct processx_pipe_handle_s {
-  HANDLE pipe;
-  OVERLAPPED overlapped;
-  BYTE *buffer;
-  DWORD buffer_size;
-  BYTE *buffer_end;
-  BOOLEAN read_pending;
-  BOOLEAN EOF_signalled;
-  char tail;
-  struct processx_handle_s *process;
-  int which;
-} processx_pipe_handle_t;
-
 typedef struct processx_handle_s {
   int exitcode;
   int collected;	 /* Whether exit code was collected already */
@@ -28,7 +14,7 @@ typedef struct processx_handle_s {
   DWORD  dwProcessId;
   BYTE *child_stdio_buffer;
   HANDLE waitObject;
-  processx_pipe_handle_t *pipes[3];
+  processx_connection_t *pipes[3];
   int cleanup;
 } processx_handle_t;
 

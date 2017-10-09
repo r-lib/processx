@@ -1,10 +1,10 @@
 
 #ifdef _WIN32
 
+#include <R.h>
 #include <Rinternals.h>
-#include "processx-win.h"
 
-DWORD processx__poll_start_read(processx_pipe_handle_t *handle, int *result);
+#include "processx-win.h"
 
 SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
   int cms = INTEGER(ms)[0], timeleft = cms;
@@ -24,10 +24,8 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
     SEXP out = VECTOR_ELT(outputs, i);
     SEXP err = VECTOR_ELT(errors, i);
     if (!px) continue;
-    num_fds += !isNull(out) && px->pipes[1] && px->pipes[1]->pipe &&
-      px->pipes[1]->buffer;
-    num_fds += !isNull(err) && px->pipes[2] && px->pipes[2]->pipe &&
-      px->pipes[2]->buffer;
+    num_fds += !isNull(out) && px->pipes[1];
+    num_fds += !isNull(err) && px->pipes[2];
   }
 
   /* Allocate and pre-fill result, we also check for buffered data */
@@ -40,10 +38,10 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
     SET_VECTOR_ELT(result, i, allocVector(INTSXP, 2));
     if (isNull(out)) {
       INTEGER(VECTOR_ELT(result, i))[0] = PXNOPIPE;
-    } else if (! px || ! px->pipes[1] || ! px->pipes[1]->pipe || !px->pipes[1]->buffer) {
+    } else if (! px || ! px->pipes[1]) {
       INTEGER(VECTOR_ELT(result, i))[0] = PXCLOSED;
     } else {
-      if (px->pipes[1]->buffer_end > px->pipes[1]->buffer) {
+      if (processx_connection_ready(px->pipes[1])) {
 	INTEGER(VECTOR_ELT(result, i))[0] = PXREADY;
 	has_buffered = 1;
       } else {
@@ -52,10 +50,10 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
     }
     if (isNull(err)) {
       INTEGER(VECTOR_ELT(result, i))[1] = PXNOPIPE;
-    } else if (! px || ! px->pipes[2] || ! px->pipes[2]->pipe || !px->pipes[2]->buffer) {
+    } else if (! px || ! px->pipes[2] || ! px->pipes[2]) {
       INTEGER(VECTOR_ELT(result, i))[1] = PXCLOSED;
     } else {
-      if (px->pipes[2]->buffer_end > px->pipes[2]->buffer) {
+      if (processx_connection_ready(px->pipes[2])) {
 	INTEGER(VECTOR_ELT(result, i))[1] = PXREADY;
 	has_buffered = 1;
       } else {
@@ -75,13 +73,11 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
     processx_handle_t *px = R_ExternalPtrAddr(status);
     int *ii = INTEGER(VECTOR_ELT(result, i));
     if (ii[0] == PXSILENT && ! px->pipes[1]->read_pending) {
-      err = processx__poll_start_read(px->pipes[1], ii);
-      if (err) { errmessage = "start async poll read (stdout)"; goto error; }
+      processx_connection_start_read(px->pipes[1], ii);
       if (ii[0] == PXREADY) has_buffered = 1;
     }
     if (ii[1] == PXSILENT && ! px->pipes[2]->read_pending) {
-      err = processx__poll_start_read(px->pipes[2], ii + 1);
-      if (err) { errmessage = "start async poll read (stderr)"; goto error; }
+      processx_connection_start_read(px->pipes[2], ii + 1);
       if (ii[1] == PXREADY) has_buffered = 1;
     }
   }
@@ -99,19 +95,32 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
     processx_handle_t *px= R_ExternalPtrAddr(status);
     int *ii = INTEGER(VECTOR_ELT(result, i));
     if (ii[0] == PXSILENT) {
-      wait_handles[j] = px->pipes[1]->overlapped.hEvent;
-      ptr[j++] = 2 * i;
+      if (px->pipes[1]->overlapped.hEvent) {
+	wait_handles[j] = px->pipes[1]->overlapped.hEvent;
+	ptr[j++] = 2 * i;
+      } else {
+	ii[0] = PXCLOSED;
+      }
     }
     if (ii[1] == PXSILENT) {
-      wait_handles[j] = px->pipes[2]->overlapped.hEvent;
-      ptr[j++] = 2 * i + 1;
+      if(px->pipes[2]->overlapped.hEvent) {
+	wait_handles[j] = px->pipes[2]->overlapped.hEvent;
+	ptr[j++] = 2 * i + 1;
+      } else {
+	ii[1] = PXCLOSED;
+      }
     }
+  }
+
+  if (j == 0) {
+    UNPROTECT(1);
+    return result;
   }
 
   waitres = WAIT_TIMEOUT;
   while (cms < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
     waitres = WaitForMultipleObjects(
-      num_fds,
+      j,
       wait_handles,
       /* bWaitAll = */ FALSE,
       PROCESSX_INTERRUPT_INTERVAL);
@@ -125,16 +134,14 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
   /* Maybe some time left from the timeout */
   if (waitres == WAIT_TIMEOUT && timeleft >= 0) {
     waitres = WaitForMultipleObjects(
-      num_fds,
+      j,
       wait_handles,
       /* bWaitAll = */ FALSE,
       timeleft);
   }
 
   if (waitres == WAIT_FAILED) {
-    err = GetLastError();
-    errmessage = "waiting in poll";
-    goto error;
+    PROCESSX_ERROR("waiting in poll", GetLastError());
 
   } else if (waitres == WAIT_TIMEOUT) {
     for (i = 0; i < num_proc; i++) {
@@ -151,10 +158,6 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
 
   UNPROTECT(1);
   return result;
-
- error:
-  PROCESSX_ERROR(errmessage, err);
-  return R_NilValue;		/* never called */
 }
 
 #endif

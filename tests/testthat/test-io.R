@@ -130,13 +130,12 @@ test_that("readChar on IO, windows", {
   skip_other_platforms("windows")
 
   p <- process$new(commandline = "echo hello world!", stdout = "|")
-  con <- p$get_output_connection()
   p$wait()
 
   p$poll_io(-1)
-  expect_equal(readChar(con, 5), "hello")
+  expect_equal(p$read_output(5), "hello")
   p$poll_io(-1)
-  expect_equal(readChar(con, 5), " worl")
+  expect_equal(p$read_output(5), " worl")
   p$poll_io(-1)
-  expect_equal(readChar(con, 5), "d!\r\n")
+  expect_equal(p$read_output(5), "d!\r\n")
 })
