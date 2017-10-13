@@ -16,14 +16,16 @@ URL: https://github.com/r-lib/processx#readme
 BugReports: https://github.com/r-lib/processx/issues
 RoxygenNote: 6.0.1.9000
 Roxygen: list(markdown = TRUE)
-Suggests:
-    covr,
-    testthat,
-    withr
 Imports:
     assertthat,
     crayon,
     debugme,
     R6,
     utils
+LinkingTo: 
+    testthat
+Suggests:
+    covr,
+    testthat,
+    withr
 Encoding: UTF-8

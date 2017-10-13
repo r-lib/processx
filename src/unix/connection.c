@@ -6,43 +6,29 @@
 #include <unistd.h>
 
 
-processx_conn_handle_t* processx__create_connection(
-  processx_handle_t *handle,
+processx_connection_t* processx__create_connection(
   int fd, const char *membername,
   SEXP private) {
 
-  processx_conn_handle_t *conn_handle;
   processx_connection_t *con;
   SEXP res;
 
-  conn_handle = (processx_conn_handle_t*)
-    malloc(sizeof(processx_conn_handle_t));
-  if (!conn_handle) error("out of memory");
-
-  con = malloc(sizeof(processx_connection_t));
-  if (!con) { free(conn_handle); error("out of memory"); }
-
-  res = PROTECT(processx_connection_new(con));
-  con->fd = fd;
+  con = processx_c_connection_create(fd, "", &res);
 
   defineVar(install(membername), res, private);
 
-  conn_handle->process = handle;
-  conn_handle->conn = con;
-
-  UNPROTECT(1);
-  return conn_handle;
+  return con;
 }
 
 void processx__create_connections(processx_handle_t *handle, SEXP private) {
 
   if (handle->fd1 >= 0) {
-    handle->std_out = processx__create_connection(handle, handle->fd1,
-						 "stdout_pipe", private);
+    handle->std_out = processx__create_connection(handle->fd1,
+						  "stdout_pipe", private);
   }
 
   if (handle->fd2 >= 0) {
-    handle->std_err = processx__create_connection(handle, handle->fd2,
-						 "stderr_pipe", private);
+    handle->std_err = processx__create_connection(handle->fd2,
+						  "stderr_pipe", private);
   }
 }
