@@ -26,8 +26,8 @@ SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
 
   if (!handle) { error("Internal processx error, handle already removed"); }
 
-  if (handle->std_out) std_out = handle->std_out->conn;
-  if (handle->std_err) std_err = handle->std_err->conn;
+  if (handle->std_out) std_out = handle->std_out;
+  if (handle->std_err) std_err = handle->std_err;
 
   if (handle->fd1 >= 0) {
     fds[idx].fd = handle->fd1;
@@ -150,8 +150,8 @@ SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors) {
     SEXP status = VECTOR_ELT(statuses, i);
     processx_handle_t *handle = R_ExternalPtrAddr(status);
     processx_connection_t *std_out = 0, *std_err = 0;
-    if (handle->std_out) std_out = handle->std_out->conn;
-    if (handle->std_err) std_err = handle->std_err->conn;
+    if (handle->std_out) std_out = handle->std_out;
+    if (handle->std_err) std_err = handle->std_err;
 
     SET_VECTOR_ELT(result, i, allocVector(INTSXP, 2));
     if (isNull(out)) {

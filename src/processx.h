@@ -2,6 +2,10 @@
 #ifndef PROCESSX_H
 #define PROCESSX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <Rinternals.h>
 #include "processx-connection.h"
 
@@ -9,7 +13,7 @@
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 		   SEXP windows_verbatim_args,
-		   SEXP windows_hide_window, SEXP private, SEXP cleanup);
+		   SEXP windows_hide_window, SEXP private_, SEXP cleanup);
 SEXP processx_wait(SEXP status, SEXP timeout);
 SEXP processx_is_alive(SEXP status);
 SEXP processx_get_exit_status(SEXP status);
@@ -30,13 +34,6 @@ SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text);
 
 
 /* Common declarations */
-
-#include <Rinternals.h>
-
-#include <R_ext/Connections.h>
-#if ! defined(R_CONNECTIONS_VERSION) || R_CONNECTIONS_VERSION != 1
-#error "Unsupported connections API version"
-#endif
 
 /* Interruption interval in ms */
 #define PROCESSX_INTERRUPT_INTERVAL 200
@@ -63,5 +60,9 @@ typedef struct {
   int windows_verbatim_args;
   int windows_hide;
 } processx_options_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
