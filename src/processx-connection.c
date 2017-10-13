@@ -157,6 +157,15 @@ processx_connection_t *processx_c_connection_create(
   con = malloc(sizeof(processx_connection_t));
   if (!con) error("out of memory");
 
+  con->encoding = 0;
+  if (encoding && encoding[0]) {
+    con->encoding = strdup(encoding);
+    if (!con->encoding) {
+      free(con);
+      error("out of memory");
+    }
+  }
+
 #ifdef _WIN32
   con->handle.handle = os_handle;
   memset(&con->handle.overlapped, 0, sizeof(OVERLAPPED));
@@ -206,7 +215,7 @@ ssize_t processx_c_connection_read_chars(processx_connection_t *ccon,
   size_t utf8_chars, utf8_bytes;
 
   if (nbyte < 4) {
-    error("Buffer sie must be at least 4 bytes, to allow multibyte "
+    error("Buffer size must be at least 4 bytes, to allow multibyte "
 	  "characters");
   }
 
@@ -496,6 +505,7 @@ static void processx__connection_xfinalizer(SEXP con) {
 
   if (ccon->buffer) free(ccon->buffer);
   if (ccon->utf8) free(ccon->utf8);
+  if (ccon->encoding) free(ccon->encoding);
 
   free(ccon);
 }
@@ -707,12 +717,14 @@ static ssize_t processx__connection_to_utf8(processx_connection_t *ccon) {
   size_t outbytesleft = ccon->utf8_allocated_size - ccon->utf8_data_size;
   size_t r, indone = 0, outdone = 0;
   int moved = 0;
+  const char *emptystr = "";
+  const char *encoding = ccon->encoding ? ccon->encoding : emptystr;
 
   inbuf = inbufold = ccon->buffer;
   outbuf = outbufold = ccon->utf8 + ccon->utf8_data_size;
 
   /* If we this is the first time we are here. */
-  if (! ccon->iconv_ctx) ccon->iconv_ctx = Riconv_open("UTF-8", "");
+  if (! ccon->iconv_ctx) ccon->iconv_ctx = Riconv_open("UTF-8", encoding);
 
   /* If nothing to do, or no space to do more, just return */
   if (inbytesleft == 0 || outbytesleft == 0) return 0;
