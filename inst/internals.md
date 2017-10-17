@@ -37,6 +37,25 @@ If you are interested in how a specific function works, make sure that you
 read the source code as well, as some details are not documented in this
 writeup.
 
+## Generic API
+
+### Polling
+
+We define an S3 class called `pollable`. An object from this class is
+an external pointer to a `processx_pollable_t` object. To make a class
+pollable, you need to define an an S3 method `as_pollable`, that converts
+its objects to `pollable`. Since this method needs to create an external
+pointer, it will have to be implemented in C/C++. (An R API will be added
+later.)
+
+`process` objects have an `as_pollable` method. You can specify whether
+you want to poll `stdout`, `stderr`, or both. `stdin` and process
+termination without any output or input pipes will be added later.
+
+The `processx::poll` method tries to convert the objects supplied to it
+to `pollable`, by calling `as_pollable` on them. The `process$poll_io`
+method now just uses `processx::poll`.
+
 ## Unix
 
 ### Process startup

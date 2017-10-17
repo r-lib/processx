@@ -1,5 +1,5 @@
 
-#include "processx-unix.h"
+#include "../processx.h"
 
 extern processx__child_list_t *child_list;
 

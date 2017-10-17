@@ -1,7 +1,7 @@
 
 #ifndef _WIN32
 
-#include "processx-unix.h"
+#include "../processx.h"
 
 /* Internals */
 

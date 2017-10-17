@@ -9,6 +9,7 @@
 
 #ifndef _WIN32
 #include <sys/uio.h>
+#include <poll.h>
 #endif
 
 #include "processx.h"
@@ -139,9 +140,17 @@ SEXP processx_connection_close(SEXP con) {
   return R_NilValue;
 }
 
+SEXP processx_connection_is_closed(SEXP con) {
+  processx_connection_t *ccon = R_ExternalPtrAddr(con);
+  if (!ccon) error("Invalid connection object");
+  return ScalarLogical(processx_c_connection_is_closed(ccon));
+}
+
 /* Poll connections and other pollable handles */
 SEXP processx_connection_poll(SEXP pollables, SEXP timeout) {
-  /* TODO */
+  /* TODO: this is not used currently */
+  error("Not implemented");
+  return R_NilValue;
 }
 
 /* Api from C -----------------------------------------------------------*/
@@ -192,6 +201,7 @@ processx_connection_t *processx_c_connection_create(
     *r_connection = result;
   }
 
+  con->is_closed_ = 0;
   con->is_eof_  = 0;
   con->is_eof_raw_ = 0;
   con->iconv_ctx = 0;
@@ -316,11 +326,170 @@ void processx_c_connection_close(processx_connection_t *ccon) {
   if (ccon->handle >= 0) close(ccon->handle);
   ccon->handle = -1;
 #endif
+  ccon->is_closed_ = 1;
+}
+
+int processx_c_connection_is_closed(processx_connection_t *ccon) {
+  return ccon->is_closed_;
+}
+
+#ifdef _WIN32
+
+#else
+
+static int processx__poll_decode(short code) {
+  if (code & POLLNVAL) return PXCLOSED;
+  if (code & POLLIN || code & POLLHUP) return PXREADY;
+  return PXSILENT;
 }
 
 /* Poll connections and other pollable handles */
 int processx_c_connection_poll(processx_pollable_t pollables[],
-			       size_t npollables, int timeout);
+			       size_t npollables, int timeout) {
+
+  int hasdata = 0;
+  size_t i, j = 0;
+  struct pollfd *fds;
+  int *ptr;
+  int ret;
+
+  /* TODO: what to do if npollables is zero? */
+
+  /* Need to allocate this, because we need to put in the fds, maybe */
+  ptr = (int*) R_alloc(npollables, sizeof(int));
+  fds = (struct pollfd*) R_alloc(npollables, sizeof(struct pollfd));
+
+  /* Need to call the poll method for every pollable */
+  for (i = 0; i < npollables; i++) {
+    processx_pollable_t *el = pollables + i;
+    processx_file_handle_t handle;
+    int again;
+    el->event = el->poll_func(el->object, 0, &handle, &again);
+    if (el->event == PXNOPIPE || el->event == PXCLOSED) {
+      /* Do nothing */
+    } else if (el->event == PXREADY) {
+      hasdata++;
+    } else if (el->event == PXSILENT && handle >= 0) {
+      fds[j].fd = handle;
+      fds[j].events = POLLIN;
+      fds[j].revents = 0;
+      ptr[j] = i;
+      j++;
+    } else {
+      error("Cannot poll pollable: not ready and no fd");
+    }
+  }
+
+  if (hasdata) return hasdata;
+  if (j == 0) return 0;
+
+  /* j contains the number of fds to poll now */
+
+  ret = processx__interruptible_poll(fds, j, timeout);
+
+  if (ret == -1) {
+    error("Processx poll error: %s", strerror(errno));
+
+  } else if (ret == 0) {
+    for (i = 0; i < j; i++) pollables[ptr[i]].event = PXTIMEOUT;
+
+  } else {
+    for (i = 0; i < j; i++) {
+      pollables[ptr[i]].event = processx__poll_decode(fds[i].revents);
+    }
+  }
+
+  return 0;
+}
+
+#endif
+
+/* Poll an OS handle
+ *
+ * It will just return the handle.
+ */
+
+int processx_i_poll_func_handle(
+  void *object,
+  int status,
+  processx_file_handle_t *handle,
+  int *again) {
+  processx_file_handle_t *os_handle = (processx_file_handle_t*) object;
+
+  if (handle) *handle = 0;
+  if (again) *again = 0;
+
+#ifdef _WIN32
+  if (! *os_handle) return PXREADY;
+#else
+  if (*os_handle < 0) return PXREADY;
+#endif
+
+  if (handle) *handle = *os_handle;
+  return PXSILENT;
+}
+
+int processx_c_pollable_from_handle(
+  processx_pollable_t *pollable,
+  processx_file_handle_t handle) {
+  pollable->poll_func = processx_i_poll_func_handle;
+  pollable->object = malloc(sizeof(handle));
+  if (!pollable->object) error("out of memory");
+  pollable->free = 1;
+  memcpy(pollable->object, &handle, sizeof(handle));
+  return 0;
+}
+
+/* Poll a connection
+ *
+ * Checks if there is anything in the buffer. If yes, it returns
+ * PXREADY. Otherwise it returns the handle.
+ *
+ * We can read immediately (without an actual device read) if
+ * 1. there is data in the UTF8 buffer, or
+ * 2. there is data in the raw buffer, and we are at EOF, or
+ * 3. there is data in the raw buffer, and we can convert it to UTF8.
+ */
+
+int processx_i_poll_func_connection(
+  void * object,
+  int status,
+  processx_file_handle_t *handle,
+  int *again) {
+
+  processx_connection_t *ccon = (processx_connection_t*) object;
+
+  if (!ccon) return PXNOPIPE;
+  if (ccon->is_closed_) return PXCLOSED;
+
+  if (ccon->utf8_data_size > 0) return PXREADY;
+  if (ccon->buffer_data_size > 0 && ccon->is_eof_) return PXREADY;
+  if (ccon->buffer_data_size > 0) {
+    processx__connection_to_utf8(ccon);
+    if (ccon->utf8_data_size > 0) return PXREADY;
+    if (ccon->buffer_data_size > 0 && ccon->is_eof_) return PXREADY;
+  }
+
+#ifdef _WIN32
+  if (handle) *handle = ccon->handle.handle;
+#else
+  if (handle) *handle = ccon->handle;
+#endif
+
+  if (again) *again = 0;
+
+  return PXSILENT;
+}
+
+int processx_c_pollable_from_connection(
+  processx_pollable_t *pollable,
+  processx_connection_t *ccon) {
+
+  pollable->poll_func = processx_i_poll_func_connection;
+  pollable->object = ccon;
+  pollable->free = 0;
+  return 0;
+}
 
 /* --------------------------------------------------------------------- */
 /* Internals                                                             */
@@ -465,34 +634,6 @@ ssize_t processx_connection_start_read(processx_connection_t *ccon, int *result)
 }
 
 #endif
-
-/* Can we read? We can read immediately (without an actual device read) if
- * 1. there is data in the UTF8 buffer, or
- * 2. there is data in the raw buffer, and we are at EOF, or
- * 3. there is data in the raw buffer, and we can convert it to UTF8.
- */
-
-/* TODO: remove this */
-
-int processx_connection_ready(processx_connection_t *ccon) {
-  if (!ccon) return 0;
-
-#ifdef _WIN32
-  if (!ccon->handle->handle) return 0;
-#else
-  if (ccon->handle < 0) return 0;
-#endif
-
-  if (ccon->utf8_data_size > 0) return 1;
-  if (ccon->buffer_data_size > 0 && ccon->is_eof_) return 1;
-  if (ccon->buffer_data_size > 0) {
-    processx__connection_to_utf8(ccon);
-    if (ccon->utf8_data_size > 0) return 1;
-    if (ccon->buffer_data_size > 0 && ccon->is_eof_) return 1;
-  }
-
-  return 0;
-}
 
 static void processx__connection_xfinalizer(SEXP con) {
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
@@ -820,5 +961,36 @@ static void processx__connection_find_utf8_chars(processx_connection_t *ccon,
  invalid:
   error("Invalid UTF-8 string, internal error");
 }
+
+#ifndef _WIN32
+
+int processx__interruptible_poll(struct pollfd fds[],
+				 nfds_t nfds, int timeout) {
+  int ret = 0;
+  int timeleft = timeout;
+
+  while (timeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
+    do {
+      ret = poll(fds, nfds, PROCESSX_INTERRUPT_INTERVAL);
+    } while (ret == -1 && errno == EINTR);
+
+    /* If not a timeout, then return */
+    if (ret != 0) return ret;
+
+    R_CheckUserInterrupt();
+    timeleft -= PROCESSX_INTERRUPT_INTERVAL;
+  }
+
+  /* Maybe we are not done, and there is a little left from the timeout */
+  if (timeleft >= 0) {
+    do {
+      ret = poll(fds, nfds, timeleft);
+    } while (ret == -1 && errno == EINTR);
+  }
+
+  return ret;
+}
+
+#endif
 
 #undef PROCESSX_CHECK_VALID_CONN

@@ -1,21 +1,6 @@
 
-#ifndef PROCESSX_UNIX_H
-#define PROCESSX_UNIX_H
-
-#include <Rinternals.h>
-#include <R_ext/Rdynload.h>
-
-#include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <signal.h>
-#include <sys/wait.h>
-#include <poll.h>
-
-#include "../processx.h"
+#ifndef R_PROCESSX_UNIX_H
+#define R_PROCESSX_UNIX_H
 
 typedef struct processx_handle_s {
   int exitcode;
@@ -26,8 +11,7 @@ typedef struct processx_handle_s {
   int fd2;			/* readable */
   int waitpipe[2];		/* use it for wait() with timeout */
   int cleanup;
-  processx_connection_t *std_out;
-  processx_connection_t *std_err;
+  processx_connection_t *pipes[3];
 } processx_handle_t;
 
 char *processx__tmp_string(SEXP str, int i);
@@ -65,10 +49,10 @@ int processx__cloexec_fcntl(int fd, int set);
 
 void processx__create_control_read(processx_handle_t *handle,
 				   int fd, const char *membername,
-				   SEXP private);
+				   SEXP privatex);
 void processx__create_control_write(processx_handle_t *handle,
 				    int fd, const char *membername,
-				    SEXP private);
+				    SEXP privatex);
 
 /* Interruptible system calls */
 
