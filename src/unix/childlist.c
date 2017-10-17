@@ -1,5 +1,5 @@
 
-#include "processx-unix.h"
+#include "../processx.h"
 
 processx__child_list_t child_list_head = { 0, 0, 0 };
 processx__child_list_t *child_list = &child_list_head;

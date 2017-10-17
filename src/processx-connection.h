@@ -27,6 +27,7 @@ typedef int processx_i_connection_t;
 #endif
 
 typedef struct processx_connection_s {
+  int is_closed_;
   int is_eof_;			/* the UTF8 buffer */
   int is_eof_raw_;		/* the raw file */
 
@@ -45,15 +46,45 @@ typedef struct processx_connection_s {
 
 } processx_connection_t;
 
+/* Generic poll method
+ *
+ * @param object The thing to poll.
+ * @param status Currently not used.
+ * @param handle A handle can be returned here, to `poll` or wait on.
+ *   If this is not needed, set it to NULL.
+ * @param timeout A timeout value can be returned here, for the next
+ *   poll. If this is not needed, set it to NULL.
+ * @return The result of the pre-polling. PXCLOSED, PXREADY or PXSILENT.
+ *   PXREADY: data is readily available, at least one character.
+ *     (But maybe not a full line.)
+ *   PXSILENT: we don't know if data is available, we need to check the
+ *     operating system via `poll` or `WaitForStatus`.
+ */
+
 typedef int (*processx_connection_poll_func_t)(
   void *object,
   int status,
-  processx_file_handle_t **handle);
+  processx_file_handle_t *handle,
+  int *again);
+
+/* Data structure for a pollable object
+ *
+ * @member poll_func The function to call on the object, before
+ *   the poll/wait system call. The pollable object might have data
+ *   available without immediately, without poll/wait. If not, it
+ *   will return the file descriptor or HANDLE to poll.
+ * @member object The object to pass to `poll_func`.
+ * @member free Whether to call `free()` on `object` when finalizing
+ *   `processx_pollable_t` objects.
+ * @member event The result of the polling is stored here. Possible values:
+ *   `PXSILENT` (no data), `PXREADY` (data), `PXTIMEOUT` (timeout).
+ */
 
 typedef struct processx_pollable_s {
   processx_connection_poll_func_t poll_func;
   void *object;
-  int events;
+  int free;
+  int event;
 } processx_pollable_t;
 
 /* --------------------------------------------------------------------- */
@@ -74,6 +105,7 @@ SEXP processx_connection_is_eof(SEXP con);
 
 /* Close the connection. */
 SEXP processx_connection_close(SEXP con);
+SEXP processx_is_closed(SEXP con);
 
 /* Poll connections and other pollable handles */
 SEXP processx_connection_poll(SEXP pollables, SEXP timeout);
@@ -107,11 +139,22 @@ int processx_c_connection_is_eof(
 /* Close */
 void processx_c_connection_close(
   processx_connection_t *con);
+int processx_c_connection_is_closed(
+  processx_connection_t *con);
 
 /* Poll connections and other pollable handles */
 int processx_c_connection_poll(
   processx_pollable_t pollables[],
   size_t npollables, int timeout);
+
+/* Helper function to create pollable handles*/
+int processx_c_pollable_from_handle(
+  processx_pollable_t *pollable,
+  processx_file_handle_t handle);
+
+int processx_c_pollable_from_connection(
+  processx_pollable_t *pollable,
+  processx_connection_t *ccon);
 
 /* --------------------------------------------------------------------- */
 /* Internals                                                             */

@@ -1,4 +1,4 @@
-OBJECTS = init.o processx-connection.o \
+OBJECTS = init.o poll.o processx-connection.o \
           win/poll.o win/processx.o win/stdio.o win/named_pipe.o
 
 .PHONY: all clean

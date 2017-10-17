@@ -1,7 +1,7 @@
-OBJECTS = init.o processx-connection.o                   \
-	  unix/childlist.o unix/connection.o unix/poll.o \
+OBJECTS = init.o poll.o processx-connection.o            \
+	  unix/childlist.o unix/connection.o             \
           unix/processx.o unix/sigchld.o unix/utils.o    \
-	  unix/interruptible-calls.o unix/named_pipe.o   \
+	  unix/named_pipe.o   		 		 \
 	  test-connections.o test-runner.o
 
 .PHONY: all clean

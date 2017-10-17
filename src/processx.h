@@ -6,8 +6,28 @@
 extern "C" {
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <poll.h>
+#endif
+
 #include <Rinternals.h>
 #include "processx-connection.h"
+
+#ifdef _WIN32
+#include "win/processx-win.h"
+#else
+#include "unix/processx-unix.h"
+#endif
 
 /* API from R */
 
@@ -20,10 +40,8 @@ SEXP processx_get_exit_status(SEXP status);
 SEXP processx_signal(SEXP status, SEXP signal);
 SEXP processx_kill(SEXP status, SEXP grace);
 SEXP processx_get_pid(SEXP status);
-SEXP processx_poll_io(SEXP status, SEXP ms, SEXP stdout_pipe,
-		      SEXP stderr_pipe);
 
-SEXP processx_poll(SEXP statuses, SEXP ms, SEXP outputs, SEXP errors);
+SEXP processx_poll(SEXP statuses, SEXP ms);
 
 SEXP processx__process_exists(SEXP pid);
 
@@ -32,6 +50,12 @@ SEXP processx_close_named_pipe(SEXP pipe_ext);
 SEXP processx_create_named_pipe(SEXP name, SEXP mode);
 SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text);
 
+/* Polling */
+
+int processx_c_pollable_from_process(
+  processx_pollable_t *pollable,
+  processx_handle_t *process,
+  int which);
 
 /* Common declarations */
 

@@ -1,5 +1,5 @@
 
-#include "processx-unix.h"
+#include "../processx.h"
 
 char *processx__tmp_string(SEXP str, int i) {
   const char *ptr = CHAR(STRING_ELT(str, i));

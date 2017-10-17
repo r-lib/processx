@@ -1,11 +1,6 @@
+
 #ifndef R_PROCESSX_WIN_H
 #define R_PROCESSX_WIN_H
-
-#include <windows.h>
-
-#include <Rinternals.h>
-
-#include "../processx.h"
 
 typedef struct processx_handle_s {
   int exitcode;

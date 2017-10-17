@@ -1,5 +1,5 @@
 
-#include "processx-unix.h"
+#include "../processx.h"
 
 #include <sys/types.h>
 #include <sys/uio.h>
@@ -21,14 +21,15 @@ processx_connection_t* processx__create_connection(
 }
 
 void processx__create_connections(processx_handle_t *handle, SEXP private) {
+  handle->pipes[0] = handle->pipes[1] = handle->pipes[2] = 0;
 
   if (handle->fd1 >= 0) {
-    handle->std_out = processx__create_connection(handle->fd1,
-						  "stdout_pipe", private);
+    handle->pipes[1] = processx__create_connection(handle->fd1,
+						   "stdout_pipe", private);
   }
 
   if (handle->fd2 >= 0) {
-    handle->std_err = processx__create_connection(handle->fd2,
-						  "stderr_pipe", private);
+    handle->pipes[2] = processx__create_connection(handle->fd2,
+						   "stderr_pipe", private);
   }
 }
