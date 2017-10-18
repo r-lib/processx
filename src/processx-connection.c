@@ -43,14 +43,18 @@ static void processx__connection_find_utf8_chars(processx_connection_t *ccon,
 						 size_t *bytes);
 
 #ifdef _WIN32
-#define PROCESSX_CHECK_VALID_CONN(x) do {				   \
-    if (!x) error("Invalid connection object");				   \
-    if (!(x)->handle.handle) error("Invalid (uninitialized?) connection object"); \
+#define PROCESSX_CHECK_VALID_CONN(x) do {				\
+    if (!x) error("Invalid connection object");				\
+    if (!(x)->handle.handle) {						\
+      error("Invalid (uninitialized or closed?) connection object");	\
+    }									\
   } while (0)
 #else
 #define PROCESSX_CHECK_VALID_CONN(x) do {				\
     if (!x) error("Invalid connection object");				\
-    if ((x)->handle < 0) error("Invalid (uninitialized?) connection object"); \
+    if ((x)->handle < 0) {                                              \
+      error("Invalid (uninitialized or closed?) connection object");	\
+}                                                                       \
   } while (0)
 #endif
 
@@ -60,13 +64,12 @@ static void processx__connection_find_utf8_chars(processx_connection_t *ccon,
 
 SEXP processx_connection_create(SEXP handle, SEXP encoding) {
   processx_file_handle_t *os_handle = R_ExternalPtrAddr(handle);
-  processx_connection_t *con;
   const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
   SEXP result;
 
   if (!os_handle) error("Cannot create connection, invalid handle");
 
-  con = processx_c_connection_create(*os_handle, c_encoding, &result);
+  processx_c_connection_create(*os_handle, c_encoding, &result);
   return result;
 }
 
@@ -155,6 +158,16 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout) {
 
 /* Api from C -----------------------------------------------------------*/
 
+#ifdef _WIN32
+
+int processx__connection_is_file_handle(HANDLE h) {
+  BY_HANDLE_FILE_INFORMATION info;
+  BOOL ret = GetFileInformationByHandle(h, &info);
+  return ret == 0 ? 1 : 0;
+}
+
+#endif
+
 processx_connection_t *processx_c_connection_create(
   processx_file_handle_t os_handle,
   const char *encoding,
@@ -176,6 +189,7 @@ processx_connection_t *processx_c_connection_create(
   }
 
 #ifdef _WIN32
+  con->is_file_ = processx__connection_is_file_handle(os_handle);
   con->handle.handle = os_handle;
   memset(&con->handle.overlapped, 0, sizeof(OVERLAPPED));
   con->handle.read_pending = FALSE;
@@ -335,6 +349,77 @@ int processx_c_connection_is_closed(processx_connection_t *ccon) {
 
 #ifdef _WIN32
 
+int processx_c_connection_poll(processx_pollable_t pollables[],
+			       size_t npollables, int timeout) {
+
+  int hasdata = 0;
+  size_t i, j = 0;
+  HANDLE *handles;
+  int *ptr;
+  DWORD waitres;
+  int timeleft = timeout;
+
+  ptr = (int*) R_alloc(npollables, sizeof(int));
+  handles = (HANDLE*) R_alloc(npollables, sizeof(HANDLE));
+
+  for (i = 0; i < npollables; i++) {
+    processx_pollable_t *el = pollables + i;
+    processx_file_handle_t handle = 0;
+    int again;
+    el->event = el->poll_func(el->object, 0, &handle, &again);
+    if (el->event == PXNOPIPE || el->event == PXCLOSED) {
+      /* Do nothing */
+    } else if (el->event == PXREADY) {
+      hasdata++;
+    } else if (el->event == PXSILENT && handle != 0) {
+      handles[j] = handle;
+      ptr[j] = i;
+      j++;
+    } else {
+      error("Cannnot poll pollable, not ready, and no handle");
+    }
+  }
+
+  if (hasdata) return hasdata;
+  if (j == 0) return 0;
+
+  waitres = WAIT_TIMEOUT;
+  while (timeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
+    waitres = WaitForMultipleObjects(
+      j,
+      handles,
+      /* bWaitAll = */ FALSE,
+      PROCESSX_INTERRUPT_INTERVAL);
+    if (waitres != WAIT_TIMEOUT) break;
+
+    R_CheckUserInterrupt();
+    timeleft -= PROCESSX_INTERRUPT_INTERVAL;
+  }
+
+  /* Maybe some time left from the timeout */
+  if (waitres == WAIT_TIMEOUT && timeleft > 0) {
+    waitres = WaitForMultipleObjects(
+      j,
+      handles,
+      /* bWaitAll = */ FALSE,
+      PROCESSX_INTERRUPT_INTERVAL);
+  }
+
+  if (waitres == WAIT_FAILED) {
+    PROCESSX_ERROR("waiting in poll", GetLastError());
+
+  } else if (waitres == WAIT_TIMEOUT) {
+    for (i = 0; i < j; i++) pollables[ptr[i]].event = PXTIMEOUT;
+
+  } else {
+    int ready = waitres - WAIT_OBJECT_0;
+    pollables[ptr[ready]].event = PXREADY;
+    hasdata = 1;
+  }
+
+  return hasdata;
+}
+
 #else
 
 static int processx__poll_decode(short code) {
@@ -353,7 +438,7 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
   int *ptr;
   int ret;
 
-  /* TODO: what to do if npollables is zero? */
+  if (npollables == 0) return 0;
 
   /* Need to allocate this, because we need to put in the fds, maybe */
   ptr = (int*) R_alloc(npollables, sizeof(int));
@@ -396,10 +481,11 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
   } else {
     for (i = 0; i < j; i++) {
       pollables[ptr[i]].event = processx__poll_decode(fds[i].revents);
+      hasdata += (pollables[ptr[i]].event == PXREADY);
     }
   }
 
-  return 0;
+  return hasdata;
 }
 
 #endif
@@ -407,6 +493,9 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 /* Poll an OS handle
  *
  * It will just return the handle.
+ * TODO: on windows async connections, it has to start reading. Which needs a
+ * buffer, etc. So maybe the handle -> pollable conversion does not make
+ * sense at all.
  */
 
 int processx_i_poll_func_handle(
@@ -440,16 +529,83 @@ int processx_c_pollable_from_handle(
   return 0;
 }
 
+#ifdef _WIN32
+
+void processx__connection_start_read(processx_connection_t *ccon) {
+  DWORD bytes_read;
+  BOOLEAN res;
+  size_t todo;
+
+  if (! ccon->handle.handle) return;
+
+  if (ccon->handle.read_pending) return;
+
+  if (!ccon->buffer) processx__connection_alloc(ccon);
+
+  todo = ccon->buffer_allocated_size - ccon->buffer_data_size;
+
+  /* These need to be set to zero for non-file handles */
+  if (! ccon->is_file_) {
+     ccon->handle.overlapped.Offset = 0;
+     ccon->handle.overlapped.OffsetHigh = 0;
+  }
+  res = ReadFile(
+    /* hfile = */                ccon->handle.handle,
+    /* lpBuffer = */             ccon->buffer + ccon->buffer_data_size,
+    /* nNumberOfBytesToRead = */ todo,
+    /* lpNumberOfBytesRead = */  &bytes_read,
+    /* lpOverlapped = */         &ccon->handle.overlapped);
+
+  if (!res) {
+    DWORD err = GetLastError();
+    if (err == ERROR_BROKEN_PIPE) {
+      ccon->is_eof_raw_ = 1;
+      if (ccon->utf8_data_size == 0 && ccon->buffer_data_size == 0) {
+	ccon->is_eof_ = 1;
+      }
+    } else if (err == ERROR_IO_PENDING) {
+      ccon->handle.read_pending = TRUE;
+    } else {
+      ccon->handle.read_pending = FALSE;
+      PROCESSX_ERROR("reading from connection", err);
+    }
+  } else {
+    /* Returned synchronously. */
+    ccon->handle.read_pending = FALSE;
+    ccon->buffer_data_size += bytes_read;
+    /* TODO: large files */
+    if (ccon->is_file_) ccon->handle.overlapped.Offset += bytes_read;
+  }
+}
+
+#endif
+
 /* Poll a connection
  *
  * Checks if there is anything in the buffer. If yes, it returns
  * PXREADY. Otherwise it returns the handle.
  *
- * We can read immediately (without an actual device read) if
- * 1. there is data in the UTF8 buffer, or
- * 2. there is data in the raw buffer, and we are at EOF, or
- * 3. there is data in the raw buffer, and we can convert it to UTF8.
+ * We can read immediately (without an actual device read), potentially:
+ * 1. if the connection is already closed, we return PXCLOSED
+ * 2. if the connection is already EOF, we return PXREADY
+ * 3. if there is data in the UTF8 buffer, we return PXREADY
+ * 4. if there is data in the raw buffer, and the raw file was EOF, we
+ *    return PXREADY, because we can surely return something, even if the
+ *    raw buffer has incomplete UTF8 characters.
+ * 5. otherwise, if there is something in the raw buffer, we try
+ *    to convert it to UTF8.
  */
+
+#define PROCESSX__I_POLL_FUNC_CONNECTION_READY do {			\
+  if (!ccon) return PXNOPIPE;						\
+  if (ccon->is_closed_) return PXCLOSED;				\
+  if (ccon->is_eof_) return PXREADY;					\
+  if (ccon->utf8_data_size > 0) return PXREADY;				\
+  if (ccon->buffer_data_size > 0 && ccon->is_eof_raw_) return PXREADY;	\
+  if (ccon->buffer_data_size > 0) {					\
+    processx__connection_to_utf8(ccon);					\
+    if (ccon->utf8_data_size > 0) return PXREADY;			\
+  } } while (0)
 
 int processx_i_poll_func_connection(
   void * object,
@@ -459,19 +615,13 @@ int processx_i_poll_func_connection(
 
   processx_connection_t *ccon = (processx_connection_t*) object;
 
-  if (!ccon) return PXNOPIPE;
-  if (ccon->is_closed_) return PXCLOSED;
-
-  if (ccon->utf8_data_size > 0) return PXREADY;
-  if (ccon->buffer_data_size > 0 && ccon->is_eof_) return PXREADY;
-  if (ccon->buffer_data_size > 0) {
-    processx__connection_to_utf8(ccon);
-    if (ccon->utf8_data_size > 0) return PXREADY;
-    if (ccon->buffer_data_size > 0 && ccon->is_eof_) return PXREADY;
-  }
+  PROCESSX__I_POLL_FUNC_CONNECTION_READY;
 
 #ifdef _WIN32
-  if (handle) *handle = ccon->handle.handle;
+  processx__connection_start_read(ccon);
+  /* Starting to read may actually get some data, or an EOF, so check again */
+  PROCESSX__I_POLL_FUNC_CONNECTION_READY;
+  if (handle) *handle = ccon->handle.overlapped.hEvent;
 #else
   if (handle) *handle = ccon->handle;
 #endif
@@ -575,65 +725,6 @@ static void processx__connection_find_lines(processx_connection_t *ccon,
   }
 
 }
-
-#ifdef _WIN32
-
-/* TODO: remove this, have proper polling */
-
-ssize_t processx_connection_start_read(processx_connection_t *ccon, int *result) {
-
-  DWORD bytes_read;
-  BOOLEAN res;
-  size_t todo;
-
-  if (result) *result = PXSILENT;
-
-  if (!ccon->handle.handle) {
-    if (result) *result = PXCLOSED;
-    return 0;
-  }
-
-  if (ccon->handle.read_pending) return 0;
-
-  if (!ccon->buffer) processx__connection_alloc(ccon);
-
-  todo = ccon->buffer_allocated_size - ccon->buffer_data_size;
-
-  ccon->handle.overlapped.Offset = 0;
-  ccon->handle.overlapped.OffsetHigh = 0;
-  res = ReadFile(
-    /* hfile = */                ccon->handle.handle,
-    /* lpBuffer = */             ccon->buffer + ccon->buffer_data_size,
-    /* nNumberOfBytesToRead = */ todo,
-    /* lpNumberOfBytesRead = */  &bytes_read,
-    /* lpOverlapped = */         &ccon->handle.overlapped);
-
-  if (!res) {
-    DWORD err = GetLastError();
-    if (err == ERROR_BROKEN_PIPE || err == ERROR_HANDLE_EOF) {
-      ccon->is_eof_raw_ = 1;
-      if (ccon->utf8_data_size == 0 && ccon->buffer_data_size == 0) {
-	ccon->is_eof_ = 1;
-	if (result) *result = PXREADY;
-      }
-    } else if (err == ERROR_IO_PENDING) {
-      ccon->handle.read_pending = TRUE;
-    } else {
-      ccon->handle.read_pending = FALSE;
-      PROCESSX_ERROR("reading from connection", err);
-    }
-  } else {
-    /* Returned synchronously. */
-    ccon->handle.read_pending = FALSE;
-    if (result) *result = PXREADY;
-    ccon->buffer_data_size += bytes_read;
-    return (ssize_t) bytes_read;
-  }
-
-  return 0;
-}
-
-#endif
 
 static void processx__connection_xfinalizer(SEXP con) {
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
@@ -760,7 +851,7 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
   if (todo == 0) return processx__connection_to_utf8(ccon);
 
   /* Otherwise we read. If there is no read pending, we start one. */
-  processx_connection_start_read(ccon, /* result = */ 0);
+  processx__connection_start_read(ccon);
 
   /* A read might be pending at this point. See if it has finished. */
   if (ccon->handle.read_pending) {
@@ -772,7 +863,7 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
 
     if (!result) {
       DWORD err = GetLastError();
-      if (err == ERROR_BROKEN_PIPE || err == ERROR_HANDLE_EOF) {
+      if (err == ERROR_BROKEN_PIPE) {
 	ccon->handle.read_pending = FALSE;
 	ccon->is_eof_raw_ = 1;
 	if (ccon->utf8_data_size == 0 && ccon->buffer_data_size == 0) {
@@ -790,14 +881,17 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
 
     } else {
       ccon->handle.read_pending = FALSE;
+      ccon->buffer_data_size += bytes_read;
+      /* TODO: large files */
+      if (ccon->is_file_) ccon->handle.overlapped.Offset += bytes_read;
     }
   }
-
-  ccon->buffer_data_size += bytes_read;
 
   /* If there is anything to convert to UTF8, try converting */
   if (ccon->buffer_data_size > 0) {
     bytes_read = processx__connection_to_utf8(ccon);
+  } else {
+    bytes_read = 0;
   }
 
   return bytes_read;
@@ -844,6 +938,8 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
   /* If there is anything to convert to UTF8, try converting */
   if (ccon->buffer_data_size > 0) {
     bytes_read = processx__connection_to_utf8(ccon);
+  } else {
+    bytes_read = 0;
   }
 
   return bytes_read;

@@ -2,6 +2,8 @@
 #ifndef R_PROCESSX_WIN_H
 #define R_PROCESSX_WIN_H
 
+#include <windows.h>
+
 typedef struct processx_handle_s {
   int exitcode;
   int collected;	 /* Whether exit code was collected already */
@@ -19,7 +21,7 @@ int processx__utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr);
 
 int processx__stdio_create(processx_handle_t *handle,
 			   const char *std_out, const char *std_err,
-			   BYTE** buffer_ptr, SEXP private);
+			   BYTE** buffer_ptr, SEXP privatex);
 WORD processx__stdio_size(BYTE* buffer);
 HANDLE processx__stdio_handle(BYTE* buffer, int fd);
 void processx__stdio_destroy(BYTE* buffer);

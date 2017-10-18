@@ -8,6 +8,78 @@
 #include <unistd.h>
 #include <errno.h>
 
+#ifdef _WIN32
+#include <windows.h>
+
+HANDLE open_file(const char *filename) {
+  HANDLE handle = CreateFile(
+    /* lpFileName =            */ filename,
+    /* dwDesiredAccess =       */ GENERIC_READ,
+    /* dwShareMode =           */ 0,
+    /* lpSecurityAttributes =  */ NULL,
+    /* dwCreationDisposition = */ OPEN_EXISTING,
+    /* dwFlagsAndAttributes =  */ FILE_FLAG_OVERLAPPED,
+    /* hTemplateFile =         */ NULL);
+
+  if (handle == INVALID_HANDLE_VALUE) error("Cannot open temporary test file");
+
+  return handle;
+}
+
+HANDLE make_temp_file(char **filename) {
+  char *wd = getcwd(NULL, 0);
+  char *tmpdir = (char*) malloc(snprintf(NULL, 0, "%s/fixtures", wd) + 1);
+  sprintf(tmpdir, "%s/fixtures", wd);
+  *filename = R_tmpnam2(0, tmpdir, ".test");
+  free(tmpdir);
+  free(wd);
+
+  HANDLE h = CreateFile(
+    /* lpFileName =            */ *filename,
+    /* dwDesiredAccess =       */ GENERIC_WRITE,
+    /* dwShareMode =           */ 0,
+    /* lpSecurityAttributes =  */ NULL,
+    /* dwCreationDisposition = */ CREATE_ALWAYS,
+    /* dwFlagsAndAttributes =  */ FILE_ATTRIBUTE_NORMAL,
+    /* hTemplateFile =         */ NULL);
+
+  if (h == INVALID_HANDLE_VALUE) error("Cannot create temporary test file");
+
+  return h;
+}
+
+HANDLE open_temp_file(char **filename, size_t bytes, const char *pattern) {
+  HANDLE h = make_temp_file(filename);
+  DWORD abytes = 0;
+  const char *default_pattern = "Nem csak a gyemant es arany\n";
+  const char *mypattern = pattern ? pattern : default_pattern;
+  size_t pattern_size = strlen(mypattern);
+  DWORD written;
+
+  for (abytes = 0; abytes < bytes; abytes += pattern_size) {
+    BOOL status = WriteFile(
+      /* hFile =                  */ h,
+      /* lpBuffer =               */ mypattern,
+      /* nNumberOfBytesToWrite =  */ pattern_size,
+      /* lpNumberOfBytesWritten = */ &written,
+      /* lpOverlappedWriteFile =  */ NULL);
+    if (!status) error("Cannot write temporary test file");
+    abytes += written;
+  }
+
+  CloseHandle(h);
+
+  return open_file(*filename);
+}
+
+#else
+
+int open_file(const char *filename) {
+  int handle = open(filename, O_RDONLY);
+  if (handle < 0) error("Cannot open test file");
+  return handle;
+}
+
 int make_temp_file(char **filename) {
   char *wd = getcwd(NULL, 0);
   char *tmpdir = (char*) malloc(snprintf(NULL, 0, "%s/fixtures", wd) + 1);
@@ -37,12 +109,14 @@ int open_temp_file(char **filename, size_t bytes, const char *pattern) {
   return fd;
 }
 
+#endif
+
 context("Basics") {
 
   test_that("can create a connection from os handle") {
-    int fd = open("fixtures/simple.txt", O_RDONLY);
+    processx_file_handle_t handle = open_file("fixtures/simple.txt");
     processx_connection_t *ccon =
-      processx_c_connection_create(fd, "UTF-8", 0);
+      processx_c_connection_create(handle, "UTF-8", 0);
     expect_true(ccon != 0);
     processx_c_connection_close(ccon);
   }
@@ -51,14 +125,17 @@ context("Basics") {
 context("Reading characters") {
 
   test_that("can read characters and set EOF") {
-    int fd = open("fixtures/simple.txt", O_RDONLY);
-    expect_true(fd >= 0);
+    processx_file_handle_t handle = open_file("fixtures/simple.txt");
     processx_connection_t *ccon =
-      processx_c_connection_create(fd, "UTF-8", 0);
+      processx_c_connection_create(handle, "UTF-8", 0);
 
     expect_false(processx_c_connection_is_eof(ccon));
 
+    processx_pollable_t pollable;
+    processx_c_pollable_from_connection(&pollable, ccon);
+
     char buffer[10];
+    processx_c_connection_poll(&pollable, 1, -1);
     size_t ret = processx_c_connection_read_chars(ccon, buffer, 10);
     expect_true(ret == 10);
     expect_true(! strncmp(buffer, "simple tex", 10));
@@ -66,11 +143,15 @@ context("Reading characters") {
     expect_false(processx_c_connection_is_eof(ccon));
 
     ret = processx_c_connection_read_chars(ccon, buffer, 10);
-    expect_true(ret == 7);
-    expect_true(! strncmp(buffer, "t file\n", 7));
+    // on windows it might end with \r\n, depending on git settings for EOL
+    expect_true(ret >= 7);
+    expect_true(ret <= 8);
+    if (ret == 7) expect_true(! strncmp(buffer, "t file\n", 7));
+    if (ret == 8) expect_true(! strncmp(buffer, "t file\r\n", 8));
 
     expect_false(processx_c_connection_is_eof(ccon));
 
+    processx_c_connection_poll(&pollable, 1, -1);
     ret = processx_c_connection_read_chars(ccon, buffer, 10);
     expect_true(ret == 0);
 
@@ -80,16 +161,17 @@ context("Reading characters") {
   }
 
   test_that("EOF edge case") {
-    int fd = open("fixtures/simple.txt", O_RDONLY);
-    expect_true(fd >= 0);
+    processx_file_handle_t handle = open_file("fixtures/simple.txt");
     processx_connection_t *ccon =
-      processx_c_connection_create(fd, "UTF-8", 0);
+      processx_c_connection_create(handle, "UTF-8", 0);
 
     // Read all contents of the file, it is still not EOF
-    char buffer[17];
-    size_t ret = processx_c_connection_read_chars(ccon, buffer, 17);
-    expect_true(ret == 17);
-    expect_true(! strncmp(buffer, "simple text file\n", 17));
+    char buffer[18];
+    size_t ret = processx_c_connection_read_chars(ccon, buffer, 18);
+    expect_true(ret >= 17);
+    expect_true(ret <= 18);
+    if (ret == 17) expect_true(! strncmp(buffer, "simple text file\n", 17));
+    if (ret == 18) expect_true(! strncmp(buffer, "simple text file\r\n", 18));
     expect_false(processx_c_connection_is_eof(ccon));
 
     // But if we read again, EOF is set
@@ -102,10 +184,9 @@ context("Reading characters") {
 
   test_that("A larger file that needs buffering") {
     char *filename;
-    int fd = open_temp_file(&filename, 100000, 0);
-    expect_true(fd >= 0);
+    processx_file_handle_t handle = open_temp_file(&filename, 100000, 0);
     processx_connection_t *ccon =
-      processx_c_connection_create(fd, "UTF-8", 0);
+      processx_c_connection_create(handle, "UTF-8", 0);
 
     expect_false(processx_c_connection_is_eof(ccon));
 
@@ -123,10 +204,10 @@ context("Reading characters") {
   test_that("Reading UTF-8 file") {
     char *filename;
     // A 2-byte character, then a 3-byte character, then a 4-byte one
-    int fd = open_temp_file(&filename, 1,
-			    "\xc2\xa0\xe2\x86\x92\xf0\x90\x84\x82");
+    processx_file_handle_t handle =
+      open_temp_file(&filename, 1, "\xc2\xa0\xe2\x86\x92\xf0\x90\x84\x82");
     processx_connection_t *ccon =
-      processx_c_connection_create(fd, "UTF-8", 0);
+      processx_c_connection_create(handle, "UTF-8", 0);
 
     expect_false(processx_c_connection_is_eof(ccon));
 
@@ -163,10 +244,10 @@ context("Reading characters") {
     char *filename;
     const char *latin1 = "\xe1\xe9\xed";
     const char *utf8 = "\xc3\xa1\xc3\xa9\xc3\xad";
-    int fd = open_temp_file(&filename, 1, latin1);
+    processx_file_handle_t handle = open_temp_file(&filename, 1, latin1);
 
     processx_connection_t *ccon =
-      processx_c_connection_create(fd, "latin1", 0);
+      processx_c_connection_create(handle, "latin1", 0);
 
     expect_false(processx_c_connection_is_eof(ccon));
 
@@ -192,10 +273,9 @@ context("Reading lines") {
 
   test_that("Reading a line") {
     char *filename;
-    int fd = open_temp_file(&filename, 50, "hello\n");
-    expect_true(fd >= 0);
+    processx_file_handle_t handle = open_temp_file(&filename, 50, "hello\n");
     processx_connection_t *ccon =
-      processx_c_connection_create(fd, "UTF-8", 0);
+      processx_c_connection_create(handle, "UTF-8", 0);
 
     char *linep = 0;
     size_t linecapp = 0;
@@ -211,10 +291,9 @@ context("Reading lines") {
 
   test_that("Reading the last incomplete line") {
     char *filename;
-    int fd = open_temp_file(&filename, 1, "hello\nhello\nagain");
-    expect_true(fd >= 0);
+    processx_file_handle_t handle = open_temp_file(&filename, 1, "hello\nhello\nagain");
     processx_connection_t *ccon =
-      processx_c_connection_create(fd, "UTF-8", 0);
+      processx_c_connection_create(handle, "UTF-8", 0);
 
     char *linep = 0;
     size_t linecapp = 0;

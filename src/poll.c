@@ -41,7 +41,6 @@ SEXP processx_poll(SEXP statuses, SEXP ms) {
   int i, num_proc = LENGTH(statuses);
   processx_pollable_t *pollables;
   SEXP result;
-  int num_ready;
 
   pollables = (processx_pollable_t*)
     R_alloc(num_proc * 2, sizeof(processx_pollable_t));
@@ -55,7 +54,7 @@ SEXP processx_poll(SEXP statuses, SEXP ms) {
     SET_VECTOR_ELT(result, i, allocVector(INTSXP, 2));
   }
 
-  num_ready = processx_c_connection_poll(pollables, num_proc * 2, cms);
+  processx_c_connection_poll(pollables, num_proc * 2, cms);
 
   for (i = 0; i < num_proc; i++) {
     INTEGER(VECTOR_ELT(result, i))[0] = pollables[i*2].event;
