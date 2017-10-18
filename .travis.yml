@@ -8,7 +8,7 @@ r:
  - oldrel
 
 r_github_packages:
-  - gaborcsardi/debugme
+  - r-lib/testthat
 
 after_success:
   - test $TRAVIS_R_VERSION_STRING = "release" && Rscript -e 'covr::codecov()'
