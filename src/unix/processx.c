@@ -12,6 +12,7 @@ static void processx__child_init(processx_handle_t *handle, int pipes[3][2],
 
 static SEXP processx__make_handle(SEXP private, int cleanup);
 static void processx__handle_destroy(processx_handle_t *handle);
+void processx__create_connections(processx_handle_t *handle, SEXP private);
 
 /* Define BSWAP_32 on Big Endian systems */
 #ifdef WORDS_BIGENDIAN
