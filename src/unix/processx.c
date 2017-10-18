@@ -50,6 +50,9 @@ void R_init_processx_unix() {
   child_free_list = &child_free_list_head;
 }
 
+/* These run in the child process, so no coverage here. */
+/* LCOV_EXCL_START */
+
 void processx__write_int(int fd, int err) {
   int dummy = write(fd, &err, sizeof(int));
   (void) dummy;
@@ -121,6 +124,8 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
   processx__write_int(error_fd, - errno);
   raise(SIGKILL);
 }
+
+/* LCOV_EXCL_STOP */
 
 void processx__finalizer(SEXP status) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
@@ -216,7 +221,7 @@ void processx__make_socketpair(int pipe[2]) {
    * Anything else is a genuine error.
    */
   if (errno != EINVAL) {
-    error("processx socketpair: %s", strerror(errno));
+    error("processx socketpair: %s", strerror(errno)); /* LCOV_EXCL_LINE */
   }
 
   no_cloexec = 1;
@@ -269,6 +274,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 
   pid = fork();
 
+  /* TODO: how could we test a failure? */
   if (pid == -1) {		/* ERROR */
     err = -errno;
     if (signal_pipe[0] >= 0) close(signal_pipe[0]);
@@ -279,9 +285,11 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 
   /* CHILD */
   if (pid == 0) {
+    /* LCOV_EXCL_START */
     processx__child_init(handle, pipes, ccommand, cargs, signal_pipe[1],
 			 cstdout, cstderr, &options);
     goto cleanup;
+    /* LCOV_EXCL_STOP */
   }
 
   /* We need to know the processx children */
@@ -577,7 +585,7 @@ SEXP processx_get_exit_status(SEXP status) {
 }
 
 /* See `processx_wait` above for the description of async processes and
- * possible rae conditions.
+ * possible race conditions.
  *
  * This is mostly along the lines of `processx_is_alive`. After we
  * successfully sent the signal, we try a `waitpid` just in case the
