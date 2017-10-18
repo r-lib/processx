@@ -482,45 +482,6 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 
 #endif
 
-/* Poll an OS handle
- *
- * It will just return the handle.
- * TODO: on windows async connections, it has to start reading. Which needs a
- * buffer, etc. So maybe the handle -> pollable conversion does not make
- * sense at all.
- */
-
-int processx_i_poll_func_handle(
-  void *object,
-  int status,
-  processx_file_handle_t *handle,
-  int *again) {
-  processx_file_handle_t *os_handle = (processx_file_handle_t*) object;
-
-  if (handle) *handle = 0;
-  if (again) *again = 0;
-
-#ifdef _WIN32
-  if (! *os_handle) return PXREADY;
-#else
-  if (*os_handle < 0) return PXREADY;
-#endif
-
-  if (handle) *handle = *os_handle;
-  return PXSILENT;
-}
-
-int processx_c_pollable_from_handle(
-  processx_pollable_t *pollable,
-  processx_file_handle_t handle) {
-  pollable->poll_func = processx_i_poll_func_handle;
-  pollable->object = malloc(sizeof(handle));
-  if (!pollable->object) error("out of memory");
-  pollable->free = 1;
-  memcpy(pollable->object, &handle, sizeof(handle));
-  return 0;
-}
-
 #ifdef _WIN32
 
 void processx__connection_start_read(processx_connection_t *ccon) {

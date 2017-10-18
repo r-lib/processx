@@ -35,6 +35,7 @@ int processx__child_add(pid_t pid, SEXP status) {
 }
 
 /* This is actually not used currently. But it should work fine. */
+/* LCOV_EXCL_START */
 
 void processx__child_remove(pid_t pid) {
   processx__child_list_t *prev = child_list, *ptr = child_list->next;
@@ -64,6 +65,8 @@ processx__child_list_t *processx__child_find(pid_t pid) {
   }
   return 0;
 }
+
+/* LCOV_EXCL_STOP */
 
 SEXP processx__killem_all() {
   processx__child_list_t *ptr = child_list->next;

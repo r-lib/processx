@@ -158,10 +158,6 @@ int processx_c_connection_poll(
   size_t npollables, int timeout);
 
 /* Helper function to create pollable handles*/
-int processx_c_pollable_from_handle(
-  processx_pollable_t *pollable,
-  processx_file_handle_t handle);
-
 int processx_c_pollable_from_connection(
   processx_pollable_t *pollable,
   processx_connection_t *ccon);

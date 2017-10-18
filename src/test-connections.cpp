@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+// LCOV_EXCL_START
+
 #ifdef _WIN32
 #include <windows.h>
 
@@ -324,3 +326,5 @@ context("Reading lines") {
     free(filename);
   }
 }
+
+// LCOV_EXCL_STOP
