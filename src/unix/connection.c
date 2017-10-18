@@ -13,7 +13,8 @@ processx_connection_t* processx__create_connection(
   processx_connection_t *con;
   SEXP res;
 
-  con = processx_c_connection_create(fd, "", &res);
+  con = processx_c_connection_create(fd, PROCESSX_FILE_TYPE_ASYNCPIPE,
+				     "", &res);
 
   defineVar(install(membername), res, private);
 

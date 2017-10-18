@@ -26,8 +26,16 @@ typedef int processx_file_handle_t;
 typedef int processx_i_connection_t;
 #endif
 
+typedef enum {
+  PROCESSX_FILE_TYPE_FILE = 1,	/* regular file, blocking IO */
+  PROCESSX_FILE_TYPE_ASYNCFILE,	/* regular file, async IO (well, win only) */
+  PROCESSX_FILE_TYPE_PIPE,	/* pipe, blocking IO */
+  PROCESSX_FILE_TYPE_ASYNCPIPE	/* pipe, async IO */
+} processx_file_type_t;
+
 typedef struct processx_connection_s {
-  int is_file_;			/* only used on windows currently */
+  processx_file_type_t type;
+
   int is_closed_;
   int is_eof_;			/* the UTF8 buffer */
   int is_eof_raw_;		/* the raw file */
@@ -118,6 +126,7 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout);
 /* Create connection object */
 processx_connection_t *processx_c_connection_create(
   processx_file_handle_t os_handle,
+  processx_file_type_t type,
   const char *encoding,
   SEXP *r_connection);
 

@@ -69,7 +69,8 @@ SEXP processx_connection_create(SEXP handle, SEXP encoding) {
 
   if (!os_handle) error("Cannot create connection, invalid handle");
 
-  processx_c_connection_create(*os_handle, c_encoding, &result);
+  processx_c_connection_create(*os_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
+			       c_encoding, &result);
   return result;
 }
 
@@ -158,18 +159,9 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout) {
 
 /* Api from C -----------------------------------------------------------*/
 
-#ifdef _WIN32
-
-int processx__connection_is_file_handle(HANDLE h) {
-  BY_HANDLE_FILE_INFORMATION info;
-  BOOL ret = GetFileInformationByHandle(h, &info);
-  return ret == 0 ? 1 : 0;
-}
-
-#endif
-
 processx_connection_t *processx_c_connection_create(
   processx_file_handle_t os_handle,
+  processx_file_type_t type,
   const char *encoding,
   SEXP *r_connection) {
 
@@ -178,6 +170,20 @@ processx_connection_t *processx_c_connection_create(
 
   con = malloc(sizeof(processx_connection_t));
   if (!con) error("out of memory");
+
+  con->type = type;
+  con->is_closed_ = 0;
+  con->is_eof_  = 0;
+  con->is_eof_raw_ = 0;
+  con->iconv_ctx = 0;
+
+  con->buffer = 0;
+  con->buffer_allocated_size = 0;
+  con->buffer_data_size = 0;
+
+  con->utf8 = 0;
+  con->utf8_allocated_size = 0;
+  con->utf8_data_size = 0;
 
   con->encoding = 0;
   if (encoding && encoding[0]) {
@@ -189,7 +195,6 @@ processx_connection_t *processx_c_connection_create(
   }
 
 #ifdef _WIN32
-  con->is_file_ = processx__connection_is_file_handle(os_handle);
   con->handle.handle = os_handle;
   memset(&con->handle.overlapped, 0, sizeof(OVERLAPPED));
   con->handle.read_pending = FALSE;
@@ -214,19 +219,6 @@ processx_connection_t *processx_c_connection_create(
     setAttrib(result, R_ClassSymbol, class);
     *r_connection = result;
   }
-
-  con->is_closed_ = 0;
-  con->is_eof_  = 0;
-  con->is_eof_raw_ = 0;
-  con->iconv_ctx = 0;
-
-  con->buffer = 0;
-  con->buffer_allocated_size = 0;
-  con->buffer_data_size = 0;
-
-  con->utf8 = 0;
-  con->utf8_allocated_size = 0;
-  con->utf8_data_size = 0;
 
   if (r_connection) UNPROTECT(2);
   return con;
@@ -545,7 +537,7 @@ void processx__connection_start_read(processx_connection_t *ccon) {
   todo = ccon->buffer_allocated_size - ccon->buffer_data_size;
 
   /* These need to be set to zero for non-file handles */
-  if (! ccon->is_file_) {
+  if (ccon->type != PROCESSX_FILE_TYPE_ASYNCFILE) {
      ccon->handle.overlapped.Offset = 0;
      ccon->handle.overlapped.OffsetHigh = 0;
   }
@@ -558,7 +550,7 @@ void processx__connection_start_read(processx_connection_t *ccon) {
 
   if (!res) {
     DWORD err = GetLastError();
-    if (err == ERROR_BROKEN_PIPE) {
+    if (err == ERROR_BROKEN_PIPE || err == ERROR_HANDLE_EOF) {
       ccon->is_eof_raw_ = 1;
       if (ccon->utf8_data_size == 0 && ccon->buffer_data_size == 0) {
 	ccon->is_eof_ = 1;
@@ -573,8 +565,10 @@ void processx__connection_start_read(processx_connection_t *ccon) {
     /* Returned synchronously. */
     ccon->handle.read_pending = FALSE;
     ccon->buffer_data_size += bytes_read;
-    /* TODO: large files */
-    if (ccon->is_file_) ccon->handle.overlapped.Offset += bytes_read;
+    if (ccon->type == PROCESSX_FILE_TYPE_ASYNCFILE) {
+      /* TODO: large files */
+      ccon->handle.overlapped.Offset += bytes_read;
+    }
   }
 }
 
@@ -863,7 +857,7 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
 
     if (!result) {
       DWORD err = GetLastError();
-      if (err == ERROR_BROKEN_PIPE) {
+      if (err == ERROR_BROKEN_PIPE || err == ERROR_HANDLE_EOF) {
 	ccon->handle.read_pending = FALSE;
 	ccon->is_eof_raw_ = 1;
 	if (ccon->utf8_data_size == 0 && ccon->buffer_data_size == 0) {
@@ -882,8 +876,10 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
     } else {
       ccon->handle.read_pending = FALSE;
       ccon->buffer_data_size += bytes_read;
-      /* TODO: large files */
-      if (ccon->is_file_) ccon->handle.overlapped.Offset += bytes_read;
+      if (ccon->type == PROCESSX_FILE_TYPE_ASYNCFILE) {
+	/* TODO: large files */
+	ccon->handle.overlapped.Offset += bytes_read;
+      }
     }
   }
 
