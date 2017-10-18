@@ -1,9 +1,7 @@
 
-#ifdef _WIN32
-
 #include <R.h>
 
-#include "processx-win.h"
+#include "../processx.h"
 
 /* Why is this not defined??? */
 BOOL WINAPI CancelIoEx(
@@ -161,37 +159,17 @@ int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_
 
 
 
-int processx__create_connection(processx_handle_t *handle, HANDLE pipe_handle,
-				const char *membername, SEXP private,
-				processx_connection_t **conptr) {
+processx_connection_t * processx__create_connection(
+  HANDLE pipe_handle, const char *membername, SEXP private) {
 
   processx_connection_t *con;
   SEXP res;
 
-  con = malloc(sizeof(processx_connection_t));
-  if (!con) error("out of memory");
-
-  res = PROTECT(processx_connection_new(con));
-  con->handle = pipe_handle;
-
-  /* Need a manual event for async IO */
-  con->overlapped.hEvent = CreateEvent(
-    /* lpEventAttributes = */ NULL,
-    /* bManualReset = */ FALSE,
-    /* bInitialState = */ FALSE,
-    /* lpName = */ NULL);
-
-  if (con->overlapped.hEvent == NULL) {
-    free(con);
-    return GetLastError();
-  }
+  con = processx_c_connection_create(pipe_handle, "", &res);
 
   defineVar(install(membername), res, private);
 
-  *conptr = con;
-
-  UNPROTECT(1);
-  return 0;
+  return con;
 }
 
 int processx__stdio_create(processx_handle_t *handle,
@@ -243,7 +221,7 @@ int processx__stdio_create(processx_handle_t *handle,
       PutRNGstate();
       if (err) goto error;
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FPIPE;
-      err = processx__create_connection(handle, pipe_handle[i], r_pipe_name, private, &con);
+      con = processx__create_connection(pipe_handle[i], r_pipe_name, private);
       if (err) { goto error; }
       handle->pipes[i] = con;
     }
@@ -282,134 +260,3 @@ WORD processx__stdio_size(BYTE* buffer) {
 HANDLE processx__stdio_handle(BYTE* buffer, int fd) {
   return CHILD_STDIO_HANDLE(buffer, fd);
 }
-
-SEXP processx_poll_io(SEXP status, SEXP ms, SEXP rstdout_pipe, SEXP rstderr_pipe) {
-  int cms = INTEGER(ms)[0], timeleft = cms;
-  processx_handle_t *px = R_ExternalPtrAddr(status);
-  SEXP result;
-  DWORD waitres;
-  HANDLE wait_handles[2];
-  DWORD nCount = 0;
-  int ptr1 = -1, ptr2 = -1;
-
-  if (!px) { error("Internal processx error, handle already removed"); }
-
-  result = PROTECT(allocVector(INTSXP, 2));
-
-  /* See if there is anything to do */
-  if (isNull(rstdout_pipe)) {
-    INTEGER(result)[0] = PXNOPIPE;
-  } else if (! px->pipes[1]) {
-    INTEGER(result)[0] = PXCLOSED;
-  } else {
-    nCount ++;
-    INTEGER(result)[0] = PXSILENT;
-  }
-
-  if (isNull(rstderr_pipe)) {
-    INTEGER(result)[1] = PXNOPIPE;
-  } else if (! px->pipes[2]) {
-    INTEGER(result)[1] = PXCLOSED;
-  } else {
-    nCount ++;
-    INTEGER(result)[1] = PXSILENT;
-  }
-
-  if (nCount == 0) {
-    UNPROTECT(1);
-    return result;
-  }
-
-  /* -------------------------------------------------------------------- */
-  /* Check if there is anything available in the buffers */
-  if (INTEGER(result)[0] == PXSILENT) {
-    if (processx_connection_ready(px->pipes[1])) INTEGER(result)[0] = PXREADY;
-  }
-  if (INTEGER(result)[1] == PXSILENT) {
-    if (processx_connection_ready(px->pipes[2])) INTEGER(result)[1] = PXREADY;
-  }
-
-  if (INTEGER(result)[0] == PXREADY || INTEGER(result)[1] == PXREADY) {
-    UNPROTECT(1);
-    return result;
-  }
-
-  /* For each pipe that does not have IO pending, start an async read */
-  if (INTEGER(result)[0] == PXSILENT && ! px->pipes[1]->read_pending) {
-    processx_connection_start_read(px->pipes[1], INTEGER(result));
-  }
-
-  if (INTEGER(result)[1] == PXSILENT && ! px->pipes[2]->read_pending) {
-    processx_connection_start_read(px->pipes[2], INTEGER(result) + 1);
-  }
-
-  if (INTEGER(result)[0] == PXREADY || INTEGER(result)[1] == PXREADY) {
-    UNPROTECT(1);
-    return result;
-  }
-
-  /* If we are still alive, then we have some pending reads. Wait on them. */
-  nCount = 0;
-  if (INTEGER(result)[0] == PXSILENT) {
-    if (px->pipes[1]->overlapped.hEvent) {
-      ptr1 = nCount;
-      wait_handles[nCount++] = px->pipes[1]->overlapped.hEvent;
-    } else {
-      INTEGER(result)[0] = PXCLOSED;
-    }
-  }
-  if (INTEGER(result)[1] == PXSILENT) {
-    if (px->pipes[2]->overlapped.hEvent) {
-      ptr2 = nCount;
-      wait_handles[nCount++] = px->pipes[2]->overlapped.hEvent;
-    } else {
-      INTEGER(result)[1] = PXCLOSED;
-    }
-  }
-
-  /* Anything to wait for? */
-  if (nCount == 0) {
-    UNPROTECT(1);
-    return result;
-  }
-
-  /* We need to wait in small intervals, to allow interruption from R */
-  waitres = WAIT_TIMEOUT;
-  while (cms < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
-    waitres = WaitForMultipleObjects(
-      nCount,
-      wait_handles,
-      /* bWaitAll = */ FALSE,
-      PROCESSX_INTERRUPT_INTERVAL);
-
-    if (waitres != WAIT_TIMEOUT) break;
-
-    R_CheckUserInterrupt();
-    timeleft -= PROCESSX_INTERRUPT_INTERVAL;
-  }
-
-  /* Maybe we are not done, and there is a little left from the timeout */
-  if (waitres == WAIT_TIMEOUT && timeleft >= 0) {
-    waitres = WaitForMultipleObjects(
-      nCount,
-      wait_handles,
-      /* bWaitAll = */ FALSE,
-      timeleft);
-  }
-
-  if (waitres == WAIT_FAILED){
-    PROCESSX_ERROR("wait when polling for io", GetLastError());
-  } else if (waitres == WAIT_TIMEOUT) {
-    if (ptr1 >= 0) INTEGER(result)[0] = PXTIMEOUT;
-    if (ptr2 >= 0) INTEGER(result)[1] = PXTIMEOUT;
-  } else {
-    int ready = waitres - WAIT_OBJECT_0;
-    if (ptr1 == ready) INTEGER(result)[0] = PXREADY;
-    if (ptr2 == ready) INTEGER(result)[1] = PXREADY;
-  }
-
-  UNPROTECT(1);
-  return result;
-}
-
-#endif

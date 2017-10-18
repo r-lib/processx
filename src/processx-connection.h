@@ -2,7 +2,6 @@
 #ifndef PROCESSX_CONNECTION_H
 #define PROCESSX_CONNECTION_H
 
-#include <R.h>
 #include <Rinternals.h>
 #include <R_ext/Riconv.h>
 
@@ -18,6 +17,7 @@
 typedef HANDLE processx_file_handle_t;
 typedef struct {
   HANDLE handle;
+  BOOLEAN async;
   OVERLAPPED overlapped;
   BOOLEAN read_pending;
 } processx_i_connection_t;
@@ -27,6 +27,7 @@ typedef int processx_i_connection_t;
 #endif
 
 typedef struct processx_connection_s {
+  int is_file_;			/* only used on windows currently */
   int is_closed_;
   int is_eof_;			/* the UTF8 buffer */
   int is_eof_raw_;		/* the raw file */

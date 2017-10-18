@@ -1,12 +1,8 @@
 
-#ifdef WIN32
-
 #include <R.h>
 #include <R_ext/Rdynload.h>
 
-#include <windows.h>
-
-#include "processx-win.h"
+#include "../processx.h"
 
 static HANDLE processx__global_job_handle = NULL;
 
@@ -931,5 +927,3 @@ SEXP processx__process_exists(SEXP pid) {
     return ScalarLogical(exitcode == STILL_ACTIVE);
   }
 }
-
-#endif
