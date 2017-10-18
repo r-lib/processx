@@ -50,13 +50,6 @@ SEXP processx_close_named_pipe(SEXP pipe_ext);
 SEXP processx_create_named_pipe(SEXP name, SEXP mode);
 SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text);
 
-/* Polling */
-
-int processx_c_pollable_from_process(
-  processx_pollable_t *pollable,
-  processx_handle_t *process,
-  int which);
-
 /* Common declarations */
 
 /* Interruption interval in ms */
