@@ -116,7 +116,7 @@ context("Basics") {
   test_that("can create a connection from os handle") {
     processx_file_handle_t handle = open_file("fixtures/simple.txt");
     processx_connection_t *ccon =
-      processx_c_connection_create(handle, "UTF-8", 0);
+      processx_c_connection_create(handle, PROCESSX_FILE_TYPE_ASYNCFILE, "UTF-8", 0);
     expect_true(ccon != 0);
     processx_c_connection_close(ccon);
   }
@@ -127,7 +127,7 @@ context("Reading characters") {
   test_that("can read characters and set EOF") {
     processx_file_handle_t handle = open_file("fixtures/simple.txt");
     processx_connection_t *ccon =
-      processx_c_connection_create(handle, "UTF-8", 0);
+      processx_c_connection_create(handle, PROCESSX_FILE_TYPE_ASYNCFILE, "UTF-8", 0);
 
     expect_false(processx_c_connection_is_eof(ccon));
 
@@ -163,7 +163,7 @@ context("Reading characters") {
   test_that("EOF edge case") {
     processx_file_handle_t handle = open_file("fixtures/simple.txt");
     processx_connection_t *ccon =
-      processx_c_connection_create(handle, "UTF-8", 0);
+      processx_c_connection_create(handle, PROCESSX_FILE_TYPE_ASYNCFILE, "UTF-8", 0);
 
     // Read all contents of the file, it is still not EOF
     char buffer[18];
@@ -186,7 +186,7 @@ context("Reading characters") {
     char *filename;
     processx_file_handle_t handle = open_temp_file(&filename, 100000, 0);
     processx_connection_t *ccon =
-      processx_c_connection_create(handle, "UTF-8", 0);
+      processx_c_connection_create(handle, PROCESSX_FILE_TYPE_ASYNCFILE, "UTF-8", 0);
 
     expect_false(processx_c_connection_is_eof(ccon));
 
@@ -207,7 +207,7 @@ context("Reading characters") {
     processx_file_handle_t handle =
       open_temp_file(&filename, 1, "\xc2\xa0\xe2\x86\x92\xf0\x90\x84\x82");
     processx_connection_t *ccon =
-      processx_c_connection_create(handle, "UTF-8", 0);
+      processx_c_connection_create(handle, PROCESSX_FILE_TYPE_ASYNCFILE, "UTF-8", 0);
 
     expect_false(processx_c_connection_is_eof(ccon));
 
@@ -247,7 +247,7 @@ context("Reading characters") {
     processx_file_handle_t handle = open_temp_file(&filename, 1, latin1);
 
     processx_connection_t *ccon =
-      processx_c_connection_create(handle, "latin1", 0);
+      processx_c_connection_create(handle, PROCESSX_FILE_TYPE_ASYNCFILE, "latin1", 0);
 
     expect_false(processx_c_connection_is_eof(ccon));
 
@@ -275,7 +275,7 @@ context("Reading lines") {
     char *filename;
     processx_file_handle_t handle = open_temp_file(&filename, 50, "hello\n");
     processx_connection_t *ccon =
-      processx_c_connection_create(handle, "UTF-8", 0);
+      processx_c_connection_create(handle, PROCESSX_FILE_TYPE_ASYNCFILE, "UTF-8", 0);
 
     char *linep = 0;
     size_t linecapp = 0;
@@ -293,7 +293,7 @@ context("Reading lines") {
     char *filename;
     processx_file_handle_t handle = open_temp_file(&filename, 1, "hello\nhello\nagain");
     processx_connection_t *ccon =
-      processx_c_connection_create(handle, "UTF-8", 0);
+      processx_c_connection_create(handle, PROCESSX_FILE_TYPE_ASYNCFILE, "UTF-8", 0);
 
     char *linep = 0;
     size_t linecapp = 0;
