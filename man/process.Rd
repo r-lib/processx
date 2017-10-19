@@ -64,10 +64,10 @@ On Windows it uses the \code{cmd} shell:
 your chosen shell directly.
 \item \code{stdout}: What to do with the standard output. Possible values:
 \code{NULL}: discard it; a string, redirect it to this file;
-\code{"|"}: create an R connection for it.
+\code{"|"}: create a connection for it.
 \item \code{stderr}: What to do with the standard error. Possible values:
 \code{NULL}: discard it; a string, redirect it to this file;
-\code{"|"}: create an R connection for it.
+\code{"|"}: create a connection for it.
 \item \code{cleanup}: Whether to kill the process (and its children)
 if the \code{process} object is garbage collected.
 \item \code{echo_cmd}: Whether to print the command to the screen before
