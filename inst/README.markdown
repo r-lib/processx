@@ -44,8 +44,7 @@ facilities, with a timeout.
 
 * Start system processes in the background and find their
   process id.
-* Read the standard output and error, using non-blocking R connection
-  objects.
+* Read the standard output and error, using non-blocking connections
 * Poll the standard output and error connections of a single process or
   multiple processes.
 * Check if a background process is running.
@@ -223,10 +222,10 @@ out2
 ```
 
 ```
-#>  [1] "DESCRIPTION"  "LICENSE"      "Makefile"     "NAMESPACE"   
-#>  [5] "NEWS.md"      "R"            "README.Rmd"   "README.md"   
-#>  [9] "appveyor.yml" "inst"         "man"          "src"         
-#> [13] "tests"
+#>  [1] "DESCRIPTION"     "LICENSE"         "Makefile"       
+#>  [4] "NAMESPACE"       "R"               "README.Rmd"     
+#>  [7] "README.markdown" "appveyor.yml"    "inst"           
+#> [10] "man"             "src"             "tests"
 ```
 
 #### Spinner
@@ -411,8 +410,8 @@ gc()
 
 ```
 #>          used (Mb) gc trigger (Mb) max used (Mb)
-#> Ncells 303179 16.2     592000 31.7   460000 24.6
-#> Vcells 500110  3.9    1023718  7.9   786411  6.0
+#> Ncells 420918 22.5     750400 40.1   592000 31.7
+#> Vcells 839465  6.5    1650153 12.6  1071418  8.2
 ```
 
 Here, the direct call to the garbage collector kills the `sleep` process
@@ -423,25 +422,32 @@ as well. See the `cleaup` option if you want to avoid this behavior.
 By default the standard output and error of the processes are ignored.
 You can set the `stdout` and `stderr` constructor arguments to a file name,
 and then they are redirected there, or to `"|"`, and then `processx` creates
-R connections to them.
+connections to them. (Note that starting from `processx` 3.0.0 these
+connections are not regular R connections, because the public R connection
+API was retroactively removed from R.)
 
 The `read_output_lines` and `read_error_lines` methods can be used
-to read from the standard output or error connections. They work the same
-way as the `readLines` base function.
+to read from the standard output or error connections. They work similarly
+to the `readLines` base R function.
 
-Alternatively, you can query the connections via the `get_output_connection`
-and `get_error_connection` functions, and work with them directly.
-
-Note, that the R connections have a buffer, which can fill up, if R does
+Note, that the connections have a buffer, which can fill up, if R does
 not read out the output, and then the process will stop, until R reads the
 connection and the buffer is freed.
 
 > **Always make sure that you read out the standard output and/or error**
 > **of the pipes, otherwise the background process will stop running!**
 
+If you don't need the standard output or error any more, you can also
+close it, like this:
+```r
+close(p$get_output_connection())
+close(p$get_error_connection())
+```
+
 Note that the connections used for reading the output and error streams
-are non-blocking text connections, so the read functions will return
-immediately, even if there is no text to read from them.
+are non-blocking, so the read functions will return immediately, even if
+there is no text to read from them. If you want to make sure that there
+is data available to read, you need to poll, see below.
 
 
 ```r
@@ -470,7 +476,16 @@ or error streams, you can use the `is_incomplete_output()` and
 ```r
 p <- process$new(commandline = "echo foo; sleep 2; echo bar", stdout = "|")
 
-Sys.sleep(1)
+## Wait for output
+p$poll_io(1000)
+```
+
+```
+#>   output    error 
+#>  "ready" "nopipe"
+```
+
+```r
 ## There must be output now
 p$is_incomplete_output()
 ```
@@ -488,12 +503,21 @@ p$read_output_lines()
 ```
 
 ```r
-## There is no more output now
+## There is no more output now, maybe later
 p$is_incomplete_output()
 ```
 
 ```
 #> [1] TRUE
+```
+
+```r
+p$poll_io(0)
+```
+
+```
+#>    output     error 
+#> "timeout"  "nopipe"
 ```
 
 ```r
@@ -505,7 +529,16 @@ p$read_output_lines()
 ```
 
 ```r
-Sys.sleep(2)
+## Wait for output
+p$poll_io(2000)
+```
+
+```
+#>   output    error 
+#>  "ready" "nopipe"
+```
+
+```r
 ## There is output again
 p$is_incomplete_output()
 ```
@@ -524,19 +557,19 @@ p$read_output_lines()
 
 ```r
 ## There is no more output
-p$is_incomplete_output()
-```
-
-```
-#> [1] FALSE
-```
-
-```r
 p$read_output_lines()
 ```
 
 ```
 #> character(0)
+```
+
+```r
+p$is_incomplete_output()
+```
+
+```
+#> [1] FALSE
 ```
 
 #### End of output
@@ -556,9 +589,9 @@ The `poll_io` method waits for data on the standard output and/or error
 of a process. It will return if any of the following events happen:
 
 * data is available on the standard output of the process (assuming there is
-  an R connection to the standard output).
+  a connection to the standard output).
 * data is available on the standard error of the proces (assuming the is
-  an R connection to the standard error).
+  a connection to the standard error).
 * The process has finished and the standard output and/or error connections
   were closed on the other end.
 * The specified timeout period expired.
@@ -593,10 +626,10 @@ p$read_output_lines()
 ```
 
 ```
-#>  [1] "DESCRIPTION"  "LICENSE"      "Makefile"     "NAMESPACE"   
-#>  [5] "NEWS.md"      "R"            "README.Rmd"   "README.md"   
-#>  [9] "appveyor.yml" "inst"         "man"          "src"         
-#> [13] "tests"
+#>  [1] "DESCRIPTION"     "LICENSE"         "Makefile"       
+#>  [4] "NAMESPACE"       "R"               "README.Rmd"     
+#>  [7] "README.markdown" "appveyor.yml"    "inst"           
+#> [10] "man"             "src"             "tests"
 ```
 
 #### Polling multiple processes
@@ -646,16 +679,22 @@ p1$read_output_lines()
 ```
 
 ```
-#>  [1] "DESCRIPTION"  "LICENSE"      "Makefile"     "NAMESPACE"   
-#>  [5] "NEWS.md"      "R"            "README.Rmd"   "README.md"   
-#>  [9] "appveyor.yml" "inst"         "man"          "src"         
-#> [13] "tests"
+#>  [1] "DESCRIPTION"     "LICENSE"         "Makefile"       
+#>  [4] "NAMESPACE"       "R"               "README.Rmd"     
+#>  [7] "README.markdown" "appveyor.yml"    "inst"           
+#> [10] "man"             "src"             "tests"
 ```
 
 ```r
 ## Done with p1
 close(p1$get_output_connection())
+```
 
+```
+#> NULL
+```
+
+```r
 ## The second process should have data on stderr by now
 poll(list(p1 = p1, p2 = p2), 5000)
 ```
@@ -675,10 +714,10 @@ p2$read_error_lines()
 ```
 
 ```
-#>  [1] "DESCRIPTION"  "LICENSE"      "Makefile"     "NAMESPACE"   
-#>  [5] "NEWS.md"      "R"            "README.Rmd"   "README.md"   
-#>  [9] "appveyor.yml" "inst"         "man"          "src"         
-#> [13] "tests"
+#>  [1] "DESCRIPTION"     "LICENSE"         "Makefile"       
+#>  [4] "NAMESPACE"       "R"               "README.Rmd"     
+#>  [7] "README.markdown" "appveyor.yml"    "inst"           
+#> [10] "man"             "src"             "tests"
 ```
 
 #### Waiting on a process
@@ -703,7 +742,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2017-05-18 14:16:55 BST"
+#> [1] "2017-10-19 12:50:50 BST"
 ```
 
 ```r
@@ -712,7 +751,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2017-05-18 14:16:57 BST"
+#> [1] "2017-10-19 12:50:52 BST"
 ```
 
 It is safe to call `wait` multiple times:
