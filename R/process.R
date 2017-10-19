@@ -62,10 +62,10 @@ NULL
 #'     your chosen shell directly.
 #' * `stdout`: What to do with the standard output. Possible values:
 #'     `NULL`: discard it; a string, redirect it to this file;
-#'     `"|"`: create an R connection for it.
+#'     `"|"`: create a connection for it.
 #' * `stderr`: What to do with the standard error. Possible values:
 #'     `NULL`: discard it; a string, redirect it to this file;
-#'     `"|"`: create an R connection for it.
+#'     `"|"`: create a connection for it.
 #' * `cleanup`: Whether to kill the process (and its children)
 #'     if the `process` object is garbage collected.
 #' * `echo_cmd`: Whether to print the command to the screen before
