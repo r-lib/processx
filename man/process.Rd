@@ -11,7 +11,6 @@ id of the started process, and set its standard output and error
 streams. The process id is then used to manage the process.
 }
 \section{Usage}{
-
 \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
                  stdout = NULL, stderr = NULL, cleanup = TRUE,
                  echo_cmd = FALSE, supervise = FALSE,
@@ -49,48 +48,49 @@ print(p)
 
 \section{Arguments}{
 
-\describe{
-\item{p}{A \code{process} object.}
-\item{command}{Character scalar, the command to run.
+\itemize{
+\item \code{p}: \code{process} object.
+\item \code{command}: Character scalar, the command to run.
 Note that this argument is not passed to a shell, so no
 tilde-expansion or variable substitution is performed on it.
-It should not be quoted with \code{\link[base]{shQuote}}. See
-\code{\link[base]{normalizePath}} for tilde-expansion.}
-\item{args}{Character vector, arguments to the command. They will be
-used as is, without a shell. They don't need to be escaped.}
-\item{commandline}{A character scalar, a full command line.
+It should not be quoted with \code{\link[base:shQuote]{base::shQuote()}}. See
+\code{\link[base:normalizePath]{base::normalizePath()}} for tilde-expansion.
+\item \code{args}: Character vector, arguments to the command. They will be
+used as is, without a shell. They don't need to be escaped.
+\item \code{commandline}: A character scalar, a full command line.
 On Unix systems it runs the a shell: \code{sh -c <commandline>}.
 On Windows it uses the \code{cmd} shell:
 \code{cmd /c <commandline>}. If you want more control, then call
-your chosen shell directly.}
-\item{stdout}{What to do with the standard output. Possible values:
-\code{NULL}: discard it; a string, redirect it to this file,
-\code{"|"}: create an R connection for it.}
-\item{stderr}{What to do with the standard error. Possible values:
-\code{NULL}: discard it; a string, redirect it to this file,
-\code{"|"}: create an R connection for it.}
-\item{cleanup}{Whether to kill the process (and its children)
-if the \code{process} object is garbage collected.}
-\item{echo_cmd}{Whether to print the command to the screen before
-running it.}
-\item{supervise}{Whether to register the process with a supervisor.
+your chosen shell directly.
+\item \code{stdout}: What to do with the standard output. Possible values:
+\code{NULL}: discard it; a string, redirect it to this file;
+\code{"|"}: create an R connection for it.
+\item \code{stderr}: What to do with the standard error. Possible values:
+\code{NULL}: discard it; a string, redirect it to this file;
+\code{"|"}: create an R connection for it.
+\item \code{cleanup}: Whether to kill the process (and its children)
+if the \code{process} object is garbage collected.
+\item \code{echo_cmd}: Whether to print the command to the screen before
+running it.
+\item \code{supervise}: Whether to register the process with a supervisor.
 If \code{TRUE}, the supervisor will ensure that the process is
-killed when the R process exits.}
-\item{windows_verbatim_args}{Whether to omit quoting the arguments
-on Windows. It is ignored on other platforms.}
-\item{windows_hide_window}{Whether to hide the application's window
-on Windows. It is ignored on other platforms.}
-\item{signal}{An integer scalar, the id of the signal to send to
-the process. See \code{\link[tools]{pskill}} for the list of
-signals.}
-\item{grace}{Currently not used.}
-\item{timeout}{Timeout in milliseconds, for the wait or the I/O
-polling.}
-\item{n}{Number of characters or lines to read.}
-\item{encoding}{The encoding to assume for \code{stdout} and
+killed when the R process exits.
+\item \code{windows_verbatim_args}: Whether to omit quoting the arguments
+on Windows. It is ignored on other platforms.
+\item \code{windows_hide_window}: Whether to hide the application's window
+on Windows. It is ignored on other platforms.
+\item \code{signal}: An integer scalar, the id of the signal to send to
+the process. See \code{\link[tools:pskill]{tools::pskill()}} for the list of signals.
+\item \code{grace}: Currently not used.
+\item \code{timeout}: Timeout in milliseconds, for the wait or the I/O
+polling.
+\item \code{n}: Number of characters or lines to read.
+\item \code{encoding}: The encoding to assume for \code{stdout} and
 \code{stderr}. By default the encoding of the current locale is
 used. Note that \code{processx} always reencodes the output of
-both streams in UTF-8 currently.}
+both streams in UTF-8 currently. If you want to read them
+without any conversion, on all platforms, specify \code{"UTF-8"} as
+encoding.
 }
 }
 
@@ -216,7 +216,7 @@ this returns the absolute path to the file. If \code{stderr} was \code{"|"} or
 \code{NULL}, this simply returns that value.
 
 \code{$poll_io()} polls the process's connections for I/O. See more in
-the \emph{Polling} section, and see also the \code{\link{poll}} function
+the \emph{Polling} section, and see also the \code{\link[=poll]{poll()}} function
 to poll on multiple processes.
 
 \code{print(p)} or \code{p$print()} shows some information about the
@@ -230,7 +230,7 @@ error connections of a process, with a timeout. If there is output
 in either of them, or they are closed (e.g. because the process exits)
 \code{poll_io()} returns immediately.
 
-In addition to polling a single process, the \code{\link{poll}} function
+In addition to polling a single process, the \code{\link[=poll]{poll()}} function
 can poll the output of several processes, and returns as soon as any
 of them has generated output (or exited).
 }
