@@ -21,7 +21,8 @@ try_silently <- function(expr) {
 get_wintool <- function(prog) {
   exe <- system.file(package = "processx", "bin", .Platform$r_arch, prog)
   if (exe == "") {
-    exe <- system.file(package = "processx", "..", "src", "wintools", prog)
+    exe <- file.path(system.file(package = "processx"), "src", "wintools", prog)
+    if (!file.exists(exe)) return("")
   }
   exe
 }
@@ -30,6 +31,7 @@ sleep <- function(n, commandline = TRUE) {
 
   if (os_type() == "windows") {
     sleepexe <- get_wintool("sleep.exe")
+    if (sleepexe == "") skip("Cannot run sleep.exe")
     if (commandline) {
       paste(sleepexe, n)
     } else {
