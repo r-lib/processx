@@ -72,3 +72,15 @@ test_that("Invalid UTF-8 characters in the middle of the string", {
 
   expect_equal(out, strrep("a", 100))
 })
+
+test_that("Convert from another encoding to UTF-8", {
+  if (os_type() != "unix") skip("Only Unix")
+
+  latin1 <- "\xe1\xe9\xed";
+  writeBin(charToRaw(latin1), tmp1 <- tempfile())
+
+  p <- process$new("cat", tmp1, stdout = "|", encoding = "latin1")
+  suppressWarnings(out <- p$read_all_output_lines())
+
+  expect_equal(out, "\xc3\xa1\xc3\xa9\xc3\xad")
+})

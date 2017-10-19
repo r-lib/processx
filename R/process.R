@@ -14,7 +14,9 @@ NULL
 #' \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
 #'                  stdout = NULL, stderr = NULL, cleanup = TRUE,
 #'                  echo_cmd = FALSE, supervise = FALSE,
-#'                  windows_verbatim_args = FALSE, windows_hide_window = FALSE)
+#'                  windows_verbatim_args = FALSE,
+#'                  windows_hide_window = FALSE,
+#'                  encoding = "")
 #'
 #' p$is_alive()
 #' p$signal(signal)
@@ -82,6 +84,10 @@ NULL
 #'   \item{timeout}{Timeout in milliseconds, for the wait or the I/O
 #'     polling.}
 #'   \item{n}{Number of characters or lines to read.}
+#'   \item{encoding}{The encoding to assume for \code{stdout} and
+#'     \code{stderr}. By default the encoding of the current locale is
+#'     used. Note that \code{processx} always reencodes the output of
+#'     both streams in UTF-8 currently.}
 #' }
 #'
 #' @section Details:
@@ -250,10 +256,11 @@ process <- R6Class(
     initialize = function(command = NULL, args = character(),
       commandline = NULL, stdout = NULL, stderr = NULL, cleanup = TRUE,
       echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
-      windows_hide_window = FALSE)
+      windows_hide_window = FALSE, encoding = "")
       process_initialize(self, private, command, args, commandline,
                          stdout, stderr, cleanup, echo_cmd, supervise,
-                         windows_verbatim_args, windows_hide_window),
+                         windows_verbatim_args, windows_hide_window,
+                         encoding),
 
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
@@ -368,6 +375,8 @@ process <- R6Class(
     stdout_pipe = NULL,
     stderr_pipe = NULL,
 
+    encoding = "",
+
     get_short_name = function()
       process_get_short_name(self, private)
   )
@@ -401,7 +410,8 @@ process_restart <- function(self, private) {
     private$echo_cmd,
     private$supervised,
     private$windows_verbatim_args,
-    private$windows_hide_window
+    private$windows_hide_window,
+    private$encoding
   )
 
   invisible(self)

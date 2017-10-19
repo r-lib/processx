@@ -60,6 +60,10 @@
 #'   command and the arguments on windows. Ignored on other platforms.
 #' @param windows_hide_window Whether to hide the window of the
 #'   application on windows. Ignored on other platforms.
+#' @param encoding The encoding to assume for \code{stdout} and
+#'   \code{stderr}. By default the encoding of the current locale is
+#'   used. Note that \code{processx} always reencodes the output of
+#'   both streams in UTF-8 currently.
 #' @return A list with components:
 #'   * status The exit status of the process. If this is `NA`, then the
 #'     process was killed and had no exit status.
@@ -93,7 +97,8 @@ run <- function(
   error_on_status = TRUE, echo_cmd = FALSE, echo = FALSE, spinner = FALSE,
   timeout = Inf, stdout_line_callback = NULL, stdout_callback = NULL,
   stderr_line_callback = NULL, stderr_callback = NULL,
-  windows_verbatim_args = FALSE, windows_hide_window = FALSE) {
+  windows_verbatim_args = FALSE, windows_hide_window = FALSE,
+  encoding = "") {
 
   assert_that(is_flag(error_on_status))
   assert_that(is_time_interval(timeout))
@@ -113,7 +118,7 @@ run <- function(
     command, args, commandline, echo_cmd = echo_cmd,
     windows_verbatim_args = windows_verbatim_args,
     windows_hide_window = windows_hide_window,
-    stdout = "|", stderr = "|"
+    stdout = "|", stderr = "|", encoding = encoding
   )
 
   ## If echo, then we need to create our own callbacks.

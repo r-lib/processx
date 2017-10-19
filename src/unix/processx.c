@@ -12,7 +12,8 @@ static void processx__child_init(processx_handle_t *handle, int pipes[3][2],
 
 static SEXP processx__make_handle(SEXP private, int cleanup);
 static void processx__handle_destroy(processx_handle_t *handle);
-void processx__create_connections(processx_handle_t *handle, SEXP private);
+void processx__create_connections(processx_handle_t *handle, SEXP private,
+				  const char *encoding);
 
 /* Define BSWAP_32 on Big Endian systems */
 #ifdef WORDS_BIGENDIAN
@@ -239,13 +240,15 @@ skip:
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 		   SEXP windows_verbatim_args,
-		   SEXP windows_hide_window, SEXP private, SEXP cleanup) {
+		   SEXP windows_hide_window, SEXP private, SEXP cleanup,
+		   SEXP encoding) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
   int ccleanup = INTEGER(cleanup)[0];
   const char *cstdout = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
   const char *cstderr = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
+  const char *cencoding = CHAR(STRING_ELT(encoding, 0));
   processx_options_t options = { 0 };
 
   pid_t pid;
@@ -345,7 +348,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   if (pipes[2][1] >= 0) close(pipes[2][1]);
 
   /* Create proper connections */
-  processx__create_connections(handle, private);
+  processx__create_connections(handle, private, cencoding);
 
   if (exec_errorno == 0) {
     handle->pid = pid;

@@ -21,7 +21,8 @@ int processx__utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr);
 
 int processx__stdio_create(processx_handle_t *handle,
 			   const char *std_out, const char *std_err,
-			   BYTE** buffer_ptr, SEXP privatex);
+			   BYTE** buffer_ptr, SEXP privatex,
+			   const char *encoding);
 WORD processx__stdio_size(BYTE* buffer);
 HANDLE processx__stdio_handle(BYTE* buffer, int fd);
 void processx__stdio_destroy(BYTE* buffer);
