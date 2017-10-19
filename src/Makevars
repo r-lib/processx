@@ -8,9 +8,10 @@ OBJECTS = init.o poll.o processx-connection.o            \
 
 all: supervisor/supervisor $(SHLIB)
 
-supervisor/supervisor: supervisor/*.c
-	$(CC) $(CFLAGS) supervisor/*.c -o supervisor/supervisor
+supervisor/supervisor: supervisor/supervisor.c supervisor/utils.c
+	$(CC) $(CFLAGS) $^ -o supervisor/supervisor
 
 clean:
-	rm -rf $(SHLIB) $(OBJECTS) \
-	    supervisor/supervisor supervisor/supervisor.dSYM supervisor/supervisor.exe
+	rm -rf $(SHLIB) $(OBJECTS)				\
+	    supervisor/supervisor supervisor/supervisor.dSYM 	\
+	    supervisor/supervisor.exe

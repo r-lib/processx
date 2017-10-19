@@ -1,4 +1,3 @@
-#ifdef WIN32
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -270,5 +269,3 @@ BOOL kill_pid(DWORD dwProcessId) {
 
     return result;
 }
-
-#endif
