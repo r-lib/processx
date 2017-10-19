@@ -10,4 +10,5 @@
 /src-i386
 /src-x64
 /src/supervisor/supervisor
+/src/supervisor/supervisor.exe
 /src/supervisor/supervisor.dSYM
