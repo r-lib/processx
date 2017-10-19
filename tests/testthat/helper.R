@@ -21,7 +21,9 @@ try_silently <- function(expr) {
 get_wintool <- function(prog) {
   exe <- system.file(package = "processx", "bin", .Platform$r_arch, prog)
   if (exe == "") {
-    exe <- file.path(system.file(package = "processx"), "src", "wintools", prog)
+    pkgpath <- system.file(package = "processx")
+    if (basename(pkgpath) == "inst") pkgpath <- dirname(pkgpath)
+    exe <- file.path(pkgpath, "src", "wintools", prog)
     if (!file.exists(exe)) return("")
   }
   exe
