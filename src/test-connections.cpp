@@ -286,6 +286,7 @@ context("Reading lines") {
     expect_true(!strcmp(linep, "hello"));
     expect_true(linecapp == 6);
 
+    free(linep);
     processx_c_connection_destroy(ccon);
     unlink(filename);
     free(filename);
@@ -321,6 +322,7 @@ context("Reading lines") {
     expect_true(read == 0);
     expect_true(processx_c_connection_is_eof(ccon));
 
+    free(linep);
     processx_c_connection_destroy(ccon);
     unlink(filename);
     free(filename);
