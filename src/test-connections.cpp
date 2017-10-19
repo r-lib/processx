@@ -120,7 +120,7 @@ context("Basics") {
     processx_connection_t *ccon =
       processx_c_connection_create(handle, PROCESSX_FILE_TYPE_ASYNCFILE, "UTF-8", 0);
     expect_true(ccon != 0);
-    processx_c_connection_close(ccon);
+    processx_c_connection_destroy(ccon);
   }
 }
 
@@ -159,7 +159,7 @@ context("Reading characters") {
 
     expect_true(processx_c_connection_is_eof(ccon));
 
-    processx_c_connection_close(ccon);
+    processx_c_connection_destroy(ccon);
   }
 
   test_that("EOF edge case") {
@@ -181,7 +181,7 @@ context("Reading characters") {
     expect_true(ret == 0);
     expect_true(processx_c_connection_is_eof(ccon));
 
-    processx_c_connection_close(ccon);
+    processx_c_connection_destroy(ccon);
   }
 
   test_that("A larger file that needs buffering") {
@@ -198,7 +198,7 @@ context("Reading characters") {
       if (ret == 0) expect_true(processx_c_connection_is_eof(ccon));
     }
 
-    processx_c_connection_close(ccon);
+    processx_c_connection_destroy(ccon);
     unlink(filename);
     free(filename);
   }
@@ -237,7 +237,7 @@ context("Reading characters") {
     expect_true(ret == 0);
     expect_true(processx_c_connection_is_eof(ccon));
 
-    processx_c_connection_close(ccon);
+    processx_c_connection_destroy(ccon);
     unlink(filename);
     free(filename);
   }
@@ -264,7 +264,7 @@ context("Reading characters") {
     expect_true(ret == 0);
     expect_true(processx_c_connection_is_eof(ccon));
 
-    processx_c_connection_close(ccon);
+    processx_c_connection_destroy(ccon);
     unlink(filename);
     free(filename);
   }
@@ -286,7 +286,7 @@ context("Reading lines") {
     expect_true(!strcmp(linep, "hello"));
     expect_true(linecapp == 6);
 
-    processx_c_connection_close(ccon);
+    processx_c_connection_destroy(ccon);
     unlink(filename);
     free(filename);
   }
@@ -321,7 +321,7 @@ context("Reading lines") {
     expect_true(read == 0);
     expect_true(processx_c_connection_is_eof(ccon));
 
-    processx_c_connection_close(ccon);
+    processx_c_connection_destroy(ccon);
     unlink(filename);
     free(filename);
   }
