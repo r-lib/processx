@@ -160,13 +160,14 @@ int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_
 
 
 processx_connection_t * processx__create_connection(
-  HANDLE pipe_handle, const char *membername, SEXP private) {
+  HANDLE pipe_handle, const char *membername, SEXP private,
+  const char *encoding) {
 
   processx_connection_t *con;
   SEXP res;
 
   con = processx_c_connection_create(pipe_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
-				     "", &res);
+				     encoding, &res);
 
   defineVar(install(membername), res, private);
 
@@ -175,7 +176,8 @@ processx_connection_t * processx__create_connection(
 
 int processx__stdio_create(processx_handle_t *handle,
 			   const char *std_out, const char *std_err,
-			   BYTE** buffer_ptr, SEXP private) {
+			   BYTE** buffer_ptr, SEXP private,
+			   const char *encoding) {
   BYTE* buffer;
   int count, i;
   int err;
@@ -222,7 +224,8 @@ int processx__stdio_create(processx_handle_t *handle,
       PutRNGstate();
       if (err) goto error;
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FPIPE;
-      con = processx__create_connection(pipe_handle[i], r_pipe_name, private);
+      con = processx__create_connection(pipe_handle[i], r_pipe_name,
+					private, encoding);
       if (err) { goto error; }
       handle->pipes[i] = con;
     }

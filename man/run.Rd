@@ -9,7 +9,7 @@ run(command = NULL, args = character(), commandline = NULL,
   spinner = FALSE, timeout = Inf, stdout_line_callback = NULL,
   stdout_callback = NULL, stderr_line_callback = NULL,
   stderr_callback = NULL, windows_verbatim_args = FALSE,
-  windows_hide_window = FALSE)
+  windows_hide_window = FALSE, encoding = "")
 }
 \arguments{
 \item{command}{Character scalar, the command to run. It will be
@@ -63,6 +63,11 @@ command and the arguments on windows. Ignored on other platforms.}
 
 \item{windows_hide_window}{Whether to hide the window of the
 application on windows. Ignored on other platforms.}
+
+\item{encoding}{The encoding to assume for \code{stdout} and
+\code{stderr}. By default the encoding of the current locale is
+used. Note that \code{processx} always reencodes the output of
+both streams in UTF-8 currently.}
 }
 \value{
 A list with components:

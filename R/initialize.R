@@ -11,6 +11,7 @@
 #' @param cleanup Kill on GC?
 #' @param echo_cmd Echo command before starting it?
 #' @param supervise Should the process be supervised?
+#' @param encoding Assumed stdout and stderr encoding.
 #'
 #' @keywords internal
 #' @importFrom utils head tail
@@ -18,7 +19,7 @@
 process_initialize <- function(self, private, command, args,
                                commandline, stdout, stderr, cleanup,
                                echo_cmd, supervise, windows_verbatim_args,
-                               windows_hide_window) {
+                               windows_hide_window, encoding) {
 
   "!DEBUG process_initialize `command`"
 
@@ -31,6 +32,7 @@ process_initialize <- function(self, private, command, args,
   assert_that(is_flag(echo_cmd))
   assert_that(is_flag(windows_verbatim_args))
   assert_that(is_flag(windows_hide_window))
+  assert_that(is_string(encoding))
 
   if (is.null(command) + is.null(commandline) != 1) {
     stop("Need exactly one of 'command' and 'commandline")
@@ -48,6 +50,7 @@ process_initialize <- function(self, private, command, args,
   private$echo_cmd <- echo_cmd
   private$windows_verbatim_args <- windows_verbatim_args
   private$windows_hide_window <- windows_hide_window
+  private$encoding <- encoding
 
   if (is.null(command)) {
     if (os_type() == "unix") {
@@ -69,7 +72,7 @@ process_initialize <- function(self, private, command, args,
     c_processx_exec,
     command, c(command, args), stdout, stderr,
     windows_verbatim_args, windows_hide_window,
-    private, cleanup
+    private, cleanup, encoding
   )
   private$starttime <- Sys.time()
 

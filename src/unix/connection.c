@@ -8,29 +8,37 @@
 
 processx_connection_t* processx__create_connection(
   int fd, const char *membername,
-  SEXP private) {
+  SEXP private,
+  const char *encoding) {
 
   processx_connection_t *con;
   SEXP res;
 
   con = processx_c_connection_create(fd, PROCESSX_FILE_TYPE_ASYNCPIPE,
-				     "", &res);
+				     encoding, &res);
 
   defineVar(install(membername), res, private);
 
   return con;
 }
 
-void processx__create_connections(processx_handle_t *handle, SEXP private) {
+void processx__create_connections(processx_handle_t *handle, SEXP private,
+				  const char *encoding) {
   handle->pipes[0] = handle->pipes[1] = handle->pipes[2] = 0;
 
   if (handle->fd1 >= 0) {
-    handle->pipes[1] = processx__create_connection(handle->fd1,
-						   "stdout_pipe", private);
+    handle->pipes[1] = processx__create_connection(
+      handle->fd1,
+      "stdout_pipe",
+      private,
+      encoding);
   }
 
   if (handle->fd2 >= 0) {
-    handle->pipes[2] = processx__create_connection(handle->fd2,
-						   "stderr_pipe", private);
+    handle->pipes[2] = processx__create_connection(
+      handle->fd2,
+      "stderr_pipe",
+      private,
+      encoding);
   }
 }
