@@ -45,6 +45,19 @@ sleep <- function(n, commandline = TRUE) {
   }
 }
 
+## type is not good, because it needs cmd
+## more is another candidate, but it does not handle long lines, it cuts them
+## so we go with cat
+
+cat_command <- function() {
+  if (os_type() == "windows") "cat" else "cat"
+}
+
+skip_if_no_cat <- function() {
+  cat <- cat_command()
+  if (Sys.which(cat) == "") skip("No cat command")
+}
+
 get_pid_by_name <- function(name) {
   if (os_type() == "windows") {
     get_pid_by_name_windows(name)
