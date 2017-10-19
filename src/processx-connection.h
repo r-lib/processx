@@ -130,6 +130,9 @@ processx_connection_t *processx_c_connection_create(
   const char *encoding,
   SEXP *r_connection);
 
+/* Destroy connection object. We need this for the C API */
+void processx_c_connection_destroy(processx_connection_t *ccon);
+
 /* Read characters */
 ssize_t processx_c_connection_read_chars(
   processx_connection_t *con,
