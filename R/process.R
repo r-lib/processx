@@ -6,12 +6,13 @@ NULL
 #'
 #' Managing external processes from R is not trivial, and this
 #' class aims to help with this deficiency. It is essentially a small
-#' wrapper around the \code{system} base R function, to return the process
+#' wrapper around the `system` base R function, to return the process
 #' id of the started process, and set its standard output and error
 #' streams. The process id is then used to manage the process.
 #'
 #' @section Usage:
-#' \preformatted{p <- process$new(command = NULL, args, commandline = NULL,
+#' ```
+#' p <- process$new(command = NULL, args, commandline = NULL,
 #'                  stdout = NULL, stderr = NULL, cleanup = TRUE,
 #'                  echo_cmd = FALSE, supervise = FALSE,
 #'                  windows_verbatim_args = FALSE,
@@ -43,187 +44,186 @@ NULL
 #' p$poll_io(timeout)
 #'
 #' print(p)
-#' }
+#' ```
 #'
 #' @section Arguments:
-#' \describe{
-#'   \item{p}{A \code{process} object.}
-#'   \item{command}{Character scalar, the command to run.
+#' * `p`: `process` object.
+#' * `command`: Character scalar, the command to run.
 #'     Note that this argument is not passed to a shell, so no
 #'     tilde-expansion or variable substitution is performed on it.
-#'     It should not be quoted with \code{\link[base]{shQuote}}. See
-#'     \code{\link[base]{normalizePath}} for tilde-expansion.}
-#'   \item{args}{Character vector, arguments to the command. They will be
-#'     used as is, without a shell. They don't need to be escaped.}
-#'   \item{commandline}{A character scalar, a full command line.
-#'     On Unix systems it runs the a shell: \code{sh -c <commandline>}.
-#'     On Windows it uses the \code{cmd} shell:
-#'     \code{cmd /c <commandline>}. If you want more control, then call
-#'     your chosen shell directly.}
-#'   \item{stdout}{What to do with the standard output. Possible values:
-#'     \code{NULL}: discard it; a string, redirect it to this file,
-#'     \code{"|"}: create an R connection for it.}
-#'   \item{stderr}{What to do with the standard error. Possible values:
-#'     \code{NULL}: discard it; a string, redirect it to this file,
-#'     \code{"|"}: create an R connection for it.}
-#'   \item{cleanup}{Whether to kill the process (and its children)
-#'     if the \code{process} object is garbage collected.}
-#'   \item{echo_cmd}{Whether to print the command to the screen before
-#'     running it.}
-#'   \item{supervise}{Whether to register the process with a supervisor.
-#'     If \code{TRUE}, the supervisor will ensure that the process is
-#'     killed when the R process exits.}
-#'   \item{windows_verbatim_args}{Whether to omit quoting the arguments
-#'     on Windows. It is ignored on other platforms.}
-#'   \item{windows_hide_window}{Whether to hide the application's window
-#'     on Windows. It is ignored on other platforms.}
-#'   \item{signal}{An integer scalar, the id of the signal to send to
-#'     the process. See \code{\link[tools]{pskill}} for the list of
-#'     signals.}
-#'   \item{grace}{Currently not used.}
-#'   \item{timeout}{Timeout in milliseconds, for the wait or the I/O
-#'     polling.}
-#'   \item{n}{Number of characters or lines to read.}
-#'   \item{encoding}{The encoding to assume for \code{stdout} and
-#'     \code{stderr}. By default the encoding of the current locale is
-#'     used. Note that \code{processx} always reencodes the output of
-#'     both streams in UTF-8 currently.}
-#' }
+#'     It should not be quoted with [base::shQuote()]. See
+#'     [base::normalizePath()] for tilde-expansion.
+#' * `args`: Character vector, arguments to the command. They will be
+#'     used as is, without a shell. They don't need to be escaped.
+#' * `commandline`: A character scalar, a full command line.
+#'     On Unix systems it runs the a shell: `sh -c <commandline>`.
+#'     On Windows it uses the `cmd` shell:
+#'     `cmd /c <commandline>`. If you want more control, then call
+#'     your chosen shell directly.
+#' * `stdout`: What to do with the standard output. Possible values:
+#'     `NULL`: discard it; a string, redirect it to this file;
+#'     `"|"`: create an R connection for it.
+#' * `stderr`: What to do with the standard error. Possible values:
+#'     `NULL`: discard it; a string, redirect it to this file;
+#'     `"|"`: create an R connection for it.
+#' * `cleanup`: Whether to kill the process (and its children)
+#'     if the `process` object is garbage collected.
+#' * `echo_cmd`: Whether to print the command to the screen before
+#'     running it.
+#' * `supervise`: Whether to register the process with a supervisor.
+#'     If `TRUE`, the supervisor will ensure that the process is
+#'     killed when the R process exits.
+#' * `windows_verbatim_args`: Whether to omit quoting the arguments
+#'     on Windows. It is ignored on other platforms.
+#' * `windows_hide_window`: Whether to hide the application's window
+#'     on Windows. It is ignored on other platforms.
+#' * `signal`: An integer scalar, the id of the signal to send to
+#'     the process. See [tools::pskill()] for the list of signals.
+#' * `grace`: Currently not used.
+#' * `timeout`: Timeout in milliseconds, for the wait or the I/O
+#'     polling.
+#' * `n`: Number of characters or lines to read.
+#' * `encoding`: The encoding to assume for `stdout` and
+#'     `stderr`. By default the encoding of the current locale is
+#'     used. Note that `processx` always reencodes the output of
+#'     both streams in UTF-8 currently. If you want to read them
+#'     without any conversion, on all platforms, specify `"UTF-8"` as
+#'     encoding.
 #'
 #' @section Details:
-#' \code{$new()} starts a new process in the background, and then returns
+#' `$new()` starts a new process in the background, and then returns
 #' immediately.
 #'
-#' \code{$is_alive()} checks if the process is alive. Returns a logical
+#' `$is_alive()` checks if the process is alive. Returns a logical
 #' scalar.
 #'
-#' \code{$signal()} sends a signal to the process. On Windows only the
-#' \code{SIGINT}, \code{SIGTERM} and \code{SIGKILL} signals are interpreted,
+#' `$signal()` sends a signal to the process. On Windows only the
+#' `SIGINT`, `SIGTERM` and `SIGKILL` signals are interpreted,
 #' and the special 0 signal, The first three all kill the process. The 0
-#' signal return \code{TRUE} if the process is alive, and \code{FALSE}
+#' signal return `TRUE` if the process is alive, and `FALSE`
 #' otherwise. On Unix all signals are supported that the OS supports, and
 #' the 0 signal as well.
 #'
-#' \code{$kill()} kills the process. It also kills all of its child
+#' `$kill()` kills the process. It also kills all of its child
 #' processes, except if they have created a new process group (on Unix),
-#' or job object (on Windows). It returns \code{TRUE} if the process
-#' was killed, and \code{FALSE} if it was no killed (because it was
-#' already finished/dead when \code{processx} tried to kill it).
+#' or job object (on Windows). It returns `TRUE` if the process
+#' was killed, and `FALSE` if it was no killed (because it was
+#' already finished/dead when `processx` tried to kill it).
 #'
-#' \code{$wait()} waits until the process finishes, or a timeout happens.
+#' `$wait()` waits until the process finishes, or a timeout happens.
 #' Note that if the process never finishes, and the timeout is infinite
 #' (the default), then R will never regain control. It returns
 #' the process itself, invisibly.
 #'
-#' \code{$get_pid()} returns the process id of the process.
+#' `$get_pid()` returns the process id of the process.
 #'
-#' \code{$get_exit_status} returns the exit code of the process if it has
-#' finished and \code{NULL} otherwise.
+#' `$get_exit_status` returns the exit code of the process if it has
+#' finished and `NULL` otherwise.
 #'
-#' \code{$restart()} restarts a process. It returns the process itself.
+#' `$restart()` restarts a process. It returns the process itself.
 #'
-#' \code{$get_start_time()} returns the time when the process was
+#' `$get_start_time()` returns the time when the process was
 #' started.
 #'
-#' \code{$is_supervised()} returns whether the process is being tracked by
+#' `$is_supervised()` returns whether the process is being tracked by
 #' supervisor process.
 #'
-#' \code{$supervise()} if passed \code{TRUE}, tells the supervisor to start
-#' tracking the process. If \code{FALSE}, tells the supervisor to stop
+#' `$supervise()` if passed `TRUE`, tells the supervisor to start
+#' tracking the process. If `FALSE`, tells the supervisor to stop
 #' tracking the process. Note that even if the supervisor is disabled for a
-#' process, if it was started with \code{cleanup=TRUE}, the process will
+#' process, if it was started with `cleanup=TRUE`, the process will
 #' still be killed when the object is garbage collected.
 #'
-#' \code{$read_output()} reads from the standard output connection of the
+#' `$read_output()` reads from the standard output connection of the
 #' process. If the standard output connection was not requested, then
 #' then it returns an error. It uses a non-blocking text connection. This
 #' will work only if `stdout="|"` was used. Otherwise, it will throw an
 #' error.
 #'
-#' \code{$read_error()} is similar to \code{$read_output}, but it reads
+#' `$read_error()` is similar to `$read_output`, but it reads
 #' from the standard error stream.
 #'
-#' \code{$read_output_lines()} reads lines from standard output connection
+#' `$read_output_lines()` reads lines from standard output connection
 #' of the process. If the standard output connection was not requested, then
 #' then it returns an error. It uses a non-blocking text connection. This
 #' will work only if `stdout="|"` was used. Otherwise, it will throw an
 #' error.
 #'
-#' \code{$read_error_lines()} is similar to \code{$read_output_lines}, but
+#' `$read_error_lines()` is similar to `$read_output_lines`, but
 #' it reads from the standard error stream.
 #'
-#' \code{$has_output_connection()} returns `TRUE` if there is a connection
+#' `$has_output_connection()` returns `TRUE` if there is a connection
 #' object for standard output; in other words, if `stdout="|"`. It returns
 #' `FALSE` otherwise.
 #'
-#' \code{$has_error_connection()} returns `TRUE` if there is a connection
+#' `$has_error_connection()` returns `TRUE` if there is a connection
 #' object for standard error; in other words, if `stderr="|"`. It returns
 #' `FALSE` otherwise.
 #'
-#' \code{$get_output_connection()} returns a connection object, to the
+#' `$get_output_connection()` returns a connection object, to the
 #' standard output stream of the process.
 #'
-#' \code{$get_error_conneciton()} returns a connection object, to the
+#' `$get_error_conneciton()` returns a connection object, to the
 #' standard error stream of the process.
 #'
-#' \code{$is_incomplete_output()} return \code{FALSE} if the other end of
+#' `$is_incomplete_output()` return `FALSE` if the other end of
 #' the standard output connection was closed (most probably because the
-#' process exited). It return \code{TRUE} otherwise.
+#' process exited). It return `TRUE` otherwise.
 #'
-#' \code{$is_incomplete_error()} return \code{FALSE} if the other end of
+#' `$is_incomplete_error()` return `FALSE` if the other end of
 #' the standard error connection was closed (most probably because the
-#' process exited). It return \code{TRUE} otherwise.
+#' process exited). It return `TRUE` otherwise.
 #'
-#' \code{$read_all_output()} waits for all standard output from the process.
+#' `$read_all_output()` waits for all standard output from the process.
 #' It does not return until the process has finished.
 #' Note that this process involves waiting for the process to finish,
 #' polling for I/O and potentically several `readLines()` calls.
 #' It returns a character scalar. This will return content only if
 #' `stdout="|"` was used. Otherwise, it will throw an error.
 #'
-#' \code{$read_all_error()} waits for all standard error from the process.
+#' `$read_all_error()` waits for all standard error from the process.
 #' It does not return until the process has finished.
 #' Note that this process involves waiting for the process to finish,
 #' polling for I/O and potentically several `readLines()` calls.
 #' It returns a character scalar. This will return content only if
 #' `stderr="|"` was used. Otherwise, it will throw an error.
 #'
-#' \code{$read_all_output_lines()} waits for all standard output lines
+#' `$read_all_output_lines()` waits for all standard output lines
 #' from a process. It does not return until the process has finished.
 #' Note that this process involves waiting for the process to finish,
 #' polling for I/O and potentically several `readLines()` calls.
 #' It returns a character vector. This will return content only if
 #' `stdout="|"` was used. Otherwise, it will throw an error.
 #'
-#' \code{$read_all_error_lines()} waits for all standard error lines from
+#' `$read_all_error_lines()` waits for all standard error lines from
 #' a process. It does not return until the process has finished.
 #' Note that this process involves waiting for the process to finish,
 #' polling for I/O and potentically several `readLines()` calls.
 #' It returns a character vector. This will return content only if
 #' `stderr="|"` was used. Otherwise, it will throw an error.
 #'
-#' \code{$get_output_file()} if the `stdout` argument was a filename,
+#' `$get_output_file()` if the `stdout` argument was a filename,
 #' this returns the absolute path to the file. If `stdout` was `"|"` or
 #' `NULL`, this simply returns that value.
 #'
-#' \code{$get_error_file()} if the `stderr` argument was a filename,
+#' `$get_error_file()` if the `stderr` argument was a filename,
 #' this returns the absolute path to the file. If `stderr` was `"|"` or
 #' `NULL`, this simply returns that value.
 #'
-#' \code{$poll_io()} polls the process's connections for I/O. See more in
-#' the \emph{Polling} section, and see also the \code{\link{poll}} function
+#' `$poll_io()` polls the process's connections for I/O. See more in
+#' the _Polling_ section, and see also the [poll()] function
 #' to poll on multiple processes.
 #'
-#' \code{print(p)} or \code{p$print()} shows some information about the
+#' `print(p)` or `p$print()` shows some information about the
 #' process on the screen, whether it is running and it's process id, etc.
 #'
 #' @section Polling:
-#' The \code{poll_io()} function polls the standard output and standard
+#' The `poll_io()` function polls the standard output and standard
 #' error connections of a process, with a timeout. If there is output
 #' in either of them, or they are closed (e.g. because the process exits)
-#' \code{poll_io()} returns immediately.
+#' `poll_io()` returns immediately.
 #'
-#' In addition to polling a single process, the \code{\link{poll}} function
+#' In addition to polling a single process, the [poll()] function
 #' can poll the output of several processes, and returns as soon as any
 #' of them has generated output (or exited).
 #'
