@@ -191,6 +191,7 @@ processx_connection_t *processx_c_connection_create(
     if (!con->encoding) {
       free(con);
       error("out of memory");
+      return 0;			/* never reached */
     }
   }
 
@@ -207,6 +208,7 @@ processx_connection_t *processx_c_connection_create(
   if (con->handle.overlapped.hEvent == NULL) {
     free(con);
     PROCESSX_ERROR("Cannot create connection event", GetLastError());
+    return 0; 			/* never reached */
   }
 #else
   con->handle = os_handle;
@@ -754,9 +756,6 @@ static ssize_t processx__connection_read_until_newline
     /* If we cannot read now, then we give up */
     if (new_bytes == 0) return -1;
   }
-
-  /* Never reached */
-  return -1;
 }
 
 /* Allocate buffer for reading */

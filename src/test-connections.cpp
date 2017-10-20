@@ -4,9 +4,15 @@
 #include "processx.h"
 
 #include <fcntl.h>
-#include <cstring>
+#include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <errno.h>
+
+#ifndef _WIN32
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
 
 // LCOV_EXCL_START
 
