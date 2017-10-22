@@ -95,7 +95,8 @@ test_that("get_exit_status", {
 
 test_that("restart", {
 
-  p <- process$new(commandline = sleep(5))
+  cmd <- sleep(5, commandline = FALSE)
+  p <- process$new(cmd[1], cmd[-1])
   expect_true(p$is_alive())
 
   p$kill(grace = 0)

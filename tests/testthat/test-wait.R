@@ -11,7 +11,8 @@ test_that("no deadlock when no stdout + wait", {
 
 test_that("wait with timeout", {
 
-  p <- process$new(commandline = sleep(3))
+  cmd <- sleep(3, commandline = FALSE)
+  p <- process$new(cmd[1], cmd[-1])
   expect_true(p$is_alive())
 
   t1 <- proc.time()

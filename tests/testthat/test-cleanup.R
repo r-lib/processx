@@ -3,7 +3,8 @@ context("Cleanup")
 
 test_that("process is cleaned up", {
 
-  p <- process$new(commandline = sleep(60), cleanup = TRUE)
+  cmd <- sleep(1, commandline = FALSE)
+  p <- process$new(cmd[1], cmd[-1], cleanup = TRUE)
   pid <- p$get_pid()
 
   rm(p)

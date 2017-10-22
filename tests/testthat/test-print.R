@@ -19,7 +19,7 @@ test_that("print", {
 })
 
 test_that("print, commandline", {
-  p <- process$new(commandline = sleep(5))
+  p <- process$new(commandline = sleep(1))
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
   expect_output(
     print(p),
