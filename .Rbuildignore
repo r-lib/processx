@@ -7,3 +7,4 @@
 ^appveyor.yml$
 ^src/processx\.so$
 ^src/.*\.o$
+^revdep$
