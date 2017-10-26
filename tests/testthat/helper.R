@@ -57,9 +57,13 @@ cat_command <- function() {
   if (os_type() == "windows") "cat" else "cat"
 }
 
+skip_if_no_command <- function(command) {
+  if (Sys.which(command) == "") skip(paste0("No '", command, "' command"))
+}
+
 skip_if_no_cat <- function() {
   cat <- cat_command()
-  if (Sys.which(cat) == "") skip("No cat command")
+  skip_if_no_command(cat)
 }
 
 get_pid_by_name <- function(name) {
