@@ -1,4 +1,6 @@
+
 OBJECTS = init.o poll.o processx-connection.o            \
+          processx-vector.o                              \
 	  unix/childlist.o unix/connection.o             \
           unix/processx.o unix/sigchld.o unix/utils.o    \
 	  unix/named_pipe.o   		 		 \
