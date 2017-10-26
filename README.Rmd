@@ -59,6 +59,7 @@ facilities, with a timeout.
 * Get the exit status of a background process, if it has already
   finished.
 * Kill background processes, together with their children.
+  (Children are only killed on Windows, currently.)
 * Kill background process, when its associated object is garbage
   collected.
 * Restart background processes.

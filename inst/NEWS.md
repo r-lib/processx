@@ -1,6 +1,8 @@
 
 # 3.0.0
 
+* `$kill()` kills the complete child-tree of the process.
+
 * `processx` process objects no longer use R connection objects,
   because the R connection API was retroactive made private by R-core
   `processx` uses its own connection class now to manage standard output
