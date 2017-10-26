@@ -861,6 +861,8 @@ SEXP processx_signal(SEXP status, SEXP signal) {
     }
 
     if (exitcode == STILL_ACTIVE) {
+      /* We only cleanup the tree if the process is still running. */
+      processx__cleanup_child_tree(handle->dwProcessId);
       err = TerminateProcess(handle->hProcess, 1);
       if (err) {
 	processx__collect_exit_status(status, 1);
