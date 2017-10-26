@@ -62,10 +62,7 @@ process_initialize <- function(self, private, command, args,
     }
   }
 
-  if (echo_cmd) {
-    cat("Running command", command, "\n")
-    if (length(args)) cat("Arguments:", args, sep = "\n")
-  }
+  if (echo_cmd) do_echo_cmd(command, args)
 
   "!DEBUG process_initialize exec()"
   private$status <- .Call(

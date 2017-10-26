@@ -90,3 +90,57 @@ full_path <- function(path) {
 
   new_path
 }
+
+vcapply <- function (X, FUN, ..., USE.NAMES = TRUE) {
+  vapply(X, FUN, FUN.VALUE = character(1), ..., USE.NAMES = USE.NAMES)
+}
+
+do_echo_cmd <- function(command, args) {
+  quoted <- sh_quote_smart(c("Running", command, args))
+
+  out <- str_wrap_words(quoted, width = getOption("width") - 3)
+
+  if ((len <- length(out)) > 1) {
+    out[1:(len - 1)] <- paste0(out[1:(len - 1)], " \\")
+  }
+  cat(out, sep = "\n")
+}
+
+sh_quote_smart <- function(x) {
+  if (!length(x)) return(x)
+  ifelse(grepl("^[-a-zA-Z0-9/_\\.]*$", x), x, shQuote(x))
+}
+
+str_wrap_words <- function(words, width, indent = 0, exdent = 2) {
+  word_widths <- nchar(words, type = "width")
+  out <- character()
+
+  current_width <- indent
+  current_line <- strrep(" ", indent)
+  first_word <- TRUE
+
+  i <- 1
+  while (i <= length(words)) {
+    if (first_word) {
+      current_width <- current_width + word_widths[i]
+      current_line <- paste0(current_line, words[i])
+      first_word <- FALSE
+      i <- i + 1
+
+    } else if (current_width + 1 + word_widths[i] <= width) {
+      current_width <- current_width + word_widths[i] + 1
+      current_line <- paste0(current_line, " ", words[i])
+      i <- i + 1
+
+    } else {
+      out <- c(out, current_line)
+      current_width <- exdent
+      current_line <- strrep(" ", exdent)
+      first_word <- TRUE
+    }
+  }
+
+  if (!first_word) out <- c(out, current_line)
+
+  out
+}

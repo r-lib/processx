@@ -69,3 +69,32 @@ test_that("full_path gives correct values, unix", {
   expect_identical(full_path("//"), "/")
   expect_identical(full_path("///a/"), "/a")
 })
+
+test_that("do_echo_cmd", {
+  skip_other_platforms("unix")
+
+  expect_output(
+    withr::with_options(
+      list(width = 20),
+      do_echo_cmd("command", rep("a r g x", 3))
+    ),
+    "Running command \\\n  'a r g x' \\\n  'a r g x' \\\n  'a r g x'",
+    fixed = TRUE
+  )
+})
+
+test_that("sh_quote_smart", {
+
+  cases <- list(
+    list(c("foo", "bar")),
+    list(character()),
+    list("foo"),
+    list(""),
+    list("foo/bar123_-"),
+
+    list("foo bar", shQuote("foo bar")),
+    list(c("foo", "1 2"), c("foo", shQuote("1 2")))
+  )
+
+  for (c in cases) expect_equal(sh_quote_smart(c[[1]]), c[[length(c)]])
+})
