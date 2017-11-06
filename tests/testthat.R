@@ -2,7 +2,9 @@ library(testthat)
 library(processx)
 
 Sys.setenv("R_TESTS" = "")
-test_check("processx", reporter = "summary")
+if (Sys.getenv("NOT_CRAN") != "" || .Platform$OS.type != "windows") {
+  test_check("processx", reporter = "summary")
+}
 
 ## Wait until the child processes have surely finished,
 ## on windows. This might fix some win-builder troubles.
