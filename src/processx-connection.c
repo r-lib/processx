@@ -480,13 +480,17 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
   /* Nothing to poll */
   if (j == 0) return hasdata;
 
-  ret = processx__interruptible_poll(fds, j, timeout);
+  /* If we already have some data, then we don't wait any more,
+     just check if other connections are ready */
+  ret = processx__interruptible_poll(fds, j, hasdata > 0 ? 0 : timeout);
 
   if (ret == -1) {
     error("Processx poll error: %s", strerror(errno));
 
   } else if (ret == 0) {
-    for (i = 0; i < j; i++) pollables[ptr[i]].event = PXTIMEOUT;
+    if (hasdata == 0) {
+      for (i = 0; i < j; i++) pollables[ptr[i]].event = PXTIMEOUT;
+    }
 
   } else {
     for (i = 0; i < j; i++) {
