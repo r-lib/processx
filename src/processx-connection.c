@@ -475,10 +475,10 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
     }
   }
 
-  if (hasdata) return hasdata;
-  if (j == 0) return 0;
-
   /* j contains the number of fds to poll now */
+
+  /* Nothing to poll */
+  if (j == 0) return hasdata;
 
   ret = processx__interruptible_poll(fds, j, timeout);
 
