@@ -65,7 +65,7 @@ static void processx__connection_find_utf8_chars(processx_connection_t *ccon,
 SEXP processx_connection_create(SEXP handle, SEXP encoding) {
   processx_file_handle_t *os_handle = R_ExternalPtrAddr(handle);
   const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
-  SEXP result;
+  SEXP result = R_NilValue;
 
   if (!os_handle) error("Cannot create connection, invalid handle");
 
