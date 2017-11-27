@@ -98,7 +98,7 @@ supervisor_start <- function() {
   cur_time <- Sys.time()
   end_time <- cur_time + 5
   while (cur_time < end_time) {
-    p$poll_io(as.numeric(end_time - cur_time, units = "secs") * 1000)
+    p$poll_io(round(as.numeric(end_time - cur_time, units = "secs") * 1000))
 
     if (!p$is_alive())
       break
