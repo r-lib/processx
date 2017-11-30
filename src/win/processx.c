@@ -866,9 +866,9 @@ SEXP processx_signal(SEXP status, SEXP signal) {
       err = TerminateProcess(handle->hProcess, 1);
       if (err) {
 	processx__collect_exit_status(status, 1);
-	return ScalarLogical(0);
-      } else {
 	return ScalarLogical(1);
+      } else {
+	return ScalarLogical(0);
       }
 
     } else {
