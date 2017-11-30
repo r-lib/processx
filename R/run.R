@@ -234,7 +234,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
     ## so interruption does not work.
     if (!is.null(timeout) && timeout < Inf) {
       remains <- timeout - (Sys.time() - start_time)
-      remains <- as.integer(as.numeric(remains) * 1000)
+      remains <- max(0, as.integer(as.numeric(remains) * 1000))
       if (spinner) remains <- min(remains, 200)
     } else {
       remains <- 200
