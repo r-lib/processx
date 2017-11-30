@@ -1,4 +1,7 @@
 
+* Fixed a bug where `process$new(supervisor=TRUE)` could give the error
+  message `Error: ms is not a length 1 integer` (@wch).
+
 # 3.0.0
 
 * `$kill()` kills the complete child-tree of the process.
