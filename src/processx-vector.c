@@ -17,10 +17,11 @@ size_t processx_vector_size(const processx_vector_t *v) {
 
 void processx_vector_reserve(processx_vector_t *v, size_t size) {
   size_t actual_size = processx_vector_size(v);
+  size_t alloc_size = v->stor_end - v->stor_begin;
   pid_t *tmp;
   if (size <= actual_size) return;
 
-  tmp = (pid_t*) S_realloc( (char*) v->stor_begin, size, actual_size, sizeof(pid_t));
+  tmp = (pid_t*) S_realloc( (char*) v->stor_begin, size, alloc_size, sizeof(pid_t));
   v->stor_begin = tmp;
   v->stor_end   = v->stor_begin + size;
   v->end        = v->stor_begin + actual_size;
