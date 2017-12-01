@@ -108,7 +108,7 @@ int open_temp_file(char **filename, size_t bytes, const char *pattern) {
   size_t pattern_size = strlen(mypattern);
 
   for (abytes = 0; abytes < bytes; abytes += pattern_size) {
-    write(fd, mypattern, pattern_size);
+    (void) write(fd, mypattern, pattern_size);
   }
 
   close(fd);
