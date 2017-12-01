@@ -17,7 +17,7 @@ test_that("run() a lot of times, with small timeouts", {
       error = identity
     )
     expect_s3_class(err, "system_command_timeout_error")
-    expect_true(Sys.time() - tic < 3)
+    expect_true(Sys.time() - tic < as.difftime(3, units = "secs"))
   }
 })
 
@@ -31,6 +31,6 @@ test_that("run() a lot of times, with small timeouts", {
       error = identity
     )
     expect_s3_class(err, "system_command_timeout_error")
-    expect_true(Sys.time() - tic < 3)
+    expect_true(Sys.time() - tic < as.difftime(3, units = "secs"))
   }
 })
