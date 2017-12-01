@@ -13,7 +13,9 @@ install:
 # Adapt as necessary starting from here
 
 environment:
-  NOT_CRAN: true
+  global:
+    NOT_CRAN: yes
+    DEBUGME: processx
 
 build_script:
   - travis-tool.sh install_deps
