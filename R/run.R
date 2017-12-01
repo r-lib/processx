@@ -239,6 +239,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
     } else {
       remains <- 200
     }
+    "!DEBUG run is polling for `remains` ms"
     polled <- proc$poll_io(remains)
 
     ## If output/error, then collect it

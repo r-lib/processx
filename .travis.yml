@@ -12,3 +12,8 @@ r_github_packages:
 
 after_success:
   - test $TRAVIS_R_VERSION_STRING = "release" && Rscript -e 'covr::codecov()'
+
+env:
+  global:
+    - NOT_CRAN=yes
+    - DEBUGME=processx
