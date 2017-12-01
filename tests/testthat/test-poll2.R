@@ -169,6 +169,10 @@ test_that("polling and buffering #2", {
     p1$poll_io(-1)
     expect_equal(p1$read_output_lines(n = 2), c("1", "2"))
 
+    ## We also need to poll p2, to make sure that there is
+    ## output from it. But we don't read anything from it.
+    p2$poll_io(-1)
+
     ## Now poll should return ready for both processes, and it should
     ## return fast.
     tick <- Sys.time()
