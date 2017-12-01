@@ -14,10 +14,10 @@ test_that("run can run, windows", {
 
   skip_other_platforms("windows")
 
-  expect_silent({
+  expect_error({
     cmd <- sleep(0)
     run(cmd[1], cmd[-1])
-  })
+  }, NA)
 })
 
 test_that("timeout works", {
