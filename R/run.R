@@ -110,6 +110,7 @@ run <- function(
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
   assert_that(is.null(stderr_callback) || is.function(stderr_callback))
   ## The rest is checked by process$new()
+  "!DEBUG run() Checked arguments"
 
   if (!interactive()) spinner <- FALSE
 
@@ -120,6 +121,7 @@ run <- function(
     windows_hide_window = windows_hide_window,
     stdout = "|", stderr = "|", encoding = encoding
   )
+  "#!DEBUG run() Started the process: `pr$get_pid()`"
 
   ## If echo, then we need to create our own callbacks.
   ## These are merged to user callbacks if there are any.
@@ -136,6 +138,7 @@ run <- function(
                stderr_callback),
     interrupt = function(e) {
       tryCatch(pr$kill(), error = function(e) NULL)
+      "!DEBUG run() process `pr$get_pid()` killed on interrupt"
       stop(make_condition(
         list(interrupt = TRUE),
         runcall
@@ -144,6 +147,7 @@ run <- function(
   )
 
   if (error_on_status && (is.na(res$status) || res$status != 0)) {
+    "!DEBUG run() error on status `res$status` for process `pr$get_pid()`"
     stop(make_condition(res, call = sys.call()))
   }
 
@@ -225,6 +229,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
     ## Timeout? Maybe finished by now...
     if (!is.null(timeout) && Sys.time() - start_time > timeout) {
       if (proc$kill()) timeout_happened <- TRUE
+      "!DEBUG Timeout killed run() process `proc$get_pid()`"
       break
     }
 
@@ -239,7 +244,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
     } else {
       remains <- 200
     }
-    "!DEBUG run is polling for `remains` ms"
+    "!DEBUG run is polling for `remains` ms, process `proc$get_pid()`"
     polled <- proc$poll_io(remains)
 
     ## If output/error, then collect it
@@ -249,9 +254,11 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
   }
 
   ## Needed to get the exit status
+  "!DEBUG run() waiting to get exit status, process `proc$get_pid()`"
   proc$wait()
 
   ## We might still have output
+  "!DEBUG run() reading leftover output / error, process `proc$get_pid()`"
   while (proc$is_incomplete_output() || proc$is_incomplete_error()) {
     do_output()
   }
