@@ -458,7 +458,7 @@ process_signal <- function(self, private, signal) {
 }
 
 process_kill <- function(self, private, grace) {
-  "!DEBUG process_kill '`private$get_short_name()`', pid `private$get_pid()`"
+  "!DEBUG process_kill '`private$get_short_name()`', pid `self$get_pid()`"
   if (private$exited) {
     FALSE
   } else {

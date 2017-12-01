@@ -9,6 +9,7 @@ r:
 
 r_github_packages:
   - r-lib/testthat
+  - r-lib/debugme
 
 after_success:
   - test $TRAVIS_R_VERSION_STRING = "release" && Rscript -e 'covr::codecov()'

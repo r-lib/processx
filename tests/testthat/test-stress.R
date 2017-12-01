@@ -4,7 +4,7 @@ context("stress test")
 test_that("can start 100 processes quickly", {
   skip_on_cran()
   sl <- sleep(0)
-  expect_silent(for (i in 1:100) run(sl[1], sl[-1]))
+  expect_error(for (i in 1:100) run(sl[1], sl[-1]), NA)
 })
 
 test_that("run() a lot of times, with small timeouts", {
