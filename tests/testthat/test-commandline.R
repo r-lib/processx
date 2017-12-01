@@ -3,6 +3,8 @@ context("commandline")
 
 test_that("One of command & commandline or error", {
 
+  skip_on_cran()
+
   expect_error(
     process$new("sleep", "5", "sleep 5"),
     "exactly one of"
@@ -16,7 +18,10 @@ test_that("One of command & commandline or error", {
 
 test_that("'commandline' works", {
 
-  win  <- paste0("(echo kuku) && (>&2 echo kuku2) && (", sleep(1), ")")
+  skip_on_cran()
+
+  sl <- paste(sleep(1), collapse = " ")
+  win  <- paste0("(echo kuku) && (>&2 echo kuku2) && (", sl, ")")
   unix <- "echo kuku; >&2 echo kuku2; sleep 1"
 
   p <- process$new(

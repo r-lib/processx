@@ -25,7 +25,9 @@ test_that("UTF-8", {
 })
 
 test_that("UTF-8 multibyte character cut in half", {
+
   skip_if_no_cat()
+  skip_on_cran()
 
   rtxt <- charToRaw("a\xc2\xa0a")
 

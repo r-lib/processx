@@ -29,7 +29,9 @@ get_wintool <- function(prog) {
   exe
 }
 
-sleep <- function(n, commandline = TRUE) {
+sleep <- function(n) {
+
+  commandline <- FALSE
 
   if (os_type() == "windows") {
     sleepexe <- get_wintool("sleep.exe")

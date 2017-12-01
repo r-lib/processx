@@ -11,7 +11,7 @@ test_that("no deadlock when no stdout + wait", {
 
 test_that("wait with timeout", {
 
-  cmd <- sleep(3, commandline = FALSE)
+  cmd <- sleep(3)
   p <- process$new(cmd[1], cmd[-1])
   expect_true(p$is_alive())
 
@@ -29,6 +29,7 @@ test_that("wait with timeout", {
 
 test_that("wait after process already exited", {
 
+  skip_on_cran()
   cmd <- if (os_type() == "windows") "dir /b /A" else "ls -A"
   p <- process$new(commandline = cmd)
 

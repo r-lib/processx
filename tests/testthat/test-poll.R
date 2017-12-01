@@ -2,7 +2,11 @@
 context("poll")
 
 test_that("polling for output available", {
-  cmd <- if (os_type() == "unix") "sleep 1; ls" else paste0(sleep(1), " && dir /b")
+
+  skip_on_cran()
+  
+  sl1 <- paste(sleep(1), collapse = " ")  
+  cmd <- if (os_type() == "unix") "sleep 1; ls" else paste0(sl1, " && dir /b")
   p <- process$new(commandline = cmd, stdout = "|")
 
   ## Timeout
@@ -22,10 +26,12 @@ test_that("polling for output available", {
 })
 
 test_that("polling for stderr", {
+  skip_on_cran()
+  sl1 <- paste(sleep(1), collapse = " ")
   cmd <- if (os_type() == "unix") {
     "sleep 1; ls 1>&2"
   } else {
-    paste0(sleep(1), " && dir /b 1>&2")
+    paste0(sl1, " && dir /b 1>&2")
   }
   p <- process$new(commandline = cmd, stderr = "|")
 
@@ -47,10 +53,12 @@ test_that("polling for stderr", {
 
 test_that("polling for both stdout and stderr", {
 
+  skip_on_cran()
+
   cmd <- if (os_type() == "unix") {
     "sleep 1; ls 1>&2; ls"
   } else {
-    paste0(sleep(1), " && dir /b 1>&2 && dir /b")
+    paste0(paste(sleep(1), collapse = " "), " && dir /b 1>&2 && dir /b")
   }
 
   p <- process$new(commandline = cmd, stdout = "|", stderr = "|")

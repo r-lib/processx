@@ -15,7 +15,7 @@ test_that("run can run, windows", {
   skip_other_platforms("windows")
 
   expect_silent({
-    cmd <- sleep(0, commandline = FALSE)
+    cmd <- sleep(0)
     run(cmd[1], cmd[-1])
   })
 })
@@ -23,7 +23,7 @@ test_that("run can run, windows", {
 test_that("timeout works", {
 
   tic <- Sys.time()
-  sl <- sleep(5, commandline = FALSE)
+  sl <- sleep(5)
   x <- run(sl[1], sl[-1], timeout = 0.00001, error_on_status = FALSE)
   toc <- Sys.time()
 
@@ -33,7 +33,7 @@ test_that("timeout works", {
 
 test_that("timeout throws right error", {
 
-  sl <- sleep(5, commandline = FALSE)
+  sl <- sleep(5)
   e <- tryCatch(
     run(sl[1], sl[-1], timeout = 0.00001, error_on_status = TRUE),
     error = function(e) e

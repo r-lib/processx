@@ -2,10 +2,11 @@
 context("poll multiple processes")
 
 test_that("single process", {
+  skip_on_cran()
   cmd <- switch(
     os_type(),
     "unix" = "sleep 1; ls",
-    paste0(sleep(1), " && dir /b")
+    paste0(paste(sleep(1), collapse = " "), " && dir /b")
   )
   p <- process$new(commandline = cmd, stdout = "|")
 
@@ -41,15 +42,16 @@ test_that("single process", {
 })
 
 test_that("multiple processes", {
+  skip_on_cran()
   cmd1 <- switch(
     os_type(),
     "unix" = "sleep 1; ls",
-    paste0(sleep(1), " && dir /b")
+    paste0(paste(sleep(1), collapse = " "), " && dir /b")
   )
   cmd2 <- switch(
     os_type(),
     "unix" = "sleep 2; ls 1>&2",
-    paste0(sleep(1), " && dir /b 1>&2")
+    paste0(paste(sleep(1), collapse = " "), " && dir /b 1>&2")
   )
 
   p1 <- process$new(commandline = cmd1, stdout = "|")

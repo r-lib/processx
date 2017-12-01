@@ -3,6 +3,8 @@ context("io")
 
 test_that("Output and error are discarded by default", {
 
+  skip_on_cran()
+
   cmd <- if (os_type() == "windows") "dir /b /A" else "ls -A"
 
   p <- process$new(commandline = cmd)
@@ -17,6 +19,8 @@ test_that("Output and error are discarded by default", {
 })
 
 test_that("We can get the output", {
+
+  skip_on_cran()
 
   cmd <- if (os_type() == "windows") "dir /b /A" else "ls -A"
 
@@ -99,6 +103,8 @@ test_that("Output and error to specific files", {
 
 test_that("is_incomplete", {
 
+  skip_on_cran()
+
   cmd <- if (os_type() == "windows") "dir /b /A" else "ls -A"
 
   p <- process$new(commandline = cmd, stdout = "|")
@@ -127,6 +133,7 @@ test_that("readChar on IO, unix", {
 
 test_that("readChar on IO, windows", {
 
+  skip_on_cran()
   skip_other_platforms("windows")
 
   p <- process$new(commandline = "echo hello world!", stdout = "|")

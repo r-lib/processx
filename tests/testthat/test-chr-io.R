@@ -3,6 +3,8 @@ context("character IO")
 
 test_that("Can read last line without trailing newline", {
 
+  skip_on_cran()
+
   cmd <- if (os_type() == "unix") {
     "printf foobar"
   } else {
@@ -15,6 +17,8 @@ test_that("Can read last line without trailing newline", {
 })
 
 test_that("Can read single characters", {
+
+  skip_on_cran()
 
   cmd <- if (os_type() == "unix") {
     "printf 123"
@@ -34,6 +38,8 @@ test_that("Can read single characters", {
 })
 
 test_that("Can read multiple characters", {
+
+  skip_on_cran()
 
   cmd <- if (os_type() == "unix") {
     "printf 123456789"

@@ -3,7 +3,7 @@ context("process")
 
 test_that("process works", {
 
-  win  <- sleep(5, commandline = FALSE)
+  win  <- sleep(5)
   unix <- c("sleep", "5")
   cmd <- if (os_type() == "windows") win else unix
 
@@ -15,6 +15,7 @@ test_that("process works", {
 })
 
 test_that("get_exit_status", {
+  skip_on_cran()
   cmd <- if (os_type() == "windows") {
     "cmd /c exit 1"
   } else {
@@ -27,7 +28,7 @@ test_that("get_exit_status", {
 
 test_that("restart", {
 
-  cmd <- sleep(5, commandline = FALSE)
+  cmd <- sleep(5)
   p <- process$new(cmd[1], cmd[-1])
   expect_true(p$is_alive())
 
