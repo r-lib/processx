@@ -12,15 +12,14 @@ install:
 
 # Adapt as necessary starting from here
 
-environment:
-  global:
-    NOT_CRAN: yes
-    DEBUGME: processx
-
 build_script:
   - travis-tool.sh install_deps
   - travis-tool.sh github_package r-lib/testthat
   - travis-tool.sh github_package r-lib/debugme
+
+environment:
+  NOT_CRAN: true
+  DEBUGME: processx
 
 test_script:
   - travis-tool.sh run_tests
