@@ -3,7 +3,7 @@ library(processx)
 
 Sys.setenv("R_TESTS" = "")
 if (Sys.getenv("NOT_CRAN") != "" || .Platform$OS.type != "windows") {
-  test_check("processx", reporter = "summary")
+  test_check("processx", reporter = "summary", filter = "poll2")
 }
 
 ## Wait until the child processes have surely finished,
