@@ -3,6 +3,7 @@ library(processx)
 
 Sys.setenv("R_TESTS" = "")
 test_check("processx", reporter = "summary", filter = "poll2")
+test_check("processx", reporter = "summary", filter = "stress")
 
 ## Wait until the child processes have surely finished,
 ## on windows. This might fix some win-builder troubles.
