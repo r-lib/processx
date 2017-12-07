@@ -21,13 +21,28 @@ test_that("run() a lot of times, with small timeouts", {
   }
 })
 
-test_that("run() a lot of times, with small timeouts", {
+test_that("run() and kill while polling", {
   skip_on_cran()
   sl <- sleep(5)
-  for (i in 1:100) {
+  for (i in 1:10) {
     tic <- Sys.time()
     err <- tryCatch(
-      run(commandline = paste(sl, collapse = " "), timeout = 1/1000),
+      run(sl[1], sl[-1], timeout = 1/2),
+      error = identity
+    )
+    expect_s3_class(err, "system_command_timeout_error")
+    expect_true(Sys.time() - tic < as.difftime(3, units = "secs"))
+  }
+})
+
+test_that("run() and kill while polling, command line", {
+  skip_on_cran()
+  skip("Not running this, because the child of the shell is not killed")
+  sl <- sleep(5)
+  for (i in 1:10) {
+    tic <- Sys.time()
+    err <- tryCatch(
+      run(commandline = paste(sl, collapse = " "), timeout = 1/2),
       error = identity
     )
     expect_s3_class(err, "system_command_timeout_error")
