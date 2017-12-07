@@ -51,8 +51,7 @@ facilities, with a timeout.
 * Wait on a background process.
 * Get the exit status of a background process, if it has already
   finished.
-* Kill background processes, together with their children.
-  (Children are only killed on Windows, currently.)
+* Kill background processes.
 * Kill background process, when its associated object is garbage
   collected.
 * Restart background processes.
@@ -411,8 +410,8 @@ gc()
 
 ```
 #>          used (Mb) gc trigger (Mb) max used (Mb)
-#> Ncells 420918 22.5     750400 40.1   592000 31.7
-#> Vcells 839465  6.5    1650153 12.6  1071418  8.2
+#> Ncells 419845 22.5     750400 40.1   592000 31.7
+#> Vcells 833891  6.4    1650153 12.6  1091906  8.4
 ```
 
 Here, the direct call to the garbage collector kills the `sleep` process
@@ -689,13 +688,7 @@ p1$read_output_lines()
 ```r
 ## Done with p1
 close(p1$get_output_connection())
-```
 
-```
-#> NULL
-```
-
-```r
 ## The second process should have data on stderr by now
 poll(list(p1 = p1, p2 = p2), 5000)
 ```
@@ -743,7 +736,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2017-10-19 12:50:50 BST"
+#> [1] "2017-12-07 14:06:39 GMT"
 ```
 
 ```r
@@ -752,7 +745,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2017-10-19 12:50:52 BST"
+#> [1] "2017-12-07 14:06:41 GMT"
 ```
 
 It is safe to call `wait` multiple times:

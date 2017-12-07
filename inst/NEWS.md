@@ -1,10 +1,8 @@
 
+# 3.0.2
+
 * Fixed a bug where `process$new(supervisor=TRUE)` could give the error
   message `Error: ms is not a length 1 integer` (@wch).
-
-# 3.0.0
-
-* `$kill()` kills the complete child-tree of the process.
 
 * `processx` process objects no longer use R connection objects,
   because the R connection API was retroactive made private by R-core
