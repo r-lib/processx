@@ -8,7 +8,10 @@ OBJECTS = init.o poll.o processx-connection.o            \
 
 .PHONY: all clean
 
-all: supervisor/supervisor $(SHLIB)
+all: tools/px supervisor/supervisor $(SHLIB)
+
+tools/px: tools/px.c
+	$(CC) $(CFLAGS) -Wall $< -o $@
 
 supervisor/supervisor: supervisor/supervisor.c supervisor/utils.c
 	$(CC) $(CFLAGS) $^ -o supervisor/supervisor

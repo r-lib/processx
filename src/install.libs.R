@@ -1,9 +1,11 @@
 
 progs <- if (WINDOWS) {
-  c(file.path("tools", "sleep.exe"),
+  c(file.path("tools", "px.exe"),
+    file.path("tools", "sleep.exe"),
     file.path("supervisor", "supervisor.exe"))
 } else {
-  file.path("supervisor", "supervisor")
+  c(file.path("tools", "px"),
+    file.path("supervisor", "supervisor"))
 }
 
 dest <- file.path(R_PACKAGE_DIR, paste0("bin", R_ARCH))

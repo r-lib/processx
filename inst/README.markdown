@@ -68,20 +68,36 @@ source("https://install-github.me/r-lib/processx")
 
 ## Usage
 
-> Note: the following external commands are usually present in macOS and
-> Linux systems, but not necessarily on Windows.
-
 
 ```r
 library(processx)
 ```
 
+> Note: the following external commands are usually present in macOS and
+> Linux systems, but not necessarily on Windows. We will also use the `px`
+> command line tool (`px.exe` on Windows), that is a very simple program
+> that can produce output to `stdout` and `stderr`, with the specified
+> timings.
+
+
+```r
+px <- paste0(
+  system.file(package = "processx", "bin", "px"),
+  system.file(package = "processx", "bin", .Platform$r_arch, "px.exe")
+)
+px
+```
+
+```
+#> [1] "/Users/gaborcsardi/r_pkgs/processx/bin/px"
+```
+
 ### Runing an external process
 
-`processx` provides two ways to start processes. The first one
-requires a single command, and a character vector of arguments.
-You don't need to quote the command or the arguments, as they are
-passed directly to the operating system, without an intermediate shell.
+The `run()` function runs an external command. It requires a single command,
+and a character vector of arguments. You don't need to quote the command
+or the arguments, as they are passed directly to the operating system,
+without an intermediate shell.
 
 
 ```r
@@ -102,41 +118,37 @@ run("echo", "Hello R!")
 #> [1] FALSE
 ```
 
-The other way is to supply a full shell command line via the
-`commandline` argument:
-
+Short summary of the `px` binary we are using extensively below:
 
 ```r
-run(commandline = "echo Hello R!")
+result <- run(px, "--help", echo = TRUE)
 ```
 
 ```
-#> $status
-#> [1] 0
-#> 
-#> $stdout
-#> [1] "Hello R!\n"
-#> 
-#> $stderr
-#> [1] ""
-#> 
-#> $timeout
-#> [1] FALSE
+#> Usage: px [command arg] [command arg] ...
+#>   Commands: sleep  <seconds>  -- sleep for a number os seconds
+#>             out    <string>   -- print string to stdout
+#>             err    <string>   -- print string to stderr
+#>             outln  <string>   -- print string to stdout, add newline
+#>             errln  <string>   -- print string to stderr, add newline
+#>             return <exitcode> -- return with exitcode
 ```
 
-This methods starts up a shell, i.e. on Unix-like systems it runs
-`sh -c <command>` and on Windows `cmd /c <command>`. (If you need a
-different shell, then specify that directly in the `command` argument,
-i.e. use the `command` + `args` form.
+> Note: From version 3.0.1, `processx` does not let you specify a full
+> shell command line, as this involves starting a grandchild process from
+> the child process, and it is difficult to clean up the grandchild
+> process when the child process is killed. The user can still start a
+> shell (`sh` or `cmd.exe`) directly of course, and then proper cleanup is
+> the user's responsibility.
 
 #### Errors
 
-By default `run` throws an error if the process exits with a non-zero
+By default `run()` throws an error if the process exits with a non-zero
 status code. To avoid this, specify `error_on_status = FALSE`:
 
 
 ```r
-run(commandline = "echo error >&2; exit 2", error_on_status = FALSE)
+run(px, c("out", "oh no!", "return", "2"), error_on_status = FALSE)
 ```
 
 ```
@@ -144,10 +156,10 @@ run(commandline = "echo error >&2; exit 2", error_on_status = FALSE)
 #> [1] 2
 #> 
 #> $stdout
-#> [1] ""
+#> [1] "oh no!"
 #> 
 #> $stderr
-#> [1] "error\n"
+#> [1] ""
 #> 
 #> $timeout
 #> [1] FALSE
@@ -161,8 +173,8 @@ because they are coming from two different connections.
 
 
 ```r
-result <- run(
-  commandline = "echo out; echo err 1>&2; echo out again",
+result <- run(px,
+  c("outln", "out", "errln", "err", "outln", "out again"),
   echo = TRUE)
 ```
 
@@ -197,10 +209,10 @@ result
 #> [1] FALSE
 ```
 
-Note that `run` is different from `system`, and it always shows the output
-of the process on R's proper standard output, instead of writing to the
-terminal directly. This means for example that you can capture the output
-with `capture.output` or use `sink`, etc.:
+Note that `run()` is different from `system()`, and it always shows the
+output of the process on R's proper standard output, instead of writing to
+the terminal directly. This means for example that you can capture the
+output with `capture.output()` or use `sink()`, etc.:
 
 
 ```r
@@ -230,26 +242,25 @@ out2
 
 #### Spinner
 
-The `spinner` option of `run` puts a calming spinner to the terminal
+The `spinner` option of `run()` puts a calming spinner to the terminal
 while the background program is running. The spinner is always shown in the
 first character of the last line, so you can make it work nicely with the
 regular output of the background process if you like. E.g. try this in your
 R terminal:
 
 ```
-result <- run(
-  commandline = paste(
-    "printf '  foo';",
-    "sleep 1;",
-	"printf '\r  bar';",
-	"sleep 1;",
-	"printf '\rX foobar\n'"),
+result <- run(px,
+  c("out", "  foo",
+    "sleep", "1",
+    "out", "\r  bar",
+	"sleep", "1",
+	"out", "\rX foobar\n"),
   echo = TRUE, spinner = TRUE)
 ```
 
 #### Callbacks for I/O
 
-`run` can call an R function for each line of the standard output or
+`run()` can call an R function for each line of the standard output or
 error of the process, just supply the `stdout_line_callback` or the
 `stderr_line_callback` arguments. The callback functions take two
 arguments, the first one is a character scalar, the output line. The
@@ -264,11 +275,9 @@ cb <- function(line, proc) {
   cat("Got:", line, "\n")
   if (line == "done") proc$kill()
 }
-result <- run(
-  commandline = paste(
-    "echo this; echo that; echo done;",
-    "echo still here;",
-	"sleep 10; echo dead by now"),
+result <- run(px,
+  c("outln", "this", "outln", "that", "outln", "done",
+    "outln", "still here", "sleep", "10", "outln", "dead by now"), 
   stdout_line_callback = cb,
   error_on_status = FALSE,
 )
@@ -300,7 +309,7 @@ result
 ```
 
 Keep in mind, that while the R callback is running, the background process
-has not stopped, it is also running. In the previous example, whether
+is not stopped, it is also running. In the previous example, whether
 `still here` is printed or not depends on the scheduling of the
 R process and the background process by the OS. Typically, it is printed,
 because the R callback takes a while to run.
@@ -318,25 +327,20 @@ then you can use the R6 `process` class directly.
 #### Starting processes
 
 To start a new background process, create a new instance of the `process`
-class. Similarly to `run`, the `process` constructor supports two
-kinds of argument specifications. If `commandline` is specified, then
-it is passed to a shell.
+class.
 
 
 ```r
-p1 <- process$new("sleep", "20")
-p2 <- process$new(commandline = "sleep 20")
+p <- process$new("sleep", "20")
 ```
 
 #### Killing and restarting a process
 
-A process can be killed via the `kill` method. This also kills
-all child processes (unless they created a new process group on Unix,
-or a new job object on Windows).
+A process can be killed via the `kill()` method.
 
 
 ```r
-p1$is_alive()
+p$is_alive()
 ```
 
 ```
@@ -344,7 +348,7 @@ p1$is_alive()
 ```
 
 ```r
-p2$is_alive()
+p$kill()
 ```
 
 ```
@@ -352,45 +356,21 @@ p2$is_alive()
 ```
 
 ```r
-p1$kill()
-```
-
-```
-#> [1] TRUE
-```
-
-```r
-p2$kill()
-```
-
-```
-#> [1] TRUE
-```
-
-```r
-p1$is_alive()
+p$is_alive()
 ```
 
 ```
 #> [1] FALSE
 ```
 
-```r
-p2$is_alive()
-```
-
-```
-#> [1] FALSE
-```
-
-A process can be restarted via `restart`. This works if the process
+A process can be restarted via `restart()`. This works if the process
 has been killed, if it has finished regularly, or even if it is running
 currently. If it is running, then it will be killed first.
 
 
 ```r
-p1$restart()
-p1$is_alive()
+p$restart()
+p$is_alive()
 ```
 
 ```
@@ -410,12 +390,12 @@ gc()
 
 ```
 #>          used (Mb) gc trigger (Mb) max used (Mb)
-#> Ncells 419845 22.5     750400 40.1   592000 31.7
-#> Vcells 833891  6.4    1650153 12.6  1091906  8.4
+#> Ncells 421150 22.5     750400 40.1   592000 31.7
+#> Vcells 836899  6.4    1650153 12.6  1080710  8.3
 ```
 
 Here, the direct call to the garbage collector kills the `sleep` process
-as well. See the `cleaup` option if you want to avoid this behavior.
+as well. See the `cleanup` option if you want to avoid this behavior.
 
 #### Standard output and error
 
@@ -426,9 +406,9 @@ connections to them. (Note that starting from `processx` 3.0.0 these
 connections are not regular R connections, because the public R connection
 API was retroactively removed from R.)
 
-The `read_output_lines` and `read_error_lines` methods can be used
-to read from the standard output or error connections. They work similarly
-to the `readLines` base R function.
+The `read_output_lines()` and `read_error_lines()` methods can be used
+to read complete lines from the standard output or error connections. They
+work similarly to the `readLines()` base R function.
 
 Note, that the connections have a buffer, which can fill up, if R does
 not read out the output, and then the process will stop, until R reads the
@@ -451,8 +431,9 @@ is data available to read, you need to poll, see below.
 
 
 ```r
-p <- process$new(commandline = "echo foo; >&2 echo bar; echo foobar",
-                 stdout = "|", stderr = "|")
+p <- process$new(px,
+  c("outln", "foo", "errln", "bar", "outln", "foobar"),
+  stdout = "|", stderr = "|")
 p$read_output_lines()
 ```
 
@@ -468,124 +449,20 @@ p$read_error_lines()
 #> [1] "bar"
 ```
 
-To check if there is anything available for reading on the standard output
-or error streams, you can use the `is_incomplete_output()` and
-`is_incomplete_error()` methods:
-
-
-```r
-p <- process$new(commandline = "echo foo; sleep 2; echo bar", stdout = "|")
-
-## Wait for output
-p$poll_io(1000)
-```
-
-```
-#>   output    error 
-#>  "ready" "nopipe"
-```
-
-```r
-## There must be output now
-p$is_incomplete_output()
-```
-
-```
-#> [1] TRUE
-```
-
-```r
-p$read_output_lines()
-```
-
-```
-#> [1] "foo"
-```
-
-```r
-## There is no more output now, maybe later
-p$is_incomplete_output()
-```
-
-```
-#> [1] TRUE
-```
-
-```r
-p$poll_io(0)
-```
-
-```
-#>    output     error 
-#> "timeout"  "nopipe"
-```
-
-```r
-p$read_output_lines()
-```
-
-```
-#> character(0)
-```
-
-```r
-## Wait for output
-p$poll_io(2000)
-```
-
-```
-#>   output    error 
-#>  "ready" "nopipe"
-```
-
-```r
-## There is output again
-p$is_incomplete_output()
-```
-
-```
-#> [1] TRUE
-```
-
-```r
-p$read_output_lines()
-```
-
-```
-#> [1] "bar"
-```
-
-```r
-## There is no more output
-p$read_output_lines()
-```
-
-```
-#> character(0)
-```
-
-```r
-p$is_incomplete_output()
-```
-
-```
-#> [1] FALSE
-```
-
 #### End of output
 
-There is no standard way in R to signal the end of a connection,
-unfortunately. Most R I/O is blocking, and the end of file is reached when
-nothing can be read from the connection. This clearly does not work for
-non-blocking connections.
+The standard R way to query the end of the stream for a non-blocking
+connection, is to use the `isIncomplete()` function. *After a read attempt*,
+this function returns `FALSE` if the connection has surely no more data.
+(If the read attempt returns no data, but `isIncomplete()` returns `TRUE`,
+then the connection might deliver more data in the future.
 
-For `processx` standard output and error streams, you can use the
-`is_incomplete_output` and `is_incomplete_error` functions to check if
-there is any chance that more output will arrive on them later.
+The `is_incomplete_output()` and `is_incomplete_error()` functions work
+similarly for `process` objects.
 
 #### Polling the standard output and error
 
-The `poll_io` method waits for data on the standard output and/or error
+The `poll_io()` method waits for data on the standard output and/or error
 of a process. It will return if any of the following events happen:
 
 * data is available on the standard output of the process (assuming there is
@@ -600,7 +477,7 @@ For example the following code waits about a second for output.
 
 
 ```r
-p <- process$new(commandline = "sleep 1; ls", stdout = "|")
+p <- process$new(px, c("sleep", "1", "outln", "kuku"), stdout = "|")
 
 ## No output yet
 p$read_output_lines()
@@ -626,24 +503,21 @@ p$read_output_lines()
 ```
 
 ```
-#>  [1] "DESCRIPTION"     "LICENSE"         "Makefile"       
-#>  [4] "NAMESPACE"       "R"               "README.Rmd"     
-#>  [7] "README.markdown" "appveyor.yml"    "inst"           
-#> [10] "man"             "src"             "tests"
+#> [1] "kuku"
 ```
 
 #### Polling multiple processes
 
 If you need to manage multiple background processes, and need to wait
-for output from all of them, `processx` defines a `poll` function that
-does just that. It is similar to the `poll_io` method, but it takes
+for output from all of them, `processx` defines a `poll()` function that
+does just that. It is similar to the `poll_io()` method, but it takes
 multiple process objects, and returns as soon as one of them have data
 on standard output or error, or a timeout expires. Here is an example:
 
 
 ```r
-p1 <- process$new(commandline = "sleep 1; ls", stdout = "|")
-p2 <- process$new(commandline = "sleep 2; ls 1>&2", stderr = "|")
+p1 <- process$new(px, c("sleep", "1", "outln", "output"), stdout = "|")
+p2 <- process$new(px, c("sleep", "2", "errln", "error"), stderr = "|")
 
 ## After 100ms no output yet
 poll(list(p1 = p1, p2 = p2), 100)
@@ -679,17 +553,20 @@ p1$read_output_lines()
 ```
 
 ```
-#>  [1] "DESCRIPTION"     "LICENSE"         "Makefile"       
-#>  [4] "NAMESPACE"       "R"               "README.Rmd"     
-#>  [7] "README.markdown" "appveyor.yml"    "inst"           
-#> [10] "man"             "src"             "tests"
+#> [1] "output"
 ```
 
 ```r
 ## Done with p1
 close(p1$get_output_connection())
+```
 
-## The second process should have data on stderr by now
+```
+#> NULL
+```
+
+```r
+## The second process should have data on stderr soonish
 poll(list(p1 = p1, p2 = p2), 5000)
 ```
 
@@ -708,22 +585,19 @@ p2$read_error_lines()
 ```
 
 ```
-#>  [1] "DESCRIPTION"     "LICENSE"         "Makefile"       
-#>  [4] "NAMESPACE"       "R"               "README.Rmd"     
-#>  [7] "README.markdown" "appveyor.yml"    "inst"           
-#> [10] "man"             "src"             "tests"
+#> [1] "error"
 ```
 
 #### Waiting on a process
 
-As seen before, `is_alive` checks if a process is running. The `wait`
+As seen before, `is_alive()` checks if a process is running. The `wait()`
 method can be used to wait until it has finished (or a specified timeout
-expires).. E.g. in the following code `wait` needs to wait about 2 seconds
-for the `sleep` shell command to finish.
+expires).. E.g. in the following code `wait()` needs to wait about 2 seconds
+for the `sleep` `px` command to finish.
 
 
 ```r
-p <- process$new(commandline = "sleep 2")
+p <- process$new(px, c("sleep", "2"))
 p$is_alive()
 ```
 
@@ -736,7 +610,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2017-12-07 14:06:39 GMT"
+#> [1] "2017-12-07 22:33:28 GMT"
 ```
 
 ```r
@@ -745,10 +619,10 @@ Sys.time()
 ```
 
 ```
-#> [1] "2017-12-07 14:06:41 GMT"
+#> [1] "2017-12-07 22:33:30 GMT"
 ```
 
-It is safe to call `wait` multiple times:
+It is safe to call `wait()` multiple times:
 
 
 ```r
@@ -758,12 +632,12 @@ p$wait() # already finished!
 #### Exit statuses
 
 After a process has finished, its exit status can be queried via the
-`get_exit_status` method. If the process is still running, then this
+`get_exit_status()` method. If the process is still running, then this
 method returns `NULL`.
 
 
 ```r
-p <- process$new(commandline = "sleep 2")
+p <- process$new(px, c("sleep", "2"))
 p$get_exit_status()
 ```
 
@@ -798,13 +672,13 @@ p <- process$new("nonexistant-command-for-sure")
 
 
 ```r
-p2 <- process$new(commandline = "sleep 1; command-does-not-exist-right")
+p2 <- process$new(px, c("sleep", "1", "command-does-not-exist"))
 p2$wait()
 p2$get_exit_status()
 ```
 
 ```
-#> [1] 127
+#> [1] 2
 ```
 
 ## License
