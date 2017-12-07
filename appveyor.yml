@@ -19,7 +19,6 @@ build_script:
 
 environment:
   NOT_CRAN: true
-  DEBUGME: processx
 
 test_script:
   - travis-tool.sh run_tests
