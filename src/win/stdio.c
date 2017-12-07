@@ -3,12 +3,6 @@
 
 #include "../processx.h"
 
-/* Why is this not defined??? */
-BOOL WINAPI CancelIoEx(
-  HANDLE       hFile,
-  LPOVERLAPPED lpOverlapped
-);
-
 /*
  * The `child_stdio_buffer` buffer has the following layout:
  *   int number_of_fds
@@ -226,7 +220,6 @@ int processx__stdio_create(processx_handle_t *handle,
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FPIPE;
       con = processx__create_connection(pipe_handle[i], r_pipe_name,
 					private, encoding);
-      if (err) { goto error; }
       handle->pipes[i] = con;
     }
   }

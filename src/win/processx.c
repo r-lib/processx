@@ -551,18 +551,27 @@ void processx__error(const char *message, DWORD errorcode,
 
 void processx__collect_exit_status(SEXP status, DWORD exitcode);
 
+DWORD processx__terminate(processx_handle_t *handle, SEXP status) {
+  DWORD err;
+
+  err = TerminateProcess(handle->hProcess, 2);
+  if (err) processx__collect_exit_status(status, 2);
+
+  WaitForSingleObject(handle->hProcess, INFINITE);
+  CloseHandle(handle->hProcess);
+  handle->hProcess = 0;
+  return err;
+}
+
 void processx__finalizer(SEXP status) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
   SEXP private;
-  DWORD err;
 
   if (!handle) return;
 
   if (handle->cleanup && !handle->collected) {
     /* Just in case it is running */
-    err = TerminateProcess(handle->hProcess, 1);
-    if (err) processx__collect_exit_status(status, 1);
-    WaitForSingleObject(handle->hProcess, INFINITE);
+    processx__terminate(handle, status);
   }
 
   /* Copy over pid and exit status */
@@ -861,17 +870,13 @@ SEXP processx_signal(SEXP status, SEXP signal) {
     }
 
     if (exitcode == STILL_ACTIVE) {
+
       /* We only cleanup the tree if the process is still running. */
       /* TODO: we are not running this for now, until we can properly
 	 work around pid reuse. */
       /* processx__cleanup_child_tree(handle->dwProcessId); */
-      err = TerminateProcess(handle->hProcess, 1);
-      if (err) {
-	processx__collect_exit_status(status, 1);
-	return ScalarLogical(1);
-      } else {
-	return ScalarLogical(0);
-      }
+      err = processx__terminate(handle, status);
+      return ScalarLogical(err != 0);
 
     } else {
       processx__collect_exit_status(status, exitcode);
