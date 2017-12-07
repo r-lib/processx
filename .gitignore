@@ -6,7 +6,8 @@
 /src/win/*.o
 /src/processx.so
 /src/processx.dll
-/src/wintools/*.exe
+/src/tools/*.exe
+/src/tools/px
 /src-i386
 /src-x64
 /src/supervisor/supervisor

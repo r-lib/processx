@@ -5,9 +5,9 @@ OBJECTS = test-connections.o init.o poll.o processx-connection.o     \
 
 .PHONY: all clean
 
-all: wintools/sleep.exe supervisor/supervisor.exe $(SHLIB)
+all: tools/sleep.exe supervisor/supervisor.exe $(SHLIB)
 
-wintools/sleep.exe: wintools/sleep.c
+tools/sleep.exe: tools/sleep.c
 	$(CC) $(CFLAGS) -Wall $< -o $@
 
 supervisor/supervisor.exe: supervisor/supervisor.c supervisor/utils.c \
