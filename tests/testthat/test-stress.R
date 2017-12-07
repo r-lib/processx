@@ -13,7 +13,7 @@ test_that("run() a lot of times, with small timeouts", {
   for (i in 1:100) {
     tic <- Sys.time()
     err <- tryCatch(
-      run(sl[1], sl[-1], timeout = 0.000001),
+      run(sl[1], sl[-1], timeout = 1/1000),
       error = identity
     )
     expect_s3_class(err, "system_command_timeout_error")
@@ -27,10 +27,11 @@ test_that("run() a lot of times, with small timeouts", {
   for (i in 1:100) {
     tic <- Sys.time()
     err <- tryCatch(
-      run(commandline = paste(sl, collapse = " "), timeout = 0.000001),
+      run(commandline = paste(sl, collapse = " "), timeout = 1/1000),
       error = identity
     )
     expect_s3_class(err, "system_command_timeout_error")
-    expect_true(Sys.time() - tic < as.difftime(3, units = "secs"))
+    dt <- Sys.time() - tic
+    expect_true(dt < as.difftime(3, units = "secs"))
   }
 })
