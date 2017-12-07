@@ -412,7 +412,7 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
       j,
       handles,
       /* bWaitAll = */ FALSE,
-      PROCESSX_INTERRUPT_INTERVAL);
+      timeleft);
   }
 
   if (waitres == WAIT_FAILED) {
