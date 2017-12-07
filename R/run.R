@@ -260,6 +260,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
   ## We might still have output
   "!DEBUG run() reading leftover output / error, process `proc$get_pid()`"
   while (proc$is_incomplete_output() || proc$is_incomplete_error()) {
+    proc$poll_io(-1)
     do_output()
   }
 
