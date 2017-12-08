@@ -41,7 +41,7 @@ test_that("UTF-8 multibyte character cut in half", {
 
   cmd <- paste("(cat", shQuote(tmp1), ";sleep 1;cat", shQuote(tmp2), ")")
   p <- process$new(px, c("cat", tmp1, "sleep", "1", "cat", tmp2),
-                   stdout = "|", stderr = "|")
+                   stdout = "|", stderr = "|", encoding = "UTF-8")
   out <- p$read_all_output_lines()
   expect_equal(rtxt, charToRaw(out))
 })
