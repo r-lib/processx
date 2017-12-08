@@ -116,7 +116,7 @@ test_that("polling and buffering", {
   ## We poll until p1 has output. We read out some of the output,
   ## and leave the rest in the buffer.
   p1$poll_io(-1)
-  expect_equal(p1$read_output_lines(n = 2), c("1", "2"))
+  expect_equal(p1$read_output_lines(n = 1), "1")
 
   ## Now poll should return immediately, because there is output ready
   ## from p1. The status of p2 should be 'silent' (and not 'timeout')
@@ -140,7 +140,7 @@ test_that("polling and buffering #2", {
 
   ## We run this a bunch of times, because it used to fail
   ## non-deterministically on the CI
-  for (i in 1:100) {
+  for (i in 1:10) {
 
     ## Two processes, they both produce output. For the first process,
     ## we make sure that there is something in the buffer.
@@ -148,22 +148,21 @@ test_that("polling and buffering #2", {
     ## available immediately.
     p1 <- process$new(px, rbind("outln", 1:20), stdout = "|")
     p2 <- process$new(px, rbind("outln", 21:30), stdout = "|")
-    on.exit(p1$kill(), add = TRUE)
-    on.exit(p2$kill(), add = TRUE)
 
     ## We poll until p1 has output. We read out some of the output,
     ## and leave the rest in the buffer.
     p1$poll_io(-1)
-    expect_equal(p1$read_output_lines(n = 2), c("1", "2"))
+    expect_equal(p1$read_output_lines(n = 2), "1")
 
     ## We also need to poll p2, to make sure that there is
     ## output from it. But we don't read anything from it.
-    p2$poll_io(-1)
+    expect_equal(p1$poll_io(-1)[["output"]], "ready")
+    expect_equal(p2$poll_io(-1)[["output"]], "ready")
 
     ## Now poll should return ready for both processes, and it should
     ## return fast.
     tick <- Sys.time()
-    s <- poll(list(p1, p2), 5000)
+    s <- poll(list(p1, p2), 3000)
     expect_equal(
       s,
       list(
@@ -171,6 +170,9 @@ test_that("polling and buffering #2", {
         c(output = "ready", error = "nopipe")
       )
     )
+
+    p1$kill()
+    p2$kill()
 
     ## Check that poll has returned immediately
     expect_true(Sys.time() - tick < as.difftime(2, units = "secs"))
