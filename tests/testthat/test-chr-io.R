@@ -3,30 +3,18 @@ context("character IO")
 
 test_that("Can read last line without trailing newline", {
 
-  skip_on_cran()
+  px <- get_tool("px")
 
-  cmd <- if (os_type() == "unix") {
-    "printf foobar"
-  } else {
-    "<nul set /p =foobar"
-  }
-
-  p <- process$new(commandline = cmd, stdout = "|")
+  p <- process$new(px, c("out", "foobar"), stdout = "|")
   out <- p$read_all_output_lines()
   expect_equal(out, "foobar")
 })
 
 test_that("Can read single characters", {
 
-  skip_on_cran()
+  px <- get_tool("px")
 
-  cmd <- if (os_type() == "unix") {
-    "printf 123"
-  } else {
-    "<nul set /p =123"
-  }
-
-  p <- process$new(commandline = cmd, stdout = "|")
+  p <- process$new(px, c("out", "123"), stdout = "|")
   p$wait()
 
   p$poll_io(-1)
@@ -39,15 +27,9 @@ test_that("Can read single characters", {
 
 test_that("Can read multiple characters", {
 
-  skip_on_cran()
+  px <- get_tool("px")
 
-  cmd <- if (os_type() == "unix") {
-    "printf 123456789"
-  } else {
-    "<nul set /p =123456789"
-  }
-
-  p <- process$new(commandline = cmd, stdout = "|")
+  p <- process$new(px, c("out", "123456789"), stdout = "|")
   p$wait()
 
   p$poll_io(-1)

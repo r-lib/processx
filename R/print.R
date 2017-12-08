@@ -20,11 +20,5 @@ process_print <- function(self, private) {
 }
 
 process_get_short_name <- function(self, private) {
-  if (!is.null(private$command)) {
-    basename(private$command)
-  } else if (nchar(private$commandline) < 40) {
-    private$commandline
-  } else {
-    paste(substr(private$commandline, 1, 36), "...")
-  }
+  basename(private$command)
 }

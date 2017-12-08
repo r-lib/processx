@@ -667,7 +667,7 @@ p <- process$new("nonexistant-command-for-sure")
 ```
 
 ```
-#> Error in process_initialize(self, private, command, args, commandline, : processx error
+#> Error in process_initialize(self, private, command, args : processx error
 ```
 
 

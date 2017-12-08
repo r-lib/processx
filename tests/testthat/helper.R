@@ -3,12 +3,6 @@ skip_other_platforms <- function(platform) {
   if (os_type() != platform) skip(paste("only run it on", platform))
 }
 
-skip_without_command <- function(command) {
-  if (Sys.which(command) == "") {
-    skip(paste("only run if", command, "is available"))
-  }
-}
-
 try_silently <- function(expr) {
   tryCatch(
     expr,
@@ -18,7 +12,8 @@ try_silently <- function(expr) {
   )
 }
 
-get_wintool <- function(prog) {
+get_tool <- function(prog) {
+  if (os_type() == "windows") prog <- paste0(prog, ".exe")
   exe <- system.file(package = "processx", "bin", .Platform$r_arch, prog)
   if (exe == "") {
     pkgpath <- system.file(package = "processx")
@@ -27,45 +22,6 @@ get_wintool <- function(prog) {
     if (!file.exists(exe)) return("")
   }
   exe
-}
-
-sleep <- function(n) {
-
-  commandline <- FALSE
-
-  if (os_type() == "windows") {
-    sleepexe <- get_wintool("sleep.exe")
-    if (sleepexe == "") skip("Cannot run sleep.exe")
-    if (commandline) {
-      paste(sleepexe, n)
-    } else {
-      c(sleepexe, as.character(n))
-    }
-
-  } else {
-    if (commandline) {
-      paste("(sleep", n, ")")
-    } else {
-      c("sleep", as.character(n))
-    }
-  }
-}
-
-## type is not good, because it needs cmd
-## more is another candidate, but it does not handle long lines, it cuts them
-## so we go with cat
-
-cat_command <- function() {
-  if (os_type() == "windows") "cat" else "cat"
-}
-
-skip_if_no_command <- function(command) {
-  if (Sys.which(command) == "") skip(paste0("No '", command, "' command"))
-}
-
-skip_if_no_cat <- function() {
-  cat <- cat_command()
-  skip_if_no_command(cat)
 }
 
 get_pid_by_name <- function(name) {

@@ -3,11 +3,8 @@ context("poll")
 
 test_that("polling for output available", {
 
-  skip_on_cran()
-  
-  sl1 <- paste(sleep(1), collapse = " ")  
-  cmd <- if (os_type() == "unix") "sleep 1; ls" else paste0(sl1, " && dir /b")
-  p <- process$new(commandline = cmd, stdout = "|")
+  px <- get_tool("px")
+  p <- process$new(px, c("sleep", "1", "outln", "foobar"), stdout = "|")
 
   ## Timeout
   expect_equal(p$poll_io(0), c(output = "timeout", error = "nopipe"))
@@ -26,14 +23,9 @@ test_that("polling for output available", {
 })
 
 test_that("polling for stderr", {
-  skip_on_cran()
-  sl1 <- paste(sleep(1), collapse = " ")
-  cmd <- if (os_type() == "unix") {
-    "sleep 1; ls 1>&2"
-  } else {
-    paste0(sl1, " && dir /b 1>&2")
-  }
-  p <- process$new(commandline = cmd, stderr = "|")
+
+  px <- get_tool("px")
+  p <- process$new(px, c("sleep", "1", "errln", "foobar"), stderr = "|")
 
   ## Timeout
   expect_equal(p$poll_io(0), c(output = "nopipe", error = "timeout"))
@@ -53,15 +45,9 @@ test_that("polling for stderr", {
 
 test_that("polling for both stdout and stderr", {
 
-  skip_on_cran()
-
-  cmd <- if (os_type() == "unix") {
-    "sleep 1; ls 1>&2; ls"
-  } else {
-    paste0(paste(sleep(1), collapse = " "), " && dir /b 1>&2 && dir /b")
-  }
-
-  p <- process$new(commandline = cmd, stdout = "|", stderr = "|")
+  px <- get_tool("px")
+  p <- process$new(px, c("sleep", "1", "errln", "foo", "outln", "bar"),
+                   stdout = "|", stderr = "|")
 
   ## Timeout
   expect_equal(p$poll_io(0), c(output = "timeout", error = "timeout"))
@@ -82,12 +68,10 @@ test_that("polling for both stdout and stderr", {
 
 test_that("multiple polls", {
 
-  skip_on_cran()
-  if (os_type() != "unix") skip("Only on Unix")
-
-  cmd <- "sleep 1; echo foo; sleep 1; echo bar"
-
-  p <- process$new(commandline = cmd, stdout = "|", stderr = "|")
+  px <- get_tool("px")
+  p <- process$new(
+    px, c("sleep", "1", "outln", "foo", "sleep", "1", "outln", "bar"),
+    stdout = "|", stderr = "|")
 
   out <- character()
   while (p$is_alive()) {

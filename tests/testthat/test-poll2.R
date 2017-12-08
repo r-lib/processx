@@ -2,13 +2,10 @@
 context("poll multiple processes")
 
 test_that("single process", {
-  skip_on_cran()
-  cmd <- switch(
-    os_type(),
-    "unix" = "sleep 1; ls",
-    paste0(paste(sleep(1), collapse = " "), " && dir /b")
-  )
-  p <- process$new(commandline = cmd, stdout = "|")
+
+  px <- get_tool("px")
+  p <- process$new(px, c("sleep", "1", "outln", "foo", "outln", "bar"),
+                   stdout = "|")
 
   ## Timeout
   expect_equal(
@@ -42,20 +39,13 @@ test_that("single process", {
 })
 
 test_that("multiple processes", {
-  skip_on_cran()
-  cmd1 <- switch(
-    os_type(),
-    "unix" = "sleep 1; ls",
-    paste0(paste(sleep(1), collapse = " "), " && dir /b")
-  )
-  cmd2 <- switch(
-    os_type(),
-    "unix" = "sleep 2; ls 1>&2",
-    paste0(paste(sleep(1), collapse = " "), " && dir /b 1>&2")
-  )
 
-  p1 <- process$new(commandline = cmd1, stdout = "|")
-  p2 <- process$new(commandline = cmd2, stderr = "|")
+  px <- get_tool("px")
+  cmd1 <- c("sleep", "1", "outln", "foo", "outln", "bar")
+  cmd2 <- c("sleep", "2", "errln", "foo", "errln", "bar")
+
+  p1 <- process$new(px, cmd1, stdout = "|")
+  p2 <- process$new(px, cmd2, stderr = "|")
 
   ## Timeout
   res <- poll(list(p1 = p1, p2 = p2), 0)
@@ -98,12 +88,9 @@ test_that("multiple processes", {
 
 test_that("multiple polls", {
 
-  skip_on_cran()
-  if (os_type() != "unix") skip("Only on Unix")
-
-  cmd <- "sleep 1; echo foo; sleep 1; echo bar"
-
-  p <- process$new(commandline = cmd, stdout = "|", stderr = "|")
+  px <- get_tool("px")
+  cmd <- c("sleep", "1", "outln", "foo", "sleep", "1", "outln", "bar")
+  p <- process$new(px, cmd, stdout = "|", stderr = "|")
 
   out <- character()
   while (p$is_alive()) {
@@ -116,13 +103,13 @@ test_that("multiple polls", {
 
 test_that("polling and buffering", {
 
-  if (os_type() != "unix") skip("Only on Unix")
+  px <- get_tool("px")
 
   ## We set up two processes, one produces a output, that we do not
   ## read out from the cache. The other one does not produce output.
 
-  p1 <- process$new("seq", c("1", "20"), stdout = "|")
-  p2 <- process$new("sleep", "4", stdout = "|")
+  p1 <- process$new(px, rbind("outln", 1:20), stdout = "|")
+  p2 <- process$new(px, c("sleep", "4"), stdout = "|")
   on.exit(p1$kill(), add = TRUE)
   on.exit(p2$kill(), add = TRUE)
 
@@ -149,7 +136,7 @@ test_that("polling and buffering", {
 
 test_that("polling and buffering #2", {
 
-  if (os_type() != "unix") skip("Only on Unix")
+  px <- get_tool("px")
 
   ## We run this a bunch of times, because it used to fail
   ## non-deterministically on the CI
@@ -159,8 +146,8 @@ test_that("polling and buffering #2", {
     ## we make sure that there is something in the buffer.
     ## For the second process we need to poll, but data should be
     ## available immediately.
-    p1 <- process$new("seq", c("1", "20"), stdout = "|")
-    p2 <- process$new("seq", c("21", "30"), stdout = "|")
+    p1 <- process$new(px, rbind("outln", 1:20), stdout = "|")
+    p2 <- process$new(px, rbind("outln", 21:30), stdout = "|")
     on.exit(p1$kill(), add = TRUE)
     on.exit(p2$kill(), add = TRUE)
 

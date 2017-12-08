@@ -1,4 +1,3 @@
-
 #' Run external command, and wait until finishes
 #'
 #' `run` provides an interface similar to [base::system()] and
@@ -31,8 +30,6 @@
 #'   `system_command_status_error` and `system_command_timeout_error`,
 #'   respectively, and both errors have class `system_command_error` as
 #'   well.
-#' @param commandline A character scalar, a full command line.
-#'   No escaping will be performed on it.
 #' @param echo_cmd Whether to print the command to run to the screen.
 #' @param echo Whether to print the standard output and error
 #'   to the screen. Note that the order of the standard output and error
@@ -77,23 +74,23 @@
 #' \dontrun{
 #' if (.Platform$OS.type == "unix") {
 #'   run("ls")
-#'   system.time(run(commandline = "sleep 10", timeout = 1,
+#'   system.time(run("sleep", "10", timeout = 1,
 #'     error_on_status = FALSE))
 #'   system.time(
 #'     run(
-#'       commandline = "for i in 1 2 3 4 5; do echo $i; sleep 1; done",
-#'       timeout=2, error_on_status = FALSE
+#'       "sh", c("-c", "for i in 1 2 3 4 5; do echo $i; sleep 1; done"),
+#'       timeout = 2, error_on_status = FALSE
 #'     )
 #'   )
 #' } else {
-#'   run(commandline = "ping -n 1 127.0.0.1")
-#'   run(commandline = "ping -n 6 127.0.0.1", timeout = 1,
+#'   run("ping", c("-n", "1", "127.0.0.1"))
+#'   run("ping", c("-n", "6", "127.0.0.1"), timeout = 1,
 #'     error_on_status = FALSE)
 #' }
 #' }
 
 run <- function(
-  command = NULL, args = character(), commandline = NULL,
+  command = NULL, args = character(),
   error_on_status = TRUE, echo_cmd = FALSE, echo = FALSE, spinner = FALSE,
   timeout = Inf, stdout_line_callback = NULL, stdout_callback = NULL,
   stderr_line_callback = NULL, stderr_callback = NULL,
@@ -116,7 +113,7 @@ run <- function(
 
   ## Run the process
   pr <- process$new(
-    command, args, commandline, echo_cmd = echo_cmd,
+    command, args, echo_cmd = echo_cmd,
     windows_verbatim_args = windows_verbatim_args,
     windows_hide_window = windows_hide_window,
     stdout = "|", stderr = "|", encoding = encoding
