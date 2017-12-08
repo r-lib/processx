@@ -392,6 +392,8 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 
   if (j == 0) return hasdata;
 
+  if (hasdata) timeout = timeleft = 0;
+
   waitres = WAIT_TIMEOUT;
   while (timeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
     waitres = WaitForMultipleObjects(
@@ -418,7 +420,9 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
     PROCESSX_ERROR("waiting in poll", GetLastError());
 
   } else if (waitres == WAIT_TIMEOUT) {
-    for (i = 0; i < j; i++) pollables[ptr[i]].event = PXTIMEOUT;
+    if (hasdata == 0) {
+      for (i = 0; i < j; i++) pollables[ptr[i]].event = PXTIMEOUT;
+    }
 
   } else {
     int ready = waitres - WAIT_OBJECT_0;
