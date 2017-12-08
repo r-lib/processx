@@ -133,7 +133,7 @@ test_that("readChar on IO, windows", {
   skip_other_platforms("windows")
 
   px <- get_tool("px")
-  p <- process$new(px, c("outln", "echo hello world!"), stdout = "|")
+  p <- process$new(px, c("outln", "hello world!"), stdout = "|")
   p$wait()
 
   p$poll_io(-1)
