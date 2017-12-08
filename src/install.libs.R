@@ -1,7 +1,6 @@
 
 progs <- if (WINDOWS) {
   c(file.path("tools", "px.exe"),
-    file.path("tools", "sleep.exe"),
     file.path("supervisor", "supervisor.exe"))
 } else {
   c(file.path("tools", "px"),
