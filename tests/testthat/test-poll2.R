@@ -152,7 +152,7 @@ test_that("polling and buffering #2", {
     ## We poll until p1 has output. We read out some of the output,
     ## and leave the rest in the buffer.
     p1$poll_io(-1)
-    expect_equal(p1$read_output_lines(n = 2), "1")
+    expect_equal(p1$read_output_lines(n = 1), "1")
 
     ## We also need to poll p2, to make sure that there is
     ## output from it. But we don't read anything from it.
