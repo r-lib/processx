@@ -120,6 +120,7 @@ test_that("polling and buffering", {
 
   ## Now poll should return immediately, because there is output ready
   ## from p1. The status of p2 should be 'silent' (and not 'timeout')
+  p2$poll_io(-1)
   tick <- Sys.time()
   s <- poll(list(p1, p2), 5000)
   expect_equal(
