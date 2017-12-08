@@ -594,7 +594,7 @@ int processx_i_poll_func_connection(
   PROCESSX__I_POLL_FUNC_CONNECTION_READY;
 
 #ifdef _WIN32
-  processx__connection_start_read(ccon);
+  processx__connection_read(ccon);
   /* Starting to read may actually get some data, or an EOF, so check again */
   PROCESSX__I_POLL_FUNC_CONNECTION_READY;
   if (handle) *handle = ccon->handle.overlapped.hEvent;
