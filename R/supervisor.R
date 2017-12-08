@@ -88,8 +88,7 @@ supervisor_start <- function() {
     supervisor_path(),
     args = c("-p", Sys.getpid(), "-i", supervisor_info$stdin_file),
     stdout = "|",
-    cleanup = FALSE,
-    commandline = NULL
+    cleanup = FALSE
   )
 
   # Wait for supervisor to emit the line "Ready", which indicates it is ready

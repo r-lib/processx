@@ -3,17 +3,17 @@ context("stress test")
 
 test_that("can start 100 processes quickly", {
   skip_on_cran()
-  sl <- sleep(0)
-  expect_error(for (i in 1:100) run(sl[1], sl[-1]), NA)
+  px <- get_tool("px")
+  expect_error(for (i in 1:100) run(px), NA)
 })
 
 test_that("run() a lot of times, with small timeouts", {
   skip_on_cran()
-  sl <- sleep(5)
+  px <- get_tool("px")
   for (i in 1:100) {
     tic <- Sys.time()
     err <- tryCatch(
-      run(sl[1], sl[-1], timeout = 1/1000),
+      run(px, c("sleep", "5"), timeout = 1/1000),
       error = identity
     )
     expect_s3_class(err, "system_command_timeout_error")
@@ -23,30 +23,14 @@ test_that("run() a lot of times, with small timeouts", {
 
 test_that("run() and kill while polling", {
   skip_on_cran()
-  sl <- sleep(5)
+  px <- get_tool("px")
   for (i in 1:10) {
     tic <- Sys.time()
     err <- tryCatch(
-      run(sl[1], sl[-1], timeout = 1/2),
+      run(px, c("sleep", "5"), timeout = 1/2),
       error = identity
     )
     expect_s3_class(err, "system_command_timeout_error")
     expect_true(Sys.time() - tic < as.difftime(3, units = "secs"))
-  }
-})
-
-test_that("run() and kill while polling, command line", {
-  skip_on_cran()
-  skip("Not running this, because the child of the shell is not killed")
-  sl <- sleep(5)
-  for (i in 1:10) {
-    tic <- Sys.time()
-    err <- tryCatch(
-      run(commandline = paste(sl, collapse = " "), timeout = 1/2),
-      error = identity
-    )
-    expect_s3_class(err, "system_command_timeout_error")
-    dt <- Sys.time() - tic
-    expect_true(dt < as.difftime(3, units = "secs"))
   }
 })

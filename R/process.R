@@ -12,7 +12,7 @@ NULL
 #'
 #' @section Usage:
 #' ```
-#' p <- process$new(command = NULL, args, commandline = NULL,
+#' p <- process$new(command = NULL, args,
 #'                  stdout = NULL, stderr = NULL, cleanup = TRUE,
 #'                  echo_cmd = FALSE, supervise = FALSE,
 #'                  windows_verbatim_args = FALSE,
@@ -55,11 +55,6 @@ NULL
 #'     [base::normalizePath()] for tilde-expansion.
 #' * `args`: Character vector, arguments to the command. They will be
 #'     used as is, without a shell. They don't need to be escaped.
-#' * `commandline`: A character scalar, a full command line.
-#'     On Unix systems it runs the a shell: `sh -c <commandline>`.
-#'     On Windows it uses the `cmd` shell:
-#'     `cmd /c <commandline>`. If you want more control, then call
-#'     your chosen shell directly.
 #' * `stdout`: What to do with the standard output. Possible values:
 #'     `NULL`: discard it; a string, redirect it to this file;
 #'     `"|"`: create a connection for it.
@@ -254,10 +249,10 @@ process <- R6Class(
   public = list(
 
     initialize = function(command = NULL, args = character(),
-      commandline = NULL, stdout = NULL, stderr = NULL, cleanup = TRUE,
+      stdout = NULL, stderr = NULL, cleanup = TRUE,
       echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
       windows_hide_window = FALSE, encoding = "")
-      process_initialize(self, private, command, args, commandline,
+      process_initialize(self, private, command, args,
                          stdout, stderr, cleanup, echo_cmd, supervise,
                          windows_verbatim_args, windows_hide_window,
                          encoding),
@@ -353,7 +348,6 @@ process <- R6Class(
 
     command = NULL,       # Save 'command' argument here
     args = NULL,          # Save 'args' argument here
-    commandline = NULL,   # The full command line
     cleanup = NULL,       # cleanup argument
     stdout = NULL,        # stdout argument or stream
     stderr = NULL,        # stderr argument or stream
@@ -403,7 +397,6 @@ process_restart <- function(self, private) {
     private,
     private$command,
     private$args,
-    private$commandline,
     private$pstdout,
     private$pstderr,
     private$cleanup,

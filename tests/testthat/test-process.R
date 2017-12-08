@@ -3,33 +3,24 @@ context("process")
 
 test_that("process works", {
 
-  win  <- sleep(5)
-  unix <- c("sleep", "5")
-  cmd <- if (os_type() == "windows") win else unix
-
-  p <- process$new(cmd[1], cmd[-1])
+  px <- get_tool("px")
+  p <- process$new(px, c("sleep", "5"))
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
-
-  Sys.sleep(.1)
   expect_true(p$is_alive())
 })
 
 test_that("get_exit_status", {
-  skip_on_cran()
-  cmd <- if (os_type() == "windows") {
-    "cmd /c exit 1"
-  } else {
-    "echo alive && exit 1"
-  }
-  p <- process$new(commandline = cmd)
+
+  px <- get_tool("px")
+  p <- process$new(px, c("return", "1"))
   p$wait()
   expect_identical(p$get_exit_status(), 1L)
 })
 
 test_that("restart", {
 
-  cmd <- sleep(5)
-  p <- process$new(cmd[1], cmd[-1])
+  px <- get_tool("px")
+  p <- process$new(px, c("sleep", "5"))
   expect_true(p$is_alive())
 
   p$kill(grace = 0)

@@ -11,8 +11,8 @@ test_that("no deadlock when no stdout + wait", {
 
 test_that("wait with timeout", {
 
-  cmd <- sleep(3)
-  p <- process$new(cmd[1], cmd[-1])
+  px <- get_tool("px")
+  p <- process$new(px, c("sleep", "3"))
   expect_true(p$is_alive())
 
   t1 <- proc.time()
@@ -29,13 +29,12 @@ test_that("wait with timeout", {
 
 test_that("wait after process already exited", {
 
-  skip_on_cran()
-  cmd <- if (os_type() == "windows") "dir /b /A" else "ls -A"
-  p <- process$new(commandline = cmd)
+  px <- get_tool("px")
+  p <- process$new(
+    px, c("outln", "foo", "outln", "bar", "outln", "foobar"))
 
-  ## Make sure it is done, wait a bit, so that exit status is collected
+  ## Make sure it is done
   p$wait()
-  Sys.sleep(1)
 
   ## Now wait() should return immediately, regardless of timeout
   expect_true(system.time(p$wait())[["elapsed"]] < 1)

@@ -1,8 +1,9 @@
 
-# 3.0.2
+# 3.0.1
 
-* Fixed a bug where `process$new(supervisor=TRUE)` could give the error
-  message `Error: ms is not a length 1 integer` (@wch).
+* `run()` and `process$new()` do not support the `commandline` argument
+  any more, because process cleanup is error prone with an intermediate
+  shell. (#88)
 
 * `processx` process objects no longer use R connection objects,
   because the R connection API was retroactive made private by R-core

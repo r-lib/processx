@@ -3,11 +3,8 @@ context("io")
 
 test_that("Output and error are discarded by default", {
 
-  skip_on_cran()
-
-  cmd <- if (os_type() == "windows") "dir /b /A" else "ls -A"
-
-  p <- process$new(commandline = cmd)
+  px <- get_tool("px")
+  p <- process$new(px, c("outln", "foobar"))
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   expect_error(p$read_output_lines(n=1),  "not a pipe")
@@ -20,15 +17,14 @@ test_that("Output and error are discarded by default", {
 
 test_that("We can get the output", {
 
-  skip_on_cran()
+  px <- get_tool("px")
 
-  cmd <- if (os_type() == "windows") "dir /b /A" else "ls -A"
-
-  p <- process$new(commandline = cmd, stdout = "|", stderr = "|")
+  p <- process$new(px, c("out", "foo\nbar\nfoobar\n"),
+                   stdout = "|", stderr = "|")
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
-  out <- sort(p$read_all_output_lines())
-  expect_identical(sort(out), sort(dir(no..=TRUE, all.files=TRUE)))
+  out <- p$read_all_output_lines()
+  expect_identical(out, c("foo", "bar", "foobar"))
 })
 
 test_that("We can get the error stream", {
@@ -103,11 +99,8 @@ test_that("Output and error to specific files", {
 
 test_that("is_incomplete", {
 
-  skip_on_cran()
-
-  cmd <- if (os_type() == "windows") "dir /b /A" else "ls -A"
-
-  p <- process$new(commandline = cmd, stdout = "|")
+  px <- get_tool("px")
+  p <- process$new(px, c("out", "foo\nbar\nfoobar\n"), stdout = "|")
 
   expect_true(p$is_incomplete_output())
 
@@ -120,9 +113,12 @@ test_that("is_incomplete", {
 
 test_that("readChar on IO, unix", {
 
+  ## Need to skip, because of the different EOL character
   skip_other_platforms("unix")
 
-  p <- process$new("echo", "hello world!", stdout = "|")
+  px <- get_tool("px")
+
+  p <- process$new(px, c("outln", "hello world!"), stdout = "|")
   p$wait()
 
   p$poll_io(-1)
@@ -133,10 +129,11 @@ test_that("readChar on IO, unix", {
 
 test_that("readChar on IO, windows", {
 
-  skip_on_cran()
+  ## Need to skip, because of the different EOL character
   skip_other_platforms("windows")
 
-  p <- process$new(commandline = "echo hello world!", stdout = "|")
+  px <- get_tool("px")
+  p <- process$new(px, c("outln", "echo hello world!"), stdout = "|")
   p$wait()
 
   p$poll_io(-1)

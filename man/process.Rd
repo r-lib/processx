@@ -11,7 +11,7 @@ id of the started process, and set its standard output and error
 streams. The process id is then used to manage the process.
 }
 \section{Usage}{
-\preformatted{p <- process$new(command = NULL, args, commandline = NULL,
+\preformatted{p <- process$new(command = NULL, args,
                  stdout = NULL, stderr = NULL, cleanup = TRUE,
                  echo_cmd = FALSE, supervise = FALSE,
                  windows_verbatim_args = FALSE,
@@ -57,11 +57,6 @@ It should not be quoted with \code{\link[base:shQuote]{base::shQuote()}}. See
 \code{\link[base:normalizePath]{base::normalizePath()}} for tilde-expansion.
 \item \code{args}: Character vector, arguments to the command. They will be
 used as is, without a shell. They don't need to be escaped.
-\item \code{commandline}: A character scalar, a full command line.
-On Unix systems it runs the a shell: \code{sh -c <commandline>}.
-On Windows it uses the \code{cmd} shell:
-\code{cmd /c <commandline>}. If you want more control, then call
-your chosen shell directly.
 \item \code{stdout}: What to do with the standard output. Possible values:
 \code{NULL}: discard it; a string, redirect it to this file;
 \code{"|"}: create a connection for it.
