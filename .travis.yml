@@ -17,4 +17,3 @@ after_success:
 env:
   global:
     - NOT_CRAN=true
-    - DEBUGME=processx
