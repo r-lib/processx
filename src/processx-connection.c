@@ -390,8 +390,7 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
     }
   }
 
-  if (hasdata) return hasdata;
-  if (j == 0) return 0;
+  if (j == 0) return hasdata;
 
   waitres = WAIT_TIMEOUT;
   while (timeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
@@ -424,7 +423,7 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
   } else {
     int ready = waitres - WAIT_OBJECT_0;
     pollables[ptr[ready]].event = PXREADY;
-    hasdata = 1;
+    hasdata++;
   }
 
   return hasdata;
