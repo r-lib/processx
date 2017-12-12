@@ -32,3 +32,7 @@ test_that("restart", {
 
   p$kill(grace = 0)
 })
+
+test_that("non existing process", {
+  expect_error(process$new(tempfile()))
+})
