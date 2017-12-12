@@ -32,7 +32,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_connection_read_lines", (DL_FUNC) &processx_connection_read_lines, 2 },
   { "processx_connection_is_eof",     (DL_FUNC) &processx_connection_is_eof,     1 },
   { "processx_connection_close",      (DL_FUNC) &processx_connection_close,      1 },
-  { "processx_conenction_poll",       (DL_FUNC) &processx_connection_poll,       2 },
+  { "processx_connection_poll",       (DL_FUNC) &processx_connection_poll,       2 },
 
   { "run_testthat_tests", (DL_FUNC) &run_testthat_tests, 0 },
 
