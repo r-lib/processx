@@ -1,4 +1,8 @@
 
+# 3.0.2.9000
+
+* Fix a crash on windows when trying to run a non-existing command (#90)
+
 # 3.0.2
 
 * Fix a race condition in `process$restart()`
