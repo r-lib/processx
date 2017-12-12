@@ -7,4 +7,6 @@
 ^appveyor.yml$
 ^src/processx\.so$
 ^src/.*\.o$
+^src/tools/px$
+^src/tools/px.exe$
 ^revdep$
