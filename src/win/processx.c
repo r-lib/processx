@@ -563,6 +563,11 @@ DWORD processx__terminate(processx_handle_t *handle, SEXP status) {
   return err;
 }
 
+SEXP processx__disconnect_process_handle(SEXP status) {
+  R_SetExternalPtrTag(status, R_NilValue);
+  return R_NilValue;
+}
+
 void processx__finalizer(SEXP status) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
   SEXP private;
@@ -575,10 +580,18 @@ void processx__finalizer(SEXP status) {
   }
 
   /* Copy over pid and exit status */
-  private = R_ExternalPtrTag(status);
-  defineVar(install("exited"), ScalarLogical(1), private);
-  defineVar(install("pid"), ScalarInteger(handle->dwProcessId), private);
-  defineVar(install("exitcode"), ScalarInteger(handle->exitcode), private);
+  private = PROTECT(R_ExternalPtrTag(status));
+  if (!isNull(private)) {
+    SEXP sone = PROTECT(ScalarLogical(1));
+    SEXP spid = PROTECT(ScalarInteger(handle->dwProcessId));
+    SEXP sexitcode = PROTECT(ScalarInteger(handle->exitcode));
+
+    defineVar(install("exited"), sone, private);
+    defineVar(install("pid"), spid, private);
+    defineVar(install("exitcode"), sexitcode, private);
+    UNPROTECT(3);
+  }
+  UNPROTECT(1);
 
   if (handle->hProcess) CloseHandle(handle->hProcess);
   R_ClearExternalPtr(status);

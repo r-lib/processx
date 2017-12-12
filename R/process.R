@@ -383,6 +383,16 @@ process_restart <- function(self, private) {
   ## Suicide if still alive
   if (self$is_alive()) self$kill()
 
+  ## This makes sure that the finalizer does not modify `private`.
+  ## Otherwise we get a race condition, beacause we are trying to
+  ## set `private$exited`, `private$exitcode` and `private$pid` here,
+  ## but the finalizer also sets them, and the finalizer runs async.
+  ## So we set the tag of the external pointer to NULL here, which signals
+  ## the finalizer not to set `private$*`.
+  if (!is.null(private$status)) {
+    .Call(c_processx__disconnect_process_handle, private$status);
+  }
+
   ## Wipe out state, to be sure
   private$cleanfiles <- NULL
   private$status <- NULL

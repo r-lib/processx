@@ -45,6 +45,7 @@ SEXP processx_get_pid(SEXP status);
 SEXP processx_poll(SEXP statuses, SEXP ms);
 
 SEXP processx__process_exists(SEXP pid);
+SEXP processx__disconnect_process_handle(SEXP status);
 
 SEXP processx_is_named_pipe_open(SEXP pipe_ext);
 SEXP processx_close_named_pipe(SEXP pipe_ext);
