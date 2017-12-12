@@ -698,7 +698,12 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   if (err) { PROCESSX_ERROR("setup stdio", err); }
 
   application_path = processx__search_path(application, cwd, path);
-  if (!application_path) { free(handle); error("Command not found"); }
+  if (!application_path) {
+    R_ClearExternalPtr(result);
+    processx__stdio_destroy(handle->child_stdio_buffer);
+    free(handle);
+    error("Command not found");
+  }
 
   startup.cb = sizeof(startup);
   startup.lpReserved = NULL;
