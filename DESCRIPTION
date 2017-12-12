@@ -1,6 +1,6 @@
 Package: processx
 Title: Execute and Control System Processes
-Version: 3.0.1
+Version: 3.0.2
 Author: Gábor Csárdi, Winston Chang
 Maintainer: Gábor Csárdi <csardi.gabor@gmail.com>
 Description: Tools to run system processes in the background.

@@ -1,5 +1,7 @@
 
-# 3.0.1
+# 3.0.2
+
+* Fix a race condition in `process$restart()`
 
 * `run()` and `process$new()` do not support the `commandline` argument
   any more, because process cleanup is error prone with an intermediate
