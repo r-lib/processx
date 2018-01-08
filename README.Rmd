@@ -92,7 +92,7 @@ px <- paste0(
 px
 ```
 
-### Runing an external process
+### Running an external process
 
 The `run()` function runs an external command. It requires a single command,
 and a character vector of arguments. You don't need to quote the command
