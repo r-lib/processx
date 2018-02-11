@@ -1,4 +1,10 @@
 
+# 3.0.3.9000
+
+* Fix a race condition on Windows, when creating named pipes for stdout
+  or stderr. The client sometimes didn't wait for the server, and processx
+  failed with ERROR_PIPE_BUSY (231, All pipe instances are busy).
+
 # 3.0.3
 
 * Fix a crash on windows when trying to run a non-existing command (#90)
