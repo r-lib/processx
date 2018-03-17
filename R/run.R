@@ -35,7 +35,7 @@
 #'   to the screen. Note that the order of the standard output and error
 #'   lines are not necessarily correct, as standard output is typically
 #'   buffered.
-#' @param spinner Whether to show a reassusing spinner while the process
+#' @param spinner Whether to show a reassuring spinner while the process
 #'   is running.
 #' @param timeout Timeout for the process, in seconds, or as a `difftime`
 #'   object. If it is not finished before this, it will be killed.
