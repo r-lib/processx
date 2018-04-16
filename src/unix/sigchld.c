@@ -23,8 +23,9 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
       wp = waitpid(ptr->pid, &wstat, WNOHANG);
     } while (wp == -1 && errno == EINTR);
 
-    if (wp <= 0) {
-      /* If it is still running (or an error happened), we do nothing */
+    if (wp <= 0 && errno != ECHILD) {
+      /* If it is still running (or an error, other than ECHILD happened),
+        we do nothing */
       prev = ptr;
       ptr = next;
 
@@ -43,8 +44,8 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
 
       processx_handle_t *handle = R_ExternalPtrAddr(ptr->status);
 
-      /* If handle is NULL, then the exit status was collected already */
-      if (handle) processx__collect_exit_status(ptr->status, wstat);
+      /* If waitpid errored with ECHILD, then the exit status is set to NA */
+      if (handle) processx__collect_exit_status(ptr->status, wp, wstat);
 
       /* Defer freeing the memory, because malloc/free are typically not
 	 reentrant, and if we free in the SIGCHLD handler, that can cause

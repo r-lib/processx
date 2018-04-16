@@ -26,6 +26,7 @@ LinkingTo:
     testthat
 Suggests:
     covr,
+    parallel,
     testthat,
     withr
 Encoding: UTF-8

@@ -40,7 +40,7 @@ processx__child_list_t *processx__child_find(pid_t pid);
 void processx__freelist_add(processx__child_list_t *ptr);
 void processx__freelist_free();
 
-void processx__collect_exit_status(SEXP status, int wstat);
+void processx__collect_exit_status(SEXP status, int retval, int wstat);
 
 int processx__nonblock_fcntl(int fd, int set);
 int processx__cloexec_fcntl(int fd, int set);
