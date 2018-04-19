@@ -15,8 +15,6 @@ typedef struct processx_handle_s {
   int cleanup;
 } processx_handle_t;
 
-extern HANDLE processx__iocp;
-
 int processx__utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr);
 
 int processx__stdio_create(processx_handle_t *handle,
