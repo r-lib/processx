@@ -141,6 +141,7 @@ context("Reading characters") {
 
     processx_pollable_t pollable;
     processx_c_pollable_from_connection(&pollable, ccon);
+    ccon->poll_idx = 0;
 
     char buffer[10];
     processx_c_connection_poll(&pollable, 1, -1);
