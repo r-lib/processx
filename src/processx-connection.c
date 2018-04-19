@@ -441,7 +441,8 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 	}
       }
 
-      if (pollables[poll_idx].object == con) {
+      if (poll_idx < npollables &&
+	  pollables[poll_idx].object == con) {
 	pollables[poll_idx].event = PXREADY;
 	hasdata++;
 	break;
