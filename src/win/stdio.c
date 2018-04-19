@@ -37,6 +37,8 @@
 #define FDEV        0x40
 #define FTEXT       0x80
 
+HANDLE processx__default_iocp = NULL;
+
 static int processx__create_nul_handle(HANDLE *handle_ptr, DWORD access) {
   HANDLE handle;
   SECURITY_ATTRIBUTES sa;
@@ -162,8 +164,6 @@ int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_
   PROCESSX_ERROR(errmessage, err);
   return 0;			/* never reached */
 }
-
-
 
 processx_connection_t * processx__create_connection(
   HANDLE pipe_handle, const char *membername, SEXP private,

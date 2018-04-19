@@ -1,7 +1,7 @@
 OBJECTS = test-connections.o init.o poll.o processx-connection.o     \
           processx-vector.o                                          \
           win/processx.o win/stdio.o win/named_pipe.o win/cleanup.o  \
-	  test-runner.o
+	  win/iocp.o test-runner.o
 
 .PHONY: all clean
 
