@@ -1,8 +1,10 @@
 Package: processx
 Title: Execute and Control System Processes
 Version: 3.0.3.9000
-Author: Gábor Csárdi, Winston Chang
-Maintainer: Gábor Csárdi <csardi.gabor@gmail.com>
+Authors@R: c(
+    person("Gábor", "Csárdi", role = c("aut", "cre"),
+           email = "csardi.gabor@gmail.com"),
+    person("Winston", "Chang", role = "aut"))
 Description: Tools to run system processes in the background.
     It can check if a background process is running; wait on a background
     process to finish; get the exit status of finished processes; kill
