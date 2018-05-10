@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
                     exit(1);
                 }
 
-                parent_pid_arg = extract_pid(argv[i], strlen(argv[i]));
+                parent_pid_arg = extract_pid(argv[i], (int) strlen(argv[i]));
                 if (parent_pid_arg == 0) {
                     printf("Invalid parent process ID: %s\n", argv[i]);
                     exit(1);

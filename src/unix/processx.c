@@ -55,7 +55,7 @@ void R_init_processx_unix() {
 /* LCOV_EXCL_START */
 
 void processx__write_int(int fd, int err) {
-  int dummy = write(fd, &err, sizeof(int));
+  ssize_t dummy = write(fd, &err, sizeof(int));
   (void) dummy;
 }
 

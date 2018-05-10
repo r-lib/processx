@@ -73,7 +73,7 @@ int main(int argc, const char **argv) {
       num = (int) fnum;
       sleep(num);
       fnum = fnum - num;
-      if (fnum > 0) usleep(fnum * 1000.0 * 1000.0);
+      if (fnum > 0) usleep((useconds_t) (fnum * 1000.0 * 1000.0));
 
     } else if (!strcmp("out", cmd)) {
       printf("%s", argv[++idx]);

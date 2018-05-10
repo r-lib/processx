@@ -84,7 +84,7 @@ SEXP processx_connection_read_chars(SEXP con, SEXP nchars) {
   processx__connection_find_chars(ccon, cnchars, -1, &utf8_chars,
 				  &utf8_bytes);
 
-  result = PROTECT(ScalarString(mkCharLenCE(ccon->utf8, utf8_bytes,
+  result = PROTECT(ScalarString(mkCharLenCE(ccon->utf8, (int) utf8_bytes,
 					    CE_UTF8)));
   ccon->utf8_data_size -= utf8_bytes;
   memmove(ccon->utf8, ccon->utf8 + utf8_bytes, ccon->utf8_data_size);
@@ -111,7 +111,8 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
     slashr = ccon->utf8[eol - 1] == '\r';
     SET_STRING_ELT(
       result, l,
-      mkCharLenCE(ccon->utf8 + newline + 1, eol - newline - 1 - slashr, CE_UTF8));
+      mkCharLenCE(ccon->utf8 + newline + 1,
+		  (int) (eol - newline - 1 - slashr), CE_UTF8));
     newline = eol;
   }
 
@@ -119,7 +120,8 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
     eol = ccon->utf8_data_size - 1;
     SET_STRING_ELT(
       result, l,
-      mkCharLenCE(ccon->utf8 + newline + 1, eol - newline, CE_UTF8));
+      mkCharLenCE(ccon->utf8 + newline + 1,
+		  (int) (eol - newline), CE_UTF8));
   }
 
   if (eol >= 0) {
@@ -501,7 +503,7 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
       fds[j].fd = handle;
       fds[j].events = POLLIN;
       fds[j].revents = 0;
-      ptr[j] = i;
+      ptr[j] = (int) i;
       j++;
     } else {
       error("Cannot poll pollable: not ready and no fd");
@@ -515,7 +517,8 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 
   /* If we already have some data, then we don't wait any more,
      just check if other connections are ready */
-  ret = processx__interruptible_poll(fds, j, hasdata > 0 ? 0 : timeout);
+  ret = processx__interruptible_poll(fds, (nfds_t) j,
+				     hasdata > 0 ? 0 : timeout);
 
   if (ret == -1) {
     error("Processx poll error: %s", strerror(errno));
@@ -813,10 +816,13 @@ static void processx__connection_alloc(processx_connection_t *ccon) {
    other buffer is transient, even if there are no newline characters. */
 
 static void processx__connection_realloc(processx_connection_t *ccon) {
-  void *nb = realloc(ccon->utf8, ccon->utf8_allocated_size * 1.2);
+  size_t new_size = (size_t) (ccon->utf8_allocated_size * 1.2);
+  void *nb;
+  if (new_size == ccon->utf8_allocated_size) new_size = 2 * new_size;
+  nb = realloc(ccon->utf8, new_size);
   if (!nb) error("Cannot allocate memory for processx line");
   ccon->utf8 = nb;
-  ccon->utf8_allocated_size = ccon->utf8_allocated_size * 1.2;
+  ccon->utf8_allocated_size = new_size;
 }
 
 /* Read as much as we can. This is the only function that explicitly
