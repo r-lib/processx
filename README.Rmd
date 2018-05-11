@@ -12,6 +12,7 @@ knitr::opts_chunk$set(
 
 > Execute and Control System Processes
 
+[![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://tidyverse.org/lifecycle/#maturing)
 [![Linux Build Status](https://travis-ci.org/r-lib/processx.svg?branch=master)](https://travis-ci.org/r-lib/processx)
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/15sfg3l9mm4aseyf/branch/master?svg=true)](https://ci.appveyor.com/project/gaborcsardi/processx)
 [![](https://www.r-pkg.org/badges/version/processx)](https://www.r-pkg.org/pkg/processx)
@@ -21,7 +22,7 @@ knitr::opts_chunk$set(
 Tools to run system processes in the background,
 read their standard output and error, kill and restart them.
 
-`processx` can poll the standard output and error of a single process,
+processx can poll the standard output and error of a single process,
 or multiple processes, using the operating system's polling and waiting
 facilities, with a timeout.
 
@@ -30,7 +31,7 @@ facilities, with a timeout.
    * [Features](#features)
    * [Installation](#installation)
    * [Usage](#usage)
-      * [Runing an external process](#runing-an-external-process)
+      * [Running an external process](#running-an-external-process)
          * [Errors](#errors)
          * [Showing output](#showing-output)
          * [Spinner](#spinner)
@@ -45,6 +46,7 @@ facilities, with a timeout.
          * [Waiting on a process](#waiting-on-a-process)
          * [Exit statuses](#exit-statuses)
          * [Errors](#errors-1)
+   * [Code of Conduct](#code-of-conduct)
    * [License](#license)
 
 ## Features
@@ -64,7 +66,7 @@ facilities, with a timeout.
 * Restart background processes.
 * Works on Linux, macOS and Windows.
 * Lightweight, it only depends on the also lightweight
-  `R6`, `assertthat`, `crayon` and `debugme` packages.
+  R6, assertthat and crayon packages.
 
 ## Installation
 
@@ -108,7 +110,7 @@ Short summary of the `px` binary we are using extensively below:
 result <- run(px, "--help", echo = TRUE)
 ```
 
-> Note: From version 3.0.1, `processx` does not let you specify a full
+> Note: From version 3.0.1, processx does not let you specify a full
 > shell command line, as this involves starting a grandchild process from
 > the child process, and it is difficult to clean up the grandchild
 > process when the child process is killed. The user can still start a
@@ -265,8 +267,8 @@ as well. See the `cleanup` option if you want to avoid this behavior.
 
 By default the standard output and error of the processes are ignored.
 You can set the `stdout` and `stderr` constructor arguments to a file name,
-and then they are redirected there, or to `"|"`, and then `processx` creates
-connections to them. (Note that starting from `processx` 3.0.0 these
+and then they are redirected there, or to `"|"`, and then processx creates
+connections to them. (Note that starting from processx 3.0.0 these
 connections are not regular R connections, because the public R connection
 API was retroactively removed from R.)
 
@@ -295,7 +297,7 @@ is data available to read, you need to poll, see below.
 
 ```{r}
 p <- process$new(px,
-  c("outln", "foo", "errln", "bar", "outln", "foobar"),
+  c("sleep", "1", "outln", "foo", "errln", "bar", "outln", "foobar"),
   stdout = "|", stderr = "|")
 p$read_output_lines()
 p$read_error_lines()
@@ -343,7 +345,7 @@ p$read_output_lines()
 #### Polling multiple processes
 
 If you need to manage multiple background processes, and need to wait
-for output from all of them, `processx` defines a `poll()` function that
+for output from all of them, processx defines a `poll()` function that
 does just that. It is similar to the `poll_io()` method, but it takes
 multiple process objects, and returns as soon as one of them have data
 on standard output or error, or a timeout expires. Here is an example:
@@ -403,7 +405,7 @@ p$get_exit_status()
 
 #### Errors
 
-Errors are typically signalled via non-zero exits statuses. The `processx`
+Errors are typically signalled via non-zero exits statuses. The processx
 constructor fails if the external program cannot be started,
 but it does not deal with errors that happen after the
 program has successfully started running.
@@ -417,6 +419,11 @@ p2 <- process$new(px, c("sleep", "1", "command-does-not-exist"))
 p2$wait()
 p2$get_exit_status()
 ```
+
+## Code of Conduct
+
+Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md).
+By participating in this project you agree to abide by its terms.
 
 ## License
 

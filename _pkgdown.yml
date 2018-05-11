@@ -1,0 +1,20 @@
+url: http://processx.r-lib.org
+
+authors:
+  "Gábor Csárdi":
+    href: https://github.com/gaborcsardi
+  "Winston Chang":
+    href: https://github.com/wch
+
+reference:
+- title: Foreground processes
+  contents:
+  - run
+
+- title: Background processes
+  contents:
+  - process
+
+- title: Polling
+  contents:
+  - poll
