@@ -63,3 +63,19 @@ test_that("post processing", {
   p$get_result()
   expect_equal(xx, 1)
 })
+
+test_that("working directory", {
+  px  <- get_tool("px")
+  dir.create(tmp <- tempfile())
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  cat("foo\nbar\n", file = file.path(tmp, "file"))
+
+  p <- process$new(px, c("cat", "file"), wd = tmp, stdout = "|")
+  p$wait()
+  expect_equal(p$read_all_output_lines(), c("foo", "bar"))
+})
+
+test_that("working directory does not exist", {
+  px <- get_tool("px")
+  expect_error(process$new(px, wd = tempfile()))
+})

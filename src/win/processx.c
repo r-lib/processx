@@ -622,11 +622,12 @@ void processx__handle_destroy(processx_handle_t *handle) {
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 		   SEXP windows_verbatim_args, SEXP windows_hide,
-		   SEXP private, SEXP cleanup, SEXP encoding) {
+		   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding) {
 
   const char *cstd_out = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
   const char *cstd_err = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
+  const char *ccwd = isNull(wd) ? 0 : CHAR(STRING_ELT(wd, 0));
 
   int err = 0;
   WCHAR *path;
@@ -655,8 +656,15 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
       &arguments);
   if (err) { PROCESSX_ERROR("making program args", err); }
 
-  /* Inherit cwd */
-  {
+  if (ccwd) {
+    /* Explicit cwd */
+    err = processx__utf8_to_utf16_alloc(ccwd, &cwd);
+    if (err) {
+      PROCESSX_ERROR("convert current directory encoding", GetLastError());
+    }
+
+  } else {
+    /* Inherit cwd */
     DWORD cwd_len, r;
 
     cwd_len = GetCurrentDirectoryW(0, NULL);

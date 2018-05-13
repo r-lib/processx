@@ -121,6 +121,11 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
     if (-1 == close(i) && i > 200) break;
   }
 
+  if (options->wd != NULL && chdir(options->wd)) {
+    processx__write_int(error_fd, - errno);
+    raise(SIGKILL);
+  }
+
   execvp(command, args);
   processx__write_int(error_fd, - errno);
   raise(SIGKILL);
@@ -248,7 +253,7 @@ skip:
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 		   SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private, SEXP cleanup,
-		   SEXP encoding) {
+		   SEXP wd, SEXP encoding) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
@@ -266,6 +271,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 
   processx_handle_t *handle = NULL;
   SEXP result;
+
+  options.wd = isNull(wd) ? 0 : CHAR(STRING_ELT(wd, 0));
 
   if (pipe(signal_pipe)) { goto cleanup; }
   processx__cloexec_fcntl(signal_pipe[0], 1);

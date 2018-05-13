@@ -55,3 +55,22 @@ test_that("callbacks work", {
     expect_equal(out, as.character(1:20))
   }
 })
+
+test_that("working directory", {
+  px <- get_tool("px")
+  dir.create(tmp <- tempfile())
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  cat("foo\nbar\n", file = file.path(tmp, "file"))
+
+  x <- run(px, c("cat", "file"), wd = tmp)
+  if  (is_windows()) {
+    expect_equal(x$stdout, "foo\r\nbar\r\n")
+  } else {
+    expect_equal(x$stdout, "foo\nbar\n")
+  }
+})
+
+test_that("working directory does not exist", {
+  px <- get_tool("px")
+  expect_error(run(px, wd = tempfile()))
+})
