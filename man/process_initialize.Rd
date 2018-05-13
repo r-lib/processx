@@ -4,7 +4,7 @@
 \alias{process_initialize}
 \title{Start a process}
 \usage{
-process_initialize(self, private, command, args, stdout, stderr, cleanup,
+process_initialize(self, private, command, args, stdout, stderr, cleanup, wd,
   echo_cmd, supervise, windows_verbatim_args, windows_hide_window, encoding,
   post_process)
 }
@@ -22,6 +22,8 @@ process_initialize(self, private, command, args, stdout, stderr, cleanup,
 \item{stderr}{Standard error, FALSE to ignore, TRUE for temp file.}
 
 \item{cleanup}{Kill on GC?}
+
+\item{wd}{working directory (or NULL)}
 
 \item{echo_cmd}{Echo command before starting it?}
 

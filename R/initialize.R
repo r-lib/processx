@@ -8,6 +8,7 @@
 #' @param stdout Standard output, FALSE to ignore, TRUE for temp file.
 #' @param stderr Standard error, FALSE to ignore, TRUE for temp file.
 #' @param cleanup Kill on GC?
+#' @param wd working directory (or NULL)
 #' @param echo_cmd Echo command before starting it?
 #' @param supervise Should the process be supervised?
 #' @param encoding Assumed stdout and stderr encoding.
@@ -17,7 +18,7 @@
 #' @importFrom utils head tail
 
 process_initialize <- function(self, private, command, args,
-                               stdout, stderr, cleanup,
+                               stdout, stderr, cleanup, wd,
                                echo_cmd, supervise, windows_verbatim_args,
                                windows_hide_window, encoding, post_process) {
 
@@ -28,6 +29,7 @@ process_initialize <- function(self, private, command, args,
   assert_that(is_string_or_null(stdout))
   assert_that(is_string_or_null(stderr))
   assert_that(is_flag(cleanup))
+  assert_that(is_string_or_null(wd))
   assert_that(is_flag(echo_cmd))
   assert_that(is_flag(windows_verbatim_args))
   assert_that(is_flag(windows_hide_window))
@@ -37,6 +39,7 @@ process_initialize <- function(self, private, command, args,
   private$command <- command
   private$args <- args
   private$cleanup <- cleanup
+  private$wd <- wd
   private$pstdout <- stdout
   private$pstderr <- stderr
   private$echo_cmd <- echo_cmd
@@ -52,7 +55,7 @@ process_initialize <- function(self, private, command, args,
     c_processx_exec,
     command, c(command, args), stdout, stderr,
     windows_verbatim_args, windows_hide_window,
-    private, cleanup, encoding
+    private, cleanup, wd, encoding
   )
   private$starttime <- Sys.time()
 

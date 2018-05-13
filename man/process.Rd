@@ -13,7 +13,7 @@ streams. The process id is then used to manage the process.
 \section{Usage}{
 \preformatted{p <- process$new(command = NULL, args,
                  stdout = NULL, stderr = NULL, cleanup = TRUE,
-                 echo_cmd = FALSE, supervise = FALSE,
+                 wd = NULL, echo_cmd = FALSE, supervise = FALSE,
                  windows_verbatim_args = FALSE,
                  windows_hide_window = FALSE,
                  encoding = "", post_process = NULL)
@@ -67,6 +67,8 @@ used as is, without a shell. They don't need to be escaped.
 \code{"|"}: create a connection for it.
 \item \code{cleanup}: Whether to kill the process (and its children)
 if the \code{process} object is garbage collected.
+\item \code{wd}: working directory of the process. It must exist. If \code{NULL}, then
+the current working directory is used.
 \item \code{echo_cmd}: Whether to print the command to the screen before
 running it.
 \item \code{supervise}: Whether to register the process with a supervisor.

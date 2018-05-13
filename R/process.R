@@ -14,7 +14,7 @@ NULL
 #' ```
 #' p <- process$new(command = NULL, args,
 #'                  stdout = NULL, stderr = NULL, cleanup = TRUE,
-#'                  echo_cmd = FALSE, supervise = FALSE,
+#'                  wd = NULL, echo_cmd = FALSE, supervise = FALSE,
 #'                  windows_verbatim_args = FALSE,
 #'                  windows_hide_window = FALSE,
 #'                  encoding = "", post_process = NULL)
@@ -65,6 +65,8 @@ NULL
 #'     `"|"`: create a connection for it.
 #' * `cleanup`: Whether to kill the process (and its children)
 #'     if the `process` object is garbage collected.
+#' * `wd`: working directory of the process. It must exist. If `NULL`, then
+#'     the current working directory is used.
 #' * `echo_cmd`: Whether to print the command to the screen before
 #'     running it.
 #' * `supervise`: Whether to register the process with a supervisor.
@@ -268,11 +270,11 @@ process <- R6Class(
   public = list(
 
     initialize = function(command = NULL, args = character(),
-      stdout = NULL, stderr = NULL, cleanup = TRUE,
+      stdout = NULL, stderr = NULL, cleanup = TRUE, wd = NULL,
       echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
       windows_hide_window = FALSE, encoding = "",  post_process = NULL)
       process_initialize(self, private, command, args,
-                         stdout, stderr, cleanup, echo_cmd, supervise,
+                         stdout, stderr, cleanup, wd, echo_cmd, supervise,
                          windows_verbatim_args, windows_hide_window,
                          encoding, post_process),
 
@@ -376,6 +378,7 @@ process <- R6Class(
     pstdout = NULL,       # the original stdout argument
     pstderr = NULL,       # the original stderr argument
     cleanfiles = NULL,    # which temp stdout/stderr file(s) to clean up
+    wd = NULL,            # working directory (or NULL for current)
     starttime = NULL,     # timestamp of start
     echo_cmd = NULL,      # whether to echo the command
     windows_verbatim_args = NULL,
@@ -436,6 +439,7 @@ process_restart <- function(self, private) {
     private$pstdout,
     private$pstderr,
     private$cleanup,
+    private$wd,
     private$echo_cmd,
     private$supervised,
     private$windows_verbatim_args,
