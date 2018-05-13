@@ -2,9 +2,12 @@ Package: processx
 Title: Execute and Control System Processes
 Version: 3.1.0
 Authors@R: c(
-    person("Gábor", "Csárdi", role = c("aut", "cre"),
-           email = "csardi.gabor@gmail.com"),
-    person("Winston", "Chang", role = "aut"))
+    person("Gábor", "Csárdi", role = c("aut", "cre", "cph"),
+           email = "csardi.gabor@gmail.com",
+	   comment = c(ORCID = "0000-0001-7098-9676")),
+    person("Winston", "Chang", role = "aut"),
+    person("RStudio", role = c("cph", "fnd")),
+    person("Mango Solutions", role  = c("cph", "fnd")))
 Description: Tools to run system processes in the background.
     It can check if a background process is running; wait on a background
     process to finish; get the exit status of finished processes; kill

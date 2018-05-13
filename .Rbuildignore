@@ -3,6 +3,8 @@
 ^Makefile$
 ^README.Rmd$
 ^README.markdown$
+^NEWS.md$
+^docs$
 ^.travis.yml$
 ^appveyor.yml$
 ^src/processx\.so$
@@ -11,3 +13,4 @@
 ^src/tools/px.exe$
 ^revdep$
 ^.*\.dSYM$
+^CODE_OF_CONDUCT\.md$
