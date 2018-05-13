@@ -3,6 +3,8 @@
 
 #include "../processx.h"
 
+#include <stdio.h>
+
 /* Internals */
 
 static void processx__child_init(processx_handle_t *handle, int pipes[3][2],
@@ -274,7 +276,9 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
 
   options.wd = isNull(wd) ? 0 : CHAR(STRING_ELT(wd, 0));
 
-  if (pipe(signal_pipe)) { goto cleanup; }
+  if (pipe(signal_pipe)) {
+    PROCESSX__ERROR("Cannot create pipe", strerror(errno));
+  }
   processx__cloexec_fcntl(signal_pipe[0], 1);
   processx__cloexec_fcntl(signal_pipe[1], 1);
 
@@ -297,7 +301,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     if (signal_pipe[0] >= 0) close(signal_pipe[0]);
     if (signal_pipe[1] >= 0) close(signal_pipe[1]);
     processx__unblock_sigchld();
-    goto cleanup;
+    PROCESSX__ERROR("Cannot fork", strerror(err));
   }
 
   /* CHILD */
@@ -305,7 +309,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     /* LCOV_EXCL_START */
     processx__child_init(handle, pipes, ccommand, cargs, signal_pipe[1],
 			 cstdout, cstderr, &options);
-    goto cleanup;
+    PROCESSX__ERROR("Cannot start child process", "");
     /* LCOV_EXCL_STOP */
   }
 
@@ -315,7 +319,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     if (signal_pipe[0] >= 0) close(signal_pipe[0]);
     if (signal_pipe[1] >= 0) close(signal_pipe[1]);
     processx__unblock_sigchld();
-    goto cleanup;
+    PROCESSX__ERROR("Cannot create child process", "out of memory");
   }
 
   /* SIGCHLD can arrive now */
@@ -340,7 +344,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     } while (err == -1 && errno == EINTR);
 
   } else {
-    goto cleanup;
+    PROCESSX__ERROR("Child process failed to start", strerror(exec_errorno));
   }
 
   if (signal_pipe[0] >= 0) close(signal_pipe[0]);
@@ -370,8 +374,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
     return result;
   }
 
- cleanup:
-  error("processx error");
+  error("processx error: '%s' at %s:%d", strerror(- exec_errorno),
+	__FILE__, __LINE__);
 }
 
 void processx__collect_exit_status(SEXP status, int retval, int wstat) {
