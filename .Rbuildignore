@@ -6,6 +6,7 @@
 ^NEWS.md$
 ^docs$
 ^.travis.yml$
+^_pkgdown\.yml$
 ^appveyor.yml$
 ^src/processx\.so$
 ^src/.*\.o$
