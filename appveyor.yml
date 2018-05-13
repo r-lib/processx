@@ -14,8 +14,6 @@ install:
 
 build_script:
   - travis-tool.sh install_deps
-  - travis-tool.sh github_package r-lib/testthat
-  - travis-tool.sh github_package r-lib/debugme
 
 environment:
   NOT_CRAN: true

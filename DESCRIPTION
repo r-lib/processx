@@ -21,13 +21,13 @@ Roxygen: list(markdown = TRUE)
 Imports:
     assertthat,
     crayon,
-    debugme,
     R6,
     utils
 LinkingTo: 
     testthat
 Suggests:
     covr,
+    debugme,
     parallel,
     testthat,
     withr

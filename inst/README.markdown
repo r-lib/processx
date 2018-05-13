@@ -57,7 +57,7 @@ facilities, with a timeout.
 * Restart background processes.
 * Works on Linux, macOS and Windows.
 * Lightweight, it only depends on the also lightweight
-  `R6`, `assertthat`, `crayon` and `debugme` packages.
+  `R6`, `assertthat` and `crayon` packages.
 
 ## Installation
 

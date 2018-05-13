@@ -1,7 +1,7 @@
 
 .onLoad <- function(libname, pkgname) {
   supervisor_reset()
-  debugme::debugme()                    # nocov
+  if (requireNamespace("debugme", quietly = TRUE)) debugme::debugme() # nocov
 }
 
 .onUnload <- function(libpath) {
