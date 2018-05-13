@@ -1,8 +1,20 @@
 
 # 3.0.3.9000
 
+* Fix interference with the parallel package, and other packages that
+  redefine the `SIGCHLD` signal handler on Unix. If the processx signal
+  handler is overwritten, we might miss the exit status of some processes
+  (they are set to `NA`).
+
+* `run()` and  `process$new()` allow specifying the working directory
+  of the process (#63).
+
+* Make the debugme package an optional dependency (#74).
+
+* processx is now compatible with R 3.1.x.
+
 * Allow polling more than 64 connections on Windows, by using IOCP
-  instead of `WaitForMultipleObjects()`, #81, #106
+  instead of `WaitForMultipleObjects()` (#81, #106).
 
 * Fix a race condition on Windows, when creating named pipes for stdout
   or stderr. The client sometimes didn't wait for the server, and processx
