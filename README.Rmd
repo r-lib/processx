@@ -70,6 +70,14 @@ facilities, with a timeout.
 
 ## Installation
 
+Install the stable version from CRAN:
+
+```{r eval = FALSE}
+install.packages("processx")
+```
+
+Install the development version from GitHub:
+
 ```{r eval = FALSE}
 source("https://install-github.me/r-lib/processx")
 ```
