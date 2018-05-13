@@ -1,6 +1,6 @@
 Package: processx
 Title: Execute and Control System Processes
-Version: 3.0.3.9000
+Version: 3.1.0
 Authors@R: c(
     person("Gábor", "Csárdi", role = c("aut", "cre"),
            email = "csardi.gabor@gmail.com"),

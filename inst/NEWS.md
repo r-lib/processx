@@ -1,5 +1,5 @@
 
-# 3.0.3.9000
+# processx 3.1.0
 
 * Fix interference with the parallel package, and other packages that
   redefine the `SIGCHLD` signal handler on Unix. If the processx signal
@@ -20,7 +20,7 @@
   or stderr. The client sometimes didn't wait for the server, and processx
   failed with ERROR_PIPE_BUSY (231, All pipe instances are busy).
 
-# 3.0.3
+# processx 3.0.3
 
 * Fix a crash on windows when trying to run a non-existing command (#90)
 
@@ -65,11 +65,11 @@
 * Fixes when running under job control that does not allow breaking away
   from the job, on Windows.
 
-# 2.0.0.1
+# processx 2.0.0.1
 
 This is an unofficial release, created by CRAN, to fix compilation on
 Solaris.
 
-# 2.0.0
+# processx 2.0.0
 
 First public release.
