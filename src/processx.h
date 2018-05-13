@@ -6,6 +6,11 @@
 extern "C" {
 #endif
 
+#ifdef __INTEL_COMPILER
+#define _BSD_SOURCE 1
+#define _POSIX_C_SOURCE  200809L
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #else
