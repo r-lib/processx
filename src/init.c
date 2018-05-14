@@ -1,8 +1,8 @@
 
+#include "processx.h"
+
 #include <R_ext/Rdynload.h>
 #include <R.h>
-
-#include "processx.h"
 
 void R_init_processx_win();
 void R_init_processx_unix();

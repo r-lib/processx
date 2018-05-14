@@ -2,6 +2,11 @@
 #ifndef PROCESSX_CONNECTION_H
 #define PROCESSX_CONNECTION_H
 
+#ifdef __INTEL_COMPILER
+#define _BSD_SOURCE 1
+#define _POSIX_C_SOURCE  200809L
+#endif
+
 #include <Rinternals.h>
 #include <R_ext/Riconv.h>
 
