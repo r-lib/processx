@@ -1,4 +1,9 @@
 
+process_has_input_connection <- function(self, private) {
+  "!DEBUG process_has_input_connection `private$get_short_name()`"
+  !is.null(private$stdin_pipe)
+}
+
 process_has_output_connection <- function(self, private) {
   "!DEBUG process_has_output_connection `private$get_short_name()`"
   !is.null(private$stdout_pipe)
@@ -7,6 +12,13 @@ process_has_output_connection <- function(self, private) {
 process_has_error_connection <- function(self, private) {
   "!DEBUG process_has_error_connection `private$get_short_name()`"
   !is.null(private$stderr_pipe)
+}
+
+process_get_input_connection <- function(self, private) {
+  "!DEBUG process_get_input_connection `private$get_short_name()`"
+  if (!self$has_input_connection())
+    stop("stdin is not a pipe.")
+  private$stdin_pipe
 }
 
 process_get_output_connection <- function(self, private) {
@@ -92,6 +104,17 @@ process_read_all_error_lines <- function(self, private) {
     results <- c(results, self$read_error_lines())
   }
   results
+}
+
+process_write_input <- function(self, private, str, sep) {
+  "!DEBUG process_write_input `private$get_short_name()`"
+  con <- process_get_input_connection(self, private)
+  str2 <- enc2native(paste(str, collapse = "\n"))
+  .Call(c_processx_connection_write_chars, con, str2)
+}
+
+process_get_input_file <- function(self, private) {
+  private$stdin
 }
 
 process_get_output_file <- function(self, private) {

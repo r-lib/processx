@@ -4,8 +4,8 @@
 \alias{process_initialize}
 \title{Start a process}
 \usage{
-process_initialize(self, private, command, args, stdout, stderr, cleanup, wd,
-  echo_cmd, supervise, windows_verbatim_args, windows_hide_window, encoding,
+process_initialize(self, private, command, args, stdin, stdout, stderr, cleanup,
+  wd, echo_cmd, supervise, windows_verbatim_args, windows_hide_window, encoding,
   post_process)
 }
 \arguments{
@@ -17,9 +17,11 @@ process_initialize(self, private, command, args, stdout, stderr, cleanup, wd,
 
 \item{args}{Command arguments, character vector.}
 
-\item{stdout}{Standard output, FALSE to ignore, TRUE for temp file.}
+\item{stdin}{Standard input, NULL to ignore.}
 
-\item{stderr}{Standard error, FALSE to ignore, TRUE for temp file.}
+\item{stdout}{Standard output, NULL to ignore, TRUE for temp file.}
+
+\item{stderr}{Standard error, NULL to ignore, TRUE for temp file.}
 
 \item{cleanup}{Kill on GC?}
 

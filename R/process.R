@@ -13,9 +13,9 @@ NULL
 #' @section Usage:
 #' ```
 #' p <- process$new(command = NULL, args,
-#'                  stdout = NULL, stderr = NULL, cleanup = TRUE,
-#'                  wd = NULL, echo_cmd = FALSE, supervise = FALSE,
-#'                  windows_verbatim_args = FALSE,
+#'                  stdin = NULL, stdout = NULL, stderr = NULL,
+#'                  cleanup = TRUE, wd = NULL, echo_cmd = FALSE,
+#'                  supervise = FALSE, windows_verbatim_args = FALSE,
 #'                  windows_hide_window = FALSE,
 #'                  encoding = "", post_process = NULL)
 #'
@@ -32,6 +32,7 @@ NULL
 #' p$read_error(n = -1)
 #' p$read_output_lines(n = -1)
 #' p$read_error_lines(n = -1)
+#' p$get_input_connection()
 #' p$get_output_connection()
 #' p$get_error_connection()
 #' p$is_incomplete_output()
@@ -40,6 +41,10 @@ NULL
 #' p$read_all_error()
 #' p$read_all_output_lines()
 #' p$read_all_error_lines()
+#' p$write_input(str, sep = "")
+#' p$get_input_file()
+#' p$get_output_file()
+#' p$get_error_file()
 #'
 #' p$poll_io(timeout)
 #'
@@ -57,6 +62,10 @@ NULL
 #'     [base::normalizePath()] for tilde-expansion.
 #' * `args`: Character vector, arguments to the command. They will be
 #'     used as is, without a shell. They don't need to be escaped.
+#' * `stdin`: What to do with the standard input. Possible values:
+#'     `NULL`: set to the _null device_, i.e. no standard input is
+#'     provided; a string, supply the specified string as standard input;
+#'     `"|"`: create a (writeable) connection for stdin.
 #' * `stdout`: What to do with the standard output. Possible values:
 #'     `NULL`: discard it; a string, redirect it to this file;
 #'     `"|"`: create a connection for it.
@@ -82,6 +91,7 @@ NULL
 #' * `timeout`: Timeout in milliseconds, for the wait or the I/O
 #'     polling.
 #' * `n`: Number of characters or lines to read.
+#' * `str`: Character vector to write to the standard input of the process.
 #' * `encoding`: The encoding to assume for `stdout` and
 #'     `stderr`. By default the encoding of the current locale is
 #'     used. Note that `processx` always reencodes the output of
@@ -171,6 +181,9 @@ NULL
 #' object for standard error; in other words, if `stderr="|"`. It returns
 #' `FALSE` otherwise.
 #'
+#' `$get_input_connection()` returns a connection object, to the
+#' standard input stream of the process.
+#'
 #' `$get_output_connection()` returns a connection object, to the
 #' standard output stream of the process.
 #'
@@ -212,6 +225,14 @@ NULL
 #' polling for I/O and potentically several `readLines()` calls.
 #' It returns a character vector. This will return content only if
 #' `stderr="|"` was used. Otherwise, it will throw an error.
+#'
+#' `$write_input()` writes the character vector (separated by `sep`) to
+#' the standard input of the process. It will be converted to the native
+#' encoding.
+#'
+#' `$get_input_file()` if the `stdin` argument was a filename,
+#' this returns the absolute path to the file. If `stdin` was `"|"` or
+#' `NULL`, this simply returns that value.
 #'
 #' `$get_output_file()` if the `stdout` argument was a filename,
 #' this returns the absolute path to the file. If `stdout` was `"|"` or
@@ -270,10 +291,10 @@ process <- R6Class(
   public = list(
 
     initialize = function(command = NULL, args = character(),
-      stdout = NULL, stderr = NULL, cleanup = TRUE, wd = NULL,
+      stdin = NULL, stdout = NULL, stderr = NULL, cleanup = TRUE, wd = NULL,
       echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
       windows_hide_window = FALSE, encoding = "",  post_process = NULL)
-      process_initialize(self, private, command, args,
+      process_initialize(self, private, command, args, stdin,
                          stdout, stderr, cleanup, wd, echo_cmd, supervise,
                          windows_verbatim_args, windows_hide_window,
                          encoding, post_process),
@@ -331,11 +352,17 @@ process <- R6Class(
     is_incomplete_error = function()
       process_is_incompelete_error(self, private),
 
+    has_input_connection = function()
+      process_has_input_connection(self, private),
+
     has_output_connection = function()
       process_has_output_connection(self, private),
 
     has_error_connection = function()
       process_has_error_connection(self, private),
+
+    get_input_connection =  function()
+      process_get_input_connection(self, private),
 
     get_output_connection = function()
       process_get_output_connection(self, private),
@@ -355,6 +382,12 @@ process <- R6Class(
     read_all_error_lines = function()
       process_read_all_error_lines(self, private),
 
+    write_input = function(str, sep = "\n")
+      process_write_input(self, private, str, sep),
+
+    get_input_file = function()
+      process_get_input_file(self, private),
+
     get_output_file = function()
       process_get_output_file(self, private),
 
@@ -373,8 +406,10 @@ process <- R6Class(
     command = NULL,       # Save 'command' argument here
     args = NULL,          # Save 'args' argument here
     cleanup = NULL,       # cleanup argument
+    stdin = NULL,         # stdin argument or stream
     stdout = NULL,        # stdout argument or stream
     stderr = NULL,        # stderr argument or stream
+    pstdin = NULL,        # the original stdin argument
     pstdout = NULL,       # the original stdout argument
     pstderr = NULL,       # the original stderr argument
     cleanfiles = NULL,    # which temp stdout/stderr file(s) to clean up
@@ -391,6 +426,7 @@ process <- R6Class(
 
     supervised = FALSE,   # Whether process is tracked by supervisor
 
+    stdin_pipe = NULL,
     stdout_pipe = NULL,
     stderr_pipe = NULL,
 
@@ -428,6 +464,7 @@ process_restart <- function(self, private) {
   private$exited <- FALSE
   private$pid <- NULL
   private$exitcode <- NULL
+  private$stdin_pipe <- NULL
   private$stdout_pipe <- NULL
   private$stderr_pipe <- NULL
 
@@ -436,6 +473,7 @@ process_restart <- function(self, private) {
     private,
     private$command,
     private$args,
+    private$pstdin,
     private$pstdout,
     private$pstderr,
     private$cleanup,

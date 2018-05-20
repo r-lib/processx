@@ -133,6 +133,21 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
   return result;
 }
 
+SEXP processx_connection_write_chars(SEXP con, SEXP chars) {
+  processx_connection_t *ccon = R_ExternalPtrAddr(con);
+  const char *cchars = CHAR(STRING_ELT(chars, 0));
+  size_t bytes = strlen(cchars);
+
+  ssize_t ret = processx_c_connection_write_bytes(ccon, cchars, bytes);
+
+  if (ret < 0) {
+    error("Cannot write connection: %s at %s:%d", strerror(errno),
+	  __FILE__, __LINE__);
+  }
+
+  return ScalarReal(ret);
+}
+
 SEXP processx_connection_is_eof(SEXP con) {
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
   if (!ccon) error("Invalid connection object");
@@ -342,6 +357,17 @@ ssize_t processx_c_connection_read_line(processx_connection_t *ccon,
   }
 
   return newline;
+}
+
+/* Write bytes */
+ssize_t processx_c_connection_write_bytes(
+  processx_connection_t *ccon,
+  const void *buffer,
+  size_t nbytes) {
+
+  PROCESSX_CHECK_VALID_CONN(ccon);
+
+  return write(ccon->handle, buffer, nbytes);
 }
 
 /* Check if the connection has ended */

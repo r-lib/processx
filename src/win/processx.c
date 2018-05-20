@@ -620,7 +620,8 @@ void processx__handle_destroy(processx_handle_t *handle) {
   free(handle);
 }
 
-SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
+SEXP processx_exec(SEXP command, SEXP args,
+		   SEXP std_in, SEXP std_out, SEXP std_err,
 		   SEXP windows_verbatim_args, SEXP windows_hide,
 		   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding) {
 

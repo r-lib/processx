@@ -117,6 +117,9 @@ SEXP processx_connection_read_chars(SEXP con, SEXP nchars);
 /* Read lines of characters from the connection. */
 SEXP processx_connection_read_lines(SEXP con, SEXP nlines);
 
+/* Write characters */
+SEXP processx_connection_write_chars(SEXP con, SEXP chars);
+
 /* Check if the connection has ended. */
 SEXP processx_connection_is_eof(SEXP con);
 
@@ -152,6 +155,12 @@ ssize_t processx_c_connection_read_line(
   processx_connection_t *ccon,
   char **linep,
   size_t *linecapp);
+
+/* Write characters */
+ssize_t processx_c_connection_write_bytes(
+  processx_connection_t *con,
+  const void *buffer,
+  size_t nbytes);
 
 /* Check if the connection has ended */
 int processx_c_connection_is_eof(

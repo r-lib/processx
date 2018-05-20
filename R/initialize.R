@@ -5,8 +5,9 @@
 #' @param private this$private
 #' @param command Command to run, string scalar.
 #' @param args Command arguments, character vector.
-#' @param stdout Standard output, FALSE to ignore, TRUE for temp file.
-#' @param stderr Standard error, FALSE to ignore, TRUE for temp file.
+#' @param stdin Standard input, NULL to ignore.
+#' @param stdout Standard output, NULL to ignore, TRUE for temp file.
+#' @param stderr Standard error, NULL to ignore, TRUE for temp file.
 #' @param cleanup Kill on GC?
 #' @param wd working directory (or NULL)
 #' @param echo_cmd Echo command before starting it?
@@ -18,7 +19,7 @@
 #' @importFrom utils head tail
 
 process_initialize <- function(self, private, command, args,
-                               stdout, stderr, cleanup, wd,
+                               stdin, stdout, stderr, cleanup, wd,
                                echo_cmd, supervise, windows_verbatim_args,
                                windows_hide_window, encoding, post_process) {
 
@@ -26,6 +27,7 @@ process_initialize <- function(self, private, command, args,
 
   assert_that(is_string(command))
   assert_that(is.character(args))
+  assert_that(is_string_or_null(stdin))
   assert_that(is_string_or_null(stdout))
   assert_that(is_string_or_null(stderr))
   assert_that(is_flag(cleanup))
@@ -40,6 +42,7 @@ process_initialize <- function(self, private, command, args,
   private$args <- args
   private$cleanup <- cleanup
   private$wd <- wd
+  private$pstdin <- stdin
   private$pstdout <- stdout
   private$pstderr <- stderr
   private$echo_cmd <- echo_cmd
@@ -53,18 +56,21 @@ process_initialize <- function(self, private, command, args,
   "!DEBUG process_initialize exec()"
   private$status <- .Call(
     c_processx_exec,
-    command, c(command, args), stdout, stderr,
+    command, c(command, args), stdin, stdout, stderr,
     windows_verbatim_args, windows_hide_window,
     private, cleanup, wd, encoding
   )
   private$starttime <- Sys.time()
 
+  if (is.character(stdin) && stdin != "|")
+    stdin <- full_path(stdin)
   if (is.character(stdout) && stdout != "|")
     stdout <- full_path(stdout)
   if (is.character(stderr) && stderr != "|")
     stderr <- full_path(stderr)
 
   ## Store the output and error files, we'll open them later if needed
+  private$stdin  <- stdin
   private$stdout <- stdout
   private$stderr <- stderr
 

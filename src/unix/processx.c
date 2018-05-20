@@ -9,7 +9,8 @@
 
 static void processx__child_init(processx_handle_t *handle, int pipes[3][2],
 				 char *command, char **args, int error_fd,
-				 const char *std_out, const char *std_err,
+				 const char *std_in, const char *std_out,
+				 const char *std_err,
 				 processx_options_t *options);
 
 static SEXP processx__make_handle(SEXP private, int cleanup);
@@ -63,10 +64,11 @@ void processx__write_int(int fd, int err) {
 
 static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
 				 char *command, char **args, int error_fd,
-				 const char *std_out, const char *std_err,
+				 const char *std_in, const char *std_out,
+				 const char *std_err,
 				 processx_options_t *options) {
 
-  int fd0, fd1, fd2;
+  int fd0 = -1, fd1 = -1, fd2 = -1;
   int i;
 
   setsid();
@@ -74,9 +76,16 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
   /* The dup2 calls make sure that stdin, stdout and stderr use file
      descriptors 0, 1 and 3 respectively. */
 
-  /* stdin is coming from /dev/null */
+  /* stdin */
 
-  fd0 = open("/dev/null", O_RDONLY);
+  if (!std_in)  {
+    fd0 = open("/dev/null", O_RDONLY);
+  } else if (!strcmp(std_in, "|")) {
+    fd0 = pipes[0][1];
+    close(pipes[0][0]);
+  } else {
+    fd0 = open(std_in, O_RDONLY);
+  }
   if (fd0 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
 
   if (fd0 != 0) fd0 = dup2(fd0, 0);
@@ -252,14 +261,15 @@ skip:
   processx__cloexec_fcntl(pipe[1], 1);
 }
 
-SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
-		   SEXP windows_verbatim_args,
+SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
+		   SEXP std_err, SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private, SEXP cleanup,
 		   SEXP wd, SEXP encoding) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
   int ccleanup = INTEGER(cleanup)[0];
+  const char *cstdin = isNull(std_in) ?  0 : CHAR(STRING_ELT(std_in, 0));
   const char *cstdout = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
   const char *cstderr = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
@@ -287,7 +297,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   result = PROTECT(processx__make_handle(private, ccleanup));
   handle = R_ExternalPtrAddr(result);
 
-  /* Create pipes, if requested. TODO: stdin */
+  /* Create pipes, if requested. */
+  if (cstdin && !strcmp(cstdin, "|")) processx__make_socketpair(pipes[0]);
   if (cstdout && !strcmp(cstdout, "|")) processx__make_socketpair(pipes[1]);
   if (cstderr && !strcmp(cstderr, "|")) processx__make_socketpair(pipes[2]);
 
@@ -308,7 +319,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   if (pid == 0) {
     /* LCOV_EXCL_START */
     processx__child_init(handle, pipes, ccommand, cargs, signal_pipe[1],
-			 cstdout, cstderr, &options);
+			 cstdin, cstdout, cstderr, &options);
     PROCESSX__ERROR("Cannot start child process", "");
     /* LCOV_EXCL_STOP */
   }
@@ -350,8 +361,11 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   if (signal_pipe[0] >= 0) close(signal_pipe[0]);
 
   /* Set fds for standard I/O */
-  /* TODO: implement stdin */
   handle->fd0 = handle->fd1 = handle->fd2 = -1;
+  if (pipes[0][0] >= 0) {
+    handle->fd0  = pipes[0][0];
+    processx__nonblock_fcntl(handle->fd0, 1);
+  }
   if (pipes[1][0] >= 0) {
     handle->fd1 = pipes[1][0];
     processx__nonblock_fcntl(handle->fd1, 1);
@@ -362,6 +376,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   }
 
   /* Closed unused ends of pipes */
+  if (pipes[0][1] >= 0) close(pipes[0][1]);
   if (pipes[1][1] >= 0) close(pipes[1][1]);
   if (pipes[2][1] >= 0) close(pipes[2][1]);
 

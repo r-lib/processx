@@ -26,6 +26,14 @@ void processx__create_connections(processx_handle_t *handle, SEXP private,
 				  const char *encoding) {
   handle->pipes[0] = handle->pipes[1] = handle->pipes[2] = 0;
 
+  if (handle->fd0 >= 0)  {
+    handle->pipes[0] = processx__create_connection(
+      handle->fd0,
+      "stdin_pipe",
+      private,
+      encoding);
+  }
+
   if (handle->fd1 >= 0) {
     handle->pipes[1] = processx__create_connection(
       handle->fd1,
