@@ -12,9 +12,9 @@ streams. The process id is then used to manage the process.
 }
 \section{Usage}{
 \preformatted{p <- process$new(command = NULL, args,
-                 stdout = NULL, stderr = NULL, cleanup = TRUE,
-                 wd = NULL, echo_cmd = FALSE, supervise = FALSE,
-                 windows_verbatim_args = FALSE,
+                 stdin = NULL, stdout = NULL, stderr = NULL,
+                 cleanup = TRUE, wd = NULL, echo_cmd = FALSE,
+                 supervise = FALSE, windows_verbatim_args = FALSE,
                  windows_hide_window = FALSE,
                  encoding = "", post_process = NULL)
 
@@ -31,6 +31,7 @@ p$read_output(n = -1)
 p$read_error(n = -1)
 p$read_output_lines(n = -1)
 p$read_error_lines(n = -1)
+p$get_input_connection()
 p$get_output_connection()
 p$get_error_connection()
 p$is_incomplete_output()
@@ -39,6 +40,10 @@ p$read_all_output()
 p$read_all_error()
 p$read_all_output_lines()
 p$read_all_error_lines()
+p$write_input(str, sep = "\n")
+p$get_input_file()
+p$get_output_file()
+p$get_error_file()
 
 p$poll_io(timeout)
 
@@ -59,6 +64,10 @@ It should not be quoted with \code{\link[base:shQuote]{base::shQuote()}}. See
 \code{\link[base:normalizePath]{base::normalizePath()}} for tilde-expansion.
 \item \code{args}: Character vector, arguments to the command. They will be
 used as is, without a shell. They don't need to be escaped.
+\item \code{stdin}: What to do with the standard input. Possible values:
+\code{NULL}: set to the \emph{null device}, i.e. no standard input is
+provided; a string, supply the specified string as standard input;
+\code{"|"}: create a (writeable) connection for stdin.
 \item \code{stdout}: What to do with the standard output. Possible values:
 \code{NULL}: discard it; a string, redirect it to this file;
 \code{"|"}: create a connection for it.
@@ -84,12 +93,17 @@ the process. See \code{\link[tools:pskill]{tools::pskill()}} for the list of sig
 \item \code{timeout}: Timeout in milliseconds, for the wait or the I/O
 polling.
 \item \code{n}: Number of characters or lines to read.
-\item \code{encoding}: The encoding to assume for \code{stdout} and
+\item \code{str}: Character or raw vector to write to the standard input of the
+process. If a character vector with a marked encoding, it will be
+converted to \code{encoding}.
+\item \code{sep}: Separator to add between \code{str} elements if it is a character
+vector. It is ignored if \code{str} is a raw vector.
+\item \code{encoding}: The encoding to assume for \code{stdin}, \code{stdout} and
 \code{stderr}. By default the encoding of the current locale is
-used. Note that \code{processx} always reencodes the output of
-both streams in UTF-8 currently. If you want to read them
-without any conversion, on all platforms, specify \code{"UTF-8"} as
-encoding.
+used. Note that \code{processx} always reencodes the output of the
+\code{stdout}and \code{stderr}  streams in UTF-8 currently.
+If you want to read them without any conversion, on all platforms,
+specify \code{"UTF-8"} as encoding.
 \item \code{post_process}: An optional function to run when the process has
 finished. Currently it only runs if \code{$get_result()} is called.
 It is only run once.
@@ -176,6 +190,9 @@ object for standard output; in other words, if \code{stdout="|"}. It returns
 object for standard error; in other words, if \code{stderr="|"}. It returns
 \code{FALSE} otherwise.
 
+\code{$get_input_connection()} returns a connection object, to the
+standard input stream of the process.
+
 \code{$get_output_connection()} returns a connection object, to the
 standard output stream of the process.
 
@@ -217,6 +234,19 @@ Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several \code{readLines()} calls.
 It returns a character vector. This will return content only if
 \code{stderr="|"} was used. Otherwise, it will throw an error.
+
+\code{$write_input()} writes the character vector (separated by \code{sep}) to
+the standard input of the process. It will be converted to the specified
+encoding. This operation is non-blocking, and it will return, even if
+the write fails (because the write buffer is full), or if it suceeds
+partially (i.e. not the full string is written). It returns with a raw
+vector, that contains the bytes that were not written. You can supply
+this raw vector to \code{$write_input()} again, until it is fully written,
+and then the return value will be \code{raw(0)} (invisibly).
+
+\code{$get_input_file()} if the \code{stdin} argument was a filename,
+this returns the absolute path to the file. If \code{stdin} was \code{"|"} or
+\code{NULL}, this simply returns that value.
 
 \code{$get_output_file()} if the \code{stdout} argument was a filename,
 this returns the absolute path to the file. If \code{stdout} was \code{"|"} or

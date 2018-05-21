@@ -36,7 +36,8 @@ extern "C" {
 
 /* API from R */
 
-SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
+SEXP processx_exec(SEXP command, SEXP args,
+		   SEXP std_in,  SEXP std_out, SEXP std_err,
 		   SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private_, SEXP cleanup,
 		   SEXP wd, SEXP encoding);

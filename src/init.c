@@ -10,7 +10,7 @@ SEXP processx__killem_all();
 SEXP run_testthat_tests();
 
 static const R_CallMethodDef callMethods[]  = {
-  { "processx_exec",               (DL_FUNC) &processx_exec,              10 },
+  { "processx_exec",               (DL_FUNC) &processx_exec,              11 },
   { "processx_wait",               (DL_FUNC) &processx_wait,               2 },
   { "processx_is_alive",           (DL_FUNC) &processx_is_alive,           1 },
   { "processx_get_exit_status",    (DL_FUNC) &processx_get_exit_status,    1 },
@@ -30,6 +30,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_connection_create",     (DL_FUNC) &processx_connection_create,     2 },
   { "processx_connection_read_chars", (DL_FUNC) &processx_connection_read_chars, 2 },
   { "processx_connection_read_lines", (DL_FUNC) &processx_connection_read_lines, 2 },
+  { "processx_connection_write_bytes",(DL_FUNC) &processx_connection_write_bytes,2 },
   { "processx_connection_is_eof",     (DL_FUNC) &processx_connection_is_eof,     1 },
   { "processx_connection_close",      (DL_FUNC) &processx_connection_close,      1 },
   { "processx_connection_poll",       (DL_FUNC) &processx_connection_poll,       2 },

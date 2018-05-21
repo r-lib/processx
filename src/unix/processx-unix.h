@@ -60,6 +60,6 @@ int processx__interruptible_poll(struct pollfd fds[],
 				 nfds_t nfds, int timeout);
 
 #define PROCESSX__ERROR(msg1, msg2) \
-  error("%s %s at %s:%s", msg1, msg2, __FILE__,  __LINE__)
+  error("%s %s at %s:%d", msg1, msg2, __FILE__,  __LINE__)
 
 #endif

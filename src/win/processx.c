@@ -620,10 +620,12 @@ void processx__handle_destroy(processx_handle_t *handle) {
   free(handle);
 }
 
-SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
+SEXP processx_exec(SEXP command, SEXP args,
+		   SEXP std_in, SEXP std_out, SEXP std_err,
 		   SEXP windows_verbatim_args, SEXP windows_hide,
 		   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding) {
 
+  const char *cstd_in = isNull(std_in) ? 0 : CHAR(STRING_ELT(std_in, 0));
   const char *cstd_out = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
   const char *cstd_err = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
@@ -700,7 +702,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_out, SEXP std_err,
   result = PROTECT(processx__make_handle(private, ccleanup));
   handle = R_ExternalPtrAddr(result);
 
-  err = processx__stdio_create(handle, cstd_out, cstd_err,
+  err = processx__stdio_create(handle, cstd_in, cstd_out, cstd_err,
 			       &handle->child_stdio_buffer, private,
 			       cencoding);
   if (err) { PROCESSX_ERROR("setup stdio", err); }
