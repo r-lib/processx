@@ -133,19 +133,20 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
   return result;
 }
 
-SEXP processx_connection_write_chars(SEXP con, SEXP chars) {
+SEXP processx_connection_write_bytes(SEXP con, SEXP bytes) {
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
-  const char *cchars = CHAR(STRING_ELT(chars, 0));
-  size_t bytes = strlen(cchars);
+  Rbyte *cbytes = RAW(bytes);
+  size_t nbytes = LENGTH(bytes);
+  SEXP result;
 
-  ssize_t ret = processx_c_connection_write_bytes(ccon, cchars, bytes);
+  ssize_t written = processx_c_connection_write_bytes(ccon, cbytes, nbytes);
 
-  if (ret < 0) {
-    error("Cannot write connection: %s at %s:%d", strerror(errno),
-	  __FILE__, __LINE__);
-  }
+  size_t left = nbytes - written;
+  PROTECT(result = allocVector(RAWSXP, left));
+  if (left > 0) memcpy(RAW(result), cbytes + written, left);
 
-  return ScalarReal(ret);
+  UNPROTECT(1);
+  return result;
 }
 
 SEXP processx_connection_is_eof(SEXP con) {
@@ -381,7 +382,16 @@ ssize_t processx_c_connection_write_bytes(
   if (!ret) PROCESSX_ERROR("Cannot write connection ", GetLastError());
   return (ssize_t) written;
 #else
-  return write(ccon->handle, buffer, nbytes);
+  ssize_t ret = write(ccon->handle, buffer, nbytes);
+  if (ret == -1) {
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+      return 0;
+    } else {
+      error("Cannot write connection: %s at %s:%d", strerror(errno),
+	    __FILE__, __LINE__);
+    }
+  }
+  return ret;
 #endif
 }
 

@@ -109,8 +109,11 @@ process_read_all_error_lines <- function(self, private) {
 process_write_input <- function(self, private, str, sep) {
   "!DEBUG process_write_input `private$get_short_name()`"
   con <- process_get_input_connection(self, private)
-  str2 <- enc2native(paste(str, collapse = "\n"))
-  .Call(c_processx_connection_write_chars, con, str2)
+  if (is.character(str)) {
+    pstr <- paste(str, collapse = sep)
+    str <- iconv(pstr, "", private$encoding, toRaw = TRUE)[[1]]
+  }
+  invisible(.Call(c_processx_connection_write_bytes, con, str))
 }
 
 process_get_input_file <- function(self, private) {

@@ -52,10 +52,12 @@ test_that("stdin buffer full", {
 
   px <- get_tool("px")
   p <- process$new(px, c("sleep", 100), stdin = "|")
-  expect_error(
-    for (i in 1:100000) p$write_input("foobar"),
-    "Cannot write connection"
-  )
+  for (i in 1:100000) {
+    ret <- p$write_input("foobar")
+    if (length(ret) > 0) break
+  }
+
+  expect_true(length(ret) > 0)
 })
 
 test_that("file as stdin", {
@@ -92,4 +94,27 @@ test_that("large file as stdin", {
   p$wait()
   expect_true(file.exists(tmp2))
   expect_equal(file.info(tmp2)$size, nchar(txt))
+})
+
+test_that("writing raw", {
+  skip_on_cran()
+  skip_if_no_tool("cat")
+
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+  p <- process$new("cat", stdin = "|", stdout = tmp, stderr = "|")
+  expect_true(p$is_alive())
+
+  foo <- charToRaw("foo\n")
+  bar <- charToRaw("bar\n")
+  p$write_input(foo)
+  p$write_input(bar)
+  expect_true(p$is_alive())
+
+  close(p$get_input_connection())
+  p$wait(5000)
+  expect_false(p$is_alive())
+  p$kill()
+
+  expect_equal(readLines(tmp), c("foo", "bar"))
 })

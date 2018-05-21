@@ -40,7 +40,10 @@ p$read_all_output()
 p$read_all_error()
 p$read_all_output_lines()
 p$read_all_error_lines()
-p$write_input(str, sep = "")
+p$write_input(str, sep = "\n")
+p$get_input_file()
+p$get_output_file()
+p$get_error_file()
 
 p$poll_io(timeout)
 
@@ -90,13 +93,17 @@ the process. See \code{\link[tools:pskill]{tools::pskill()}} for the list of sig
 \item \code{timeout}: Timeout in milliseconds, for the wait or the I/O
 polling.
 \item \code{n}: Number of characters or lines to read.
-\item \code{str}: Character vector to write to the standard input of the process.
-\item \code{encoding}: The encoding to assume for \code{stdout} and
+\item \code{str}: Character or raw vector to write to the standard input of the
+process. If a character vector with a marked encoding, it will be
+converted to \code{encoding}.
+\item \code{sep}: Separator to add between \code{str} elements if it is a character
+vector. It is ignored if \code{str} is a raw vector.
+\item \code{encoding}: The encoding to assume for \code{stdin}, \code{stdout} and
 \code{stderr}. By default the encoding of the current locale is
-used. Note that \code{processx} always reencodes the output of
-both streams in UTF-8 currently. If you want to read them
-without any conversion, on all platforms, specify \code{"UTF-8"} as
-encoding.
+used. Note that \code{processx} always reencodes the output of the
+\code{stdout}and \code{stderr}  streams in UTF-8 currently.
+If you want to read them without any conversion, on all platforms,
+specify \code{"UTF-8"} as encoding.
 \item \code{post_process}: An optional function to run when the process has
 finished. Currently it only runs if \code{$get_result()} is called.
 It is only run once.
@@ -229,8 +236,17 @@ It returns a character vector. This will return content only if
 \code{stderr="|"} was used. Otherwise, it will throw an error.
 
 \code{$write_input()} writes the character vector (separated by \code{sep}) to
-the standard input of the process. It will be converted to the native
-encoding.
+the standard input of the process. It will be converted to the specified
+encoding. This operation is non-blocking, and it will return, even if
+the write fails (because the write buffer is full), or if it suceeds
+partially (i.e. not the full string is written). It returns with a raw
+vector, that contains the bytes that were not written. You can supply
+this raw vector to \code{$write_input()} again, until it is fully written,
+and then the return value will be \code{raw(0)} (invisibly).
+
+\code{$get_input_file()} if the \code{stdin} argument was a filename,
+this returns the absolute path to the file. If \code{stdin} was \code{"|"} or
+\code{NULL}, this simply returns that value.
 
 \code{$get_output_file()} if the \code{stdout} argument was a filename,
 this returns the absolute path to the file. If \code{stdout} was \code{"|"} or

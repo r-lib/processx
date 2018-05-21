@@ -30,7 +30,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_connection_create",     (DL_FUNC) &processx_connection_create,     2 },
   { "processx_connection_read_chars", (DL_FUNC) &processx_connection_read_chars, 2 },
   { "processx_connection_read_lines", (DL_FUNC) &processx_connection_read_lines, 2 },
-  { "processx_connection_write_chars",(DL_FUNC) &processx_connection_write_chars, 2 },
+  { "processx_connection_write_bytes",(DL_FUNC) &processx_connection_write_bytes,2 },
   { "processx_connection_is_eof",     (DL_FUNC) &processx_connection_is_eof,     1 },
   { "processx_connection_close",      (DL_FUNC) &processx_connection_close,      1 },
   { "processx_connection_poll",       (DL_FUNC) &processx_connection_poll,       2 },

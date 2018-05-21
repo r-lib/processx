@@ -118,7 +118,7 @@ SEXP processx_connection_read_chars(SEXP con, SEXP nchars);
 SEXP processx_connection_read_lines(SEXP con, SEXP nlines);
 
 /* Write characters */
-SEXP processx_connection_write_chars(SEXP con, SEXP chars);
+SEXP processx_connection_write_bytes(SEXP con, SEXP chars);
 
 /* Check if the connection has ended. */
 SEXP processx_connection_is_eof(SEXP con);
