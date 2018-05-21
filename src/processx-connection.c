@@ -216,26 +216,29 @@ processx_connection_t *processx_c_connection_create(
   con->handle.handle = os_handle;
   memset(&con->handle.overlapped, 0, sizeof(OVERLAPPED));
   con->handle.read_pending = FALSE;
-  con->handle.overlapped.hEvent = CreateEvent(
-    /* lpEventAttributes = */ NULL,
-    /* bManualReset = */      FALSE,
-    /* bInitialState = */     FALSE,
-    /* lpName = */            NULL);
+  if (type == PROCESSX_FILE_TYPE_ASYNCFILE ||
+      type == PROCESSX_FILE_TYPE_ASYNCPIPE) {
+    con->handle.overlapped.hEvent = CreateEvent(
+      /* lpEventAttributes = */ NULL,
+      /* bManualReset = */      FALSE,
+      /* bInitialState = */     FALSE,
+      /* lpName = */            NULL);
 
-  if (con->handle.overlapped.hEvent == NULL) {
-    free(con);
-    PROCESSX_ERROR("Cannot create connection event", GetLastError());
-    return 0; 			/* never reached */
+    if (con->handle.overlapped.hEvent == NULL) {
+      free(con);
+      PROCESSX_ERROR("Cannot create connection event", GetLastError());
+      return 0; 			/* never reached */
+    }
+
+    HANDLE iocp = processx__get_default_iocp();
+    HANDLE res = CreateIoCompletionPort(
+      /* FileHandle =  */                con->handle.handle,
+      /* ExistingCompletionPort = */     iocp,
+      /* CompletionKey = */              (ULONG_PTR) con,
+      /* NumberOfConcurrentThreads = */  0);
+
+    if (!res) PROCESSX_ERROR("cannot add file to IOCP", GetLastError());
   }
-
-  HANDLE iocp = processx__get_default_iocp();
-  HANDLE res = CreateIoCompletionPort(
-    /* FileHandle =  */                con->handle.handle,
-    /* ExistingCompletionPort = */     iocp,
-    /* CompletionKey = */              (ULONG_PTR) con,
-    /* NumberOfConcurrentThreads = */  0);
-
-  if (!res) PROCESSX_ERROR("cannot add file to IOCP", GetLastError());
 
 #else
   con->handle = os_handle;
@@ -367,7 +370,19 @@ ssize_t processx_c_connection_write_bytes(
 
   PROCESSX_CHECK_VALID_CONN(ccon);
 
+#ifdef _WIN32
+  DWORD written;
+  BOOL ret = WriteFile(
+    /* hFile =                  */ ccon->handle.handle,
+    /* lpBuffer =               */ buffer,
+    /* nNumberOfBytesToWrite =  */ nbytes,
+    /* lpNumberOfBytesWritten = */ &written,
+    /* lpOverlapped =           */ NULL);
+  if (!ret) PROCESSX_ERROR("Cannot write connection ", GetLastError());
+  return (ssize_t) written;
+#else
   return write(ccon->handle, buffer, nbytes);
+#endif
 }
 
 /* Check if the connection has ended */

@@ -3,8 +3,8 @@ context("stdin")
 
 test_that("stdin", {
 
-  skip_other_platforms("unix")
   skip_on_cran()
+  skip_if_no_tool("cat")
 
   tmp <- tempfile()
   on.exit(unlink(tmp), add = TRUE)
@@ -16,7 +16,7 @@ test_that("stdin", {
   expect_true(p$is_alive())
 
   close(p$get_input_connection())
-  p$wait(10)
+  p$wait(5000)
   expect_false(p$is_alive())
   p$kill()
 
@@ -25,8 +25,8 @@ test_that("stdin", {
 
 test_that("stdin & stdout", {
 
-  skip_other_platforms("unix")
   skip_on_cran()
+  skip_if_no_tool("cat")
 
   p <- process$new("cat", stdin = "|", stdout = "|")
   expect_true(p$is_alive())
@@ -47,8 +47,8 @@ test_that("stdin & stdout", {
 
 test_that("stdin buffer full", {
 
-  skip_other_platforms("unix")
   skip_on_cran()
+  skip_other_platforms("unix")
 
   px <- get_tool("px")
   p <- process$new(px, c("sleep", 100), stdin = "|")
@@ -60,8 +60,8 @@ test_that("stdin buffer full", {
 
 test_that("file as stdin", {
 
-  skip_other_platforms("unix")
   skip_on_cran()
+  skip_if_no_tool("cat")
 
   tmp <- tempfile()
   tmp2 <- tempfile()
@@ -71,14 +71,15 @@ test_that("file as stdin", {
   cat(txt, file = tmp)
 
   p <- process$new("cat", stdin = tmp, stdout = tmp2)
+  p$wait()
   expect_true(file.exists(tmp2))
   expect_equal(readChar(tmp2, nchar(txt)), txt)
 })
 
 test_that("large file as stdin", {
 
-  skip_other_platforms("unix")
   skip_on_cran()
+  skip_if_no_tool("cat")
 
   tmp <- tempfile()
   tmp2 <- tempfile()
@@ -88,6 +89,7 @@ test_that("large file as stdin", {
   cat(txt, file = tmp)
 
   p <- process$new("cat", stdin = tmp, stdout = tmp2)
+  p$wait()
   expect_true(file.exists(tmp2))
   expect_equal(file.info(tmp2)$size, nchar(txt))
 })

@@ -61,6 +61,34 @@ static int processx__create_nul_handle(HANDLE *handle_ptr, DWORD access) {
   return 0;
 }
 
+static int processx__create_input_handle(HANDLE *handle_ptr, const char *file,
+					  DWORD access) {
+  HANDLE handle;
+  SECURITY_ATTRIBUTES sa;
+  int  err;
+
+  sa.nLength = sizeof(sa);
+  sa.lpSecurityDescriptor = NULL;
+  sa.bInheritHandle = TRUE;
+  WCHAR *filew;
+
+  err = processx__utf8_to_utf16_alloc(file, &filew);
+  if (err) return(err);
+
+  handle = CreateFileW(
+    /* lpFilename =            */ filew,
+    /* dwDesiredAccess=        */ access,
+    /* dwShareMode =           */ FILE_SHARE_READ | FILE_SHARE_WRITE,
+    /* lpSecurityAttributes =  */ &sa,
+    /* dwCreationDisposition = */ OPEN_EXISTING,
+    /* dwFlagsAndAttributes =  */ 0,
+    /* hTemplateFile =         */ NULL);
+  if (handle == INVALID_HANDLE_VALUE) { return GetLastError(); }
+
+  *handle_ptr = handle;
+  return 0;
+}
+
 static int processx__create_output_handle(HANDLE *handle_ptr, const char *file,
 					  DWORD access) {
   HANDLE handle;
@@ -165,15 +193,82 @@ int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_
   return 0;			/* never reached */
 }
 
+int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_ptr) {
+
+  char pipe_name[40];
+  HANDLE hOutputRead = INVALID_HANDLE_VALUE;
+  HANDLE hOutputWrite = INVALID_HANDLE_VALUE;
+  SECURITY_ATTRIBUTES sa;
+  DWORD err;
+  char *errmessage = "";
+
+  sa.nLength = sizeof(sa);
+  sa.lpSecurityDescriptor = NULL;
+  sa.bInheritHandle = TRUE;
+
+  for (;;) {
+    processx__unique_pipe_name(id, pipe_name, sizeof(pipe_name));
+
+    hOutputRead = CreateNamedPipeA(
+      pipe_name,
+      PIPE_ACCESS_OUTBOUND | PIPE_ACCESS_INBOUND |
+        FILE_FLAG_FIRST_PIPE_INSTANCE,
+      PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+      1,
+      65536,
+      65536,
+      0,
+      NULL);
+
+    if (hOutputRead != INVALID_HANDLE_VALUE) {
+      break;
+    }
+
+    err = GetLastError();
+    if (err != ERROR_PIPE_BUSY && err != ERROR_ACCESS_DENIED) {
+      errmessage = "creating read pipe";
+      goto error;
+    }
+  }
+
+  hOutputWrite = CreateFileA(
+    pipe_name,
+    GENERIC_READ,
+    0,
+    &sa,
+    OPEN_EXISTING,
+    FILE_ATTRIBUTE_NORMAL,
+    NULL);
+
+  if (hOutputWrite == INVALID_HANDLE_VALUE) {
+    err = GetLastError();
+    errmessage = "creating write pipe";
+    goto error;
+  }
+
+  *parent_pipe_ptr = hOutputRead;
+  *child_pipe_ptr  = hOutputWrite;
+
+  return 0;
+
+ error:
+  if (hOutputRead != INVALID_HANDLE_VALUE) CloseHandle(hOutputRead);
+  if (hOutputWrite != INVALID_HANDLE_VALUE) CloseHandle(hOutputWrite);
+  PROCESSX_ERROR(errmessage, err);
+  return 0;			/* never reached */
+}
+
 processx_connection_t * processx__create_connection(
   HANDLE pipe_handle, const char *membername, SEXP private,
-  const char *encoding) {
+  const char *encoding, BOOL async) {
 
   processx_connection_t *con;
   SEXP res;
 
-  con = processx_c_connection_create(pipe_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
-				     encoding, &res);
+  con = processx_c_connection_create(
+    pipe_handle,
+    async ? PROCESSX_FILE_TYPE_ASYNCPIPE : PROCESSX_FILE_TYPE_PIPE,
+    encoding, &res);
 
   defineVar(install(membername), res, private);
 
@@ -181,7 +276,8 @@ processx_connection_t * processx__create_connection(
 }
 
 int processx__stdio_create(processx_handle_t *handle,
-			   const char *std_out, const char *std_err,
+			   const char *std_in, const char *std_out,
+			   const char *std_err,
 			   BYTE** buffer_ptr, SEXP private,
 			   const char *encoding) {
   BYTE* buffer;
@@ -201,9 +297,9 @@ int processx__stdio_create(processx_handle_t *handle,
   }
 
   for (i = 0; i < count; i++) {
-    DWORD access = (i == 0) ? FILE_GENERIC_READ :
+    DWORD access = (i == 0) ? FILE_GENERIC_READ | FILE_WRITE_ATTRIBUTES :
       FILE_GENERIC_WRITE | FILE_READ_ATTRIBUTES;
-    const char *output = i == 0 ? 0 : (i == 1 ? std_out : std_err);
+    const char *output = i == 0 ? std_in : (i == 1 ? std_out : std_err);
 
     handle->pipes[i] = 0;
 
@@ -215,21 +311,32 @@ int processx__stdio_create(processx_handle_t *handle,
 
     } else if (strcmp("|", output)) {
       /* output to file */
-      err = processx__create_output_handle(&CHILD_STDIO_HANDLE(buffer, i),
-					   output, access);
+      if (i == 0) {
+	err = processx__create_input_handle(&CHILD_STDIO_HANDLE(buffer, i),
+					    output, access);
+      } else {
+	err = processx__create_output_handle(&CHILD_STDIO_HANDLE(buffer, i),
+					     output, access);
+      }
       if (err) { goto error; }
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
 
     } else {
       /* piped output */
       processx_connection_t *con = 0;
-      const char *r_pipe_name = i == 1 ? "stdout_pipe" : "stderr_pipe";
-      err = processx__create_pipe(handle, &pipe_handle[i],
-				  &CHILD_STDIO_HANDLE(buffer, i));
+      const char *r_pipe_name = i == 0 ? "stdin_pipe" :
+	(i == 1 ? "stdout_pipe" : "stderr_pipe");
+      if (i == 0) {
+	err = processx__create_input_pipe(handle, &pipe_handle[i],
+					  &CHILD_STDIO_HANDLE(buffer, i));
+      } else {
+	err = processx__create_pipe(handle, &pipe_handle[i],
+				    &CHILD_STDIO_HANDLE(buffer, i));
+      }
       if (err) goto error;
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FPIPE;
       con = processx__create_connection(pipe_handle[i], r_pipe_name,
-					private, encoding);
+					private, encoding, i != 0);
       handle->pipes[i] = con;
     }
   }

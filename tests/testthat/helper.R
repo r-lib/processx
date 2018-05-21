@@ -3,6 +3,10 @@ skip_other_platforms <- function(platform) {
   if (os_type() != platform) skip(paste("only run it on", platform))
 }
 
+skip_if_no_tool <- function(tool) {
+  if (Sys.which(tool) == "") skip(paste0("`", tool, "` is not available"))
+}
+
 try_silently <- function(expr) {
   tryCatch(
     expr,

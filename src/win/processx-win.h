@@ -18,7 +18,8 @@ typedef struct processx_handle_s {
 int processx__utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr);
 
 int processx__stdio_create(processx_handle_t *handle,
-			   const char *std_out, const char *std_err,
+			   const char *std_in, const char *std_out,
+			   const char *std_err,
 			   BYTE** buffer_ptr, SEXP privatex,
 			   const char *encoding);
 WORD processx__stdio_size(BYTE* buffer);
