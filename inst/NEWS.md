@@ -1,4 +1,8 @@
 
+# processx 3.1.0.9000
+
+* Support writing to the standard input of a process (#27, #114)
+
 # processx 3.1.0
 
 * Fix interference with the parallel package, and other packages that
