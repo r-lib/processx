@@ -55,6 +55,8 @@
 #'   of the standard error. A chunk can be as small as a single character.
 #'   At most one of `stderr_line_callback` and `stderr_callback` can be
 #'   non-`NULL`.
+#' @param env Environment of the child process, a named character vector.
+#'   IF `NULL`, the environment of the parent is inherited.
 #' @param windows_verbatim_args Whether to omit the escaping of the
 #'   command and the arguments on windows. Ignored on other platforms.
 #' @param windows_hide_window Whether to hide the window of the
@@ -95,7 +97,7 @@ run <- function(
   command = NULL, args = character(), error_on_status = TRUE, wd = NULL,
   echo_cmd = FALSE, echo = FALSE, spinner = FALSE,
   timeout = Inf, stdout_line_callback = NULL, stdout_callback = NULL,
-  stderr_line_callback = NULL, stderr_callback = NULL,
+  stderr_line_callback = NULL, stderr_callback = NULL, env = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = FALSE,
   encoding = "") {
 
@@ -118,7 +120,7 @@ run <- function(
     command, args, echo_cmd = echo_cmd, wd = wd,
     windows_verbatim_args = windows_verbatim_args,
     windows_hide_window = windows_hide_window,
-    stdout = "|", stderr = "|", encoding = encoding
+    stdout = "|", stderr = "|", env = env, encoding = encoding
   )
   "#!DEBUG run() Started the process: `pr$get_pid()`"
 

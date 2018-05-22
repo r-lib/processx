@@ -8,6 +8,7 @@
 #' @param stdin Standard input, NULL to ignore.
 #' @param stdout Standard output, NULL to ignore, TRUE for temp file.
 #' @param stderr Standard error, NULL to ignore, TRUE for temp file.
+#' @param env Environment vaiables.
 #' @param cleanup Kill on GC?
 #' @param wd working directory (or NULL)
 #' @param echo_cmd Echo command before starting it?
@@ -19,7 +20,7 @@
 #' @importFrom utils head tail
 
 process_initialize <- function(self, private, command, args,
-                               stdin, stdout, stderr, cleanup, wd,
+                               stdin, stdout, stderr, env, cleanup, wd,
                                echo_cmd, supervise, windows_verbatim_args,
                                windows_hide_window, encoding, post_process) {
 
@@ -30,6 +31,7 @@ process_initialize <- function(self, private, command, args,
   assert_that(is_string_or_null(stdin))
   assert_that(is_string_or_null(stdout))
   assert_that(is_string_or_null(stderr))
+  assert_that(is.null(env) || is_named_character(env))
   assert_that(is_flag(cleanup))
   assert_that(is_string_or_null(wd))
   assert_that(is_flag(echo_cmd))
@@ -45,6 +47,7 @@ process_initialize <- function(self, private, command, args,
   private$pstdin <- stdin
   private$pstdout <- stdout
   private$pstderr <- stderr
+  private$env <- env
   private$echo_cmd <- echo_cmd
   private$windows_verbatim_args <- windows_verbatim_args
   private$windows_hide_window <- windows_hide_window
@@ -53,10 +56,12 @@ process_initialize <- function(self, private, command, args,
 
   if (echo_cmd) do_echo_cmd(command, args)
 
+  if (!is.null(env)) env <- paste(names(env), sep = "=", env)
+
   "!DEBUG process_initialize exec()"
   private$status <- .Call(
     c_processx_exec,
-    command, c(command, args), stdin, stdout, stderr,
+    command, c(command, args), stdin, stdout, stderr, env,
     windows_verbatim_args, windows_hide_window,
     private, cleanup, wd, encoding
   )

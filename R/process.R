@@ -14,7 +14,7 @@ NULL
 #' ```
 #' p <- process$new(command = NULL, args,
 #'                  stdin = NULL, stdout = NULL, stderr = NULL,
-#'                  cleanup = TRUE, wd = NULL, echo_cmd = FALSE,
+#'                  env = NULL, cleanup = TRUE, wd = NULL, echo_cmd = FALSE,
 #'                  supervise = FALSE, windows_verbatim_args = FALSE,
 #'                  windows_hide_window = FALSE,
 #'                  encoding = "", post_process = NULL)
@@ -72,6 +72,8 @@ NULL
 #' * `stderr`: What to do with the standard error. Possible values:
 #'     `NULL`: discard it; a string, redirect it to this file;
 #'     `"|"`: create a connection for it.
+#' * `env`: Environment variables of the child process. If `NULL`, the
+#'     parent's environment is inherited.
 #' * `cleanup`: Whether to kill the process (and its children)
 #'     if the `process` object is garbage collected.
 #' * `wd`: working directory of the process. It must exist. If `NULL`, then
@@ -300,11 +302,12 @@ process <- R6Class(
   public = list(
 
     initialize = function(command = NULL, args = character(),
-      stdin = NULL, stdout = NULL, stderr = NULL, cleanup = TRUE, wd = NULL,
-      echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
-      windows_hide_window = FALSE, encoding = "",  post_process = NULL)
-      process_initialize(self, private, command, args, stdin,
-                         stdout, stderr, cleanup, wd, echo_cmd, supervise,
+      stdin = NULL, stdout = NULL, stderr = NULL, env = NULL,
+      cleanup = TRUE, wd = NULL, echo_cmd = FALSE, supervise = FALSE,
+      windows_verbatim_args = FALSE, windows_hide_window = FALSE,
+      encoding = "",  post_process = NULL)
+      process_initialize(self, private, command, args, stdin, stdout,
+                         stderr, env, cleanup, wd, echo_cmd, supervise,
                          windows_verbatim_args, windows_hide_window,
                          encoding, post_process),
 
@@ -441,6 +444,8 @@ process <- R6Class(
 
     encoding = "",
 
+    env = NULL,
+
     post_process = NULL,
     post_process_result = NULL,
     post_process_done = FALSE,
@@ -485,6 +490,7 @@ process_restart <- function(self, private) {
     private$pstdin,
     private$pstdout,
     private$pstderr,
+    private$env,
     private$cleanup,
     private$wd,
     private$echo_cmd,

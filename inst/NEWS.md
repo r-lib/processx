@@ -1,7 +1,9 @@
 
 # processx 3.1.0.9000
 
-* Support writing to the standard input of a process (#27, #114)
+* Support writing to the standard input of a process (#27, #114).
+
+* Set the environment of the child process, optionally (#117, #118).
 
 # processx 3.1.0
 
