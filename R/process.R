@@ -73,7 +73,11 @@ NULL
 #'     `NULL`: discard it; a string, redirect it to this file;
 #'     `"|"`: create a connection for it.
 #' * `env`: Environment variables of the child process. If `NULL`, the
-#'     parent's environment is inherited.
+#'     parent's environment is inherited. On Windows, many programs cannot
+#'     function correctly if some environment variables are not set, so we
+#'     always set `HOMEDRIVE`, `HOMEPATH`, `LOGONSERVER`, `PATH`,
+#'     `SYSTEMDRIVE`, `SYSTEMROOT`, `TEMP`, `USERDOMAIN`, `USERNAME`,
+#'     `USERPROFILE` and `WINDIR`.
 #' * `cleanup`: Whether to kill the process (and its children)
 #'     if the `process` object is garbage collected.
 #' * `wd`: working directory of the process. It must exist. If `NULL`, then

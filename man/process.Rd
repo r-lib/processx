@@ -75,7 +75,11 @@ provided; a string, supply the specified string as standard input;
 \code{NULL}: discard it; a string, redirect it to this file;
 \code{"|"}: create a connection for it.
 \item \code{env}: Environment variables of the child process. If \code{NULL}, the
-parent's environment is inherited.
+parent's environment is inherited. On Windows, many programs cannot
+function correctly if some environment variables are not set, so we
+always set \code{HOMEDRIVE}, \code{HOMEPATH}, \code{LOGONSERVER}, \code{PATH},
+\code{SYSTEMDRIVE}, \code{SYSTEMROOT}, \code{TEMP}, \code{USERDOMAIN}, \code{USERNAME},
+\code{USERPROFILE} and \code{WINDIR}.
 \item \code{cleanup}: Whether to kill the process (and its children)
 if the \code{process} object is garbage collected.
 \item \code{wd}: working directory of the process. It must exist. If \code{NULL}, then
