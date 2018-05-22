@@ -14,8 +14,9 @@ NULL
 #' ```
 #' p <- process$new(command = NULL, args,
 #'                  stdin = NULL, stdout = NULL, stderr = NULL,
-#'                  env = NULL, cleanup = TRUE, wd = NULL, echo_cmd = FALSE,
-#'                  supervise = FALSE, windows_verbatim_args = FALSE,
+#'                  connections = list(), env = NULL, cleanup = TRUE,
+#'                  wd = NULL, echo_cmd = FALSE, supervise = FALSE,
+#'                  windows_verbatim_args = FALSE,
 #'                  windows_hide_window = FALSE,
 #'                  encoding = "", post_process = NULL)
 #'
@@ -71,6 +72,8 @@ NULL
 #' * `stderr`: What to do with the standard error. Possible values:
 #'     `NULL`: discard it; a string, redirect it to this file;
 #'     `"|"`: create a connection for it.
+#' * `connections`: A list of connections to pass to the child process.
+#'     This is an experimental feature currently.
 #' * `env`: Environment variables of the child process. If `NULL`, the
 #'     parent's environment is inherited. On Windows, many programs cannot
 #'     function correctly if some environment variables are not set, so we
@@ -303,14 +306,14 @@ process <- R6Class(
   public = list(
 
     initialize = function(command = NULL, args = character(),
-      stdin = NULL, stdout = NULL, stderr = NULL, env = NULL,
-      cleanup = TRUE, wd = NULL, echo_cmd = FALSE, supervise = FALSE,
-      windows_verbatim_args = FALSE, windows_hide_window = FALSE,
-      encoding = "",  post_process = NULL)
-      process_initialize(self, private, command, args, stdin, stdout,
-                         stderr, env, cleanup, wd, echo_cmd, supervise,
-                         windows_verbatim_args, windows_hide_window,
-                         encoding, post_process),
+      stdin = NULL, stdout = NULL, stderr = NULL, connections = list(),
+      env = NULL, cleanup = TRUE, wd = NULL, echo_cmd = FALSE,
+      supervise = FALSE, windows_verbatim_args = FALSE,
+      windows_hide_window = FALSE, encoding = "",  post_process = NULL)
+      process_initialize(self, private, command, args, stdin,
+                         stdout, stderr, connections, env, cleanup, wd,
+                         echo_cmd, supervise, windows_verbatim_args,
+                         windows_hide_window, encoding, post_process),
 
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
@@ -443,6 +446,8 @@ process <- R6Class(
     encoding = "",
 
     env = NULL,
+
+    connections = list(),
 
     post_process = NULL,
     post_process_result = NULL,
