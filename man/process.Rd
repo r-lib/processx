@@ -13,7 +13,7 @@ streams. The process id is then used to manage the process.
 \section{Usage}{
 \preformatted{p <- process$new(command = NULL, args,
                  stdin = NULL, stdout = NULL, stderr = NULL,
-                 cleanup = TRUE, wd = NULL, echo_cmd = FALSE,
+                 env = NULL, cleanup = TRUE, wd = NULL, echo_cmd = FALSE,
                  supervise = FALSE, windows_verbatim_args = FALSE,
                  windows_hide_window = FALSE,
                  encoding = "", post_process = NULL)
@@ -74,6 +74,8 @@ provided; a string, supply the specified string as standard input;
 \item \code{stderr}: What to do with the standard error. Possible values:
 \code{NULL}: discard it; a string, redirect it to this file;
 \code{"|"}: create a connection for it.
+\item \code{env}: Environment variables of the child process. If \code{NULL}, the
+parent's environment is inherited.
 \item \code{cleanup}: Whether to kill the process (and its children)
 if the \code{process} object is garbage collected.
 \item \code{wd}: working directory of the process. It must exist. If \code{NULL}, then
