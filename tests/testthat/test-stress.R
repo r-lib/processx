@@ -34,24 +34,3 @@ test_that("run() and kill while polling", {
     expect_true(Sys.time() - tic < as.difftime(3, units = "secs"))
   }
 })
-
-test_that("restart a lot of times", {
-  skip_on_cran()
-
-  px <- get_tool("px")
-
-  for (i in 1:100) {
-    p <- process$new(px, c("sleep", "5"))
-    on.exit(p$kill(), add = TRUE)
-    expect_true(p$is_alive())
-
-    p$kill()
-
-    expect_false(p$is_alive())
-
-    p$restart()
-    expect_true(p$is_alive())
-
-    p$kill()
-  }
-})

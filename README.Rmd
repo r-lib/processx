@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 [![Coverage Status](https://img.shields.io/codecov/c/github/r-lib/processx/master.svg)](https://codecov.io/github/r-lib/processx?branch=master)
 
 Tools to run system processes in the background,
-read their standard output and error, kill and restart them.
+read their standard output and error and kill them.
 
 processx can poll the standard output and error of a single process,
 or multiple processes, using the operating system's polling and waiting
@@ -38,7 +38,7 @@ facilities, with a timeout.
          * [Callbacks for I/O](#callbacks-for-io)
       * [Managing external processes](#managing-external-processes)
          * [Starting processes](#starting-processes)
-         * [Killing and restarting a process](#killing-and-restarting-a-process)
+         * [Killing a process](#killing-a-process)
          * [Standard output and error](#standard-output-and-error)
          * [End of output](#end-of-output)
          * [Polling the standard output and error](#polling-the-standard-output-and-error)
@@ -63,7 +63,6 @@ facilities, with a timeout.
 * Kill background processes.
 * Kill background process, when its associated object is garbage
   collected.
-* Restart background processes.
 * Works on Linux, macOS and Windows.
 * Lightweight, it only depends on the also lightweight
   R6, assertthat and crayon packages.
@@ -239,22 +238,13 @@ class.
 p <- process$new("sleep", "20")
 ```
 
-#### Killing and restarting a process
+#### Killing a process
 
 A process can be killed via the `kill()` method.
 
 ```{r}
 p$is_alive()
 p$kill()
-p$is_alive()
-```
-
-A process can be restarted via `restart()`. This works if the process
-has been killed, if it has finished regularly, or even if it is running
-currently. If it is running, then it will be killed first.
-
-```{r}
-p$restart()
 p$is_alive()
 ```
 

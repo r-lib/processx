@@ -5,6 +5,9 @@
 
 * Set the environment of the child process, optionally (#117, #118).
 
+* Removed the `$restart()` method, because it was less useful than
+  expected, and hard to maintain (#116).
+
 # processx 3.1.0
 
 * Fix interference with the parallel package, and other packages that

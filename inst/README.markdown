@@ -13,7 +13,7 @@
 [![Coverage Status](https://img.shields.io/codecov/c/github/r-lib/processx/master.svg)](https://codecov.io/github/r-lib/processx?branch=master)
 
 Tools to run system processes in the background,
-read their standard output and error, kill and restart them.
+read their standard output and error and kill them.
 
 processx can poll the standard output and error of a single process,
 or multiple processes, using the operating system's polling and waiting
@@ -31,7 +31,7 @@ facilities, with a timeout.
          * [Callbacks for I/O](#callbacks-for-io)
       * [Managing external processes](#managing-external-processes)
          * [Starting processes](#starting-processes)
-         * [Killing and restarting a process](#killing-and-restarting-a-process)
+         * [Killing a process](#killing-a-process)
          * [Standard output and error](#standard-output-and-error)
          * [End of output](#end-of-output)
          * [Polling the standard output and error](#polling-the-standard-output-and-error)
@@ -56,7 +56,6 @@ facilities, with a timeout.
 * Kill background processes.
 * Kill background process, when its associated object is garbage
   collected.
-* Restart background processes.
 * Works on Linux, macOS and Windows.
 * Lightweight, it only depends on the also lightweight
   R6, assertthat and crayon packages.
@@ -251,8 +250,8 @@ out2
 #>  [4] "Makefile"           "NAMESPACE"          "NEWS.md"           
 #>  [7] "R"                  "README.Rmd"         "README.markdown"   
 #> [10] "_pkgdown.yml"       "appveyor.yml"       "docs"              
-#> [13] "inst"               "man"                "src"               
-#> [16] "tests"
+#> [13] "inst"               "man"                "revdep"            
+#> [16] "src"                "tests"
 ```
 
 #### Spinner
@@ -349,7 +348,7 @@ class.
 p <- process$new("sleep", "20")
 ```
 
-#### Killing and restarting a process
+#### Killing a process
 
 A process can be killed via the `kill()` method.
 
@@ -378,20 +377,6 @@ p$is_alive()
 #> [1] FALSE
 ```
 
-A process can be restarted via `restart()`. This works if the process
-has been killed, if it has finished regularly, or even if it is running
-currently. If it is running, then it will be killed first.
-
-
-```r
-p$restart()
-p$is_alive()
-```
-
-```
-#> [1] TRUE
-```
-
 Note that processes are finalized (and killed) automatically if the
 corresponding `process` object goes out of scope, as soon as the object
 is garbage collected by R:
@@ -405,8 +390,8 @@ gc()
 
 ```
 #>          used (Mb) gc trigger (Mb) max used (Mb)
-#> Ncells 422094 22.6     750400 40.1   592000 31.7
-#> Vcells 839667  6.5    1650153 12.6  1097560  8.4
+#> Ncells 422816 22.6     750400 40.1   592000 31.7
+#> Vcells 840479  6.5    1650153 12.6  1061286  8.1
 ```
 
 Here, the direct call to the garbage collector kills the `sleep` process
@@ -625,7 +610,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2018-05-13 20:54:19 BST"
+#> [1] "2018-05-22 11:30:42 BST"
 ```
 
 ```r
@@ -634,7 +619,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2018-05-13 20:54:21 BST"
+#> [1] "2018-05-22 11:30:44 BST"
 ```
 
 It is safe to call `wait()` multiple times:
@@ -682,7 +667,7 @@ p <- process$new("nonexistant-command-for-sure")
 ```
 
 ```
-#> Error in process_initialize(self, private, command, args, stdout, stderr, : processx error: 'No such file or directory' at unix/processx.c:378
+#> Error in process_initialize(self, private, command, args, stdin, stdout, : processx error: 'No such file or directory' at unix/processx.c:403
 ```
 
 
