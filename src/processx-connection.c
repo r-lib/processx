@@ -14,6 +14,12 @@
 
 #include "processx.h"
 
+#ifdef _WIN32
+#include "win/processx-win.h"
+#else
+#include "unix/processx-unix.h"
+#endif
+
 /* Internal functions in this file */
 
 static void processx__connection_find_chars(processx_connection_t *ccon,
@@ -173,6 +179,53 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout) {
   /* TODO: this is not used currently */
   error("Not implemented");
   return R_NilValue;
+}
+
+SEXP processx_connection_create_pipepair(SEXP encoding) {
+  const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
+  SEXP result, con1, con2, con3, con4;
+
+#ifdef _WIN32
+  HANDLE h1, h2, h3, h4;
+  processx__create_input_pipe(result, &h1, &h2);
+  processx__create_pipe(result, &h3, &h4);
+  
+#else
+  int pipe[2], h1, h2, h3, h4;
+  processx__make_socketpair(pipe);
+  h1 = h3 = pipe[0];
+  h2 = h4 = pipe[1];
+#endif
+
+  processx_c_connection_create(h1, PROCESSX_FILE_TYPE_ASYNCPIPE,
+			       c_encoding, &con1);
+  PROTECT(con1);
+  processx_c_connection_create(h2, PROCESSX_FILE_TYPE_ASYNCPIPE,
+			       c_encoding, &con2);
+  PROTECT(con2);
+  processx_c_connection_create(h3, PROCESSX_FILE_TYPE_ASYNCPIPE,
+			       c_encoding, &con3);
+  PROTECT(con3);
+  processx_c_connection_create(h4, PROCESSX_FILE_TYPE_ASYNCPIPE,
+			       c_encoding, &con4);
+  PROTECT(con4);
+
+  result = PROTECT(allocVector(VECSXP, 4));
+  SET_VECTOR_ELT(result, 0, con1);
+  SET_VECTOR_ELT(result, 1, con2);
+  SET_VECTOR_ELT(result, 2, con3);
+  SET_VECTOR_ELT(result, 3, con4);
+
+  UNPROTECT(5);
+  return result;
+}
+
+SEXP processx_connection_get_description(SEXP con) {
+  /* TODO */
+}
+
+SEXP processx_connection_create_description(SEXP description) {
+  /* TODO */
 }
 
 /* Api from C -----------------------------------------------------------*/

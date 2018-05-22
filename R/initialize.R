@@ -8,6 +8,7 @@
 #' @param stdin Standard input, NULL to ignore.
 #' @param stdout Standard output, NULL to ignore, TRUE for temp file.
 #' @param stderr Standard error, NULL to ignore, TRUE for temp file.
+#' @param connections Connections to inherit in the child process.
 #' @param env Environment vaiables.
 #' @param cleanup Kill on GC?
 #' @param wd working directory (or NULL)
@@ -20,9 +21,10 @@
 #' @importFrom utils head tail
 
 process_initialize <- function(self, private, command, args,
-                               stdin, stdout, stderr, env, cleanup, wd,
-                               echo_cmd, supervise, windows_verbatim_args,
-                               windows_hide_window, encoding, post_process) {
+                               stdin, stdout, stderr, connections, env,
+                               cleanup, wd, echo_cmd, supervise,
+                               windows_verbatim_args, windows_hide_window,
+                               encoding, post_process) {
 
   "!DEBUG process_initialize `command`"
 

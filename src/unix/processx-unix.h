@@ -62,4 +62,6 @@ int processx__interruptible_poll(struct pollfd fds[],
 #define PROCESSX__ERROR(msg1, msg2) \
   error("%s %s at %s:%d", msg1, msg2, __FILE__,  __LINE__)
 
+void processx__make_socketpair(int pipe[2]);
+
 #endif

@@ -130,6 +130,13 @@ SEXP processx_is_closed(SEXP con);
 /* Poll connections and other pollable handles */
 SEXP processx_connection_poll(SEXP pollables, SEXP timeout);
 
+/* Functions for connection inheritance */
+SEXP processx_connection_create_pipepair();
+
+SEXP processx_connection_get_description(SEXP con);
+
+SEXP processx_connection_create_description(SEXP description);
+
 /* --------------------------------------------------------------------- */
 /* API from C                                                            */
 /* --------------------------------------------------------------------- */
