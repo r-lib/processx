@@ -94,3 +94,19 @@ is_named <- function(x) {
 on_failure(is_named) <- function(call, env) {
   paste0(deparse(call$x), " must have non-empty names")
 }
+
+is_connection <- function(x) {
+  inherits(x, "processx_connection")
+}
+
+on_failure(is_connection) <- function(call, env) {
+  paste0(deparse(call$x), " must be a processx connection")
+}
+
+is_connection_list <- function(x) {
+  all(vapply(x, is_connection, logical(1)))
+}
+
+on_failure(is_connection_list) <- function(call, env) {
+  paste0(deparse(call$x), " must be a list of processx connections")
+}

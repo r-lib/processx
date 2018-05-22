@@ -33,6 +33,7 @@ process_initialize <- function(self, private, command, args,
   assert_that(is_string_or_null(stdin))
   assert_that(is_string_or_null(stdout))
   assert_that(is_string_or_null(stderr))
+  assert_that(is_connection_list(connections))
   assert_that(is.null(env) || is_named_character(env))
   assert_that(is_flag(cleanup))
   assert_that(is_string_or_null(wd))
@@ -49,6 +50,7 @@ process_initialize <- function(self, private, command, args,
   private$pstdin <- stdin
   private$pstdout <- stdout
   private$pstderr <- stderr
+  private$connections <- connections
   private$env <- env
   private$echo_cmd <- echo_cmd
   private$windows_verbatim_args <- windows_verbatim_args
@@ -63,7 +65,7 @@ process_initialize <- function(self, private, command, args,
   "!DEBUG process_initialize exec()"
   private$status <- .Call(
     c_processx_exec,
-    command, c(command, args), stdin, stdout, stderr, env,
+    command, c(command, args), stdin, stdout, stderr, connections, env,
     windows_verbatim_args, windows_hide_window,
     private, cleanup, wd, encoding
   )
