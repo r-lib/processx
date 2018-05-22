@@ -37,7 +37,8 @@ extern "C" {
 /* API from R */
 
 SEXP processx_exec(SEXP command, SEXP args,
-		   SEXP std_in,  SEXP std_out, SEXP std_err, SEXP env,
+		   SEXP std_in,  SEXP std_out, SEXP std_err,
+		   SEXP connections, SEXP env,
 		   SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private_, SEXP cleanup,
 		   SEXP wd, SEXP encoding);
@@ -86,8 +87,6 @@ typedef struct {
   int windows_hide;
   const char *wd;
 } processx_options_t;
-
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 #ifdef __cplusplus
 }

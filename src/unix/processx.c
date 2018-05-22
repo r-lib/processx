@@ -7,9 +7,10 @@
 
 /* Internals */
 
-static void processx__child_init(processx_handle_t *handle, int pipes[3][2],
-				 char *command, char **args, int error_fd,
-				 const char *std_in, const char *std_out,
+static void processx__child_init(processx_handle_t *handle, int (*pipes)[2],
+				 int stdio_count, char *command, char **args,
+				 int error_fd, const char *std_in,
+				 const char *std_out,
 				 const char *std_err, char **env,
 				 processx_options_t *options);
 
@@ -69,70 +70,76 @@ void processx__write_int(int fd, int err) {
   (void) dummy;
 }
 
-static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
-				 char *command, char **args, int error_fd,
-				 const char *std_in, const char *std_out,
+static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
+				 int stdio_count, char *command, char **args,
+				 int error_fd, const char *std_in,
+				 const char *std_out,
 				 const char *std_err, char **env,
 				 processx_options_t *options) {
 
-  int fd0 = -1, fd1 = -1, fd2 = -1;
-  int i;
+  int close_fd, use_fd, fd, i;
+  const char *out_files[3] = { std_in, std_out, std_err };
 
   setsid();
 
   /* The dup2 calls make sure that stdin, stdout and stderr use file
-     descriptors 0, 1 and 3 respectively. */
+     descriptors 0, 1 and 2 respectively. */
 
-  /* stdin */
-
-  if (!std_in)  {
-    fd0 = open("/dev/null", O_RDONLY);
-  } else if (!strcmp(std_in, "|")) {
-    fd0 = pipes[0][1];
-    close(pipes[0][0]);
-  } else {
-    fd0 = open(std_in, O_RDONLY);
+  for (fd = 0; fd < stdio_count; fd++) {
+    use_fd = pipes[fd][1];
+    if (use_fd < 0 || use_fd >= fd) continue;
+    pipes[fd][1] = fcntl(use_fd, F_DUPFD, stdio_count);
+    if (pipes[fd][1] == -1) {
+      processx__write_int(error_fd, -errno);
+      raise(SIGKILL);
+    }
   }
-  if (fd0 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
 
-  if (fd0 != 0) fd0 = dup2(fd0, 0);
-  if (fd0 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
+  for (fd = 0; fd < stdio_count; fd++) {
+    close_fd = pipes[fd][0];
+    use_fd = pipes[fd][1];
 
-  /* stdout is going into file or a pipe */
+    if (use_fd < 0) {
+      if (fd >= 3) continue;
+      if (out_files[fd]) {
+	if (fd == 0) {
+	  use_fd = open(out_files[fd], O_RDONLY);
+	} else {
+	  use_fd = open(out_files[fd], O_CREAT | O_TRUNC| O_RDWR, 0644);
+	}
+      } else {
+	use_fd = open("/dev/null", fd == 0 ? O_RDONLY : O_RDWR);
+      }
+      close_fd = use_fd;
 
-  if (!std_out) {
-    fd1 = open("/dev/null", O_RDWR);
-  } else if (!strcmp(std_out, "|")) {
-    fd1 = pipes[1][1];
-    close(pipes[1][0]);
-  } else {
-    fd1 = open(std_out, O_CREAT | O_TRUNC| O_RDWR, 0644);
+      if (use_fd == -1) {
+	processx__write_int(error_fd, -errno);
+	raise(SIGKILL);
+      }
+    }
+
+    if (fd == use_fd) {
+      processx__cloexec_fcntl(use_fd, 0);
+    } else {
+      fd = dup2(use_fd, fd);
+    }
+
+    if (fd == -1) {
+      processx__write_int(error_fd, -errno);
+      raise(SIGKILL);
+    }
+
+    if (fd <= 2) processx__nonblock_fcntl(fd, 0);
+
+    if (close_fd >= stdio_count) close(close_fd);
   }
-  if (fd1 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
 
-  if (fd1 != 1) fd1 = dup2(fd1, 1);
-  if (fd1 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
-
-  /* stderr, to file or a pipe */
-
-  if (!std_err) {
-    fd2 = open("/dev/null", O_RDWR);
-  } else if (!strcmp(std_err, "|")) {
-    fd2 = pipes[2][1];
-    close(pipes[2][0]);
-  } else {
-    fd2 = open(std_err, O_CREAT | O_TRUNC| O_RDWR, 0644);
+  for (fd = 0; fd < stdio_count; fd++) {
+    use_fd = pipes[fd][1];
+    if (use_fd >= stdio_count) close(use_fd);
   }
-  if (fd2 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
 
-  if (fd2 != 2) fd2 = dup2(fd2, 2);
-  if (fd2 == -1) { processx__write_int(error_fd, - errno); raise(SIGKILL); }
-
-  processx__nonblock_fcntl(fd0, 0);
-  processx__nonblock_fcntl(fd1, 0);
-  processx__nonblock_fcntl(fd2, 0);
-
-  for (i = 3; i < error_fd; i++) {
+  for (i = stdio_count; i < error_fd; i++) {
     close(i);
   }
   for (i = error_fd + 1; ; i++) {
@@ -271,9 +278,9 @@ skip:
 }
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
-		   SEXP std_err, SEXP env, SEXP windows_verbatim_args,
-		   SEXP windows_hide_window, SEXP private, SEXP cleanup,
-		   SEXP wd, SEXP encoding) {
+		   SEXP std_err, SEXP connections, SEXP env,
+		   SEXP windows_verbatim_args, SEXP windows_hide_window,
+		   SEXP private, SEXP cleanup,  SEXP wd, SEXP encoding) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
@@ -289,10 +296,14 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   int err, exec_errorno = 0, status;
   ssize_t r;
   int signal_pipe[2] = { -1, -1 };
-  int pipes[3][2] = { { -1, -1 }, { -1, -1 }, { -1, -1 } };
+  int (*pipes)[2];
+  int i;
 
   processx_handle_t *handle = NULL;
   SEXP result;
+
+  pipes = (int(*)[2]) R_alloc(3, sizeof(int) * 2);
+  for (i = 0; i < 3; i++) pipes[i][0] = pipes[i][1] = -1;
 
   options.wd = isNull(wd) ? 0 : CHAR(STRING_ELT(wd, 0));
 
@@ -328,7 +339,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   /* CHILD */
   if (pid == 0) {
     /* LCOV_EXCL_START */
-    processx__child_init(handle, pipes, ccommand, cargs, signal_pipe[1],
+    processx__child_init(handle, pipes, 3, ccommand, cargs, signal_pipe[1],
 			 cstdin, cstdout, cstderr, cenv, &options);
     PROCESSX__ERROR("Cannot start child process", "");
     /* LCOV_EXCL_STOP */

@@ -20,6 +20,8 @@
 /* Data types                                                            */
 /* --------------------------------------------------------------------- */
 
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
 #ifdef _WIN32
 typedef HANDLE processx_file_handle_t;
 typedef struct {

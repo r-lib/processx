@@ -20,6 +20,17 @@
 #include "unix/processx-unix.h"
 #endif
 
+static const char* processx__connection_type_names[] = {
+  "INVALID",
+  "FILE",
+  "ASYNCFILE",
+  "PIPE",
+  "ASYNCPIPE"
+};
+
+static size_t processx__connection_type_num =
+  ARRAY_SIZE(processx__connection_type_names);
+
 /* Internal functions in this file */
 
 static void processx__connection_find_chars(processx_connection_t *ccon,
@@ -189,7 +200,7 @@ SEXP processx_connection_create_pipepair(SEXP encoding) {
   HANDLE h1, h2, h3, h4;
   processx__create_input_pipe(result, &h1, &h2);
   processx__create_pipe(result, &h3, &h4);
-  
+
 #else
   int pipe[2], h1, h2, h3, h4;
   processx__make_socketpair(pipe);
@@ -221,7 +232,23 @@ SEXP processx_connection_create_pipepair(SEXP encoding) {
 }
 
 SEXP processx_connection_get_description(SEXP con) {
-  /* TODO */
+  processx_connection_t *ccon = R_ExternalPtrAddr(con);
+  char buffer[50];
+  if (!ccon) error("Invalid connection object");
+
+  if (ccon->type == 0 || ccon->type > processx__connection_type_num) {
+    error("Invalid connection type");
+  }
+
+  const char *name = processx__connection_type_names[ccon->type];
+#ifdef _WIN32
+  snprintf(buffer, sizeof buffer - 1, "%s:%p", name,
+	   (UINT_PTR) ccon->handle.handle);
+#else
+  snprintf(buffer, sizeof buffer - 1, "%s:%d", name, (int) ccon->handle);
+#endif
+
+  return ScalarString(mkChar(buffer));
 }
 
 SEXP processx_connection_create_description(SEXP description) {
