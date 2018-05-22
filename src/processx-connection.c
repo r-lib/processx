@@ -20,17 +20,6 @@
 #include "unix/processx-unix.h"
 #endif
 
-static const char* processx__connection_type_names[] = {
-  "INVALID",
-  "FILE",
-  "ASYNCFILE",
-  "PIPE",
-  "ASYNCPIPE"
-};
-
-static size_t processx__connection_type_num =
-  ARRAY_SIZE(processx__connection_type_names);
-
 /* Internal functions in this file */
 
 static void processx__connection_find_chars(processx_connection_t *ccon,
@@ -87,6 +76,23 @@ SEXP processx_connection_create(SEXP handle, SEXP encoding) {
   if (!os_handle) error("Cannot create connection, invalid handle");
 
   processx_c_connection_create(*os_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
+			       c_encoding, &result);
+  return result;
+}
+
+SEXP processx_connection_create_fd(SEXP handle, SEXP encoding) {
+  int fd = INTEGER(handle)[0];
+  const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
+  processx_file_handle_t os_handle;
+  SEXP result = R_NilValue;
+
+#ifdef _WIN32
+  os_handle = _get_osfhandle(fd);
+#else
+  os_handle = fd;
+#endif
+
+  processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
 			       c_encoding, &result);
   return result;
 }
@@ -194,18 +200,19 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout) {
 
 SEXP processx_connection_create_pipepair(SEXP encoding) {
   const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
-  SEXP result, con1, con2, con3, con4;
+  SEXP result, con1, con2;
 
 #ifdef _WIN32
-  HANDLE h1, h2, h3, h4;
-  processx__create_input_pipe(result, &h1, &h2);
-  processx__create_pipe(result, &h3, &h4);
+  HANDLE h1, h2;
+  processx__create_pipe(result, &h1, &h2);
 
 #else
-  int pipe[2], h1, h2, h3, h4;
+  int pipe[2], h1, h2;
   processx__make_socketpair(pipe);
-  h1 = h3 = pipe[0];
-  h2 = h4 = pipe[1];
+  processx__nonblock_fcntl(pipe[0], 1);
+  processx__nonblock_fcntl(pipe[1], 0);
+  h1 = pipe[0];
+  h2 = pipe[1];
 #endif
 
   processx_c_connection_create(h1, PROCESSX_FILE_TYPE_ASYNCPIPE,
@@ -214,45 +221,13 @@ SEXP processx_connection_create_pipepair(SEXP encoding) {
   processx_c_connection_create(h2, PROCESSX_FILE_TYPE_ASYNCPIPE,
 			       c_encoding, &con2);
   PROTECT(con2);
-  processx_c_connection_create(h3, PROCESSX_FILE_TYPE_ASYNCPIPE,
-			       c_encoding, &con3);
-  PROTECT(con3);
-  processx_c_connection_create(h4, PROCESSX_FILE_TYPE_ASYNCPIPE,
-			       c_encoding, &con4);
-  PROTECT(con4);
 
-  result = PROTECT(allocVector(VECSXP, 4));
+  result = PROTECT(allocVector(VECSXP, 2));
   SET_VECTOR_ELT(result, 0, con1);
   SET_VECTOR_ELT(result, 1, con2);
-  SET_VECTOR_ELT(result, 2, con3);
-  SET_VECTOR_ELT(result, 3, con4);
 
-  UNPROTECT(5);
+  UNPROTECT(3);
   return result;
-}
-
-SEXP processx_connection_get_description(SEXP con) {
-  processx_connection_t *ccon = R_ExternalPtrAddr(con);
-  char buffer[50];
-  if (!ccon) error("Invalid connection object");
-
-  if (ccon->type == 0 || ccon->type > processx__connection_type_num) {
-    error("Invalid connection type");
-  }
-
-  const char *name = processx__connection_type_names[ccon->type];
-#ifdef _WIN32
-  snprintf(buffer, sizeof buffer - 1, "%s:%p", name,
-	   (UINT_PTR) ccon->handle.handle);
-#else
-  snprintf(buffer, sizeof buffer - 1, "%s:%d", name, (int) ccon->handle);
-#endif
-
-  return ScalarString(mkChar(buffer));
-}
-
-SEXP processx_connection_create_description(SEXP description) {
-  /* TODO */
 }
 
 /* Api from C -----------------------------------------------------------*/
@@ -780,6 +755,15 @@ int processx_c_pollable_from_connection(
   pollable->object = ccon;
   pollable->free = 0;
   return 0;
+}
+
+processx_file_handle_t processx_c_connection_fileno(
+  const processx_connection_t *con) {
+#ifdef _WIN32
+  return con->handle.handle;
+#else
+  return con->handle;
+#endif
 }
 
 /* --------------------------------------------------------------------- */
