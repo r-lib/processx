@@ -17,22 +17,6 @@ test_that("get_exit_status", {
   expect_identical(p$get_exit_status(), 1L)
 })
 
-test_that("restart", {
-
-  px <- get_tool("px")
-  p <- process$new(px, c("sleep", "5"))
-  expect_true(p$is_alive())
-
-  p$kill(grace = 0)
-
-  expect_false(p$is_alive())
-
-  p$restart()
-  expect_true(p$is_alive())
-
-  p$kill(grace = 0)
-})
-
 test_that("non existing process", {
   expect_error(process$new(tempfile()))
 })

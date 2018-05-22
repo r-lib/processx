@@ -25,7 +25,6 @@ NULL
 #' p$wait(timeout = -1)
 #' p$get_pid()
 #' p$get_exit_status()
-#' p$restart()
 #' p$get_start_time()
 #'
 #' p$read_output(n = -1)
@@ -150,8 +149,6 @@ NULL
 #' has started. In these cases processx cannot determine the real exit
 #' status of the process. One such package is parallel, if used with
 #' fork clusters, e.g. through the `parallel::mcparallel()` function.
-#'
-#' `$restart()` restarts a process. It returns the process itself.
 #'
 #' `$get_start_time()` returns the time when the process was
 #' started.
@@ -290,7 +287,7 @@ NULL
 #' p$kill()
 #' p$is_alive()
 #'
-#' p$restart()
+#' p <- process$new("sleep", "2")
 #' p$is_alive()
 #' Sys.sleep(3)
 #' p$is_alive()
@@ -332,9 +329,6 @@ process <- R6Class(
 
     get_exit_status = function()
       process_get_exit_status(self, private),
-
-    restart = function()
-      process_restart(self, private),
 
     print = function()
       process_print(self, private),
@@ -458,55 +452,6 @@ process <- R6Class(
       process_get_short_name(self, private)
   )
 )
-
-process_restart <- function(self, private) {
-
-  "!DEBUG process_restart `private$get_short_name()`"
-
-  ## Suicide if still alive
-  if (self$is_alive()) self$kill()
-
-  ## This makes sure that the finalizer does not modify `private`.
-  ## Otherwise we get a race condition, beacause we are trying to
-  ## set `private$exited`, `private$exitcode` and `private$pid` here,
-  ## but the finalizer also sets them, and the finalizer runs async.
-  ## So we set the tag of the external pointer to NULL here, which signals
-  ## the finalizer not to set `private$*`.
-  if (!is.null(private$status)) {
-    .Call(c_processx__disconnect_process_handle, private$status);
-  }
-
-  ## Wipe out state, to be sure
-  private$cleanfiles <- NULL
-  private$status <- NULL
-  private$exited <- FALSE
-  private$pid <- NULL
-  private$exitcode <- NULL
-  private$stdin_pipe <- NULL
-  private$stdout_pipe <- NULL
-  private$stderr_pipe <- NULL
-
-  process_initialize(
-    self,
-    private,
-    private$command,
-    private$args,
-    private$pstdin,
-    private$pstdout,
-    private$pstderr,
-    private$env,
-    private$cleanup,
-    private$wd,
-    private$echo_cmd,
-    private$supervised,
-    private$windows_verbatim_args,
-    private$windows_hide_window,
-    private$encoding,
-    private$post_process
-  )
-
-  invisible(self)
-}
 
 ## See the C source code for a discussion about the implementation
 ## of these methods

@@ -24,7 +24,6 @@ p$kill(grace = 0.1)
 p$wait(timeout = -1)
 p$get_pid()
 p$get_exit_status()
-p$restart()
 p$get_start_time()
 
 p$read_output(n = -1)
@@ -155,8 +154,6 @@ overwrites the processx SIGCHLD handler, after the processx process
 has started. In these cases processx cannot determine the real exit
 status of the process. One such package is parallel, if used with
 fork clusters, e.g. through the \code{parallel::mcparallel()} function.
-
-\code{$restart()} restarts a process. It returns the process itself.
 
 \code{$get_start_time()} returns the time when the process was
 started.
@@ -295,7 +292,7 @@ p
 p$kill()
 p$is_alive()
 
-p$restart()
+p <- process$new("sleep", "2")
 p$is_alive()
 Sys.sleep(3)
 p$is_alive()
