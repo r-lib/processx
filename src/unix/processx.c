@@ -10,7 +10,7 @@
 static void processx__child_init(processx_handle_t *handle, int pipes[3][2],
 				 char *command, char **args, int error_fd,
 				 const char *std_in, const char *std_out,
-				 const char *std_err,
+				 const char *std_err, char **env,
 				 processx_options_t *options);
 
 static SEXP processx__make_handle(SEXP private, int cleanup);
@@ -31,6 +31,13 @@ void processx__create_connections(processx_handle_t *handle, SEXP private,
 #include <byteswap.h>
 #define BSWAP_32(x) bswap_32(x)
 #endif
+#endif
+
+#if defined(__APPLE__) && !TARGET_OS_IPHONE
+# include <crt_externs.h>
+# define environ (*_NSGetEnviron())
+#else
+extern char **environ;
 #endif
 
 extern processx__child_list_t child_list_head;
@@ -65,7 +72,7 @@ void processx__write_int(int fd, int err) {
 static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
 				 char *command, char **args, int error_fd,
 				 const char *std_in, const char *std_out,
-				 const char *std_err,
+				 const char *std_err, char **env,
 				 processx_options_t *options) {
 
   int fd0 = -1, fd1 = -1, fd2 = -1;
@@ -136,6 +143,8 @@ static void processx__child_init(processx_handle_t* handle, int pipes[3][2],
     processx__write_int(error_fd, - errno);
     raise(SIGKILL);
   }
+
+  if (env) environ = env;
 
   execvp(command, args);
   processx__write_int(error_fd, - errno);
@@ -262,14 +271,15 @@ skip:
 }
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
-		   SEXP std_err, SEXP windows_verbatim_args,
+		   SEXP std_err, SEXP env, SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private, SEXP cleanup,
 		   SEXP wd, SEXP encoding) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
+  char **cenv = isNull(env) ? 0 : processx__tmp_character(env);
   int ccleanup = INTEGER(cleanup)[0];
-  const char *cstdin = isNull(std_in) ?  0 : CHAR(STRING_ELT(std_in, 0));
+  const char *cstdin = isNull(std_in) ? 0 : CHAR(STRING_ELT(std_in, 0));
   const char *cstdout = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
   const char *cstderr = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
@@ -319,7 +329,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   if (pid == 0) {
     /* LCOV_EXCL_START */
     processx__child_init(handle, pipes, ccommand, cargs, signal_pipe[1],
-			 cstdin, cstdout, cstderr, &options);
+			 cstdin, cstdout, cstderr, cenv, &options);
     PROCESSX__ERROR("Cannot start child process", "");
     /* LCOV_EXCL_STOP */
   }

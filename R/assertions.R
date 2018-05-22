@@ -78,3 +78,19 @@ is_list_of_processes <- function(x) {
 on_failure(is_list_of_processes) <- function(call, env) {
   paste0(deparse(call$x), " is not a list of process objects")
 }
+
+is_named_character <- function(x) {
+  is.character(x) && !any(is.na(x)) && is_named(x)
+}
+
+on_failure(is_named_character) <- function(call, env) {
+  paste0(deparse(call$x), " must be a named character vector")
+}
+
+is_named <- function(x) {
+  length(names(x)) == length(x) && all(names(x) != "")
+}
+
+on_failure(is_named) <- function(call, env) {
+  paste0(deparse(call$x), " must have non-empty names")
+}
