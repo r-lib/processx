@@ -4,6 +4,8 @@
 
 #include "../processx.h"
 
+#include <wchar.h>
+
 static HANDLE processx__global_job_handle = NULL;
 
 static void processx__init_global_job_handle(void) {
@@ -245,6 +247,226 @@ static int processx__make_program_args(SEXP args, int verbatim_arguments,
 
 error:
   return err;
+}
+
+/*
+ * The way windows takes environment variables is different than what C does;
+ * Windows wants a contiguous block of null-terminated strings, terminated
+ * with an additional null.
+ *
+ * Windows has a few "essential" environment variables. winsock will fail
+ * to initialize if SYSTEMROOT is not defined; some APIs make reference to
+ * TEMP. SYSTEMDRIVE is probably also important. We therefore ensure that
+ * these get defined if the input environment block does not contain any
+ * values for them.
+ *
+ * Also add variables known to Cygwin to be required for correct
+ * subprocess operation in many cases:
+ * https://github.com/Alexpux/Cygwin/blob/b266b04fbbd3a595f02ea149e4306d3ab9b1fe3d/winsup/cygwin/environ.cc#L955
+ *
+ */
+
+typedef struct env_var {
+  const WCHAR* const wide;
+  const WCHAR* const wide_eq;
+  const size_t len; /* including null or '=' */
+} env_var_t;
+
+#define E_V(str) { L##str, L##str L"=", sizeof(str) }
+
+static const env_var_t required_vars[] = { /* keep me sorted */
+  E_V("HOMEDRIVE"),
+  E_V("HOMEPATH"),
+  E_V("LOGONSERVER"),
+  E_V("PATH"),
+  E_V("SYSTEMDRIVE"),
+  E_V("SYSTEMROOT"),
+  E_V("TEMP"),
+  E_V("USERDOMAIN"),
+  E_V("USERNAME"),
+  E_V("USERPROFILE"),
+  E_V("WINDIR"),
+};
+static size_t n_required_vars = ARRAY_SIZE(required_vars);
+
+int env_strncmp(const wchar_t* a, int na, const wchar_t* b) {
+  wchar_t* a_eq;
+  wchar_t* b_eq;
+  wchar_t* A;
+  wchar_t* B;
+  int nb;
+  int r;
+
+  if (na < 0) {
+    a_eq = wcschr(a, L'=');
+    na = (int)(long)(a_eq - a);
+  } else {
+    na--;
+  }
+  b_eq = wcschr(b, L'=');
+  nb = b_eq - b;
+
+  A = alloca((na+1) * sizeof(wchar_t));
+  B = alloca((nb+1) * sizeof(wchar_t));
+
+  r = LCMapStringW(LOCALE_INVARIANT, LCMAP_UPPERCASE, a, na, A, na);
+  if (!r) PROCESSX_ERROR("make environment", GetLastError());
+  A[na] = L'\0';
+  r = LCMapStringW(LOCALE_INVARIANT, LCMAP_UPPERCASE, b, nb, B, nb);
+  if (!r) PROCESSX_ERROR("make environment", GetLastError());
+  B[nb] = L'\0';
+
+  while (1) {
+    wchar_t AA = *A++;
+    wchar_t BB = *B++;
+    if (AA < BB) {
+      return -1;
+    } else if (AA > BB) {
+      return 1;
+    } else if (!AA && !BB) {
+      return 0;
+    }
+  }
+}
+
+static int qsort_wcscmp(const void *a, const void *b) {
+  wchar_t* astr = *(wchar_t* const*)a;
+  wchar_t* bstr = *(wchar_t* const*)b;
+  return env_strncmp(astr, -1, bstr);
+}
+
+static int processx__make_program_env(SEXP env_block, WCHAR** dst_ptr) {
+  WCHAR* dst;
+  WCHAR* ptr;
+  size_t env_len = 0;
+  int len;
+  size_t i;
+  DWORD var_size;
+  size_t env_block_count = 1; /* 1 for null-terminator */
+  WCHAR* dst_copy;
+  WCHAR** ptr_copy;
+  WCHAR** env_copy;
+  DWORD* required_vars_value_len = alloca(n_required_vars * sizeof(DWORD*));
+  int j, num = LENGTH(env_block);
+
+  /* first pass: determine size in UTF-16 */
+  for (j = 0; j < num; j++) {
+    int len;
+    const char *env = CHAR(STRING_ELT(env_block, 0));
+    if (strchr(env, '=')) {
+      len = MultiByteToWideChar(CP_UTF8,
+                                0,
+                                env,
+                                -1,
+                                NULL,
+                                0);
+      if (len <= 0) {
+        return GetLastError();
+      }
+      env_len += len;
+      env_block_count++;
+    }
+  }
+
+  /* second pass: copy to UTF-16 environment block */
+  dst_copy = (WCHAR*) R_alloc(env_len, sizeof(WCHAR));
+  env_copy = alloca(env_block_count * sizeof(WCHAR*));
+
+  ptr = dst_copy;
+  ptr_copy = env_copy;
+  for (j = 0; j < num; j++) {
+    const char *env = CHAR(STRING_ELT(env_block, 0));
+    if (strchr(env, '=')) {
+      len = MultiByteToWideChar(CP_UTF8,
+                                0,
+                                env,
+                                -1,
+                                ptr,
+                                (int) (env_len - (ptr - dst_copy)));
+      if (len <= 0) {
+        DWORD err = GetLastError();
+        return err;
+      }
+      *ptr_copy++ = ptr;
+      ptr += len;
+    }
+  }
+  *ptr_copy = NULL;
+
+  /* sort our (UTF-16) copy */
+  qsort(env_copy, env_block_count-1, sizeof(wchar_t*), qsort_wcscmp);
+
+  /* third pass: check for required variables */
+  for (ptr_copy = env_copy, i = 0; i < n_required_vars; ) {
+    int cmp;
+    if (!*ptr_copy) {
+      cmp = -1;
+    } else {
+      cmp = env_strncmp(required_vars[i].wide_eq,
+                       required_vars[i].len,
+                        *ptr_copy);
+    }
+    if (cmp < 0) {
+      /* missing required var */
+      var_size = GetEnvironmentVariableW(required_vars[i].wide, NULL, 0);
+      required_vars_value_len[i] = var_size;
+      if (var_size != 0) {
+        env_len += required_vars[i].len;
+        env_len += var_size;
+      }
+      i++;
+    } else {
+      ptr_copy++;
+      if (cmp == 0)
+        i++;
+    }
+  }
+
+  /* final pass: copy, in sort order, and inserting required variables */
+  dst = (WCHAR*) R_alloc(1 + env_len, sizeof(WCHAR));
+
+  for (ptr = dst, ptr_copy = env_copy, i = 0;
+       *ptr_copy || i < n_required_vars;
+       ptr += len) {
+    int cmp;
+    if (i >= n_required_vars) {
+      cmp = 1;
+    } else if (!*ptr_copy) {
+      cmp = -1;
+    } else {
+      cmp = env_strncmp(required_vars[i].wide_eq,
+                        required_vars[i].len,
+                        *ptr_copy);
+    }
+    if (cmp < 0) {
+      /* missing required var */
+      len = required_vars_value_len[i];
+      if (len) {
+        wcscpy(ptr, required_vars[i].wide_eq);
+        ptr += required_vars[i].len;
+        var_size = GetEnvironmentVariableW(required_vars[i].wide,
+                                           ptr,
+                                           (int) (env_len - (ptr - dst)));
+        if (var_size != len-1) { /* race condition? */
+          PROCESSX_ERROR("GetEnvironmentVariableW", GetLastError());
+        }
+      }
+      i++;
+    } else {
+      /* copy var from env_block */
+      len = wcslen(*ptr_copy) + 1;
+      wmemcpy(ptr, *ptr_copy, len);
+      ptr_copy++;
+      if (cmp == 0)
+        i++;
+    }
+  }
+
+  /* Terminate with an extra NULL. */
+  *ptr = L'\0';
+
+  *dst_ptr = dst;
+  return 0;
 }
 
 static WCHAR* processx__search_path_join_test(const WCHAR* dir,
@@ -621,7 +843,7 @@ void processx__handle_destroy(processx_handle_t *handle) {
 }
 
 SEXP processx_exec(SEXP command, SEXP args,
-		   SEXP std_in, SEXP std_out, SEXP std_err,
+		   SEXP std_in, SEXP std_out, SEXP std_err, SEXP env,
 		   SEXP windows_verbatim_args, SEXP windows_hide,
 		   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding) {
 
@@ -634,7 +856,7 @@ SEXP processx_exec(SEXP command, SEXP args,
   int err = 0;
   WCHAR *path;
   WCHAR *application_path = NULL, *application = NULL, *arguments = NULL,
-    *cwd = NULL;
+    *cenv = NULL, *cwd = NULL;
   processx_options_t options;
   STARTUPINFOW startup = { 0 };
   PROCESS_INFORMATION info = { 0 };
@@ -657,6 +879,11 @@ SEXP processx_exec(SEXP command, SEXP args,
       options.windows_verbatim_args,
       &arguments);
   if (err) { PROCESSX_ERROR("making program args", err); }
+
+  if (! isNull(env)) {
+     err = processx__make_program_env(env, &cenv);
+     if (err) PROCESSX_ERROR("making environment", err);
+  }
 
   if (ccwd) {
     /* Explicit cwd */
@@ -755,7 +982,7 @@ SEXP processx_exec(SEXP command, SEXP args,
     /* lpThreadAttributes =   */ NULL,
     /* bInheritHandles =      */ 1,
     /* dwCreationFlags =      */ process_flags,
-    /* lpEnvironment =        */ NULL,
+    /* lpEnvironment =        */ cenv,
     /* lpCurrentDirectory =   */ cwd,
     /* lpStartupInfo =        */ &startup,
     /* lpProcessInformation = */ &info);

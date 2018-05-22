@@ -56,7 +56,7 @@ process_initialize <- function(self, private, command, args,
 
   if (echo_cmd) do_echo_cmd(command, args)
 
-  if (!is.null(env)) env <- paste(names(env), sep = "=", env)
+  if (!is.null(env)) env <- enc2utf8(paste(names(env), sep = "=", env))
 
   "!DEBUG process_initialize exec()"
   private$status <- .Call(
