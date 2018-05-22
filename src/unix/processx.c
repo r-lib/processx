@@ -291,6 +291,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   const char *cstderr = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
   processx_options_t options = { 0 };
+  int num_connections = LENGTH(connections) + 3;
 
   pid_t pid;
   int err, exec_errorno = 0, status;
@@ -302,8 +303,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   processx_handle_t *handle = NULL;
   SEXP result;
 
-  pipes = (int(*)[2]) R_alloc(3, sizeof(int) * 2);
-  for (i = 0; i < 3; i++) pipes[i][0] = pipes[i][1] = -1;
+  pipes = (int(*)[2]) R_alloc(num_connections, sizeof(int) * 2);
+  for (i = 0; i < num_connections; i++) pipes[i][0] = pipes[i][1] = -1;
 
   options.wd = isNull(wd) ? 0 : CHAR(STRING_ELT(wd, 0));
 
@@ -323,6 +324,13 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   if (cstdout && !strcmp(cstdout, "|")) processx__make_socketpair(pipes[1]);
   if (cstderr && !strcmp(cstderr, "|")) processx__make_socketpair(pipes[2]);
 
+  for (i = 0; i < num_connections - 3; i++) {
+    processx_connection_t *ccon =
+      R_ExternalPtrAddr(VECTOR_ELT(connections, i));
+    int fd = processx_c_connection_fileno(ccon);
+    pipes[i + 3][1] = fd;
+  }
+
   processx__block_sigchld();
 
   pid = fork();
@@ -339,8 +347,9 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   /* CHILD */
   if (pid == 0) {
     /* LCOV_EXCL_START */
-    processx__child_init(handle, pipes, 3, ccommand, cargs, signal_pipe[1],
-			 cstdin, cstdout, cstderr, cenv, &options);
+    processx__child_init(handle, pipes, num_connections, ccommand, cargs,
+			 signal_pipe[1], cstdin, cstdout, cstderr, cenv,
+			 &options);
     PROCESSX__ERROR("Cannot start child process", "");
     /* LCOV_EXCL_STOP */
   }

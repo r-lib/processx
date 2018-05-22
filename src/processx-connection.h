@@ -113,6 +113,9 @@ typedef struct processx_pollable_s {
 /* Create connection from fd / HANDLE */
 SEXP processx_connection_create(SEXP handle, SEXP encoding);
 
+/* Create from fd, this is only different on Windows */
+SEXP processx_connection_create_fd(SEXP handle, SEXP encoding);
+
 /* Read characters in a given encoding from the connection. */
 SEXP processx_connection_read_chars(SEXP con, SEXP nchars);
 
@@ -134,10 +137,6 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout);
 
 /* Functions for connection inheritance */
 SEXP processx_connection_create_pipepair();
-
-SEXP processx_connection_get_description(SEXP con);
-
-SEXP processx_connection_create_description(SEXP description);
 
 /* --------------------------------------------------------------------- */
 /* API from C                                                            */
@@ -190,6 +189,9 @@ int processx_c_connection_poll(
 int processx_c_pollable_from_connection(
   processx_pollable_t *pollable,
   processx_connection_t *ccon);
+
+processx_file_handle_t processx_c_connection_fileno(
+  const processx_connection_t *con);
 
 /* --------------------------------------------------------------------- */
 /* Internals                                                             */
