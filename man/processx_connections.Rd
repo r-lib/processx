@@ -4,7 +4,7 @@
 \alias{conn_create_fd}
 \alias{conn_create_pipepair}
 \alias{conn_read_chars}
-\alias{read_chars.processx_connection}
+\alias{conn_read_chars.processx_connection}
 \alias{conn_read_lines}
 \alias{conn_read_lines.processx_connection}
 \alias{conn_is_incomplete}
@@ -19,7 +19,7 @@ conn_create_pipepair(encoding = "")
 
 conn_read_chars(con, n = -1)
 
-read_chars.processx_connection(con, n = -1)
+conn_read_chars.processx_connection(con, n = -1)
 
 conn_read_lines(con, n = -1)
 
