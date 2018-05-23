@@ -2,6 +2,14 @@
 #ifndef R_PROCESSX_UNIX_H
 #define R_PROCESSX_UNIX_H
 
+# ifndef O_CLOEXEC
+#  define O_CLOEXEC 02000000
+# endif
+
+# ifndef SOCK_CLOEXEC
+#  define SOCK_CLOEXEC O_CLOEXEC
+# endif
+
 typedef struct processx_handle_s {
   int exitcode;
   int collected;	 /* Whether exit code was collected already */
