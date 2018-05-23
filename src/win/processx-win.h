@@ -18,6 +18,7 @@ typedef struct processx_handle_s {
 int processx__utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr);
 
 int processx__stdio_create(processx_handle_t *handle,
+			   HANDLE* extra_connections, int num_connections,
 			   const char *std_in, const char *std_out,
 			   const char *std_err,
 			   BYTE** buffer_ptr, SEXP privatex,
@@ -25,6 +26,8 @@ int processx__stdio_create(processx_handle_t *handle,
 WORD processx__stdio_size(BYTE* buffer);
 HANDLE processx__stdio_handle(BYTE* buffer, int fd);
 void processx__stdio_destroy(BYTE* buffer);
+
+int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_ptr);
 
 void processx__handle_destroy(processx_handle_t *handle);
 

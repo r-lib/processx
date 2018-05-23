@@ -843,7 +843,8 @@ void processx__handle_destroy(processx_handle_t *handle) {
 }
 
 SEXP processx_exec(SEXP command, SEXP args,
-		   SEXP std_in, SEXP std_out, SEXP std_err, SEXP env,
+		   SEXP std_in, SEXP std_out, SEXP std_err,
+		   SEXP connections, SEXP env,
 		   SEXP windows_verbatim_args, SEXP windows_hide,
 		   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding) {
 
@@ -852,6 +853,9 @@ SEXP processx_exec(SEXP command, SEXP args,
   const char *cstd_err = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
   const char *ccwd = isNull(wd) ? 0 : CHAR(STRING_ELT(wd, 0));
+  int i, num_connections = LENGTH(connections) + 3;
+  HANDLE* extra_connections =
+    (HANDLE*) R_alloc(num_connections - 3, sizeof(HANDLE));
 
   int err = 0;
   WCHAR *path;
@@ -929,7 +933,14 @@ SEXP processx_exec(SEXP command, SEXP args,
   result = PROTECT(processx__make_handle(private, ccleanup));
   handle = R_ExternalPtrAddr(result);
 
-  err = processx__stdio_create(handle, cstd_in, cstd_out, cstd_err,
+  for (i = 0; i < num_connections - 3; i++) {
+    processx_connection_t *ccon =
+      R_ExternalPtrAddr(VECTOR_ELT(connections, i));
+    extra_connections[i] = processx_c_connection_fileno(ccon);
+  }
+
+  err = processx__stdio_create(handle, extra_connections, num_connections,
+			       cstd_in, cstd_out, cstd_err,
 			       &handle->child_stdio_buffer, private,
 			       cencoding);
   if (err) { PROCESSX_ERROR("setup stdio", err); }

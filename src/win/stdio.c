@@ -275,33 +275,74 @@ processx_connection_t * processx__create_connection(
   return con;
 }
 
+static int processx__duplicate_handle(HANDLE handle, HANDLE* dup) {
+  HANDLE current_process;
+
+  /* _get_osfhandle will sometimes return -2 in case of an error. This seems */
+  /* to happen when fd <= 2 and the process' corresponding stdio handle is */
+  /* set to NULL. Unfortunately DuplicateHandle will happily duplicate */
+  /* (HANDLE) -2, so this situation goes unnoticed until someone tries to */
+  /* use the duplicate. Therefore we filter out known-invalid handles here. */
+  if (handle == INVALID_HANDLE_VALUE ||
+      handle == NULL ||
+      handle == (HANDLE) -2) {
+    *dup = INVALID_HANDLE_VALUE;
+    return ERROR_INVALID_HANDLE;
+  }
+
+  current_process = GetCurrentProcess();
+
+  if (!DuplicateHandle(current_process,
+                       handle,
+                       current_process,
+                       dup,
+                       0,
+                       TRUE,
+                       DUPLICATE_SAME_ACCESS)) {
+    *dup = INVALID_HANDLE_VALUE;
+    return GetLastError();
+  }
+
+  return 0;
+}
+
 int processx__stdio_create(processx_handle_t *handle,
+			   HANDLE *extra_connections, int count,
 			   const char *std_in, const char *std_out,
 			   const char *std_err,
 			   BYTE** buffer_ptr, SEXP private,
 			   const char *encoding) {
   BYTE* buffer;
-  int count, i;
+  int i;
   int err;
 
-  HANDLE pipe_handle[3] = { 0, 0, 0 };
-  count = 3;
+  if (count > 255) error("Too many processx connections to inherit");
 
+  /* Allocate the child stdio buffer */
   buffer = malloc(CHILD_STDIO_SIZE(count));
   if (!buffer) { error("Out of memory"); }
 
+  /* Prepopulate the buffer with INVALID_HANDLE_VALUE handles, so we can
+     clean up on failure*/
   CHILD_STDIO_COUNT(buffer) = count;
   for (i = 0; i < count; i++) {
     CHILD_STDIO_CRT_FLAGS(buffer, i) = 0;
     CHILD_STDIO_HANDLE(buffer, i) = INVALID_HANDLE_VALUE;
   }
 
+  handle->pipes[0] = handle->pipes[1] = handle->pipes[2] = 0;
+
   for (i = 0; i < count; i++) {
     DWORD access = (i == 0) ? FILE_GENERIC_READ | FILE_WRITE_ATTRIBUTES :
       FILE_GENERIC_WRITE | FILE_READ_ATTRIBUTES;
-    const char *output = i == 0 ? std_in : (i == 1 ? std_out : std_err);
+    const char *output;
 
-    handle->pipes[i] = 0;
+    switch (i) {
+    case 0:  output = std_in;  break;
+    case 1:  output = std_out; break;
+    case 2:  output = std_err; break;
+    default: output = "";     break;
+    }
 
     if (!output) {
       /* ignored output */
@@ -309,7 +350,7 @@ int processx__stdio_create(processx_handle_t *handle,
       if (err) { goto error; }
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
 
-    } else if (strcmp("|", output)) {
+    } else if (output[0] != '\0' && strcmp("|", output)) {
       /* output to file */
       if (i == 0) {
 	err = processx__create_input_handle(&CHILD_STDIO_HANDLE(buffer, i),
@@ -321,34 +362,60 @@ int processx__stdio_create(processx_handle_t *handle,
       if (err) { goto error; }
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
 
-    } else {
+    } else if (output[0] != '\0') {
       /* piped output */
       processx_connection_t *con = 0;
+      HANDLE parent_handle;
       const char *r_pipe_name = i == 0 ? "stdin_pipe" :
 	(i == 1 ? "stdout_pipe" : "stderr_pipe");
       if (i == 0) {
-	err = processx__create_input_pipe(handle, &pipe_handle[i],
+	err = processx__create_input_pipe(handle, &parent_handle,
 					  &CHILD_STDIO_HANDLE(buffer, i));
       } else {
-	err = processx__create_pipe(handle, &pipe_handle[i],
+	err = processx__create_pipe(handle, &parent_handle,
 				    &CHILD_STDIO_HANDLE(buffer, i));
       }
       if (err) goto error;
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FPIPE;
-      con = processx__create_connection(pipe_handle[i], r_pipe_name,
+      con = processx__create_connection(parent_handle, r_pipe_name,
 					private, encoding, i != 0);
       handle->pipes[i] = con;
+
+    } else {
+      /* inherited output */
+      HANDLE child_handle;
+
+      err = processx__duplicate_handle(extra_connections[i - 3], &child_handle);
+      if (err) goto error;
+
+      switch (GetFileType(child_handle)) {
+      case FILE_TYPE_DISK:
+	CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN;
+	break;
+      case FILE_TYPE_PIPE:
+	CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
+	break;
+      case FILE_TYPE_CHAR:
+      case FILE_TYPE_REMOTE:
+      case FILE_TYPE_UNKNOWN:
+	CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
+	break;
+      default:
+	err = -1;
+	goto error;
+      }
     }
   }
 
-  *buffer_ptr  = buffer;
+  *buffer_ptr = buffer;
   return 0;
 
  error:
-  free(buffer);
-  for (i = 0; i < count; i++) {
-    if (pipe_handle[i]) CloseHandle(pipe_handle[i]);
-    if (handle->pipes[i]) free(handle->pipes[i]);
+  processx__stdio_destroy(buffer);
+  for (i = 0; i < 3; i++) {
+    if (handle->pipes[i]) {
+      processx_c_connection_destroy(handle->pipes[i]);
+    }
   }
   return err;
 }
