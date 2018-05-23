@@ -87,7 +87,7 @@ SEXP processx_connection_create_fd(SEXP handle, SEXP encoding) {
   SEXP result = R_NilValue;
 
 #ifdef _WIN32
-  os_handle = _get_osfhandle(fd);
+  os_handle = (HANDLE) _get_osfhandle(fd);
 #else
   os_handle = fd;
 #endif
@@ -204,7 +204,7 @@ SEXP processx_connection_create_pipepair(SEXP encoding) {
 
 #ifdef _WIN32
   HANDLE h1, h2;
-  processx__create_pipe(result, &h1, &h2);
+  processx__create_pipe(0, &h1, &h2);
 
 #else
   int pipe[2], h1, h2;
