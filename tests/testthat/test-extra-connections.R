@@ -4,38 +4,47 @@ context("extra connections")
 test_that("writing to extra connection", {
 
   skip_on_cran()
-  skip_other_platforms("unix")
-  skip_if_no_tool("bash")
+
+  if (os_type() == "unix")  {
+    skip_if_no_tool("bash")
+    cmd <- c("bash", "-c", "read -t 5 line <&3; echo $line")
+  } else {
+    cmd <- c(get_tool("px"), "echo", "3", "7")
+  }
 
   pipe <- conn_create_pipepair()
 
   expect_silent(
-    p <- process$new(
-      "bash", c("-c", "read -t 1000 line <&3; echo $line"),
-      stdout = "|", stderr = "|", connections = list(pipe[[2]])
+    p <- process$new(cmd[1], cmd[-1],
+      stdout = "|", stderr = "|", connections = list(pipe[[1]])
     )
   )
 
   on.exit(p$kill())
 
-  conn_write(pipe[[1]], "foobar\n")
+  conn_write(pipe[[2]], "foobar\n")
   p$poll_io(-1)
-  expect_equal(p$read_output_lines(), "foobar")
+  expect_equal(p$read_all_output_lines(), "foobar")
+  expect_equal(p$read_all_error_lines(), character())
 })
 
 test_that("reading from extra connection", {
 
   skip_on_cran()
-  skip_other_platforms("unix")
-  skip_if_no_tool("bash")
+
+  if (os_type() == "unix") {
+    skip_if_no_tool("bash")
+    cmd <- c("bash", "-c", "sleep .5; echo foobar >&3; echo ok")
+  } else {
+    cmd <- c(get_tool("px"), "sleep", "1", "write", "3", "foobar\r\n", "out", "ok")
+  }
 
   pipe <- conn_create_pipepair()
 
   on.exit(p$kill())
   expect_silent(
-    p <- process$new(
-      "bash", c("-c", "sleep .5; echo foobar >&3; echo ok"),
-      stdout = "|", stderr = "|", connections = list(pipe[[2]])
+    p <- process$new(cmd[1], cmd[-1], stdout = "|", stderr = "|",
+      connections = list(pipe[[2]])
     )
   )
 
@@ -45,7 +54,8 @@ test_that("reading from extra connection", {
   ## Wait until there is output
   p$poll_io(-1)
   expect_equal(conn_read_lines(pipe[[1]]), "foobar")
-  expect_equal(p$read_output_lines(), "ok")
+  expect_equal(p$read_all_output_lines(), "ok")
+  expect_equal(p$read_all_error_lines(), character())
 })
 
 test_that("reading and writing to extra connection", {
