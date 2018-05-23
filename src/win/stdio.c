@@ -341,7 +341,7 @@ int processx__stdio_create(processx_handle_t *handle,
     case 0:  output = std_in;  break;
     case 1:  output = std_out; break;
     case 2:  output = std_err; break;
-    default: output = "";     break;
+    default: output = "";      break;
     }
 
     if (!output) {
@@ -404,6 +404,8 @@ int processx__stdio_create(processx_handle_t *handle,
 	err = -1;
 	goto error;
       }
+
+      CHILD_STDIO_HANDLE(buffer, i) = child_handle;
     }
   }
 

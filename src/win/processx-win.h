@@ -28,6 +28,7 @@ HANDLE processx__stdio_handle(BYTE* buffer, int fd);
 void processx__stdio_destroy(BYTE* buffer);
 
 int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_ptr);
+int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_ptr);
 
 void processx__handle_destroy(processx_handle_t *handle);
 
