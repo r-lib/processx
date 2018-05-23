@@ -328,6 +328,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
     processx_connection_t *ccon =
       R_ExternalPtrAddr(VECTOR_ELT(connections, i));
     int fd = processx_c_connection_fileno(ccon);
+    processx__nonblock_fcntl(fd, 0);
     pipes[i + 3][1] = fd;
   }
 
