@@ -5,7 +5,7 @@ test_that("writing to extra connection", {
 
   skip_on_cran()
 
-  msg <- "foobar\n"
+  msg <- "foobar"
   cmd <- c(get_tool("px"), "echo", "3", "1", nchar(msg))
 
   pipe <- conn_create_pipepair()
@@ -20,7 +20,7 @@ test_that("writing to extra connection", {
 
   conn_write(pipe[[2]], msg)
   p$poll_io(-1)
-  expect_equal(p$read_all_output(), msg)
+  expect_equal(p$read_all_output_lines(), msg)
   expect_equal(p$read_all_error_lines(), character())
 })
 
