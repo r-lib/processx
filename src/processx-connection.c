@@ -272,30 +272,7 @@ processx_connection_t *processx_c_connection_create(
   con->handle.handle = os_handle;
   memset(&con->handle.overlapped, 0, sizeof(OVERLAPPED));
   con->handle.read_pending = FALSE;
-  if (type == PROCESSX_FILE_TYPE_ASYNCFILE ||
-      type == PROCESSX_FILE_TYPE_ASYNCPIPE) {
-    con->handle.overlapped.hEvent = CreateEvent(
-      /* lpEventAttributes = */ NULL,
-      /* bManualReset = */      FALSE,
-      /* bInitialState = */     FALSE,
-      /* lpName = */            NULL);
-
-    if (con->handle.overlapped.hEvent == NULL) {
-      free(con);
-      PROCESSX_ERROR("Cannot create connection event", GetLastError());
-      return 0; 			/* never reached */
-    }
-
-    HANDLE iocp = processx__get_default_iocp();
-    HANDLE res = CreateIoCompletionPort(
-      /* FileHandle =  */                con->handle.handle,
-      /* ExistingCompletionPort = */     iocp,
-      /* CompletionKey = */              (ULONG_PTR) con,
-      /* NumberOfConcurrentThreads = */  0);
-
-    if (!res) PROCESSX_ERROR("cannot add file to IOCP", GetLastError());
-  }
-
+  con->handle.overlapped.hEvent = NULL;
 #else
   con->handle = os_handle;
 #endif
@@ -656,6 +633,29 @@ void processx__connection_start_read(processx_connection_t *ccon) {
   if (! ccon->handle.handle) return;
 
   if (ccon->handle.read_pending) return;
+
+  if (! ccon->handle.overlapped.hEvent &&
+      (ccon->type == PROCESSX_FILE_TYPE_ASYNCFILE ||
+       ccon->type == PROCESSX_FILE_TYPE_ASYNCPIPE)) {
+    ccon->handle.overlapped.hEvent = CreateEvent(
+      /* lpEventAttributes = */ NULL,
+      /* bManualReset = */      FALSE,
+      /* bInitialState = */     FALSE,
+      /* lpName = */            NULL);
+
+    if (ccon->handle.overlapped.hEvent == NULL) {
+      PROCESSX_ERROR("Cannot read from connection", GetLastError());
+    }
+
+    HANDLE iocp = processx__get_default_iocp();
+    HANDLE res = CreateIoCompletionPort(
+      /* FileHandle =  */                ccon->handle.handle,
+      /* ExistingCompletionPort = */     iocp,
+      /* CompletionKey = */              (ULONG_PTR) ccon,
+      /* NumberOfConcurrentThreads = */  0);
+
+    if (!res) PROCESSX_ERROR("cannot add file to IOCP", GetLastError());
+  }
 
   if (!ccon->buffer) processx__connection_alloc(ccon);
 
