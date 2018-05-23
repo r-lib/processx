@@ -49,7 +49,7 @@ conn_read_chars <- function(con, n = -1)
 #' @rdname processx_connections
 #' @export
 
-read_chars.processx_connection <- function(con, n = -1) {
+conn_read_chars.processx_connection <- function(con, n = -1) {
   assert_that(is_connection(con), is_integerish_scalar(n))
   .Call(c_processx_connection_read_chars, con, n)
 }
