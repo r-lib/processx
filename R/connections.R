@@ -44,7 +44,7 @@ conn_create_pipepair <- function(encoding = "") {
 #' @export
 
 conn_read_chars <- function(con, n = -1)
-  NextMethod("conn_read_chars")
+  UseMethod("conn_read_chars")
 
 #' @rdname processx_connections
 #' @export
@@ -60,7 +60,7 @@ conn_read_chars.processx_connection <- function(con, n = -1) {
 #' @export
 
 conn_read_lines <- function(con, n = -1)
-  NextMethod("conn_read_lines")
+  UseMethod("conn_read_lines")
 
 #' @rdname processx_connections
 #' @export
@@ -77,7 +77,7 @@ conn_read_lines.processx_connection <- function(con, n = -1) {
 #' @export
 
 conn_is_incomplete <- function(con)
-  NextMethod("conn_is_incomplete")
+  UseMethod("conn_is_incomplete")
 
 #' @rdname processx_connections
 #' @export
@@ -100,7 +100,7 @@ conn_is_incomplete.processx_connection <- function(con) {
 #' @export
 
 conn_write <- function(con, str, sep = "\n", encoding = "")
-  NextMethod("conn_write")
+  UseMethod("conn_write")
 
 #' @rdname processx_connections
 #' @export

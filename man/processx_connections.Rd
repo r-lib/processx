@@ -19,19 +19,20 @@ conn_create_pipepair(encoding = "")
 
 conn_read_chars(con, n = -1)
 
-conn_read_chars.processx_connection(con, n = -1)
+\method{conn_read_chars}{processx_connection}(con, n = -1)
 
 conn_read_lines(con, n = -1)
 
-conn_read_lines.processx_connection(con, n = -1)
+\method{conn_read_lines}{processx_connection}(con, n = -1)
 
 conn_is_incomplete(con)
 
-conn_is_incomplete.processx_connection(con)
+\method{conn_is_incomplete}{processx_connection}(con)
 
 conn_write(con, str, sep = "\\n", encoding = "")
 
-conn_write.processx_connection(con, str, sep = "\\n", encoding = "")
+\method{conn_write}{processx_connection}(con, str, sep = "\\n",
+  encoding = "")
 }
 \arguments{
 \item{fd}{Integer scalar, a Unix file descriptor.}
