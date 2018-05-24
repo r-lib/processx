@@ -34,19 +34,19 @@ test_that("poll a connection and a process", {
   ## At least one of them is ready. Usually both on Unix, but on Windows
   ## it is different because the IOCP is a queue
   pr <- poll(list(out, p2), 2000)
-  expect_true(pr[[1]] == "ready"  || pr[[2]]$output == "ready")
+  expect_true(pr[[1]] == "ready"  || pr[[2]][["output"]] == "ready")
 
   p1$poll_io(2000)
   p2$poll_io(2000)
   p1$read_output_lines()
   p2$read_output_lines()
   pr <- poll(list(out, p2), 2000)
-  expect_true(pr[[1]] == "ready"  || pr[[2]]$output == "ready")
+  expect_true(pr[[1]] == "ready"  || pr[[2]][["output"]] == "ready")
 
   p1$kill()
   p2$kill()
   pr <- poll(list(out, p2), 2000)
-  expect_true(pr[[1]] == "ready"  || pr[[2]]$output == "ready")
+  expect_true(pr[[1]] == "ready"  || pr[[2]][["output"]] == "ready")
 
   close(out)
   close(p2$get_output_connection())
