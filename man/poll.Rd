@@ -7,35 +7,36 @@
 poll(processes, ms)
 }
 \arguments{
-\item{processes}{A list of \code{process} objects to wait on. If this is a
-named list, then the returned list will have the same names. This
-simplifies the identification of the processes. If an empty list,
-then the}
+\item{processes}{A list of connection objects or\code{process} objects to
+wait on. (They can be mixed as well.) If this is a named list, then
+the returned list will have the same names. This simplifies the
+identification of the processes.}
 
 \item{ms}{Integer scalar, a timeout for the polling, in milliseconds.
 Supply -1 for an infitite timeout, and 0 for not waiting at all.}
 }
 \value{
-A list of character vectors of length two. There is one list
-element for each process, in the same order as in the input list.
-The character vectors' elements are named \code{output} and \code{error} and
-their possible values are: \code{nopipe}, \code{ready}, \code{timeout}, \code{closed},
-\code{silent}. See details about these below.
+A list of character vectors of length one or two.
+There is one list element for each process, in the same order as in
+the input list. For connections the result is a single string scalar.
+For processes the character vectors' elements are named \code{output} and
+\code{error}. Possible values for each individual result are: \code{nopipe},
+\code{ready}, \code{timeout}, \code{closed}, \code{silent}. See details about these below.
 }
 \description{
-Wait until one of the specified processes produce standard output
-or error, terminates, or a timeout occurs.
+Wait until one of the specified connections or processes produce
+standard output or error, terminates, or a timeout occurs.
 }
 \section{Explanation of the return values}{
 
 \itemize{
 \item \code{nopipe} means that the stdout or stderr from this process was not
 captured.
-\item \code{ready} means that stdout or stderr from this process are ready to
-read from. Note that end-of-file on these outputs also triggers
-\code{ready}.
-\item timeout`: the processes are not ready to read from and a timeout
-happened.
+\item \code{ready} means that the connection or the stdout or stderr from this
+process are ready to read from. Note that end-of-file on these
+outputs also triggers \code{ready}.
+\item timeout`: the connections or processes are not ready to read from
+and a timeout happened.
 \item \code{closed}: the connection was already closed, before the polling
 started.
 \item \code{silent}: the connection is not ready to read from, but another

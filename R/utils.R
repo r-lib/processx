@@ -160,3 +160,8 @@ str_wrap_words <- function(words, width, indent = 0, exdent = 2) {
 
   out
 }
+
+set_names <- function(x, n) {
+  names(x) <- n
+  x
+}

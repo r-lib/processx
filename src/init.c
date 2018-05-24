@@ -17,7 +17,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_signal",             (DL_FUNC) &processx_signal,             2 },
   { "processx_kill",               (DL_FUNC) &processx_kill,               2 },
   { "processx_get_pid",            (DL_FUNC) &processx_get_pid,            1 },
-  { "processx_poll",               (DL_FUNC) &processx_poll,               2 },
+  { "processx_poll",               (DL_FUNC) &processx_poll,               3 },
   { "processx__process_exists",    (DL_FUNC) &processx__process_exists,    1 },
   { "processx__killem_all",        (DL_FUNC) &processx__killem_all,        0 },
   { "processx_is_named_pipe_open", (DL_FUNC) &processx_is_named_pipe_open, 1 },
