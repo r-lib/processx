@@ -1,5 +1,5 @@
 
-process_print <- function(self, private) {
+process_format <- function(self, private) {
 
   state <- if (self$is_alive()) {
     pid <- self$get_pid()
@@ -8,14 +8,16 @@ process_print <- function(self, private) {
     "finished."
   }
 
-  cat(
-    sep = "",
+  paste0(
     "PROCESS ",
     "'", private$get_short_name(), "', ",
     state,
     "\n"
   )
+}
 
+process_print <- function(self, private) {
+  cat(process_format(self, private))
   invisible(self)
 }
 

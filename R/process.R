@@ -50,6 +50,7 @@ NULL
 #'
 #' p$get_result()
 #'
+#' format(p)
 #' print(p)
 #' ```
 #'
@@ -265,6 +266,8 @@ NULL
 #' It can only be called once the process has finished. If the process has
 #' no post-processing function, then `NULL` is returned.
 #'
+#' `format(p)` or `p$format()` creates a string representation of the
+#' process, usually for printing.
 #'
 #' `print(p)` or `p$print()` shows some information about the
 #' process on the screen, whether it is running and it's process id, etc.
@@ -332,6 +335,9 @@ process <- R6Class(
 
     get_exit_status = function()
       process_get_exit_status(self, private),
+
+    format = function()
+      process_format(self, private),
 
     print = function()
       process_print(self, private),

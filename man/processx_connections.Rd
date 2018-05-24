@@ -13,7 +13,7 @@
 \alias{conn_write.processx_connection}
 \title{Processx connections}
 \usage{
-conn_create_fd(fd, encoding = "")
+conn_create_fd(fd, encoding = "", close = TRUE)
 
 conn_create_pipepair(encoding = "")
 
