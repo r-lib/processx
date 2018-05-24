@@ -48,6 +48,7 @@ typedef struct processx_connection_s {
   int is_closed_;
   int is_eof_;			/* the UTF8 buffer */
   int is_eof_raw_;		/* the raw file */
+  int close_on_destroy;
 
   char *encoding;
   void *iconv_ctx;
@@ -114,7 +115,7 @@ typedef struct processx_pollable_s {
 SEXP processx_connection_create(SEXP handle, SEXP encoding);
 
 /* Create from fd, this is only different on Windows */
-SEXP processx_connection_create_fd(SEXP handle, SEXP encoding);
+SEXP processx_connection_create_fd(SEXP handle, SEXP encoding, SEXP close);
 
 /* Read characters in a given encoding from the connection. */
 SEXP processx_connection_read_chars(SEXP con, SEXP nchars);

@@ -37,7 +37,7 @@ static const R_CallMethodDef callMethods[]  = {
 
   { "processx_connection_create_pipepair",
     (DL_FUNC) processx_connection_create_pipepair, 1 },
-  { "processx_connection_create_fd",  (DL_FUNC) &processx_connection_create_fd,  2 },
+  { "processx_connection_create_fd",  (DL_FUNC) &processx_connection_create_fd,  3 },
 
   { "run_testthat_tests", (DL_FUNC) &run_testthat_tests, 0 },
 

@@ -14,12 +14,13 @@
 #' @rdname processx_connections
 #' @export
 
-conn_create_fd <- function(fd, encoding = "") {
+conn_create_fd <- function(fd, encoding = "", close = TRUE) {
   assert_that(
     is_integerish_scalar(fd),
-    is_string(encoding))
+    is_string(encoding),
+    is_flag(close))
   fd <- as.integer(fd)
-  .Call(c_processx_connection_create_fd, fd, encoding)
+  .Call(c_processx_connection_create_fd, fd, encoding, close)
 }
 
 #' `conn_create_pipepair()` creates a pair of connected connections, the

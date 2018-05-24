@@ -80,10 +80,11 @@ SEXP processx_connection_create(SEXP handle, SEXP encoding) {
   return result;
 }
 
-SEXP processx_connection_create_fd(SEXP handle, SEXP encoding) {
+SEXP processx_connection_create_fd(SEXP handle, SEXP encoding, SEXP close) {
   int fd = INTEGER(handle)[0];
   const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
   processx_file_handle_t os_handle;
+  processx_connection_t *con;
   SEXP result = R_NilValue;
 
 #ifdef _WIN32
@@ -92,8 +93,11 @@ SEXP processx_connection_create_fd(SEXP handle, SEXP encoding) {
   os_handle = fd;
 #endif
 
-  processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
-			       c_encoding, &result);
+  con = processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
+				     c_encoding, &result);
+
+  if (! LOGICAL(close)[0]) con->close_on_destroy = 0;
+
   return result;
 }
 
@@ -248,6 +252,7 @@ processx_connection_t *processx_c_connection_create(
   con->is_closed_ = 0;
   con->is_eof_  = 0;
   con->is_eof_raw_ = 0;
+  con->close_on_destroy = 1;
   con->iconv_ctx = 0;
 
   con->buffer = 0;
@@ -292,9 +297,9 @@ processx_connection_t *processx_c_connection_create(
 /* Destroy */
 void processx_c_connection_destroy(processx_connection_t *ccon) {
 
-  processx_c_connection_close(ccon);
-
   if (!ccon) return;
+
+  if (ccon->close_on_destroy) processx_c_connection_close(ccon);
 
   if (ccon->iconv_ctx) Riconv_close(ccon->iconv_ctx);
 
