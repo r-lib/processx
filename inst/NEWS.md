@@ -1,5 +1,5 @@
 
-# processx 3.1.0.9000
+# processx 3.1.0.9001
 
 * `poll()` now works with connections objects, and they can be mixed with
   process objects (#121).
