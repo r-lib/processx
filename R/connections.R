@@ -9,6 +9,9 @@
 #'
 #' @param fd Integer scalar, a Unix file descriptor.
 #' @param encoding Encoding of the readable connection when reading.
+#' @param close Whether to close the OS file descriptor when closing
+#'   the connection. Sometimes you want to leave it open, and use it again
+#'   in a `conn_create_fd` call.
 #' Encoding to re-encode `str` into when writing.
 #'
 #' @rdname processx_connections
