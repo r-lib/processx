@@ -20,15 +20,19 @@ SEXP processx_poll(SEXP statuses, SEXP conn, SEXP ms) {
     SEXP status = VECTOR_ELT(statuses, i);
     if (LOGICAL(conn)[i]) {
       processx_connection_t *handle = R_ExternalPtrAddr(status);
-      processx_c_pollable_from_connection(&pollables[j++], handle);
+      processx_c_pollable_from_connection(&pollables[j], handle);
+      if (handle) handle->poll_idx = j;
+      j++;
       SET_VECTOR_ELT(result, i, allocVector(INTSXP, 1));
 
     } else {
       processx_handle_t *handle = R_ExternalPtrAddr(status);
-      processx_c_pollable_from_connection(&pollables[j++], handle->pipes[1]);
-      if (handle->pipes[1]) handle->pipes[1]->poll_idx = i * 2;
-      processx_c_pollable_from_connection(&pollables[j++], handle->pipes[2]);
-      if (handle->pipes[2]) handle->pipes[2]->poll_idx = i * 2 + 1;
+      processx_c_pollable_from_connection(&pollables[j], handle->pipes[1]);
+      if (handle->pipes[1]) handle->pipes[1]->poll_idx = j;
+      j++;
+      processx_c_pollable_from_connection(&pollables[j], handle->pipes[2]);
+      if (handle->pipes[2]) handle->pipes[2]->poll_idx = j;
+      j++;
       SET_VECTOR_ELT(result, i, allocVector(INTSXP, 2));
     }
   }

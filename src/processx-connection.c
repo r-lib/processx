@@ -277,7 +277,6 @@ processx_connection_t *processx_c_connection_create(
   con->handle.handle = os_handle;
   memset(&con->handle.overlapped, 0, sizeof(OVERLAPPED));
   con->handle.read_pending = FALSE;
-  con->handle.overlapped.hEvent = NULL;
 #else
   con->handle = os_handle;
 #endif
