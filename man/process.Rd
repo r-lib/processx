@@ -13,7 +13,8 @@ streams. The process id is then used to manage the process.
 \section{Usage}{
 \preformatted{p <- process$new(command = NULL, args,
                  stdin = NULL, stdout = NULL, stderr = NULL,
-                 connections = list(), env = NULL, cleanup = TRUE,
+                 connections = list(), poll_connection = NULL,
+                 env = NULL, cleanup = TRUE,
                  wd = NULL, echo_cmd = FALSE, supervise = FALSE,
                  windows_verbatim_args = FALSE,
                  windows_hide_window = FALSE,
@@ -31,9 +32,14 @@ p$read_output(n = -1)
 p$read_error(n = -1)
 p$read_output_lines(n = -1)
 p$read_error_lines(n = -1)
+p$has_input_connection()
+p$has_output_connection()
+p$has_error_connection()
+p$has_poll_connection()
 p$get_input_connection()
 p$get_output_connection()
 p$get_error_connection()
+p$get_poll_connection()
 p$is_incomplete_output()
 p$is_incomplete_error()
 p$read_all_output()
@@ -77,6 +83,15 @@ provided; a string, supply the specified string as standard input;
 \code{"|"}: create a connection for it.
 \item \code{connections}: A list of connections to pass to the child process.
 This is an experimental feature currently.
+\item \code{poll_connection}: Whether to create an extra connection to the process
+that allows polling, even if the standard input and standard output
+are not pipes. If this is \code{NULL} (the default), then this connection
+will be only created if standard output and standard error are not
+pipes, and \code{connections} is an empty list. If the poll connection is
+created, you can query it via \code{p$get_poll_connection()} and it is
+also included in the response to \code{p$poll_io()} and \code{\link[=poll]{poll()}}. The
+numeric file descriptor of the poll connection comes right after
+\code{stderr} (2), and the connections listed in \code{connections}.
 \item \code{env}: Environment variables of the child process. If \code{NULL}, the
 parent's environment is inherited. On Windows, many programs cannot
 function correctly if some environment variables are not set, so we
@@ -189,12 +204,19 @@ error.
 \code{$read_error_lines()} is similar to \code{$read_output_lines}, but
 it reads from the standard error stream.
 
+\code{$has_input_connection()} return \code{TRUE} if there is a connection
+object for standard input; in other words, if \code{stdout="|"}. It returns
+\code{FALSE} otherwise.
+
 \code{$has_output_connection()} returns \code{TRUE} if there is a connection
 object for standard output; in other words, if \code{stdout="|"}. It returns
 \code{FALSE} otherwise.
 
 \code{$has_error_connection()} returns \code{TRUE} if there is a connection
 object for standard error; in other words, if \code{stderr="|"}. It returns
+\code{FALSE} otherwise.
+
+\code{$has_poll_connection()} return \code{TRUE} if there is a poll connection,
 \code{FALSE} otherwise.
 
 \code{$get_input_connection()} returns a connection object, to the
@@ -205,6 +227,9 @@ standard output stream of the process.
 
 \code{$get_error_conneciton()} returns a connection object, to the
 standard error stream of the process.
+
+\code{$get_poll_connetion()} returns the poll connection, if the process has
+one.
 
 \code{$is_incomplete_output()} return \code{FALSE} if the other end of
 the standard output connection was closed (most probably because the

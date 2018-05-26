@@ -9,6 +9,7 @@
 #' @param stdout Standard output, NULL to ignore, TRUE for temp file.
 #' @param stderr Standard error, NULL to ignore, TRUE for temp file.
 #' @param connections Connections to inherit in the child process.
+#' @param poll_connection Whether to create a connection for polling.
 #' @param env Environment vaiables.
 #' @param cleanup Kill on GC?
 #' @param wd working directory (or NULL)
@@ -21,10 +22,10 @@
 #' @importFrom utils head tail
 
 process_initialize <- function(self, private, command, args,
-                               stdin, stdout, stderr, connections, env,
-                               cleanup, wd, echo_cmd, supervise,
-                               windows_verbatim_args, windows_hide_window,
-                               encoding, post_process) {
+                               stdin, stdout, stderr, connections,
+                               poll_connection, env, cleanup, wd, echo_cmd,
+                               supervise, windows_verbatim_args,
+                               windows_hide_window, encoding, post_process) {
 
   "!DEBUG process_initialize `command`"
 
@@ -34,6 +35,7 @@ process_initialize <- function(self, private, command, args,
   assert_that(is_string_or_null(stdout))
   assert_that(is_string_or_null(stderr))
   assert_that(is_connection_list(connections))
+  assert_that(is.null(poll_connection) || is_flag(poll_connection))
   assert_that(is.null(env) || is_named_character(env))
   assert_that(is_flag(cleanup))
   assert_that(is_string_or_null(wd))
@@ -57,6 +59,15 @@ process_initialize <- function(self, private, command, args,
   private$windows_hide_window <- windows_hide_window
   private$encoding <- encoding
   private$post_process <- post_process
+
+  poll_connection <- poll_connection %||%
+    (!identical(stdout, "|") && !identical(stderr, "|") &&
+     !length(connections))
+  if (poll_connection) {
+    pipe <- conn_create_pipepair()
+    connections <- c(connections, pipe[[2]])
+    private$poll_pipe <- pipe[[1]]
+  }
 
   if (echo_cmd) do_echo_cmd(command, args)
 

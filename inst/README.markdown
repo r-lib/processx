@@ -139,13 +139,16 @@ result <- run(px, "--help", echo = TRUE)
 ```
 #> Usage: px [command arg] [command arg] ...
 #> 
-#> Commands:   sleep  <seconds>  -- sleep for a number os seconds
-#>             out    <string>   -- print string to stdout
-#>             err    <string>   -- print string to stderr
-#>             outln  <string>   -- print string to stdout, add newline
-#>             errln  <string>   -- print string to stderr, add newline
-#>             cat    <filename> -- print file to stdout
-#>             return <exitcode> -- return with exitcode
+#> Commands:
+#>   sleep  <seconds>           -- sleep for a number os seconds
+#>   out    <string>            -- print string to stdout
+#>   err    <string>            -- print string to stderr
+#>   outln  <string>            -- print string to stdout, add newline
+#>   errln  <string>            -- print string to stderr, add newline
+#>   cat    <filename>          -- print file to stdout
+#>   return <exitcode>          -- return with exitcode
+#>   write <fd> <string>        -- write to file descriptor
+#>   echo <fd1> <fd2> <nbytes>  -- echo from fd to another fd
 ```
 
 > Note: From version 3.0.1, processx does not let you specify a full
@@ -252,7 +255,7 @@ out2
 #>  [4] "Makefile"           "NAMESPACE"          "NEWS.md"           
 #>  [7] "R"                  "README.Rmd"         "README.markdown"   
 #> [10] "_pkgdown.yml"       "appveyor.yml"       "docs"              
-#> [13] "inst"               "man"                "revdep"            
+#> [13] "inst"               "man"                "processx.Rproj"    
 #> [16] "src"                "tests"
 ```
 
@@ -392,8 +395,8 @@ gc()
 
 ```
 #>          used (Mb) gc trigger (Mb) max used (Mb)
-#> Ncells 422816 22.6     750400 40.1   592000 31.7
-#> Vcells 840479  6.5    1650153 12.6  1061286  8.1
+#> Ncells 423484 22.7     750400 40.1   592000 31.7
+#> Vcells 841455  6.5    1650153 12.6  1076488  8.3
 ```
 
 Here, the direct call to the garbage collector kills the `sleep` process
@@ -495,8 +498,8 @@ p$poll_io(5000)
 ```
 
 ```
-#>   output    error 
-#>  "ready" "nopipe"
+#>   output    error  process 
+#>  "ready" "nopipe" "nopipe"
 ```
 
 ```r
@@ -527,12 +530,12 @@ poll(list(p1 = p1, p2 = p2), 100)
 
 ```
 #> $p1
-#>    output     error 
-#> "timeout"  "nopipe" 
+#>    output     error   process 
+#> "timeout"  "nopipe"  "nopipe" 
 #> 
 #> $p2
-#>    output     error 
-#>  "nopipe" "timeout"
+#>    output     error   process 
+#>  "nopipe" "timeout"  "nopipe"
 ```
 
 ```r
@@ -542,12 +545,12 @@ poll(list(p1 = p1, p2 = p2), 1000)
 
 ```
 #> $p1
-#>   output    error 
-#>  "ready" "nopipe" 
+#>   output    error  process 
+#>  "ready" "nopipe" "nopipe" 
 #> 
 #> $p2
-#>   output    error 
-#> "nopipe" "silent"
+#>   output    error  process 
+#> "nopipe" "silent" "nopipe"
 ```
 
 ```r
@@ -574,12 +577,12 @@ poll(list(p1 = p1, p2 = p2), 5000)
 
 ```
 #> $p1
-#>   output    error 
-#> "closed" "nopipe" 
+#>   output    error  process 
+#> "closed" "nopipe" "nopipe" 
 #> 
 #> $p2
-#>   output    error 
-#> "nopipe"  "ready"
+#>   output    error  process 
+#> "nopipe"  "ready" "nopipe"
 ```
 
 ```r
@@ -612,7 +615,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2018-05-22 11:30:42 BST"
+#> [1] "2018-05-26 21:00:00 BST"
 ```
 
 ```r
@@ -621,7 +624,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2018-05-22 11:30:44 BST"
+#> [1] "2018-05-26 21:00:02 BST"
 ```
 
 It is safe to call `wait()` multiple times:
@@ -669,7 +672,7 @@ p <- process$new("nonexistant-command-for-sure")
 ```
 
 ```
-#> Error in process_initialize(self, private, command, args, stdin, stdout, : processx error: 'No such file or directory' at unix/processx.c:403
+#> Error in process_initialize(self, private, command, args, stdin, stdout, : processx error: 'No such file or directory' at unix/processx.c:424
 ```
 
 

@@ -1,10 +1,11 @@
 
-context("poll connections")
+context("polling connections")
 
 test_that("poll a connection", {
 
   px <- get_tool("px")
   p <- process$new(px, c("sleep", ".5", "outln", "foobar"), stdout = "|")
+  on.exit(p$kill())
   out <- p$get_output_connection()
 
   ## Timeout
@@ -24,12 +25,17 @@ test_that("poll a connection and a process", {
   px <- get_tool("px")
   p1 <- process$new(px, c("sleep", ".5", "outln", "foobar"), stdout = "|")
   p2 <- process$new(px, c("sleep", ".5", "outln", "foobar"), stdout = "|")
+  on.exit(p1$kill(), add = TRUE)
+  on.exit(p2$kill(), add = TRUE)
   out <- p1$get_output_connection()
 
   ## Timeout
   expect_equal(
     poll(list(out, p2), 0),
-    list("timeout", c(output = "timeout", error = "nopipe")))
+    list(
+      "timeout",
+      c(output = "timeout", error = "nopipe", process = "nopipe"))
+  )
 
   ## At least one of them is ready. Usually both on Unix, but on Windows
   ## it is different because the IOCP is a queue
@@ -52,5 +58,6 @@ test_that("poll a connection and a process", {
   close(p2$get_output_connection())
   expect_equal(
     poll(list(out, p2), 2000),
-    list("closed", c(output = "closed", error = "nopipe")))
+    list("closed", c(output = "closed", error = "nopipe", process = "nopipe"))
+  )
 })

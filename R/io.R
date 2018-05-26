@@ -14,6 +14,11 @@ process_has_error_connection <- function(self, private) {
   !is.null(private$stderr_pipe)
 }
 
+process_has_poll_connection <- function(self, private) {
+  "!DEBUG process_has_error_connection `private$get_short_name()`"
+  !is.null(private$poll_pipe)
+}
+
 process_get_input_connection <- function(self, private) {
   "!DEBUG process_get_input_connection `private$get_short_name()`"
   if (!self$has_input_connection())
@@ -33,6 +38,12 @@ process_get_error_connection <- function(self, private) {
   if (!self$has_error_connection())
     stop("stderr is not a pipe.")
   private$stderr_pipe
+}
+
+process_get_poll_connection <- function(self, private) {
+  "!DEBUG process_get_poll_connection `private$get_short_name()`"
+  if (!self$has_poll_connection()) stop("No poll connection")
+  private$poll_pipe
 }
 
 process_read_output <- function(self, private, n) {

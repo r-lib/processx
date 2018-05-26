@@ -17,26 +17,20 @@
 #' * `silent`: the connection is not ready to read from, but another
 #'   connection was.
 #'
-#' @section Known issues:
-#'
-#' `poll()` cannot wait on the termination of a process directly. It is
-#' only signalled through the closed stdout and stderr pipes. This means
-#' that if both stdout and stderr are ignored or closed for a process,
-#' then you will not be notified when it exits. If you want to wait for
-#' just a single process to end, it can be done with the `$wait()` method.
-#'
 #' @param processes A list of connection objects or`process` objects to
 #'   wait on. (They can be mixed as well.) If this is a named list, then
 #'   the returned list will have the same names. This simplifies the
 #'   identification of the processes.
 #' @param ms Integer scalar, a timeout for the polling, in milliseconds.
 #'   Supply -1 for an infitite timeout, and 0 for not waiting at all.
-#' @return A list of character vectors of length one or two.
-#'   There is one list element for each process, in the same order as in
-#'   the input list. For connections the result is a single string scalar.
-#'   For processes the character vectors' elements are named `output` and
-#'   `error`. Possible values for each individual result are: `nopipe`,
-#'   `ready`, `timeout`, `closed`, `silent`. See details about these below.
+#' @return A list of character vectors of length one or three.
+#'   There is one list element for each connection/process, in the same
+#'   order as in the input list. For connections the result is a single
+#'   string scalar. For processes the character vectors' elements are named
+#'   `output`, `error` and `process`. Possible values for each individual
+#'   result are: `nopipe`, `ready`, `timeout`, `closed`, `silent`.
+#'   See details about these below. `process` refers to the poll connection,
+#'   see the `poll_connection` argument of the `process` initializer.
 #'
 #' @export
 #' @examples
@@ -81,13 +75,13 @@ poll <- function(processes, ms) {
   }
   conn <- vapply(processes, is_connection, logical(1))
   processes[!conn] <- lapply(processes[!conn], function(p) {
-    p$.__enclos_env__$private$status
+    list(get_private(p)$status, get_private(p)$poll_pipe)
   })
 
   res <- .Call(c_processx_poll, processes, conn, as.integer(ms))
   res <- lapply(res, function(x) poll_codes[x])
   res[!conn] <- lapply(res[!conn], function(x) {
-    set_names(x, c("output", "error"))
+    set_names(x, c("output", "error", "process"))
   })
   names(res) <- names(processes)
   res

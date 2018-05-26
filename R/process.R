@@ -14,7 +14,8 @@ NULL
 #' ```
 #' p <- process$new(command = NULL, args,
 #'                  stdin = NULL, stdout = NULL, stderr = NULL,
-#'                  connections = list(), env = NULL, cleanup = TRUE,
+#'                  connections = list(), poll_connection = NULL,
+#'                  env = NULL, cleanup = TRUE,
 #'                  wd = NULL, echo_cmd = FALSE, supervise = FALSE,
 #'                  windows_verbatim_args = FALSE,
 #'                  windows_hide_window = FALSE,
@@ -32,9 +33,14 @@ NULL
 #' p$read_error(n = -1)
 #' p$read_output_lines(n = -1)
 #' p$read_error_lines(n = -1)
+#' p$has_input_connection()
+#' p$has_output_connection()
+#' p$has_error_connection()
+#' p$has_poll_connection()
 #' p$get_input_connection()
 #' p$get_output_connection()
 #' p$get_error_connection()
+#' p$get_poll_connection()
 #' p$is_incomplete_output()
 #' p$is_incomplete_error()
 #' p$read_all_output()
@@ -75,6 +81,15 @@ NULL
 #'     `"|"`: create a connection for it.
 #' * `connections`: A list of connections to pass to the child process.
 #'     This is an experimental feature currently.
+#' * `poll_connection`: Whether to create an extra connection to the process
+#'     that allows polling, even if the standard input and standard output
+#'     are not pipes. If this is `NULL` (the default), then this connection
+#'     will be only created if standard output and standard error are not
+#'     pipes, and `connections` is an empty list. If the poll connection is
+#'     created, you can query it via `p$get_poll_connection()` and it is
+#'     also included in the response to `p$poll_io()` and [poll()]. The
+#'     numeric file descriptor of the poll connection comes right after
+#'     `stderr` (2), and the connections listed in `connections`.
 #' * `env`: Environment variables of the child process. If `NULL`, the
 #'     parent's environment is inherited. On Windows, many programs cannot
 #'     function correctly if some environment variables are not set, so we
@@ -184,12 +199,19 @@ NULL
 #' `$read_error_lines()` is similar to `$read_output_lines`, but
 #' it reads from the standard error stream.
 #'
+#' `$has_input_connection()` return `TRUE` if there is a connection
+#' object for standard input; in other words, if `stdout="|"`. It returns
+#' `FALSE` otherwise.
+#'
 #' `$has_output_connection()` returns `TRUE` if there is a connection
 #' object for standard output; in other words, if `stdout="|"`. It returns
 #' `FALSE` otherwise.
 #'
 #' `$has_error_connection()` returns `TRUE` if there is a connection
 #' object for standard error; in other words, if `stderr="|"`. It returns
+#' `FALSE` otherwise.
+#'
+#' `$has_poll_connection()` return `TRUE` if there is a poll connection,
 #' `FALSE` otherwise.
 #'
 #' `$get_input_connection()` returns a connection object, to the
@@ -200,6 +222,9 @@ NULL
 #'
 #' `$get_error_conneciton()` returns a connection object, to the
 #' standard error stream of the process.
+#'
+#' `$get_poll_connetion()` returns the poll connection, if the process has
+#' one.
 #'
 #' `$is_incomplete_output()` return `FALSE` if the other end of
 #' the standard output connection was closed (most probably because the
@@ -310,13 +335,14 @@ process <- R6Class(
 
     initialize = function(command = NULL, args = character(),
       stdin = NULL, stdout = NULL, stderr = NULL, connections = list(),
-      env = NULL, cleanup = TRUE, wd = NULL, echo_cmd = FALSE,
-      supervise = FALSE, windows_verbatim_args = FALSE,
+      poll_connection = NULL, env = NULL, cleanup = TRUE, wd = NULL,
+      echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
       windows_hide_window = FALSE, encoding = "",  post_process = NULL)
       process_initialize(self, private, command, args, stdin,
-                         stdout, stderr, connections, env, cleanup, wd,
-                         echo_cmd, supervise, windows_verbatim_args,
-                         windows_hide_window, encoding, post_process),
+                         stdout, stderr, connections, poll_connection,
+                         env, cleanup, wd, echo_cmd, supervise,
+                         windows_verbatim_args, windows_hide_window,
+                         encoding, post_process),
 
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
@@ -380,6 +406,9 @@ process <- R6Class(
     has_error_connection = function()
       process_has_error_connection(self, private),
 
+    has_poll_connection = function()
+      process_has_poll_connection(self, private),
+
     get_input_connection =  function()
       process_get_input_connection(self, private),
 
@@ -416,6 +445,9 @@ process <- R6Class(
     poll_io = function(timeout)
       process_poll_io(self, private, timeout),
 
+    get_poll_connection = function()
+      process_get_poll_connection(self, private),
+
     get_result = function()
       process_get_result(self, private)
   ),
@@ -448,6 +480,7 @@ process <- R6Class(
     stdin_pipe = NULL,
     stdout_pipe = NULL,
     stderr_pipe = NULL,
+    poll_pipe = NULL,
 
     encoding = "",
 

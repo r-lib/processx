@@ -8,6 +8,7 @@
 /src/processx.dll
 /src/tools/*.exe
 /src/tools/px
+/src/tools/px.dSYM/
 /src-i386
 /src-x64
 /src/supervisor/supervisor
