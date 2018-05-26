@@ -407,9 +407,9 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   }
 
   /* Closed unused ends of pipes */
-  if (pipes[0][1] >= 0) close(pipes[0][1]);
-  if (pipes[1][1] >= 0) close(pipes[1][1]);
-  if (pipes[2][1] >= 0) close(pipes[2][1]);
+  for (i = 0; i < num_connections; i++) {
+    if (pipes[i][1] >= 0) close(pipes[i][1]);
+  }
 
   /* Create proper connections */
   processx__create_connections(handle, private, cencoding);
