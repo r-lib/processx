@@ -49,7 +49,7 @@ SEXP processx_signal(SEXP status, SEXP signal);
 SEXP processx_kill(SEXP status, SEXP grace);
 SEXP processx_get_pid(SEXP status);
 
-SEXP processx_poll(SEXP statuses, SEXP ms);
+SEXP processx_poll(SEXP statuses, SEXP conn, SEXP ms);
 
 SEXP processx__process_exists(SEXP pid);
 SEXP processx__disconnect_process_handle(SEXP status);

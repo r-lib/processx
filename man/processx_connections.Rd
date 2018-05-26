@@ -13,30 +13,35 @@
 \alias{conn_write.processx_connection}
 \title{Processx connections}
 \usage{
-conn_create_fd(fd, encoding = "")
+conn_create_fd(fd, encoding = "", close = TRUE)
 
 conn_create_pipepair(encoding = "")
 
 conn_read_chars(con, n = -1)
 
-conn_read_chars.processx_connection(con, n = -1)
+\method{conn_read_chars}{processx_connection}(con, n = -1)
 
 conn_read_lines(con, n = -1)
 
-conn_read_lines.processx_connection(con, n = -1)
+\method{conn_read_lines}{processx_connection}(con, n = -1)
 
 conn_is_incomplete(con)
 
-conn_is_incomplete.processx_connection(con)
+\method{conn_is_incomplete}{processx_connection}(con)
 
 conn_write(con, str, sep = "\\n", encoding = "")
 
-conn_write.processx_connection(con, str, sep = "\\n", encoding = "")
+\method{conn_write}{processx_connection}(con, str, sep = "\\n",
+  encoding = "")
 }
 \arguments{
 \item{fd}{Integer scalar, a Unix file descriptor.}
 
-\item{encoding}{Encoding of the readable connection when reading.
+\item{encoding}{Encoding of the readable connection when reading.}
+
+\item{close}{Whether to close the OS file descriptor when closing
+the connection. Sometimes you want to leave it open, and use it again
+in a \code{conn_create_fd} call.
 Encoding to re-encode \code{str} into when writing.}
 
 \item{con}{Processx connection object.}

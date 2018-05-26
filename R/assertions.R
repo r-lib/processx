@@ -71,12 +71,15 @@ on_failure(is_time_interval) <- function(call, env) {
   paste0(deparse(call$x), " is not a valid time interval")
 }
 
-is_list_of_processes <- function(x) {
-  is.list(x) && vapply(x, inherits, FUN.VALUE = logical(1), "process")
+is_list_of_pollables <- function(x) {
+  if (!is.list(x)) return(FALSE)
+  proc <- vapply(x, inherits, FUN.VALUE = logical(1), "process")
+  conn <- vapply(x, is_connection, logical(1))
+  all(proc | conn)
 }
 
-on_failure(is_list_of_processes) <- function(call, env) {
-  paste0(deparse(call$x), " is not a list of process objects")
+on_failure(is_list_of_pollables) <- function(call, env) {
+  paste0(deparse(call$x), " is not a list of pollable objects")
 }
 
 is_named_character <- function(x) {

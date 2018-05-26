@@ -9,17 +9,21 @@
 #'
 #' @param fd Integer scalar, a Unix file descriptor.
 #' @param encoding Encoding of the readable connection when reading.
+#' @param close Whether to close the OS file descriptor when closing
+#'   the connection. Sometimes you want to leave it open, and use it again
+#'   in a `conn_create_fd` call.
 #' Encoding to re-encode `str` into when writing.
 #'
 #' @rdname processx_connections
 #' @export
 
-conn_create_fd <- function(fd, encoding = "") {
+conn_create_fd <- function(fd, encoding = "", close = TRUE) {
   assert_that(
     is_integerish_scalar(fd),
-    is_string(encoding))
+    is_string(encoding),
+    is_flag(close))
   fd <- as.integer(fd)
-  .Call(c_processx_connection_create_fd, fd, encoding)
+  .Call(c_processx_connection_create_fd, fd, encoding, close)
 }
 
 #' `conn_create_pipepair()` creates a pair of connected connections, the
@@ -44,7 +48,7 @@ conn_create_pipepair <- function(encoding = "") {
 #' @export
 
 conn_read_chars <- function(con, n = -1)
-  NextMethod("conn_read_chars")
+  UseMethod("conn_read_chars")
 
 #' @rdname processx_connections
 #' @export
@@ -60,7 +64,7 @@ conn_read_chars.processx_connection <- function(con, n = -1) {
 #' @export
 
 conn_read_lines <- function(con, n = -1)
-  NextMethod("conn_read_lines")
+  UseMethod("conn_read_lines")
 
 #' @rdname processx_connections
 #' @export
@@ -77,7 +81,7 @@ conn_read_lines.processx_connection <- function(con, n = -1) {
 #' @export
 
 conn_is_incomplete <- function(con)
-  NextMethod("conn_is_incomplete")
+  UseMethod("conn_is_incomplete")
 
 #' @rdname processx_connections
 #' @export
@@ -100,7 +104,7 @@ conn_is_incomplete.processx_connection <- function(con) {
 #' @export
 
 conn_write <- function(con, str, sep = "\n", encoding = "")
-  NextMethod("conn_write")
+  UseMethod("conn_write")
 
 #' @rdname processx_connections
 #' @export

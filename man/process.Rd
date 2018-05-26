@@ -49,6 +49,7 @@ p$poll_io(timeout)
 
 p$get_result()
 
+format(p)
 print(p)
 }
 }
@@ -269,6 +270,9 @@ to poll on multiple processes.
 \code{$get_result()} returns the result of the post processesing function.
 It can only be called once the process has finished. If the process has
 no post-processing function, then \code{NULL} is returned.
+
+\code{format(p)} or \code{p$format()} creates a string representation of the
+process, usually for printing.
 
 \code{print(p)} or \code{p$print()} shows some information about the
 process on the screen, whether it is running and it's process id, etc.

@@ -1,5 +1,8 @@
 
-# processx 3.1.0.9000
+# processx 3.1.0.9001
+
+* `poll()` now works with connections objects, and they can be mixed with
+  process objects (#121).
 
 * Support writing to the standard input of a process (#27, #114).
 
@@ -15,7 +18,7 @@
   handler is overwritten, we might miss the exit status of some processes
   (they are set to `NA`).
 
-* `run()` and  `process$new()` allow specifying the working directory
+* `run()` and `process$new()` allow specifying the working directory
   of the process (#63).
 
 * Make the debugme package an optional dependency (#74).

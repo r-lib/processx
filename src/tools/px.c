@@ -57,7 +57,7 @@ void cat(const char* filename) {
 
 int write_to_fd(int fd, const char *s) {
   size_t len = strlen(s);
-  int ret = write(fd, s, len);
+  ssize_t ret = write(fd, s, len);
   if (ret != len) {
     fprintf(stderr, "Cannot write to fd '%d'\n", fd);
     return 1;
