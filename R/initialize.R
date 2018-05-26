@@ -65,7 +65,7 @@ process_initialize <- function(self, private, command, args,
      !length(connections))
   if (poll_connection) {
     pipe <- conn_create_pipepair()
-    connections <- c(connections, pipe[[2]])
+    connections <- c(connections, list(pipe[[2]]))
     private$poll_pipe <- pipe[[1]]
   }
 
