@@ -82,6 +82,11 @@ process_initialize <- function(self, private, command, args,
   )
   private$starttime <- Sys.time()
 
+  ## Need to close this, otherwise the child's end of the pipe
+  ## will not be closed when the child exits, and then we cannot
+  ## poll it.
+  if (poll_connection) close(pipe[[2]])
+
   if (is.character(stdin) && stdin != "|")
     stdin <- full_path(stdin)
   if (is.character(stdout) && stdout != "|")
