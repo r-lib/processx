@@ -1171,7 +1171,7 @@ SEXP processx_signal(SEXP status, SEXP signal) {
 }
 
 SEXP processx_interrupt(SEXP status) {
-  /* TODO */
+  error("Internal processx error, `processx_interrupt()` should not be called");
   return R_NilValue;
 }
 

@@ -551,7 +551,13 @@ process_interrupt <- function(self, private) {
   if (private$exited) {
     FALSE
   } else {
-    .Call(c_processx_interrupt, private$status)
+    if (os_type() == "windows") {
+      pid <- private$pid
+      st <- run(get_tool("interrupt"), c(pid, "c"), error_on_status = FALSE)
+      if (st$status == 0) TRUE else FALSE
+    } else {
+      .Call(c_processx_interrupt, private$status)
+    }
   }
 }
 
