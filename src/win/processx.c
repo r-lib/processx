@@ -1170,6 +1170,11 @@ SEXP processx_signal(SEXP status, SEXP signal) {
   }
 }
 
+SEXP processx_interrupt(SEXP status) {
+  /* TODO */
+  return R_NilValue;
+}
+
 SEXP processx_kill(SEXP status, SEXP grace) {
   return processx_signal(status, ScalarInteger(9));
 }

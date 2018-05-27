@@ -23,6 +23,7 @@ NULL
 #'
 #' p$is_alive()
 #' p$signal(signal)
+#' p$interrupt()
 #' p$kill(grace = 0.1)
 #' p$wait(timeout = -1)
 #' p$get_pid()
@@ -143,6 +144,11 @@ NULL
 #' signal return `TRUE` if the process is alive, and `FALSE`
 #' otherwise. On Unix all signals are supported that the OS supports, and
 #' the 0 signal as well.
+#'
+#' `$interrupt()` sends an interrupt to the process. On Unix this is a
+#' `SIGINT` signal, and it is usually equivalent to pressing CTRL+C at the
+#' terminal prompt. On Windows, it is a CTRL+BREAK keypress. Applications
+#' may catch these events. By default they will quit.
 #'
 #' `$kill()` kills the process. It also kills all of its child
 #' processes, except if they have created a new process group (on Unix),
@@ -350,6 +356,9 @@ process <- R6Class(
     signal = function(signal)
       process_signal(self, private, signal),
 
+    interrupt = function()
+      process_interrupt(self, private),
+
     get_pid = function()
       process_get_pid(self, private),
 
@@ -534,6 +543,15 @@ process_signal <- function(self, private, signal) {
     FALSE
   } else {
     .Call(c_processx_signal, private$status, as.integer(signal))
+  }
+}
+
+process_interrupt <- function(self, private) {
+  "!DEBUG process_interrupt `private$get_short_name()`"
+  if (private$exited) {
+    FALSE
+  } else {
+    .Call(c_processx_interrupt, private$status)
   }
 }
 

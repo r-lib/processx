@@ -739,6 +739,10 @@ SEXP processx_signal(SEXP status, SEXP signal) {
   return ScalarLogical(result);
 }
 
+SEXP processx_interrupt(SEXP status) {
+  return processx_signal(status, ScalarInteger(2));
+}
+
 /* This is a special case of `processx_signal`, and we implement it almost
  * the same way. We make an effort to return a TRUE/FALSE value to indicate
  * if the process died as a response to our KILL signal. This is not 100%

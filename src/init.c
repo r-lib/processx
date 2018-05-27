@@ -15,6 +15,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_is_alive",           (DL_FUNC) &processx_is_alive,           1 },
   { "processx_get_exit_status",    (DL_FUNC) &processx_get_exit_status,    1 },
   { "processx_signal",             (DL_FUNC) &processx_signal,             2 },
+  { "processx_interrupt",          (DL_FUNC) &processx_interrupt,          1 },
   { "processx_kill",               (DL_FUNC) &processx_kill,               2 },
   { "processx_get_pid",            (DL_FUNC) &processx_get_pid,            1 },
   { "processx_poll",               (DL_FUNC) &processx_poll,               3 },

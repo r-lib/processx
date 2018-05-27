@@ -46,6 +46,7 @@ SEXP processx_wait(SEXP status, SEXP timeout);
 SEXP processx_is_alive(SEXP status);
 SEXP processx_get_exit_status(SEXP status);
 SEXP processx_signal(SEXP status, SEXP signal);
+SEXP processx_interrupt(SEXP status);
 SEXP processx_kill(SEXP status, SEXP grace);
 SEXP processx_get_pid(SEXP status);
 

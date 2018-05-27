@@ -22,6 +22,7 @@ streams. The process id is then used to manage the process.
 
 p$is_alive()
 p$signal(signal)
+p$interrupt()
 p$kill(grace = 0.1)
 p$wait(timeout = -1)
 p$get_pid()
@@ -148,6 +149,11 @@ and the special 0 signal, The first three all kill the process. The 0
 signal return \code{TRUE} if the process is alive, and \code{FALSE}
 otherwise. On Unix all signals are supported that the OS supports, and
 the 0 signal as well.
+
+\code{$interrupt()} sends an interrupt to the process. On Unix this is a
+\code{SIGINT} signal, and it is usually equivalent to pressing CTRL+C at the
+terminal prompt. On Windows, it is a CTRL+BREAK keypress. Applications
+may catch these events. By default they will quit.
 
 \code{$kill()} kills the process. It also kills all of its child
 processes, except if they have created a new process group (on Unix),
