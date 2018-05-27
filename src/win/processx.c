@@ -1005,7 +1005,7 @@ SEXP processx_exec(SEXP command, SEXP args,
 
   /* If the process isn't spawned as detached, assign to the global job */
   /* object so windows will kill it when the parent process dies. */
-  if (!ccleanup) {
+  if (ccleanup) {
     if (! processx__global_job_handle) processx__init_global_job_handle();
 
     if (!AssignProcessToJobObject(processx__global_job_handle, info.hProcess)) {
