@@ -11,6 +11,9 @@
 \alias{conn_is_incomplete.processx_connection}
 \alias{conn_write}
 \alias{conn_write.processx_connection}
+\alias{conn_create_file}
+\alias{conn_set_stdout}
+\alias{conn_set_stderr}
 \title{Processx connections}
 \usage{
 conn_create_fd(fd, encoding = "", close = TRUE)
@@ -33,6 +36,12 @@ conn_write(con, str, sep = "\\n", encoding = "")
 
 \method{conn_write}{processx_connection}(con, str, sep = "\\n",
   encoding = "")
+
+conn_create_file(filename, read = NULL, write = NULL)
+
+conn_set_stdout(con)
+
+conn_set_stderr(con)
 }
 \arguments{
 \item{fd}{Integer scalar, a Unix file descriptor.}
@@ -53,6 +62,12 @@ characters or lines.}
 
 \item{sep}{Separator to use if \code{str} is a character vector. Ignored if
 \code{str} is a raw vector.}
+
+\item{filename}{File name.}
+
+\item{read}{Whether the connection is readable.}
+
+\item{write}{Whethe the connection is writeable.}
 }
 \description{
 These functions are currently experimental and will change
@@ -74,6 +89,12 @@ more data.
 It might not be able to write all bytes into the connection, in which
 case it returns the leftover bytes in a raw vector. Call \code{conn_write()}
 again with this raw vector.
+
+\code{conn_create_file()} creates a connection to a file.
+
+Set the standard output of the R process, to the specified connection.
+
+Set the standard error of the R process, to the specified connection.
 }
 \details{
 \code{conn_create_fd()} creates a connection from a file descriptor.

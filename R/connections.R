@@ -123,3 +123,52 @@ conn_write.processx_connection <- function(con, str, sep = "\n",
   }
   invisible(.Call(c_processx_connection_write_bytes, con, str))
 }
+
+#' `conn_create_file()` creates a connection to a file.
+#'
+#' @param filename File name.
+#' @param read Whether the connection is readable.
+#' @param write Whethe the connection is writeable.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_create_file <- function(filename, read = NULL, write = NULL) {
+  if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
+  if (is.null(read)) read <- !write
+  if (is.null(write)) write <- !read
+
+  assert_that(
+    is_string(filename),
+    is_flag(read),
+    is_flag(write),
+    read || write)
+
+  .Call(c_processx_connection_create_file, filename, read, write)
+}
+
+#' Set the standard output of the R process, to the specified connection.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_set_stdout <- function(con) {
+  assert_that(
+    is_connection(con))
+
+  flush(stdout())
+  invisible(.Call(c_processx_connection_set_stdout, con))
+}
+
+#' Set the standard error of the R process, to the specified connection.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_set_stderr <- function(con) {
+  assert_that(
+    is_connection(con))
+
+  flush(stderr())
+  invisible(.Call(c_processx_connection_set_stderr, con))
+}
