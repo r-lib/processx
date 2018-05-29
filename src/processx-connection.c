@@ -101,6 +101,32 @@ SEXP processx_connection_create_fd(SEXP handle, SEXP encoding, SEXP close) {
   return result;
 }
 
+SEXP processx_connection_create_file(SEXP filename, SEXP read, SEXP write) {
+  const char *c_filename = CHAR(STRING_ELT(filename, 0));
+  int c_read = LOGICAL(read)[0];
+  int c_write = LOGICAL(write)[0];
+  SEXP result = R_NilValue;
+  processx_file_handle_t os_handle;
+
+#ifdef _WIN32
+  TODO;
+#else
+  int flags = 0;
+  if ( c_read && !c_write) flags |= O_RDONLY;
+  if (!c_read &&  c_write) flags |= O_WRONLY | O_CREAT | O_TRUNC;
+  if ( c_read &&  c_write) flags |= O_RDWR;
+  os_handle = open(c_filename, flags, 0644);
+  if (os_handle == -1) {
+    error("Cannot open file `%s`: `%s`", c_filename, strerror(errno));
+  }
+#endif
+
+  processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_FILE,
+			       "", &result);
+
+  return result;
+}
+
 SEXP processx_connection_read_chars(SEXP con, SEXP nchars) {
 
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
@@ -232,6 +258,31 @@ SEXP processx_connection_create_pipepair(SEXP encoding) {
 
   UNPROTECT(3);
   return result;
+}
+
+SEXP processx__connection_set_std(SEXP con, int which) {
+  processx_connection_t *ccon = R_ExternalPtrAddr(con);
+  if (!ccon) error("Invalid connection object");
+  const char *what[] = { "stdin", "stdout", "stderr" };
+
+#ifdef _WIN32
+  TODO;
+#else
+  int ret = dup2(ccon->handle, which);
+  if (ret == -1) {
+    error("Cannot reroute %s: `%s`", what[which], strerror(errno));
+  }
+#endif
+
+  return R_NilValue;
+}
+
+SEXP processx_connection_set_stdout(SEXP con) {
+  return processx__connection_set_std(con, 1);
+}
+
+SEXP processx_connection_set_stderr(SEXP con) {
+  return processx__connection_set_std(con, 2);
 }
 
 /* Api from C -----------------------------------------------------------*/

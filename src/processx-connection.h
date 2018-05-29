@@ -117,6 +117,9 @@ SEXP processx_connection_create(SEXP handle, SEXP encoding);
 /* Create from fd, this is only different on Windows */
 SEXP processx_connection_create_fd(SEXP handle, SEXP encoding, SEXP close);
 
+/* Create file connection */
+SEXP processx_connection_create_file(SEXP filename, SEXP read, SEXP write);
+
 /* Read characters in a given encoding from the connection. */
 SEXP processx_connection_read_chars(SEXP con, SEXP nchars);
 
@@ -138,6 +141,10 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout);
 
 /* Functions for connection inheritance */
 SEXP processx_connection_create_pipepair();
+
+SEXP processx_connection_set_stdout(SEXP con);
+
+SEXP processx_connection_set_stderr(SEXP con);
 
 /* --------------------------------------------------------------------- */
 /* API from C                                                            */
