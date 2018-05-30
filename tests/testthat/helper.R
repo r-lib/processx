@@ -7,6 +7,10 @@ skip_if_no_tool <- function(tool) {
   if (Sys.which(tool) == "") skip(paste0("`", tool, "` is not available"))
 }
 
+skip_extra_tests <- function() {
+  if (Sys.getenv("PROCESSX_EXTRA_TESTS") ==  "") skip("no extra tests")
+}
+
 try_silently <- function(expr) {
   tryCatch(
     expr,
