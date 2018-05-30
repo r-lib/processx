@@ -3,6 +3,7 @@ context("SIGCHLD handler interference")
 
 test_that("is_alive()", {
 
+  skip_extra_tests()
   skip_other_platforms("unix")
   skip_on_cran()
 
@@ -20,6 +21,7 @@ test_that("is_alive()", {
 
 test_that("finalizer", {
 
+  skip_extra_tests()
   skip_other_platforms("unix")
   skip_on_cran()
 
@@ -36,6 +38,7 @@ test_that("finalizer", {
 
 test_that("get_exit_status", {
 
+  skip_extra_tests()
   skip_other_platforms("unix")
   skip_on_cran()
 
@@ -52,6 +55,7 @@ test_that("get_exit_status", {
 
 test_that("signal", {
 
+  skip_extra_tests()
   skip_other_platforms("unix")
   skip_on_cran()
 
@@ -69,6 +73,7 @@ test_that("signal", {
 
 test_that("kill", {
 
+  skip_extra_tests()
   skip_other_platforms("unix")
   skip_on_cran()
 
@@ -86,6 +91,7 @@ test_that("kill", {
 
 test_that("SIGCHLD handler", {
 
+  skip_extra_tests()
   skip_other_platforms("unix")
   skip_on_cran()
 
