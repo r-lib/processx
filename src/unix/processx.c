@@ -411,6 +411,13 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
     if (pipes[i][1] >= 0) close(pipes[i][1]);
   }
 
+  /* Close connections passed to the child process */
+  for (i = 3; i < num_connections; i++) {
+    processx_connection_t *ccon =
+      R_ExternalPtrAddr(VECTOR_ELT(connections, i - 3));
+    processx_c_connection_close(ccon);
+  }
+
   /* Create proper connections */
   processx__create_connections(handle, private, cencoding);
 
