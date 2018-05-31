@@ -7,10 +7,11 @@ SEXP processx_poll(SEXP statuses, SEXP conn, SEXP ms) {
   processx_pollable_t *pollables;
   SEXP result;
   int num_conn = 0;
-  int num_poll;
+  int num_proc, num_poll;
 
   for (i = 0; i < num_total; i++) if (LOGICAL(conn)[i]) num_conn++;
-  num_poll = num_total  * 2 - num_conn;
+  num_proc = num_total - num_conn;
+  num_poll = num_conn + num_proc * 3;
 
   pollables = (processx_pollable_t*)
     R_alloc(num_poll, sizeof(processx_pollable_t));
@@ -26,14 +27,24 @@ SEXP processx_poll(SEXP statuses, SEXP conn, SEXP ms) {
       SET_VECTOR_ELT(result, i, allocVector(INTSXP, 1));
 
     } else {
-      processx_handle_t *handle = R_ExternalPtrAddr(status);
+      SEXP process = VECTOR_ELT(status, 0);
+      SEXP pollconn = VECTOR_ELT(status, 1);
+      processx_handle_t *handle = R_ExternalPtrAddr(process);
+      processx_connection_t *cpollconn = isNull(pollconn) ? 0 :
+	R_ExternalPtrAddr(pollconn);
+
       processx_c_pollable_from_connection(&pollables[j], handle->pipes[1]);
       if (handle->pipes[1]) handle->pipes[1]->poll_idx = j;
       j++;
       processx_c_pollable_from_connection(&pollables[j], handle->pipes[2]);
       if (handle->pipes[2]) handle->pipes[2]->poll_idx = j;
       j++;
-      SET_VECTOR_ELT(result, i, allocVector(INTSXP, 2));
+
+      processx_c_pollable_from_connection(&pollables[j], cpollconn);
+      if (cpollconn) cpollconn->poll_idx = j;
+      j++;
+
+      SET_VECTOR_ELT(result, i, allocVector(INTSXP, 3));
     }
   }
 
@@ -45,6 +56,7 @@ SEXP processx_poll(SEXP statuses, SEXP conn, SEXP ms) {
     } else {
       INTEGER(VECTOR_ELT(result, i))[0] = pollables[j++].event;
       INTEGER(VECTOR_ELT(result, i))[1] = pollables[j++].event;
+      INTEGER(VECTOR_ELT(result, i))[2] = pollables[j++].event;
     }
   }
 

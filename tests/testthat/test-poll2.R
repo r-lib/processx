@@ -11,31 +11,31 @@ test_that("single process", {
   ## Timeout
   expect_equal(
     poll(list(p), 0),
-    list(c(output = "timeout", error = "nopipe"))
+    list(c(output = "timeout", error = "nopipe", process = "nopipe"))
   )
 
   p$wait()
   expect_equal(
     poll(list(p), -1),
-    list(c(output = "ready", error = "nopipe"))
+    list(c(output = "ready", error = "nopipe", process = "nopipe"))
   )
 
   p$read_output_lines()
   expect_equal(
     poll(list(p), -1),
-    list(c(output = "ready", error = "nopipe"))
+    list(c(output = "ready", error = "nopipe", process = "nopipe"))
   )
 
   p$kill()
   expect_equal(
     poll(list(p), -1),
-    list(c(output = "ready", error = "nopipe"))
+    list(c(output = "ready", error = "nopipe", process = "nopipe"))
   )
 
   close(p$get_output_connection())
   expect_equal(
     poll(list(p), -1),
-    list(c(output = "closed", error = "nopipe"))
+    list(c(output = "closed", error = "nopipe", process = "nopipe"))
   )
 })
 
@@ -53,14 +53,14 @@ test_that("multiple processes", {
   expect_equal(
     res,
     list(
-      p1 = c(output = "timeout", error = "nopipe"),
-      p2 = c(output = "nopipe", error = "timeout")
+      p1 = c(output = "timeout", error = "nopipe", process = "nopipe"),
+      p2 = c(output = "nopipe", error = "timeout", process = "nopipe")
     )
   )
 
   p1$wait()
   res <- poll(list(p1 = p1, p2 = p2), -1)
-  expect_equal(res$p1, c(output = "ready", error = "nopipe"))
+  expect_equal(res$p1, c(output = "ready", error = "nopipe", process = "nopipe"))
   expect_equal(res$p2[["output"]], "nopipe")
   expect_true(res$p2[["error"]] %in% c("silent", "ready"))
 
@@ -70,8 +70,8 @@ test_that("multiple processes", {
   expect_equal(
     res,
     list(
-      p1 = c(output = "closed", error = "nopipe"),
-      p2 = c(output = "nopipe", error = "ready")
+      p1 = c(output = "closed", error = "nopipe", process = "nopipe"),
+      p2 = c(output = "nopipe", error = "ready", process = "nopipe")
     )
   )
 
@@ -80,8 +80,8 @@ test_that("multiple processes", {
   expect_equal(
     res,
     list(
-      p1 = c(output = "closed", error = "nopipe"),
-      p2 = c(output = "nopipe", error = "closed")
+      p1 = c(output = "closed", error = "nopipe", process = "nopipe"),
+      p2 = c(output = "nopipe", error = "closed", process = "nopipe")
     )
   )
 
@@ -129,8 +129,8 @@ test_that("polling and buffering", {
     expect_equal(
       s,
       list(
-        c(output = "ready", error = "silent"),
-        c(output = "silent", error = "silent")
+        c(output = "ready", error = "silent", process = "nopipe"),
+        c(output = "silent", error = "silent", process = "nopipe")
       )
     )
 
@@ -172,8 +172,8 @@ test_that("polling and buffering #2", {
     expect_equal(
       s,
       list(
-        c(output = "ready", error = "nopipe"),
-        c(output = "ready", error = "nopipe")
+        c(output = "ready", error = "nopipe", process = "nopipe"),
+        c(output = "ready", error = "nopipe", process = "nopipe")
       )
     )
 

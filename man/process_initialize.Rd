@@ -5,8 +5,8 @@
 \title{Start a process}
 \usage{
 process_initialize(self, private, command, args, stdin, stdout, stderr,
-  connections, env, cleanup, wd, echo_cmd, supervise, windows_verbatim_args,
-  windows_hide_window, encoding, post_process)
+  connections, poll_connection, env, cleanup, wd, echo_cmd, supervise,
+  windows_verbatim_args, windows_hide_window, encoding, post_process)
 }
 \arguments{
 \item{self}{this}
@@ -24,6 +24,8 @@ process_initialize(self, private, command, args, stdin, stdout, stderr,
 \item{stderr}{Standard error, NULL to ignore, TRUE for temp file.}
 
 \item{connections}{Connections to inherit in the child process.}
+
+\item{poll_connection}{Whether to create a connection for polling.}
 
 \item{env}{Environment vaiables.}
 

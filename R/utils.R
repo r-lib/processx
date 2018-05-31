@@ -1,4 +1,6 @@
 
+`%||%` <- function(l, r) if (is.null(l)) r else l
+
 os_type <- function() {
   .Platform$OS.type
 }
@@ -164,4 +166,8 @@ str_wrap_words <- function(words, width, indent = 0, exdent = 2) {
 set_names <- function(x, n) {
   names(x) <- n
   x
+}
+
+get_private <- function(x) {
+  x$.__enclos_env__$private
 }

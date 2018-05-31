@@ -16,12 +16,14 @@ identification of the processes.}
 Supply -1 for an infitite timeout, and 0 for not waiting at all.}
 }
 \value{
-A list of character vectors of length one or two.
-There is one list element for each process, in the same order as in
-the input list. For connections the result is a single string scalar.
-For processes the character vectors' elements are named \code{output} and
-\code{error}. Possible values for each individual result are: \code{nopipe},
-\code{ready}, \code{timeout}, \code{closed}, \code{silent}. See details about these below.
+A list of character vectors of length one or three.
+There is one list element for each connection/process, in the same
+order as in the input list. For connections the result is a single
+string scalar. For processes the character vectors' elements are named
+\code{output}, \code{error} and \code{process}. Possible values for each individual
+result are: \code{nopipe}, \code{ready}, \code{timeout}, \code{closed}, \code{silent}.
+See details about these below. \code{process} refers to the poll connection,
+see the \code{poll_connection} argument of the \code{process} initializer.
 }
 \description{
 Wait until one of the specified connections or processes produce
@@ -42,16 +44,6 @@ started.
 \item \code{silent}: the connection is not ready to read from, but another
 connection was.
 }
-}
-
-\section{Known issues}{
-
-
-\code{poll()} cannot wait on the termination of a process directly. It is
-only signalled through the closed stdout and stderr pipes. This means
-that if both stdout and stderr are ignored or closed for a process,
-then you will not be notified when it exits. If you want to wait for
-just a single process to end, it can be done with the \code{$wait()} method.
 }
 
 \examples{

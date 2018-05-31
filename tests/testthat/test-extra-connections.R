@@ -15,7 +15,7 @@ test_that("writing to extra connection", {
       stdout = "|", stderr = "|", connections = list(pipe[[1]])
     )
   )
-
+  close(pipe[[1]])
   on.exit(p$kill())
 
   conn_write(pipe[[2]], msg)
@@ -39,6 +39,7 @@ test_that("reading from extra connection", {
       connections = list(pipe[[2]])
     )
   )
+  close(pipe[[2]])
 
   ## Nothing to read yet
   expect_equal(conn_read_lines(pipe[[1]]), character())
@@ -65,6 +66,8 @@ test_that("reading and writing to extra connection", {
       connections = list(pipe1[[1]], pipe2[[2]])
     )
   )
+  close(pipe1[[1]])
+  close(pipe2[[2]])
 
   on.exit(p$kill())
 

@@ -407,7 +407,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   }
 
   /* Closed unused ends of pipes */
-  for (i = 0; i < num_connections; i++) {
+  for (i = 0; i < 3; i++) {
     if (pipes[i][1] >= 0) close(pipes[i][1]);
   }
 
