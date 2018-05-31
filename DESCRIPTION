@@ -29,6 +29,7 @@ Imports:
 LinkingTo: 
     testthat
 Suggests:
+    callr,
     covr,
     debugme,
     parallel,
