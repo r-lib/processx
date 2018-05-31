@@ -10,6 +10,8 @@
 #ifndef _WIN32
 #include <sys/uio.h>
 #include <poll.h>
+#else
+#include <io.h>
 #endif
 
 #include "processx.h"
@@ -109,7 +111,23 @@ SEXP processx_connection_create_file(SEXP filename, SEXP read, SEXP write) {
   processx_file_handle_t os_handle;
 
 #ifdef _WIN32
-  TODO;
+  DWORD access = 0, create = 0;
+  if (c_read) access |= GENERIC_READ;
+  if (c_write) access |= GENERIC_WRITE;
+  if (c_read) create |= OPEN_EXISTING;
+  if (c_write) create |= CREATE_ALWAYS;
+  os_handle = CreateFile(
+    /* lpFilename = */ c_filename,
+    /* dwDesiredAccess = */ access,
+    /* dwShareMode = */ 0,
+    /* lpSecurityAttributes = */ NULL,
+    /* dwCreationDisposition = */ create,
+    /* dwFlagsAndAttributes = */ FILE_ATTRIBUTE_NORMAL,
+    /* hTemplateFile = */ NULL);
+  if (os_handle == INVALID_HANDLE_VALUE) {
+    PROCESSX_ERROR("Cannot open file", GetLastError());
+  }
+
 #else
   int flags = 0;
   if ( c_read && !c_write) flags |= O_RDONLY;
@@ -263,11 +281,13 @@ SEXP processx_connection_create_pipepair(SEXP encoding) {
 SEXP processx__connection_set_std(SEXP con, int which) {
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
   if (!ccon) error("Invalid connection object");
-  const char *what[] = { "stdin", "stdout", "stderr" };
 
 #ifdef _WIN32
-  TODO;
+  int fd = _open_osfhandle((intptr_t) ccon->handle.handle, 0);
+  int ret = _dup2(fd, which);
+  if (ret) PROCESSX_ERROR("Cannot reroute stdout/stderr", GetLastError());
 #else
+  const char *what[] = { "stdin", "stdout", "stderr" };
   int ret = dup2(ccon->handle, which);
   if (ret == -1) {
     error("Cannot reroute %s: `%s`", what[which], strerror(errno));
