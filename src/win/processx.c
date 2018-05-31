@@ -1005,7 +1005,7 @@ SEXP processx_exec(SEXP command, SEXP args,
 
   /* If the process isn't spawned as detached, assign to the global job */
   /* object so windows will kill it when the parent process dies. */
-  if (!ccleanup) {
+  if (ccleanup) {
     if (! processx__global_job_handle) processx__init_global_job_handle();
 
     if (!AssignProcessToJobObject(processx__global_job_handle, info.hProcess)) {
@@ -1168,6 +1168,11 @@ SEXP processx_signal(SEXP status, SEXP signal) {
     error("Unsupported signal on this platform");
     return R_NilValue;
   }
+}
+
+SEXP processx_interrupt(SEXP status) {
+  error("Internal processx error, `processx_interrupt()` should not be called");
+  return R_NilValue;
 }
 
 SEXP processx_kill(SEXP status, SEXP grace) {

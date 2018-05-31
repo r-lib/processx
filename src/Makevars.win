@@ -5,9 +5,13 @@ OBJECTS = test-connections.o init.o poll.o processx-connection.o     \
 
 .PHONY: all clean
 
-all: tools/px.exe supervisor/supervisor.exe $(SHLIB)
+all: tools/px.exe tools/interrupt.exe \
+	supervisor/supervisor.exe $(SHLIB)
 
 tools/px.exe: tools/px.c
+	$(CC) $(CFLAGS) -Wall $< -o $@
+
+tools/interrupt.exe: tools/interrupt.c
 	$(CC) $(CFLAGS) -Wall $< -o $@
 
 supervisor/supervisor.exe: supervisor/supervisor.c supervisor/utils.c \
@@ -17,4 +21,4 @@ supervisor/supervisor.exe: supervisor/supervisor.c supervisor/utils.c \
 clean:
 	rm -rf $(SHLIB) $(OBJECTS) \
 	    supervisor/supervisor supervisor/supervisor.dSYM \
-	    supervisor/supervisor.exe wintools/sleep.exe
+	    supervisor/supervisor.exe tools/px.exe tools/interrupt.exe

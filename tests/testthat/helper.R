@@ -16,18 +16,6 @@ try_silently <- function(expr) {
   )
 }
 
-get_tool <- function(prog) {
-  if (os_type() == "windows") prog <- paste0(prog, ".exe")
-  exe <- system.file(package = "processx", "bin", .Platform$r_arch, prog)
-  if (exe == "") {
-    pkgpath <- system.file(package = "processx")
-    if (basename(pkgpath) == "inst") pkgpath <- dirname(pkgpath)
-    exe <- file.path(pkgpath, "src", "tools", prog)
-    if (!file.exists(exe)) return("")
-  }
-  exe
-}
-
 get_pid_by_name <- function(name) {
   if (os_type() == "windows") {
     get_pid_by_name_windows(name)
