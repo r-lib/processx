@@ -552,7 +552,7 @@ process_interrupt <- function(self, private) {
     FALSE
   } else {
     if (os_type() == "windows") {
-      pid <- private$pid
+      pid <- as.character(self$get_pid())
       st <- run(get_tool("interrupt"), c(pid, "c"), error_on_status = FALSE)
       if (st$status == 0) TRUE else FALSE
     } else {
