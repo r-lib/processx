@@ -26,8 +26,6 @@ Imports:
     crayon,
     R6,
     utils
-LinkingTo: 
-    testthat
 Suggests:
     callr,
     covr,
