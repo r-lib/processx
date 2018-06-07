@@ -311,7 +311,7 @@ SEXP processx_connection_get_fileno(SEXP con) {
   int fd;
 
 #ifdef _WIN32
-  fd = _open_odfhandle((intptr_t) ccon->handle.handle, 0);
+  fd = _open_osfhandle((intptr_t) ccon->handle.handle, 0);
 #else
   fd = ccon->handle;
 #endif
