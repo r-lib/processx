@@ -146,6 +146,8 @@ SEXP processx_connection_set_stdout(SEXP con);
 
 SEXP processx_connection_set_stderr(SEXP con);
 
+SEXP processx_connection_get_fileno(SEXP con);
+
 /* --------------------------------------------------------------------- */
 /* API from C                                                            */
 /* --------------------------------------------------------------------- */

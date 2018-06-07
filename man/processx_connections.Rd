@@ -14,6 +14,7 @@
 \alias{conn_create_file}
 \alias{conn_set_stdout}
 \alias{conn_set_stderr}
+\alias{conn_get_fileno}
 \title{Processx connections}
 \usage{
 conn_create_fd(fd, encoding = "", close = TRUE)
@@ -42,6 +43,8 @@ conn_create_file(filename, read = NULL, write = NULL)
 conn_set_stdout(con)
 
 conn_set_stderr(con)
+
+conn_get_fileno(con)
 }
 \arguments{
 \item{fd}{Integer scalar, a Unix file descriptor.}
@@ -92,9 +95,14 @@ again with this raw vector.
 
 \code{conn_create_file()} creates a connection to a file.
 
-Set the standard output of the R process, to the specified connection.
+\code{conn_set_stdout()} set the standard output of the R process, to the
+specified connection.
 
-Set the standard error of the R process, to the specified connection.
+\code{conn_set_stderr()} set the standard error of the R process, to the
+specified connection.
+
+\code{conn_get_fileno()} return the integer file desciptor that belongs to
+the connection.
 }
 \details{
 \code{conn_create_fd()} creates a connection from a file descriptor.

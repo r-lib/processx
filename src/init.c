@@ -43,6 +43,7 @@ static const R_CallMethodDef callMethods[]  = {
     (DL_FUNC) &processx_connection_create_file,    3 },
   { "processx_connection_set_stdout", (DL_FUNC) &processx_connection_set_stdout,  1 },
   { "processx_connection_set_stderr", (DL_FUNC) &processx_connection_set_stderr,  1 },
+  { "processx_connection_get_fileno", (DL_FUNC) &processx_connection_get_fileno,  1 },
 
   { NULL, NULL, 0 }
 };

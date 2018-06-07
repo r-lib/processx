@@ -147,7 +147,8 @@ conn_create_file <- function(filename, read = NULL, write = NULL) {
   .Call(c_processx_connection_create_file, filename, read, write)
 }
 
-#' Set the standard output of the R process, to the specified connection.
+#' `conn_set_stdout()` set the standard output of the R process, to the
+#' specified connection.
 #'
 #' @rdname processx_connections
 #' @export
@@ -160,7 +161,8 @@ conn_set_stdout <- function(con) {
   invisible(.Call(c_processx_connection_set_stdout, con))
 }
 
-#' Set the standard error of the R process, to the specified connection.
+#' `conn_set_stderr()` set the standard error of the R process, to the
+#' specified connection.
 #'
 #' @rdname processx_connections
 #' @export
@@ -171,4 +173,14 @@ conn_set_stderr <- function(con) {
 
   flush(stderr())
   invisible(.Call(c_processx_connection_set_stderr, con))
+}
+
+#' `conn_get_fileno()` return the integer file desciptor that belongs to
+#' the connection.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_get_fileno <- function(con) {
+  .Call(c_processx_connection_get_fileno, con)
 }

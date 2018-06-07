@@ -305,6 +305,20 @@ SEXP processx_connection_set_stderr(SEXP con) {
   return processx__connection_set_std(con, 2);
 }
 
+SEXP processx_connection_get_fileno(SEXP con) {
+  processx_connection_t *ccon = R_ExternalPtrAddr(con);
+  if (!ccon) error("Invalid connection object");
+  int fd;
+
+#ifdef _WIN32
+  fd = _open_odfhandle((intptr_t) ccon->handle.handle, 0);
+#else
+  fd = ccon->handle;
+#endif
+
+  return ScalarInteger(fd);
+}
+
 /* Api from C -----------------------------------------------------------*/
 
 processx_connection_t *processx_c_connection_create(
