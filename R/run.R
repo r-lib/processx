@@ -21,10 +21,8 @@
 #' `$kill()` on it to terminate it, as a response to a message on the
 #' standard output or error.
 #'
-#' @param command Character scalar, the command to run. It will be
-#'   escaped via [base::shQuote].
-#' @param args Character vector, arguments to the command. They will be
-#'   escaped via [base::shQuote].
+#' @param command Character scalar, the command to run.
+#' @param args Character vector, arguments to the command.
 #' @param error_on_status Whether to throw an error if the command returns
 #'   with a non-zero status, or it is interrupted. The error clases are
 #'   `system_command_status_error` and `system_command_timeout_error`,

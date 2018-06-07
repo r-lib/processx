@@ -12,11 +12,9 @@ run(command = NULL, args = character(), error_on_status = TRUE,
   encoding = "")
 }
 \arguments{
-\item{command}{Character scalar, the command to run. It will be
-escaped via \link[base:shQuote]{base::shQuote}.}
+\item{command}{Character scalar, the command to run.}
 
-\item{args}{Character vector, arguments to the command. They will be
-escaped via \link[base:shQuote]{base::shQuote}.}
+\item{args}{Character vector, arguments to the command.}
 
 \item{error_on_status}{Whether to throw an error if the command returns
 with a non-zero status, or it is interrupted. The error clases are
