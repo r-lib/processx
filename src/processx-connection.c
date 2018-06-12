@@ -319,6 +319,37 @@ SEXP processx_connection_get_fileno(SEXP con) {
   return ScalarInteger(fd);
 }
 
+#ifdef _WIN32
+
+/*
+ * Clear the HANDLE_FLAG_INHERIT flag from all HANDLEs that were inherited
+ * the parent process. Don't check for errors - the stdio handles may not be
+ * valid, or may be closed already. There is no guarantee that this function
+ * does a perfect job.
+ */
+
+SEXP processx_connection_disable_inheritance() {
+  /* TODO */
+  return R_NilValue;
+}
+
+#else
+
+SEXP processx_connection_disable_inheritance() {
+  int fd;
+
+  /* Set the CLOEXEC flag on all open descriptors. Unconditionally try the
+   * first 16 file descriptors. After that, bail out after the first error.
+   */
+  for (fd = 0; ; fd++) {
+    if (processx__cloexec_fcntl(fd, 1) && fd > 15) break;
+  }
+
+  return R_NilValue;
+}
+
+#endif
+
 /* Api from C -----------------------------------------------------------*/
 
 processx_connection_t *processx_c_connection_create(

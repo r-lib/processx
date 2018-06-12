@@ -184,3 +184,18 @@ conn_set_stderr <- function(con) {
 conn_get_fileno <- function(con) {
   .Call(c_processx_connection_get_fileno, con)
 }
+
+#' `conn_disable_inheritance()` can be called to disable the inheritance
+#' of all open handles. Call this function as soon as possible in a new
+#' process to avoid inheriting the inherited handles even further.
+#'
+#' The function is best effort to close the handles, it might still leave
+#' some handles open. It should work for `stdin`, `stdout` and `stderr`,
+#' at least.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_disable_inheritance <- function() {
+  .Call(c_processx_connection_disable_inheritance)
+}
