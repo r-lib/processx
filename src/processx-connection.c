@@ -278,31 +278,53 @@ SEXP processx_connection_create_pipepair(SEXP encoding) {
   return result;
 }
 
-SEXP processx__connection_set_std(SEXP con, int which) {
+SEXP processx__connection_set_std(SEXP con, int which, int drop) {
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
   if (!ccon) error("Invalid connection object");
+  SEXP result = R_NilValue;
 
 #ifdef _WIN32
-  int fd = _open_osfhandle((intptr_t) ccon->handle.handle, 0);
-  int ret = _dup2(fd, which);
+  int fd, ret;
+  if (!drop) {
+    int saved = _dup(which);
+    processx_file_handle_t os_handle;
+    if (saved == -1) {
+      PROCESSX_ERROR("Cannot save stdout/stderr for rerouting", GetLastError());
+    }
+    os_handle = (HANDLE) _get_osfhandle(saved) ;
+    processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_PIPE,
+				 "", &result);
+  }
+  fd = _open_osfhandle((intptr_t) ccon->handle.handle, 0);
+  ret = _dup2(fd, which);
   if (ret) PROCESSX_ERROR("Cannot reroute stdout/stderr", GetLastError());
+
 #else
   const char *what[] = { "stdin", "stdout", "stderr" };
-  int ret = dup2(ccon->handle, which);
+  int ret;
+  if (!drop) {
+    processx_file_handle_t os_handle = dup(which);
+    if (os_handle == -1) {
+      error("Cannot save %s for rerouting: `%s`", what[which], strerror(errno));
+    }
+    processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_PIPE,
+				 "", &result);
+  }
+  ret = dup2(ccon->handle, which);
   if (ret == -1) {
     error("Cannot reroute %s: `%s`", what[which], strerror(errno));
   }
 #endif
 
-  return R_NilValue;
+  return result;
 }
 
-SEXP processx_connection_set_stdout(SEXP con) {
-  return processx__connection_set_std(con, 1);
+SEXP processx_connection_set_stdout(SEXP con, SEXP drop) {
+  return processx__connection_set_std(con, 1, LOGICAL(drop)[0]);
 }
 
-SEXP processx_connection_set_stderr(SEXP con) {
-  return processx__connection_set_std(con, 2);
+SEXP processx_connection_set_stderr(SEXP con, SEXP drop) {
+  return processx__connection_set_std(con, 2, LOGICAL(drop)[0]);
 }
 
 SEXP processx_connection_get_fileno(SEXP con) {
