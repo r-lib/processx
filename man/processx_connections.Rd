@@ -41,9 +41,9 @@ conn_write(con, str, sep = "\\n", encoding = "")
 
 conn_create_file(filename, read = NULL, write = NULL)
 
-conn_set_stdout(con)
+conn_set_stdout(con, drop = TRUE)
 
-conn_set_stderr(con)
+conn_set_stderr(con, drop = TRUE)
 
 conn_get_fileno(con)
 
@@ -74,6 +74,9 @@ characters or lines.}
 \item{read}{Whether the connection is readable.}
 
 \item{write}{Whethe the connection is writeable.}
+
+\item{drop}{Whether to close the original stdout/stderr, or keep it
+open and return a connection to it.}
 }
 \description{
 These functions are currently experimental and will change
