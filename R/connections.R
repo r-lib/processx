@@ -150,15 +150,19 @@ conn_create_file <- function(filename, read = NULL, write = NULL) {
 #' `conn_set_stdout()` set the standard output of the R process, to the
 #' specified connection.
 #'
+#' @param drop Whether to close the original stdout/stderr, or keep it
+#' open and return a connection to it.
+#'
 #' @rdname processx_connections
 #' @export
 
-conn_set_stdout <- function(con) {
+conn_set_stdout <- function(con, drop = TRUE) {
   assert_that(
-    is_connection(con))
+    is_connection(con),
+    is_flag(drop))
 
   flush(stdout())
-  invisible(.Call(c_processx_connection_set_stdout, con))
+  invisible(.Call(c_processx_connection_set_stdout, con, drop))
 }
 
 #' `conn_set_stderr()` set the standard error of the R process, to the
@@ -167,12 +171,13 @@ conn_set_stdout <- function(con) {
 #' @rdname processx_connections
 #' @export
 
-conn_set_stderr <- function(con) {
+conn_set_stderr <- function(con, drop = TRUE) {
   assert_that(
-    is_connection(con))
+    is_connection(con),
+    is_flag(drop))
 
   flush(stderr())
-  invisible(.Call(c_processx_connection_set_stderr, con))
+  invisible(.Call(c_processx_connection_set_stderr, con, drop))
 }
 
 #' `conn_get_fileno()` return the integer file desciptor that belongs to
