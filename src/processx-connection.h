@@ -148,6 +148,8 @@ SEXP processx_connection_set_stderr(SEXP con);
 
 SEXP processx_connection_get_fileno(SEXP con);
 
+SEXP processx_connection_disable_inheritance();
+
 /* --------------------------------------------------------------------- */
 /* API from C                                                            */
 /* --------------------------------------------------------------------- */

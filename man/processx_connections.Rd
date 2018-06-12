@@ -15,6 +15,7 @@
 \alias{conn_set_stdout}
 \alias{conn_set_stderr}
 \alias{conn_get_fileno}
+\alias{conn_disable_inheritance}
 \title{Processx connections}
 \usage{
 conn_create_fd(fd, encoding = "", close = TRUE)
@@ -45,6 +46,8 @@ conn_set_stdout(con)
 conn_set_stderr(con)
 
 conn_get_fileno(con)
+
+conn_disable_inheritance()
 }
 \arguments{
 \item{fd}{Integer scalar, a Unix file descriptor.}
@@ -103,6 +106,10 @@ specified connection.
 
 \code{conn_get_fileno()} return the integer file desciptor that belongs to
 the connection.
+
+The function is best effort to close the handles, it might still leave
+some handles open. It should work for \code{stdin}, \code{stdout} and \code{stderr},
+at least.
 }
 \details{
 \code{conn_create_fd()} creates a connection from a file descriptor.
