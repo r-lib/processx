@@ -436,6 +436,41 @@ void processx__stdio_destroy(BYTE* buffer) {
   free(buffer);
 }
 
+void processx__stdio_noinherit(BYTE* buffer) {
+  int i, count;
+
+  count = CHILD_STDIO_COUNT(buffer);
+  for (i = 0; i < count; i++) {
+    HANDLE handle = CHILD_STDIO_HANDLE(buffer, i);
+    if (handle != INVALID_HANDLE_VALUE) {
+      SetHandleInformation(handle, HANDLE_FLAG_INHERIT, 0);
+    }
+  }
+}
+
+int processx__stdio_verify(BYTE* buffer, WORD size) {
+  unsigned int count;
+
+  /* Check the buffer pointer. */
+  if (buffer == NULL)
+    return 0;
+
+  /* Verify that the buffer is at least big enough to hold the count. */
+  if (size < CHILD_STDIO_SIZE(0))
+    return 0;
+
+  /* Verify if the count is within range. */
+  count = CHILD_STDIO_COUNT(buffer);
+  if (count > 256)
+    return 0;
+
+  /* Verify that the buffer size is big enough to hold info for N FDs. */
+  if (size < CHILD_STDIO_SIZE(count))
+    return 0;
+
+  return 1;
+}
+
 WORD processx__stdio_size(BYTE* buffer) {
   return (WORD) CHILD_STDIO_SIZE(CHILD_STDIO_COUNT((buffer)));
 }

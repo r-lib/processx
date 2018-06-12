@@ -329,7 +329,31 @@ SEXP processx_connection_get_fileno(SEXP con) {
  */
 
 SEXP processx_connection_disable_inheritance() {
-  /* TODO */
+  HANDLE handle;
+  STARTUPINFOW si;
+
+  /* Make the windows stdio handles non-inheritable. */
+  handle = GetStdHandle(STD_INPUT_HANDLE);
+  if (handle != NULL && handle != INVALID_HANDLE_VALUE) {
+    SetHandleInformation(handle, HANDLE_FLAG_INHERIT, 0);
+  }
+
+  handle = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (handle != NULL && handle != INVALID_HANDLE_VALUE) {
+    SetHandleInformation(handle, HANDLE_FLAG_INHERIT, 0);
+  }
+
+  handle = GetStdHandle(STD_ERROR_HANDLE);
+  if (handle != NULL && handle != INVALID_HANDLE_VALUE) {
+    SetHandleInformation(handle, HANDLE_FLAG_INHERIT, 0);
+  }
+
+  /* Make inherited CRT FDs non-inheritable. */
+  GetStartupInfoW(&si);
+  if (processx__stdio_verify(si.lpReserved2, si.cbReserved2)) {
+    processx__stdio_noinherit(si.lpReserved2);
+  }
+
   return R_NilValue;
 }
 
