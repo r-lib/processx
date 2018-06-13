@@ -183,3 +183,7 @@ get_tool <- function(prog) {
   }
   exe
 }
+
+disable_crash_dialog <- function() {
+  .Call(c_processx_disable_crash_dialog)
+}

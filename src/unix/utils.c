@@ -53,3 +53,15 @@ int processx__cloexec_fcntl(int fd, int set) {
 
   return 0;
 }
+
+SEXP processx_disable_crash_dialog() {
+  struct sigaction action;
+  memset(&action, 0, sizeof(action));
+  action.sa_handler = SIG_DFL;
+  sigaction(SIGSEGV, &action, /* oldact= */ NULL);
+  sigaction(SIGILL,  &action, /* oldact= */ NULL);
+#ifdef SIGBUS
+  sigaction(SIGBUS,  &action, /* oldact= */ NULL);
+#endif
+  return R_NilValue;
+}
