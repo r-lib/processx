@@ -47,6 +47,8 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_connection_disable_inheritance",
     (DL_FUNC) &processx_connection_disable_inheritance, 0 },
 
+  { "processx_disable_crash_dialog",  (DL_FUNC) &processx_disable_crash_dialog,   0 },
+
   { NULL, NULL, 0 }
 };
 

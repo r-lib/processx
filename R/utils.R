@@ -203,3 +203,7 @@ file_size <- function(x) {
     file.info(x)$size
   }
 }
+
+disable_crash_dialog <- function() {
+  .Call(c_processx_disable_crash_dialog)
+}

@@ -61,6 +61,8 @@ SEXP processx_close_named_pipe(SEXP pipe_ext);
 SEXP processx_create_named_pipe(SEXP name, SEXP mode);
 SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text);
 
+SEXP processx_disable_crash_dialog();
+
 /* Common declarations */
 
 /* Interruption interval in ms */
