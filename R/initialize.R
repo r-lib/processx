@@ -29,21 +29,22 @@ process_initialize <- function(self, private, command, args,
 
   "!DEBUG process_initialize `command`"
 
-  assert_that(is_string(command))
-  assert_that(is.character(args))
-  assert_that(is_string_or_null(stdin))
-  assert_that(is_string_or_null(stdout))
-  assert_that(is_string_or_null(stderr))
-  assert_that(is_connection_list(connections))
-  assert_that(is.null(poll_connection) || is_flag(poll_connection))
-  assert_that(is.null(env) || is_named_character(env))
-  assert_that(is_flag(cleanup))
-  assert_that(is_string_or_null(wd))
-  assert_that(is_flag(echo_cmd))
-  assert_that(is_flag(windows_verbatim_args))
-  assert_that(is_flag(windows_hide_window))
-  assert_that(is_string(encoding))
-  assert_that(is.function(post_process) || is.null(post_process))
+  assert_that(
+    is_string(command),
+    is.character(args),
+    is_string_or_null(stdin),
+    is_string_or_null(stdout),
+    is_string_or_null(stderr),
+    is_connection_list(connections),
+    is.null(poll_connection) || is_flag(poll_connection),
+    is.null(env) || is_named_character(env),
+    is_flag(cleanup),
+    is_string_or_null(wd),
+    is_flag(echo_cmd),
+    is_flag(windows_verbatim_args),
+    is_flag(windows_hide_window),
+    is_string(encoding),
+    is.function(post_process) || is.null(post_process))
 
   private$command <- command
   private$args <- args
