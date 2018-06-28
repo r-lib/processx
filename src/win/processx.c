@@ -336,6 +336,44 @@ static int qsort_wcscmp(const void *a, const void *b) {
 }
 
 static int processx__add_tree_id_env(const char *ctree_id, WCHAR **dst_ptr) {
+  WCHAR *env = GetEnvironmentStringsW();
+  int len = 0, len2 = 0;
+  WCHAR *ptr = env;
+  WCHAR *id = 0;
+  int err;
+  int idlen;
+  WCHAR *dst_copy;
+
+  if (!env) return GetLastError();
+
+  err = processx__utf8_to_utf16_alloc(ctree_id, &id);
+  if (err) {
+    FreeEnvironmentStringsW(env);
+    return(err);
+  }
+
+  while (1) {
+    WCHAR *prev = ptr;
+    if (!*ptr) break;
+    while (*ptr) ptr++;
+    ptr++;
+    len += (ptr - prev);
+  }
+
+  /* Plus the id */
+  idlen = wcslen(id) + 1;
+  len2 = len + idlen;
+
+  /* Allocate, copy */
+  dst_copy = (WCHAR*) R_alloc(len2 + 1, sizeof(WCHAR)); /* +1 for final zero */
+  memcpy(dst_copy, env, len * sizeof(WCHAR));
+  memcpy(dst_copy + len, id, idlen * sizeof(WCHAR));
+
+  /* Final \0 */
+  *(dst_copy + len2) = L'\0';
+  *dst_ptr = dst_copy;
+
+  FreeEnvironmentStringsW(env);
   return 0;
 }
 
