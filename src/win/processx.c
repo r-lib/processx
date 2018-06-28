@@ -335,7 +335,11 @@ static int qsort_wcscmp(const void *a, const void *b) {
   return env_strncmp(astr, -1, bstr);
 }
 
-static int processx__make_program_env(SEXP env_block, WCHAR** dst_ptr) {
+static int processx__add_tree_id_env(const char *ctree_id, WCHAR **dst_ptr) {
+  return 0;
+}
+
+static int processx__make_program_env(SEXP env_block, const char *tree_id, WCHAR** dst_ptr) {
   WCHAR* dst;
   WCHAR* ptr;
   size_t env_len = 0;
@@ -351,7 +355,6 @@ static int processx__make_program_env(SEXP env_block, WCHAR** dst_ptr) {
 
   /* first pass: determine size in UTF-16 */
   for (j = 0; j < num; j++) {
-    int len;
     const char *env = CHAR(STRING_ELT(env_block, 0));
     if (strchr(env, '=')) {
       len = MultiByteToWideChar(CP_UTF8,
@@ -367,6 +370,12 @@ static int processx__make_program_env(SEXP env_block, WCHAR** dst_ptr) {
       env_block_count++;
     }
   }
+
+  /* Plus the tree id */
+  len = MultiByteToWideChar(CP_UTF8, 0, tree_id, -1, NULL, 0);
+  if (len <= 0) return GetLastError();
+  env_len += len;
+  env_block_count++;
 
   /* second pass: copy to UTF-16 environment block */
   dst_copy = (WCHAR*) R_alloc(env_len, sizeof(WCHAR));
@@ -391,6 +400,13 @@ static int processx__make_program_env(SEXP env_block, WCHAR** dst_ptr) {
       ptr += len;
     }
   }
+  /* Plus the tree id */
+  len = MultiByteToWideChar(CP_UTF8, 0, tree_id, -1, ptr,
+			    (int) (env_len  - (ptr - dst_copy)));
+  if (len <= 0) return GetLastError();
+  *ptr_copy++ = ptr;
+  ptr += len;
+
   *ptr_copy = NULL;
 
   /* sort our (UTF-16) copy */
@@ -834,6 +850,7 @@ SEXP processx_exec(SEXP command, SEXP args,
   const char *cstd_err = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
   const char *ccwd = isNull(wd) ? 0 : CHAR(STRING_ELT(wd, 0));
+  const char *ctree_id = CHAR(STRING_ELT(tree_id, 0));
   int i, num_connections = LENGTH(connections) + 3;
   HANDLE* extra_connections =
     (HANDLE*) R_alloc(num_connections - 3, sizeof(HANDLE));
@@ -865,10 +882,12 @@ SEXP processx_exec(SEXP command, SEXP args,
       &arguments);
   if (err) { PROCESSX_ERROR("making program args", err); }
 
-  if (! isNull(env)) {
-     err = processx__make_program_env(env, &cenv);
-     if (err) PROCESSX_ERROR("making environment", err);
+  if (isNull(env)) {
+    err = processx__add_tree_id_env(ctree_id, &cenv);
+  } else {
+    err = processx__make_program_env(env, ctree_id, &cenv);
   }
+  if (err) PROCESSX_ERROR("making environment", err);
 
   if (ccwd) {
     /* Explicit cwd */
