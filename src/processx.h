@@ -41,7 +41,7 @@ SEXP processx_exec(SEXP command, SEXP args,
 		   SEXP connections, SEXP env,
 		   SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private_, SEXP cleanup,
-		   SEXP wd, SEXP encoding);
+		   SEXP wd, SEXP encoding, SEXP tree_id);
 SEXP processx_wait(SEXP status, SEXP timeout);
 SEXP processx_is_alive(SEXP status);
 SEXP processx_get_exit_status(SEXP status);

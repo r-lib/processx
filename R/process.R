@@ -498,6 +498,8 @@ process <- R6Class(
     post_process_result = NULL,
     post_process_done = FALSE,
 
+    tree_id = NULL,
+
     get_short_name = function()
       process_get_short_name(self, private)
   )

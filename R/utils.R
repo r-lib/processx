@@ -183,3 +183,10 @@ get_tool <- function(prog) {
   }
   exe
 }
+
+get_id <- function() {
+  paste(
+    sample(c(LETTERS, 0:9), 10, replace = TRUE),
+    collapse = ""
+  )
+}

@@ -74,12 +74,15 @@ process_initialize <- function(self, private, command, args,
 
   if (!is.null(env)) env <- enc2utf8(paste(names(env), sep = "=", env))
 
+  private$tree_id <- get_id()
+
   "!DEBUG process_initialize exec()"
   private$status <- .Call(
     c_processx_exec,
     command, c(command, args), stdin, stdout, stderr, connections, env,
     windows_verbatim_args, windows_hide_window,
-    private, cleanup, wd, encoding
+    private, cleanup, wd, encoding,
+    paste0("PROCESSX_", private$tree_id, "=YES")
   )
   private$starttime <- Sys.time()
 
