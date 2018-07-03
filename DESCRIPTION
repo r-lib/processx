@@ -31,6 +31,9 @@ Suggests:
     covr,
     debugme,
     parallel,
+    ps,
     testthat,
     withr
+Remotes:
+    r-lib/ps
 Encoding: UTF-8
