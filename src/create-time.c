@@ -5,9 +5,25 @@
 
 #ifdef _WIN32
 
-double processx__create_time(long pid) {
-  /* TODO */
-  return 0.0;
+#include <windows.h>
+
+double processx__create_time(HANDLE process) {
+  long long   unix_time;
+  FILETIME    ftCreate, ftExit, ftKernel, ftUser;
+
+  if (! GetProcessTimes(process, &ftCreate, &ftExit, &ftKernel, &ftUser)) {
+    if (GetLastError() == ERROR_ACCESS_DENIED) {
+      // usually means the process has died
+      return 0.0;
+    } else {
+      return 0.0;
+    }
+  }
+
+  unix_time = ((LONGLONG) ftCreate.dwHighDateTime) << 32;
+  unix_time += ftCreate.dwLowDateTime - 116444736000000000LL;
+  unix_time /= 10000000;
+  return (double) unix_time;
 }
 
 #endif
@@ -212,7 +228,16 @@ double processx__create_time(long pid) {
 #endif
 
 SEXP processx_create_time(SEXP r_pid) {
-  return ScalarReal(processx__create_time(INTEGER(r_pid)[0]));
+  long pid = INTEGER(r_pid)[0];
+#ifdef _WIN32
+  DWORD dwDesiredAccess = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ;
+  HANDLE process = OpenProcess(dwDesiredAccess, FALSE, pid);
+  double ct = processx__create_time(process);
+  CloseHandle(process);
+  return ScalarReal(ct);
+#else
+  return ScalarReal(processx__create_time(pid));
+#endif
 }
 
 SEXP processx__proc_start_time(SEXP status) {

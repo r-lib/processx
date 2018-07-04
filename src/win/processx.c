@@ -1041,6 +1041,11 @@ SEXP processx_exec(SEXP command, SEXP args,
   handle->hProcess = info.hProcess;
   handle->dwProcessId = info.dwProcessId;
 
+  /* Query official creation time. On Windows this is not used as
+     an id, since the pid itself is valid until the process handle
+     is released. */
+  handle->create_time = processx__create_time(handle->hProcess);
+
   /* If the process isn't spawned as detached, assign to the global job */
   /* object so windows will kill it when the parent process dies. */
   if (ccleanup) {
