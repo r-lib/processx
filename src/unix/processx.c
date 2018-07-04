@@ -343,6 +343,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
     /* LCOV_EXCL_STOP */
   }
 
+  /* Query creation time ASAP. We'll use (pid, create_time) as an ID,
+     to avoid race conditions when sending signals */
+  handle->create_time = processx__create_time(pid);
+
   /* We need to know the processx children */
   if (processx__child_add(pid, result)) {
     err = -errno;

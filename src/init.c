@@ -18,6 +18,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_interrupt",          (DL_FUNC) &processx_interrupt,          1 },
   { "processx_kill",               (DL_FUNC) &processx_kill,               2 },
   { "processx_get_pid",            (DL_FUNC) &processx_get_pid,            1 },
+  { "processx_create_time",        (DL_FUNC) &processx_create_time,        1 },
   { "processx_poll",               (DL_FUNC) &processx_poll,               3 },
   { "processx__process_exists",    (DL_FUNC) &processx__process_exists,    1 },
   { "processx__killem_all",        (DL_FUNC) &processx__killem_all,        0 },
@@ -25,6 +26,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_close_named_pipe",   (DL_FUNC) &processx_close_named_pipe,   1 },
   { "processx_create_named_pipe",  (DL_FUNC) &processx_create_named_pipe,  2 },
   { "processx_write_named_pipe",   (DL_FUNC) &processx_write_named_pipe,   2 },
+  { "processx__proc_start_time",   (DL_FUNC) &processx__proc_start_time,   1 },
 
   { "processx_connection_create",     (DL_FUNC) &processx_connection_create,     2 },
   { "processx_connection_read_chars", (DL_FUNC) &processx_connection_read_chars, 2 },

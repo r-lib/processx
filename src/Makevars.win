@@ -1,5 +1,5 @@
 OBJECTS = init.o poll.o processx-connection.o			     \
-          processx-vector.o                                          \
+          processx-vector.o create-time.o                            \
           win/processx.o win/stdio.o win/named_pipe.o win/cleanup.o  \
 	  win/iocp.o
 

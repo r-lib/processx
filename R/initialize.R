@@ -84,7 +84,15 @@ process_initialize <- function(self, private, command, args,
     private, cleanup, wd, encoding,
     paste0("PROCESSX_", private$tree_id, "=YES")
   )
-  private$starttime <- Sys.time()
+
+  ## We try the query the start time according to the OS, because we can
+  ## use the (pid, start time) pair as an id when performing operations on
+  ## the process, e.g. sending signals. This is only implemented on Linux,
+  ## macOS and Windows and on other OSes it returns 0.0, so we just use the
+  ## current time instead. (In the C process handle, there will be 0,
+  ## still.)
+  private$starttime <- .Call(c_processx__proc_start_time, private$status)
+  if (private$starttime == 0) private$starttime <- Sys.time()
 
   ## Need to close this, otherwise the child's end of the pipe
   ## will not be closed when the child exits, and then we cannot

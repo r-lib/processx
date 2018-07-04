@@ -190,3 +190,7 @@ get_id <- function() {
     collapse = ""
   )
 }
+
+format_unix_time <- function(z) {
+  structure(z, class = c("POSIXct", "POSIXt"), tzone = "GMT")
+}

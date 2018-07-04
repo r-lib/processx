@@ -39,5 +39,6 @@ void processx__error(const char *message, DWORD errorcode, const char *file, int
 
 void processx__stdio_noinherit(BYTE* buffer);
 int processx__stdio_verify(BYTE* buffer, WORD size);
+double processx__create_time(long pid);
 
 #endif

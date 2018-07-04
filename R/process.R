@@ -546,7 +546,7 @@ process_kill <- function(self, private, grace) {
 }
 
 process_get_start_time <- function(self, private) {
-  private$starttime
+  format_unix_time(private$starttime)
 }
 
 process_get_pid <- function(self, private) {
