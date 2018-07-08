@@ -101,7 +101,7 @@ double processx__create_time_since_boot(long pid) {
   }
   /* This removed the last character, but that's a \n anyway.
      At least we have a zero terminated string... */
-  *(buf + ret) = '\0';
+  *(buf + ret - 1) = '\0';
 
   /* Find the first '(' and last ')', that's the end of the command */
   l = strchr(buf, '(');
@@ -158,6 +158,8 @@ double processx__boot_time() {
 
   ret = processx__read_file("/proc/stat", &buf, /* buffer= */ 2048);
   if (ret < 0)  return 0.0;
+
+  *(buf + ret - 1) = '\0';
 
   btime_pos = processx__memmem(buf, ret, btime_str, btime_size);
   if (! btime_pos) return 0.0;
