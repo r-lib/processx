@@ -7,10 +7,10 @@ test_that("tree ids are inherited", {
 
   p <- process$new(px, c("sleep", "10"))
   on.exit(p$kill(), add = TRUE)
-  ep <- ps::process(p$get_pid())
+  ep <- ps::ps_handle(p$get_pid())
 
   ev <- paste0("PROCESSX_", get_private(p)$tree_id)
-  expect_equal(ep$environ()[[ev]], "YES")
+  expect_equal(ps::ps_environ(ep)[[ev]], "YES")
 })
 
 test_that("tree ids are inherited if env is specified", {
@@ -20,9 +20,9 @@ test_that("tree ids are inherited if env is specified", {
   p <- process$new(px, c("sleep", "10"), env = c(FOO = "bar"))
   on.exit(p$kill(), add = TRUE)
 
-  ep <-  ps::process(p$get_pid())
+  ep <-  ps::ps_handle(p$get_pid())
 
   ev <- paste0("PROCESSX_", get_private(p)$tree_id)
-  expect_equal(ep$environ()[[ev]], "YES")
-  expect_equal(ep$environ()[["FOO"]], "bar")
+  expect_equal(ps::ps_environ(ep)[[ev]], "YES")
+  expect_equal(ps::ps_environ(ep)[["FOO"]], "bar")
 })
