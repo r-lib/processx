@@ -1,11 +1,12 @@
 
+#define _XOPEN_SOURCE 500
+
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <sys/types.h>
 
 void usage() {
   fprintf(stderr, "Usage: px [command arg] [command arg] ...\n\n");
