@@ -9,6 +9,8 @@ extern "C" {
 #ifdef __INTEL_COMPILER
 #define _BSD_SOURCE 1
 #define _POSIX_C_SOURCE  200809L
+#elif defined __GNUC__
+#define _XOPEN_SOURCE 500
 #endif
 
 #ifdef _WIN32
