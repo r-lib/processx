@@ -26,7 +26,7 @@
 // * Kill the parent processes.
 // * Kill a child process.
 
-#ifdef __INTEL_COMPILER
+#if defined __INTEL_COMPILER || defined __GNUC__
 #define _BSD_SOURCE 1
 #define _POSIX_C_SOURCE  200809L
 #endif
