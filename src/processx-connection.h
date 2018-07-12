@@ -2,11 +2,9 @@
 #ifndef PROCESSX_CONNECTION_H
 #define PROCESSX_CONNECTION_H
 
-#ifdef __INTEL_COMPILER
+#ifdef __INTEL_COMPILER || __GNUC__
 #define _BSD_SOURCE 1
 #define _POSIX_C_SOURCE  200809L
-#elif defined __GNUC__
-#define _XOPEN_SOURCE 500
 #endif
 
 #include <Rinternals.h>
