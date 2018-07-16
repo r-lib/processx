@@ -8,7 +8,7 @@
 #include <windows.h>
 
 double processx__create_time(HANDLE process) {
-  long long   unix_time;
+  long long   ll, secs, nsecs;
   FILETIME    ftCreate, ftExit, ftKernel, ftUser;
 
   if (! GetProcessTimes(process, &ftCreate, &ftExit, &ftKernel, &ftUser)) {
@@ -20,10 +20,11 @@ double processx__create_time(HANDLE process) {
     }
   }
 
-  unix_time = ((LONGLONG) ftCreate.dwHighDateTime) << 32;
-  unix_time += ftCreate.dwLowDateTime - 116444736000000000LL;
-  unix_time /= 10000000;
-  return (double) unix_time;
+  ll = ((LONGLONG) ftCreate.dwHighDateTime) << 32;
+  ll += ftCreate.dwLowDateTime - 116444736000000000LL;
+  secs = ll / 10000000;
+  nsecs = ll % 10000000;
+  return (double) secs + ((double) nsecs) / 10000000;
 }
 
 #endif
