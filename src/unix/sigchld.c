@@ -23,7 +23,7 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
       wp = waitpid(ptr->pid, &wstat, WNOHANG);
     } while (wp == -1 && errno == EINTR);
 
-    if (wp <= 0 && errno != ECHILD) {
+    if (wp == 0 || (wp < 0 && errno != ECHILD)) {
       /* If it is still running (or an error, other than ECHILD happened),
         we do nothing */
       prev = ptr;
