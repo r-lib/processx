@@ -15,9 +15,30 @@ matrix:
     - os: osx
       osx_image: xcode7.3 #El-Capitan
 
+before_script:
+  - ulimit -c unlimited -S       # enable core dumps
+  - rm -rf /cores/core.*
+
 after_success:
   - test $R_CODECOV && Rscript -e 'covr::codecov()'
+
+after_failure:
+  - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
+      for c in $(ls /cores/core.*); do
+        lldb -c $c -o "bt all" -b;
+      done
+    fi
+  - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
+      for x in $(ls core*); do
+        gdb -c $c -ex bt -ex "set pagination 0" -batch;
+      done
+    fi
 
 env:
   global:
     - NOT_CRAN=true
+
+addons:
+  apt:
+    packages:
+    - gdb
