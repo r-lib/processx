@@ -1,15 +1,31 @@
 
-# processx 3.1.0.9001
+# processx 3.1.0.9005
+
+* Send interrupt to a process, SIGINT on Unix, CTRL+C on Windows (#127).
+
+* Support writing to the standard input of a process (#27, #114).
+
+* Support extra connections, in addition to the standard streams.
+
+* Poll connection: an extra connection that can be used to poll the
+  process, even if `stdout` and `stderr` are not pipes (#125).
 
 * `poll()` now works with connections objects, and they can be mixed with
   process objects (#121).
-
-* Support writing to the standard input of a process (#27, #114).
 
 * Set the environment of the child process, optionally (#117, #118).
 
 * Removed the `$restart()` method, because it was less useful than
   expected, and hard to maintain (#116).
+
+* Function to set the standard output or error of the calling process.
+
+* Function to disable stdio inheritance. It is suggested that child
+  processes call this immediately after starting, so the file handles
+  are not inherited further.
+
+* Fixed a signal handler bug on Unix that marked the process as finished,
+  even if it has not (d221aa1f).
 
 # processx 3.1.0
 
