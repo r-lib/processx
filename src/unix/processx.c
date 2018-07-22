@@ -181,8 +181,6 @@ void processx__finalizer(SEXP status) {
 
   pid = handle->pid;
 
-  REprintf("Finalizing %d\n", pid);
-  
   if (handle->cleanup) {
     /* Do a non-blocking waitpid() to see if it is running */
     do {
@@ -202,8 +200,6 @@ void processx__finalizer(SEXP status) {
     }
   }
 
-  REprintf("copying over status\n");
-  
   /* Copy over pid and exit status */
   private = PROTECT(R_ExternalPtrTag(status));
   if (!isNull(private)) {
@@ -224,7 +220,6 @@ void processx__finalizer(SEXP status) {
      any more. */
 
   /* Deallocate memory */
-  REprintf("destroying status\n");
   R_ClearExternalPtr(status);
   processx__handle_destroy(handle);
 
@@ -493,7 +488,6 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   int ret = 0;
   pid_t pid;
 
-  REprintf("wait\n");
   processx__block_sigchld();
 
   if (!handle) {
@@ -505,17 +499,12 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
 
   /* If we already have the status, then return now. */
   if (handle->collected) {
-    REprintf("handle collected\n");
     processx__unblock_sigchld();
     return ScalarLogical(1);
   }
 
-  REprintf("handle active\n");
-
   /* Make sure this is active, in case another package replaced it... */
-  REprintf("setup sigchld\n");
   processx__setup_sigchld();
-  REprintf("block sigchld after setting up\n");
   processx__block_sigchld();
 
   /* Setup the self-pipe that we can poll */
@@ -535,14 +524,12 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
 
   while (ctimeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
     do {
-      REprintf("polling\n");
       ret = poll(&fd, 1, PROCESSX_INTERRUPT_INTERVAL);
     } while (ret == -1 && errno == EINTR);
 
     /* If not a timeout, then we are done */
     if (ret != 0) break;
 
-    REprintf("Checking for interrupt\n");
     R_CheckUserInterrupt();
 
     /* We also check if the process is alive, because the SIGCHLD is
@@ -570,7 +557,6 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   }
 
  cleanup:
-  REprintf("Cleaning up\n");
   if (handle->waitpipe[0] >= 0) close(handle->waitpipe[0]);
   if (handle->waitpipe[1] >= 0) close(handle->waitpipe[1]);
   handle->waitpipe[0] = -1;

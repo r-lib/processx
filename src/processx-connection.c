@@ -1019,12 +1019,7 @@ static void processx__connection_find_lines(processx_connection_t *ccon,
 
 static void processx__connection_xfinalizer(SEXP con) {
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
-
-  REprintf("Finalizing a connection\n");
-  
   processx_c_connection_destroy(ccon);
-
-  REprintf("done Finalizing a connection\n");
 }
 
 static ssize_t processx__find_newline(processx_connection_t *ccon,

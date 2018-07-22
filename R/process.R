@@ -513,9 +513,7 @@ process_wait <- function(self, private, timeout) {
   "!DEBUG process_wait `private$get_short_name()`"
   if (private$exited) {
     ## Nothing
-    print("already gone")
   } else {
-    print("call to wait")
     .Call(c_processx_wait, private$status, as.integer(timeout))
   }
   invisible(self)
