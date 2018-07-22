@@ -18,6 +18,7 @@ matrix:
 before_script:
   - ulimit -c unlimited -S       # enable core dumps
   - rm -rf /cores/core.*
+  - rm -rf ~/Library/Logs/DiagnosticReports/*
 
 after_success:
   - test $R_CODECOV && Rscript -e 'covr::codecov()'
@@ -26,12 +27,15 @@ after_failure:
   - if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
       for c in $(ls /cores/core.*); do
         lldb -c $c -o "bt all" -b;
-      done
+      done;
+      for c in $(ls ~/Library/Logs/DiagnosticReports); do
+        cat ~/Library/Logs/DiagnosticReports/$c;
+      done;
     fi
   - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
-      for x in $(ls core*); do
+      for c in $(ls core*); do
         gdb -c $c -ex bt -ex "set pagination 0" -batch;
-      done
+      done;
     fi
 
 env:
