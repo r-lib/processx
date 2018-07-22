@@ -30,7 +30,7 @@ test_that("wait with timeout", {
 test_that("wait after process already exited", {
 
   px <- get_tool("px")
-  
+
   pxs <- replicate(20, process$new(px, c("outln",  "foo", "outln", "bar")))
   rm(pxs)
 

@@ -160,16 +160,10 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
 
 /* LCOV_EXCL_STOP */
 
-SEXP processx__disconnect_process_handle(SEXP status) {
-  R_SetExternalPtrTag(status, R_NilValue);
-  return R_NilValue;
-}
-
 void processx__finalizer(SEXP status) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
   pid_t pid;
   int wp, wstat;
-  SEXP private;
 
   processx__block_sigchld();
 
@@ -199,21 +193,6 @@ void processx__finalizer(SEXP status) {
       processx__collect_exit_status(status, wp, wstat);
     }
   }
-
-  /* Copy over pid and exit status */
-  private = PROTECT(R_ExternalPtrTag(status));
-  if (!isNull(private)) {
-    SEXP sone = PROTECT(ScalarLogical(1));
-    SEXP spid = PROTECT(ScalarInteger(pid));
-    SEXP sexitcode = PROTECT(ScalarInteger(handle->exitcode));
-
-    defineVar(install("exited"), sone, private);
-    defineVar(install("pid"), spid, private);
-    defineVar(install("exitcode"), sexitcode, private);
-    UNPROTECT(3);
-  }
-
-  UNPROTECT(1);
 
   /* Note: if no cleanup is requested, then we still have a sigchld
      handler, to read out the exit code via waitpid, but no handle
