@@ -30,6 +30,10 @@ test_that("wait with timeout", {
 test_that("wait after process already exited", {
 
   px <- get_tool("px")
+  
+  pxs <- replicate(20, process$new(px, c("outln",  "foo", "outln", "bar")))
+  rm(pxs)
+
   p <- process$new(
     px, c("outln", "foo", "outln", "bar", "outln", "foobar"))
 
@@ -37,6 +41,8 @@ test_that("wait after process already exited", {
   p$wait()
 
   ## Now wait() should return immediately, regardless of timeout
+  print("1")
   expect_true(system.time(p$wait())[["elapsed"]] < 1)
+  print("2")
   expect_true(system.time(p$wait(3000))[["elapsed"]] < 1)
 })

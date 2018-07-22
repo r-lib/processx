@@ -30,6 +30,7 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
       ptr = next;
 
     } else {
+      REprintf("sigchld remove  %d\n", ptr->pid);
       /* Remove the child from the list */
 
       /* We deliberately do not call the finalizer here, because that
