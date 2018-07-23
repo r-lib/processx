@@ -38,7 +38,7 @@ SEXP processx__killem_all();
 
 typedef struct processx__child_list_s {
   pid_t pid;
-  SEXP status;
+  SEXP weak_status;
   struct processx__child_list_s *next;
 } processx__child_list_t;
 

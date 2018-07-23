@@ -18,17 +18,27 @@ void processx__freelist_free() {
   processx__child_list_t *ptr = child_free_list->next;
   while (ptr) {
     processx__child_list_t *next = ptr->next;
+    R_ReleaseObject(ptr->weak_status);
     free(ptr);
     ptr = next;
   }
   child_free_list->next = 0;
 }
 
+void processx__child_finalizer(SEXP x) {
+  /* Nothing to do here, there is a finalizer on the xPTR */
+}
+
 int processx__child_add(pid_t pid, SEXP status) {
   processx__child_list_t *child = calloc(1, sizeof(processx__child_list_t));
+  SEXP weak_ref;
   if (!child) return 1;
+
+  weak_ref = R_MakeWeakRefC(status, R_NilValue, processx__child_finalizer, 1);
+
   child->pid = pid;
-  child->status = status;
+  R_PreserveObject(weak_ref);
+  child->weak_status = weak_ref;
   child->next = child_list->next;
   child_list->next = child;
   return 0;
@@ -42,7 +52,6 @@ void processx__child_remove(pid_t pid) {
   while (ptr) {
     if (ptr->pid == pid) {
       prev->next = ptr->next;
-      memset(ptr, 0, sizeof(*ptr));
       /* Defer freeing the memory, because malloc/free are typically not
 	 reentrant, and if we free in the SIGCHLD handler, that can cause
 	 crashes. The test case in test-run.R (see comments there)
@@ -76,9 +85,9 @@ SEXP processx__killem_all() {
 
   while (ptr) {
     processx__child_list_t *next = ptr->next;
-    SEXP status = ptr->status;
+    SEXP status = R_WeakRefKey(ptr->weak_status);
     processx_handle_t *handle =
-      (processx_handle_t*) R_ExternalPtrAddr(status);
+      isNull(status) ? 0 : (processx_handle_t*) R_ExternalPtrAddr(status);
     int wp, wstat;
 
     if (handle && handle->cleanup) {
@@ -91,7 +100,7 @@ SEXP processx__killem_all() {
 
     /* waitpid errors are ignored here... */
 
-    R_ClearExternalPtr(status);
+    if (!isNull(status)) R_ClearExternalPtr(status);
     /* The handle will be freed in the finalizer, otherwise there is
        a race condition here. */
 

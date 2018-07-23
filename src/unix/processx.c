@@ -52,12 +52,12 @@ extern processx__child_list_t *child_free_list;
 
 void R_init_processx_unix() {
   child_list_head.pid = 0;
-  child_list_head.status = 0;
+  child_list_head.weak_status = R_NilValue;
   child_list_head.next = 0;
   child_list = &child_list_head;
 
   child_free_list_head.pid = 0;
-  child_free_list_head.status = 0;
+  child_free_list_head.weak_status = R_NilValue;
   child_free_list_head.next = 0;
   child_free_list = &child_free_list_head;
 }
@@ -160,16 +160,10 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
 
 /* LCOV_EXCL_STOP */
 
-SEXP processx__disconnect_process_handle(SEXP status) {
-  R_SetExternalPtrTag(status, R_NilValue);
-  return R_NilValue;
-}
-
 void processx__finalizer(SEXP status) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
   pid_t pid;
   int wp, wstat;
-  SEXP private;
 
   processx__block_sigchld();
 
@@ -199,21 +193,6 @@ void processx__finalizer(SEXP status) {
       processx__collect_exit_status(status, wp, wstat);
     }
   }
-
-  /* Copy over pid and exit status */
-  private = PROTECT(R_ExternalPtrTag(status));
-  if (!isNull(private)) {
-    SEXP sone = PROTECT(ScalarLogical(1));
-    SEXP spid = PROTECT(ScalarInteger(pid));
-    SEXP sexitcode = PROTECT(ScalarInteger(handle->exitcode));
-
-    defineVar(install("exited"), sone, private);
-    defineVar(install("pid"), spid, private);
-    defineVar(install("exitcode"), sexitcode, private);
-    UNPROTECT(3);
-  }
-
-  UNPROTECT(1);
 
   /* Note: if no cleanup is requested, then we still have a sigchld
      handler, to read out the exit code via waitpid, but no handle
@@ -560,6 +539,7 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   if (handle->waitpipe[0] >= 0) close(handle->waitpipe[0]);
   if (handle->waitpipe[1] >= 0) close(handle->waitpipe[1]);
   handle->waitpipe[0] = -1;
+  handle->waitpipe[1] = -1;
 
   return ScalarLogical(ret != 0);
 }

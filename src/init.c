@@ -25,8 +25,6 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_close_named_pipe",   (DL_FUNC) &processx_close_named_pipe,   1 },
   { "processx_create_named_pipe",  (DL_FUNC) &processx_create_named_pipe,  2 },
   { "processx_write_named_pipe",   (DL_FUNC) &processx_write_named_pipe,   2 },
-  { "processx__disconnect_process_handle",
-    (DL_FUNC) &processx__disconnect_process_handle, 1 },
 
   { "processx_connection_create",     (DL_FUNC) &processx_connection_create,     2 },
   { "processx_connection_read_chars", (DL_FUNC) &processx_connection_read_chars, 2 },
