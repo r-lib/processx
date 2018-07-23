@@ -28,6 +28,7 @@ int processx__child_add(pid_t pid, SEXP status) {
   processx__child_list_t *child = calloc(1, sizeof(processx__child_list_t));
   if (!child) return 1;
   child->pid = pid;
+  R_PreserveObject(status);
   child->status = status;
   child->next = child_list->next;
   child_list->next = child;
@@ -42,7 +43,7 @@ void processx__child_remove(pid_t pid) {
   while (ptr) {
     if (ptr->pid == pid) {
       prev->next = ptr->next;
-      memset(ptr, 0, sizeof(*ptr));
+      R_ReleaseObject(ptr->status);
       /* Defer freeing the memory, because malloc/free are typically not
 	 reentrant, and if we free in the SIGCHLD handler, that can cause
 	 crashes. The test case in test-run.R (see comments there)

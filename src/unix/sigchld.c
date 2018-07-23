@@ -51,7 +51,7 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
 	 reentrant, and if we free in the SIGCHLD handler, that can cause
 	 crashes. The test case in test-run.R (see comments there)
 	 typically brings this out. */
-      /* memset(ptr, 0, sizeof(*ptr)); */
+      R_ReleaseObject(ptr->status);
       processx__freelist_add(ptr);
 
       /* If there is an active wait() with a timeout, then stop it */
