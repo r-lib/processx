@@ -11,6 +11,11 @@ skip_extra_tests <- function() {
   if (Sys.getenv("PROCESSX_EXTRA_TESTS") ==  "") skip("no extra tests")
 }
 
+skip_if_no_ps <- function() {
+  if (!requireNamespace("ps", quietly = TRUE)) skip("ps package needed")
+  if (!ps::ps_is_supported()) skip("ps does not support this platform")
+}
+
 try_silently <- function(expr) {
   tryCatch(
     expr,

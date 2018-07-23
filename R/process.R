@@ -25,6 +25,7 @@ NULL
 #' p$signal(signal)
 #' p$interrupt()
 #' p$kill(grace = 0.1)
+#' p$kill_tree(grace = 0.1)
 #' p$wait(timeout = -1)
 #' p$get_pid()
 #' p$get_exit_status()
@@ -155,6 +156,15 @@ NULL
 #' or job object (on Windows). It returns `TRUE` if the process
 #' was killed, and `FALSE` if it was no killed (because it was
 #' already finished/dead when `processx` tried to kill it).
+#'
+#' `$kill_tree()` performs process tree cleanup, it kills the process
+#' (if still alive), together with any child (or grandchild, etc.)
+#' processes. It uses the _ps_ package, so that needs to be installed,
+#' and _ps_ needs to support the current platform as well. Process tree
+#' cleanup works by marking the process with an environment variable,
+#' which is inherited in all child processes. This allows finding
+#' descendents, even if they are orphaned, i.e. they are not connected
+#' to the root of the tree cleanup in the process tree any more.
 #'
 #' `$wait()` waits until the process finishes, or a timeout happens.
 #' Note that if the process never finishes, and the timeout is infinite
@@ -353,6 +363,9 @@ process <- R6Class(
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
 
+    kill_tree = function(grace = 0.1)
+      process_kill_tree(self, private, grace),
+
     signal = function(signal)
       process_signal(self, private, signal),
 
@@ -543,6 +556,22 @@ process_interrupt <- function(self, private) {
 process_kill <- function(self, private, grace) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `self$get_pid()`"
   .Call(c_processx_kill, private$status, as.numeric(grace))
+}
+
+process_kill_tree <- function(self, private, grace) {
+  "!DEBUG process_kill_tree '`private$get_short_name()`', pid `self$get_pid()`"
+  if (!requireNamespace("ps", quietly = TRUE)) {
+    stop(structure(
+      list(message = "kill_tree needs the ps package"),
+      class = c("missing_import", "error", "condition")))
+  }
+  if (!ps::ps_is_supported()) {
+    stop(structure(
+      list(message = "kill_tree is not supported on this platform"),
+      class = c("not_implemented", "error", "condition")))
+  }
+
+  get("ps_kill_tree", asNamespace("ps"))(private$tree_id)
 }
 
 process_get_start_time <- function(self, private) {
