@@ -7,6 +7,12 @@ pandoc: false
 
 matrix:
   include:
+    - r: 3.1
+    - r: 3.2
+    - r: 3.3
+    - r: 3.4
+    - r: release
+      env: R_CODECOV=true
     - r: devel
     - os: osx
       osx_image: xcode9.3 #High Sierra
