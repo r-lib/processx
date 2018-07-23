@@ -52,12 +52,12 @@ extern processx__child_list_t *child_free_list;
 
 void R_init_processx_unix() {
   child_list_head.pid = 0;
-  child_list_head.status = 0;
+  child_list_head.weak_status = R_NilValue;
   child_list_head.next = 0;
   child_list = &child_list_head;
 
   child_free_list_head.pid = 0;
-  child_free_list_head.status = 0;
+  child_free_list_head.weak_status = R_NilValue;
   child_free_list_head.next = 0;
   child_free_list = &child_free_list_head;
 }

@@ -42,16 +42,17 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
 	 might even trigger the SIGCHLD handler...
       */
 
-      processx_handle_t *handle = R_ExternalPtrAddr(ptr->status);
+      SEXP status = R_WeakRefKey(ptr->weak_status);
+      processx_handle_t *handle =
+	isNull(status) ? 0 : R_ExternalPtrAddr(status);
 
       /* If waitpid errored with ECHILD, then the exit status is set to NA */
-      if (handle) processx__collect_exit_status(ptr->status, wp, wstat);
+      if (handle) processx__collect_exit_status(status, wp, wstat);
 
       /* Defer freeing the memory, because malloc/free are typically not
 	 reentrant, and if we free in the SIGCHLD handler, that can cause
 	 crashes. The test case in test-run.R (see comments there)
 	 typically brings this out. */
-      R_ReleaseObject(ptr->status);
       processx__freelist_add(ptr);
 
       /* If there is an active wait() with a timeout, then stop it */

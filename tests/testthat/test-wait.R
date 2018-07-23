@@ -41,8 +41,6 @@ test_that("wait after process already exited", {
   p$wait()
 
   ## Now wait() should return immediately, regardless of timeout
-  print("1")
   expect_true(system.time(p$wait())[["elapsed"]] < 1)
-  print("2")
   expect_true(system.time(p$wait(3000))[["elapsed"]] < 1)
 })
