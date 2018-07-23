@@ -1,6 +1,8 @@
 
 # processx 3.1.0.9005
 
+* Clean up the process tree rooted at a processx process (#139, #143).
+
 * Send interrupt to a process, SIGINT on Unix, CTRL+C on Windows (#127).
 
 * Support writing to the standard input of a process (#27, #114).
@@ -26,6 +28,8 @@
 
 * Fixed a signal handler bug on Unix that marked the process as finished,
   even if it has not (d221aa1f).
+
+* Fixed a bug that occasionally caused crashes in `wait()`, on Unix (#138).
 
 # processx 3.1.0
 

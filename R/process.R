@@ -167,7 +167,7 @@ NULL
 #' to the root of the tree cleanup in the process tree any more.
 #' `$kill_tree()` returns a named integer vector of the process ids that
 #' were killed, the names are the names of the processes (e.g. `"sleep"`,
-#' `"notepad.exe"`, `"Rterm.exe"`, etc.)
+#' `"notepad.exe"`, `"Rterm.exe"`, etc.).
 #'
 #' `$wait()` waits until the process finishes, or a timeout happens.
 #' Note that if the process never finishes, and the timeout is infinite
