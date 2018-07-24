@@ -59,6 +59,16 @@ NULL
 #' p$get_result()
 #'
 #' p$as_ps_handle()
+#' p$get_name()
+#' p$get_exe()
+#' p$get_cmdline()
+#' p$get_status()
+#' p$get_username()
+#' p$get_wd()
+#' p$get_cpu_times()
+#' p$get_memory_info()
+#' p$suspend()
+#' p$resume()
 #'
 #' format(p)
 #' print(p)
@@ -313,7 +323,20 @@ NULL
 #' no post-processing function, then `NULL` is returned.
 #'
 #' `$as_ps_handle()` returns a [ps::ps_handle] object, corresponding to
-#' the process.
+#' the process. The following methods use the ps package on a `ps_handle`
+#' object, created automatically:
+#' - `p$get_name()` calls [ps::ps_name()] to get the process name.
+#' - `p$get_exe()` calls [ps::ps_exe()] to get the path of the executable.
+#' - `p$get_cmdline()` calls [ps::ps_cmdline()] to get the command line.
+#' - `p$get_status()` calls [ps::ps_status()] to get the process status.
+#' - `p$get_username()` calls [ps::ps_username()] to get the username.
+#' - `p$get_wd()` calls [ps::ps_cwd()] to get the current working
+#'   directory.
+#' - `p$get_cpu_times()` calls [ps::ps_cpu_times()] to get CPU usage data.
+#' - `p$get_memory_info()` calls [ps::ps_memory_info()] to get memory usage
+#'    data.
+#' - `p$suspend()` calls [ps::ps_suspend()] to suspend the process.
+#' - `p$resume()` calls [ps::ps_resume()] to resume a suspended process.
 #'
 #' `format(p)` or `p$format()` creates a string representation of the
 #' process, usually for printing.
@@ -482,7 +505,37 @@ process <- R6Class(
       process_get_result(self, private),
 
     as_ps_handle = function()
-      process_as_ps_handle(self, private)
+      process_as_ps_handle(self, private),
+
+    get_name = function()
+      ps_method(ps::ps_name, self),
+
+    get_exe = function()
+      ps_method(ps::ps_exe, self),
+
+    get_cmdline = function()
+      ps_method(ps::ps_cmdline, self),
+
+    get_status = function()
+      ps_method(ps::ps_status, self),
+
+    get_username = function()
+      ps_method(ps::ps_username, self),
+
+    get_wd = function()
+      ps_method(ps::ps_cwd, self),
+
+    get_cpu_times = function()
+      ps_method(ps::ps_cpu_times, self),
+
+    get_memory_info = function()
+      ps_method(ps::ps_memory_info, self),
+
+    suspend = function()
+      ps_method(ps::ps_suspend, self),
+
+    resume = function()
+      ps_method(ps::ps_resume, self)
   ),
 
   private = list(
@@ -614,4 +667,8 @@ process_get_result <- function(self, private) {
 
 process_as_ps_handle <- function(self, private) {
   ps::ps_handle(self$get_pid(), self$get_start_time())
+}
+
+ps_method <- function(fun, self) {
+  fun(ps::ps_handle(self$get_pid(), self$get_start_time()))
 }

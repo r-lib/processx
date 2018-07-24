@@ -58,6 +58,16 @@ p$poll_io(timeout)
 p$get_result()
 
 p$as_ps_handle()
+p$get_name()
+p$get_exe()
+p$get_cmdline()
+p$get_status()
+p$get_username()
+p$get_wd()
+p$get_cpu_times()
+p$get_memory_info()
+p$suspend()
+p$resume()
 
 format(p)
 print(p)
@@ -318,7 +328,22 @@ It can only be called once the process has finished. If the process has
 no post-processing function, then \code{NULL} is returned.
 
 \code{$as_ps_handle()} returns a \link[ps:ps_handle]{ps::ps_handle} object, corresponding to
-the process.
+the process. The following methods use the ps package on a \code{ps_handle}
+object, created automatically:
+\itemize{
+\item \code{p$get_name()} calls \code{\link[ps:ps_name]{ps::ps_name()}} to get the process name.
+\item \code{p$get_exe()} calls \code{\link[ps:ps_exe]{ps::ps_exe()}} to get the path of the executable.
+\item \code{p$get_cmdline()} calls \code{\link[ps:ps_cmdline]{ps::ps_cmdline()}} to get the command line.
+\item \code{p$get_status()} calls \code{\link[ps:ps_status]{ps::ps_status()}} to get the process status.
+\item \code{p$get_username()} calls \code{\link[ps:ps_username]{ps::ps_username()}} to get the username.
+\item \code{p$get_wd()} calls \code{\link[ps:ps_cwd]{ps::ps_cwd()}} to get the current working
+directory.
+\item \code{p$get_cpu_times()} calls \code{\link[ps:ps_cpu_times]{ps::ps_cpu_times()}} to get CPU usage data.
+\item \code{p$get_memory_info()} calls \code{\link[ps:ps_memory_info]{ps::ps_memory_info()}} to get memory usage
+data.
+\item \code{p$suspend()} calls \code{\link[ps:ps_suspend]{ps::ps_suspend()}} to suspend the process.
+\item \code{p$resume()} calls \code{\link[ps:ps_resume]{ps::ps_resume()}} to resume a suspended process.
+}
 
 \code{format(p)} or \code{p$format()} creates a string representation of the
 process, usually for printing.
