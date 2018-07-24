@@ -49,13 +49,15 @@ facilities, with a timeout.
 * Read the standard output and error, using non-blocking connections
 * Poll the standard output and error connections of a single process or
   multiple processes.
+* Write to the standard input of background processes.
 * Check if a background process is running.
-* Wait on a background process.
+* Wait on a background process, or multiple processes, with a timeout.
 * Get the exit status of a background process, if it has already
   finished.
 * Kill background processes.
 * Kill background process, when its associated object is garbage
   collected.
+* Kill background processes and all their child processes.
 * Works on Linux, macOS and Windows.
 * Lightweight, it only depends on the also lightweight
   R6, assertthat and crayon packages.
@@ -147,6 +149,7 @@ result <- run(px, "--help", echo = TRUE)
 #>   return <exitcode>          -- return with exitcode
 #>   write <fd> <string>        -- write to file descriptor
 #>   echo <fd1> <fd2> <nbytes>  -- echo from fd to another fd
+#>   getenv <var>               -- environment variable to stdout
 ```
 
 > Note: From version 3.0.1, processx does not let you specify a full

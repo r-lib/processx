@@ -24,6 +24,7 @@ p$is_alive()
 p$signal(signal)
 p$interrupt()
 p$kill(grace = 0.1)
+p$kill_tree(grace = 0.1)
 p$wait(timeout = -1)
 p$get_pid()
 p$get_exit_status()
@@ -160,6 +161,18 @@ processes, except if they have created a new process group (on Unix),
 or job object (on Windows). It returns \code{TRUE} if the process
 was killed, and \code{FALSE} if it was no killed (because it was
 already finished/dead when \code{processx} tried to kill it).
+
+\code{$kill_tree()} performs process tree cleanup, it kills the process
+(if still alive), together with any child (or grandchild, etc.)
+processes. It uses the \emph{ps} package, so that needs to be installed,
+and \emph{ps} needs to support the current platform as well. Process tree
+cleanup works by marking the process with an environment variable,
+which is inherited in all child processes. This allows finding
+descendents, even if they are orphaned, i.e. they are not connected
+to the root of the tree cleanup in the process tree any more.
+\code{$kill_tree()} returns a named integer vector of the process ids that
+were killed, the names are the names of the processes (e.g. \code{"sleep"},
+\code{"notepad.exe"}, \code{"Rterm.exe"}, etc.)
 
 \code{$wait()} waits until the process finishes, or a timeout happens.
 Note that if the process never finishes, and the timeout is infinite

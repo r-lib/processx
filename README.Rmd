@@ -56,13 +56,15 @@ facilities, with a timeout.
 * Read the standard output and error, using non-blocking connections
 * Poll the standard output and error connections of a single process or
   multiple processes.
+* Write to the standard input of background processes.
 * Check if a background process is running.
-* Wait on a background process.
+* Wait on a background process, or multiple processes, with a timeout.
 * Get the exit status of a background process, if it has already
   finished.
 * Kill background processes.
 * Kill background process, when its associated object is garbage
   collected.
+* Kill background processes and all their child processes.
 * Works on Linux, macOS and Windows.
 * Lightweight, it only depends on the also lightweight
   R6, assertthat and crayon packages.

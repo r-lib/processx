@@ -335,7 +335,49 @@ static int qsort_wcscmp(const void *a, const void *b) {
   return env_strncmp(astr, -1, bstr);
 }
 
-static int processx__make_program_env(SEXP env_block, WCHAR** dst_ptr) {
+static int processx__add_tree_id_env(const char *ctree_id, WCHAR **dst_ptr) {
+  WCHAR *env = GetEnvironmentStringsW();
+  int len = 0, len2 = 0;
+  WCHAR *ptr = env;
+  WCHAR *id = 0;
+  int err;
+  int idlen;
+  WCHAR *dst_copy;
+
+  if (!env) return GetLastError();
+
+  err = processx__utf8_to_utf16_alloc(ctree_id, &id);
+  if (err) {
+    FreeEnvironmentStringsW(env);
+    return(err);
+  }
+
+  while (1) {
+    WCHAR *prev = ptr;
+    if (!*ptr) break;
+    while (*ptr) ptr++;
+    ptr++;
+    len += (ptr - prev);
+  }
+
+  /* Plus the id */
+  idlen = wcslen(id) + 1;
+  len2 = len + idlen;
+
+  /* Allocate, copy */
+  dst_copy = (WCHAR*) R_alloc(len2 + 1, sizeof(WCHAR)); /* +1 for final zero */
+  memcpy(dst_copy, env, len * sizeof(WCHAR));
+  memcpy(dst_copy + len, id, idlen * sizeof(WCHAR));
+
+  /* Final \0 */
+  *(dst_copy + len2) = L'\0';
+  *dst_ptr = dst_copy;
+
+  FreeEnvironmentStringsW(env);
+  return 0;
+}
+
+static int processx__make_program_env(SEXP env_block, const char *tree_id, WCHAR** dst_ptr) {
   WCHAR* dst;
   WCHAR* ptr;
   size_t env_len = 0;
@@ -351,7 +393,6 @@ static int processx__make_program_env(SEXP env_block, WCHAR** dst_ptr) {
 
   /* first pass: determine size in UTF-16 */
   for (j = 0; j < num; j++) {
-    int len;
     const char *env = CHAR(STRING_ELT(env_block, 0));
     if (strchr(env, '=')) {
       len = MultiByteToWideChar(CP_UTF8,
@@ -367,6 +408,12 @@ static int processx__make_program_env(SEXP env_block, WCHAR** dst_ptr) {
       env_block_count++;
     }
   }
+
+  /* Plus the tree id */
+  len = MultiByteToWideChar(CP_UTF8, 0, tree_id, -1, NULL, 0);
+  if (len <= 0) return GetLastError();
+  env_len += len;
+  env_block_count++;
 
   /* second pass: copy to UTF-16 environment block */
   dst_copy = (WCHAR*) R_alloc(env_len, sizeof(WCHAR));
@@ -391,6 +438,13 @@ static int processx__make_program_env(SEXP env_block, WCHAR** dst_ptr) {
       ptr += len;
     }
   }
+  /* Plus the tree id */
+  len = MultiByteToWideChar(CP_UTF8, 0, tree_id, -1, ptr,
+			    (int) (env_len  - (ptr - dst_copy)));
+  if (len <= 0) return GetLastError();
+  *ptr_copy++ = ptr;
+  ptr += len;
+
   *ptr_copy = NULL;
 
   /* sort our (UTF-16) copy */
@@ -826,13 +880,15 @@ SEXP processx_exec(SEXP command, SEXP args,
 		   SEXP std_in, SEXP std_out, SEXP std_err,
 		   SEXP connections, SEXP env,
 		   SEXP windows_verbatim_args, SEXP windows_hide,
-		   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding) {
+		   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding,
+		   SEXP tree_id) {
 
   const char *cstd_in = isNull(std_in) ? 0 : CHAR(STRING_ELT(std_in, 0));
   const char *cstd_out = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
   const char *cstd_err = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
   const char *ccwd = isNull(wd) ? 0 : CHAR(STRING_ELT(wd, 0));
+  const char *ctree_id = CHAR(STRING_ELT(tree_id, 0));
   int i, num_connections = LENGTH(connections) + 3;
   HANDLE* extra_connections =
     (HANDLE*) R_alloc(num_connections - 3, sizeof(HANDLE));
@@ -864,10 +920,12 @@ SEXP processx_exec(SEXP command, SEXP args,
       &arguments);
   if (err) { PROCESSX_ERROR("making program args", err); }
 
-  if (! isNull(env)) {
-     err = processx__make_program_env(env, &cenv);
-     if (err) PROCESSX_ERROR("making environment", err);
+  if (isNull(env)) {
+    err = processx__add_tree_id_env(ctree_id, &cenv);
+  } else {
+    err = processx__make_program_env(env, ctree_id, &cenv);
   }
+  if (err) PROCESSX_ERROR("making environment", err);
 
   if (ccwd) {
     /* Explicit cwd */
@@ -982,6 +1040,11 @@ SEXP processx_exec(SEXP command, SEXP args,
 
   handle->hProcess = info.hProcess;
   handle->dwProcessId = info.dwProcessId;
+
+  /* Query official creation time. On Windows this is not used as
+     an id, since the pid itself is valid until the process handle
+     is released. */
+  handle->create_time = processx__create_time(handle->hProcess);
 
   /* If the process isn't spawned as detached, assign to the global job */
   /* object so windows will kill it when the parent process dies. */

@@ -12,7 +12,8 @@ static void processx__child_init(processx_handle_t *handle, int (*pipes)[2],
 				 int error_fd, const char *std_in,
 				 const char *std_out,
 				 const char *std_err, char **env,
-				 processx_options_t *options);
+				 processx_options_t *options,
+				 const char *tree_id);
 
 static SEXP processx__make_handle(SEXP private, int cleanup);
 static void processx__handle_destroy(processx_handle_t *handle);
@@ -75,7 +76,8 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
 				 int error_fd, const char *std_in,
 				 const char *std_out,
 				 const char *std_err, char **env,
-				 processx_options_t *options) {
+				 processx_options_t *options,
+				 const char *tree_id) {
 
   int close_fd, use_fd, fd, i;
   const char *out_files[3] = { std_in, std_out, std_err };
@@ -152,6 +154,11 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
   }
 
   if (env) environ = env;
+
+  if (putenv(strdup(tree_id))) {
+    processx__write_int(error_fd, - errno);
+    raise(SIGKILL);
+  }
 
   execvp(command, args);
   processx__write_int(error_fd, - errno);
@@ -259,7 +266,8 @@ skip:
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 		   SEXP std_err, SEXP connections, SEXP env,
 		   SEXP windows_verbatim_args, SEXP windows_hide_window,
-		   SEXP private, SEXP cleanup,  SEXP wd, SEXP encoding) {
+		   SEXP private, SEXP cleanup,  SEXP wd, SEXP encoding,
+		   SEXP tree_id) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
@@ -269,6 +277,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   const char *cstdout = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
   const char *cstderr = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
+  const char *ctree_id = CHAR(STRING_ELT(tree_id, 0));
   processx_options_t options = { 0 };
   int num_connections = LENGTH(connections) + 3;
 
@@ -329,10 +338,14 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
     /* LCOV_EXCL_START */
     processx__child_init(handle, pipes, num_connections, ccommand, cargs,
 			 signal_pipe[1], cstdin, cstdout, cstderr, cenv,
-			 &options);
+			 &options, ctree_id);
     PROCESSX__ERROR("Cannot start child process", "");
     /* LCOV_EXCL_STOP */
   }
+
+  /* Query creation time ASAP. We'll use (pid, create_time) as an ID,
+     to avoid race conditions when sending signals */
+  handle->create_time = processx__create_time(pid);
 
   /* We need to know the processx children */
   if (processx__child_add(pid, result)) {

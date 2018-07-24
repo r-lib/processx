@@ -183,3 +183,23 @@ get_tool <- function(prog) {
   }
   exe
 }
+
+get_id <- function() {
+  paste0(
+    "PS",
+    paste(sample(c(LETTERS, 0:9), 10, replace = TRUE), collapse = ""),
+    "_", as.integer(Internal(Sys.time()))
+  )
+}
+
+format_unix_time <- function(z) {
+  structure(z, class = c("POSIXct", "POSIXt"), tzone = "GMT")
+}
+
+file_size <- function(x) {
+  if (getRversion() >= "3.2.0") {
+    file.info(x, extra_cols = FALSE)$size
+  } else {
+    file.info(x)$size
+  }
+}

@@ -19,6 +19,7 @@ typedef struct processx_handle_s {
   int fd2;			/* readable */
   int waitpipe[2];		/* use it for wait() with timeout */
   int cleanup;
+  double create_time;
   processx_connection_t *pipes[3];
 } processx_handle_t;
 
@@ -71,5 +72,7 @@ int processx__interruptible_poll(struct pollfd fds[],
   error("%s %s at %s:%d", msg1, msg2, __FILE__,  __LINE__)
 
 void processx__make_socketpair(int pipe[2]);
+
+double processx__create_time(long pid);
 
 #endif

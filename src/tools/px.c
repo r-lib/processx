@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <stdlib.h>
 
 void usage() {
   fprintf(stderr, "Usage: px [command arg] [command arg] ...\n\n");
@@ -27,6 +28,8 @@ void usage() {
 	  "write to file descriptor\n");
   fprintf(stderr, "  echo <fd1> <fd2> <nbytes>  -- "
 	  "echo from fd to another fd\n");
+  fprintf(stderr, "  getenv <var>               -- "
+	  "environment variable to stdout\n");
 }
 
 void cat2(int f, const char *s) {
@@ -161,6 +164,10 @@ int main(int argc, const char **argv) {
 	return 8;
       }
       if (echo_from_fd(fd, fd2, nbytes)) return 9;
+
+    } else if (!strcmp("getenv", cmd)) {
+      printf("%s\n", getenv(argv[++idx]));
+      fflush(stdout);
 
     } else {
       fprintf(stderr, "Unknown px command: '%s'\n", cmd);
