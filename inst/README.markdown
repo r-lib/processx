@@ -71,13 +71,6 @@ Install the stable version from CRAN:
 install.packages("processx")
 ```
 
-Install the development version from GitHub:
-
-
-```r
-source("https://install-github.me/r-lib/processx")
-```
-
 ## Usage
 
 
@@ -395,9 +388,9 @@ gc()
 ```
 
 ```
-#>          used (Mb) gc trigger (Mb) max used (Mb)
-#> Ncells 423484 22.7     750400 40.1   592000 31.7
-#> Vcells 841455  6.5    1650153 12.6  1076488  8.3
+#>          used (Mb) gc trigger (Mb) limit (Mb) max used (Mb)
+#> Ncells 428443 22.9     908452 48.6         NA   631340 33.8
+#> Vcells 867615  6.7    8388608 64.0      16384  1769037 13.5
 ```
 
 Here, the direct call to the garbage collector kills the `sleep` process
@@ -616,7 +609,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2018-05-26 21:00:00 BST"
+#> [1] "2018-07-24 19:57:33 BST"
 ```
 
 ```r
@@ -625,7 +618,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2018-05-26 21:00:02 BST"
+#> [1] "2018-07-24 19:57:35 BST"
 ```
 
 It is safe to call `wait()` multiple times:
@@ -673,7 +666,7 @@ p <- process$new("nonexistant-command-for-sure")
 ```
 
 ```
-#> Error in process_initialize(self, private, command, args, stdin, stdout, : processx error: 'No such file or directory' at unix/processx.c:424
+#> Error in process_initialize(self, private, command, args, stdin, stdout, : processx error: 'No such file or directory' at unix/processx.c:423
 ```
 
 
