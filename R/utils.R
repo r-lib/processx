@@ -196,13 +196,8 @@ format_unix_time <- function(z) {
   structure(z, class = c("POSIXct", "POSIXt"), tzone = "GMT")
 }
 
-r_version <- function(x) {
-  v <- paste0(version[["major"]], ".", version[["minor"]])
-  package_version(v)
-}
-
 file_size <- function(x) {
-  if (r_version() >= "3.2.0") {
+  if (getRversion() >= "3.2.0") {
     file.info(x, extra_cols = FALSE)$size
   } else {
     file.info(x)$size

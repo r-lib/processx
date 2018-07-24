@@ -7,6 +7,12 @@
 
 #include <windows.h>
 
+/* FILETIME origin is January 1, 1601 (UTC).
+   See https://msdn.microsoft.com/en-us/9baf8a0e-59e3-4fbd-9616-2ec9161520d1
+   Unix origin is January 1, 1970.
+   The difference is 11644473600 seconds.
+   FILETIME is in 100ns units, so we need to multiple this by 10^7. */
+
 double processx__create_time(HANDLE process) {
   long long   ll, secs, nsecs;
   FILETIME    ftCreate, ftExit, ftKernel, ftUser;
