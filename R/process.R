@@ -58,6 +58,8 @@ NULL
 #'
 #' p$get_result()
 #'
+#' p$as_ps_handle()
+#'
 #' format(p)
 #' print(p)
 #' ```
@@ -310,6 +312,9 @@ NULL
 #' It can only be called once the process has finished. If the process has
 #' no post-processing function, then `NULL` is returned.
 #'
+#' `$as_ps_handle()` returns a [ps::ps_handle] object, corresponding to
+#' the process.
+#'
 #' `format(p)` or `p$format()` creates a string representation of the
 #' process, usually for printing.
 #'
@@ -474,7 +479,10 @@ process <- R6Class(
       process_get_poll_connection(self, private),
 
     get_result = function()
-      process_get_result(self, private)
+      process_get_result(self, private),
+
+    as_ps_handle = function()
+      process_as_ps_handle(self, private)
   ),
 
   private = list(
@@ -563,11 +571,6 @@ process_kill <- function(self, private, grace) {
 
 process_kill_tree <- function(self, private, grace) {
   "!DEBUG process_kill_tree '`private$get_short_name()`', pid `self$get_pid()`"
-  if (!requireNamespace("ps", quietly = TRUE)) {
-    stop(structure(
-      list(message = "kill_tree needs the ps package"),
-      class = c("missing_import", "error", "condition")))
-  }
   if (!ps::ps_is_supported()) {
     stop(structure(
       list(message = "kill_tree is not supported on this platform"),
@@ -607,4 +610,8 @@ process_get_result <- function(self, private) {
     private$post_process_done <- TRUE
   }
   private$post_process_result
+}
+
+process_as_ps_handle <- function(self, private) {
+  ps::ps_handle(self$get_pid(), self$get_start_time())
 }

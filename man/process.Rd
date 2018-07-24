@@ -57,6 +57,8 @@ p$poll_io(timeout)
 
 p$get_result()
 
+p$as_ps_handle()
+
 format(p)
 print(p)
 }
@@ -172,7 +174,7 @@ descendents, even if they are orphaned, i.e. they are not connected
 to the root of the tree cleanup in the process tree any more.
 \code{$kill_tree()} returns a named integer vector of the process ids that
 were killed, the names are the names of the processes (e.g. \code{"sleep"},
-\code{"notepad.exe"}, \code{"Rterm.exe"}, etc.)
+\code{"notepad.exe"}, \code{"Rterm.exe"}, etc.).
 
 \code{$wait()} waits until the process finishes, or a timeout happens.
 Note that if the process never finishes, and the timeout is infinite
@@ -314,6 +316,9 @@ to poll on multiple processes.
 \code{$get_result()} returns the result of the post processesing function.
 It can only be called once the process has finished. If the process has
 no post-processing function, then \code{NULL} is returned.
+
+\code{$as_ps_handle()} returns a \link[ps:ps_handle]{ps::ps_handle} object, corresponding to
+the process.
 
 \code{format(p)} or \code{p$format()} creates a string representation of the
 process, usually for printing.

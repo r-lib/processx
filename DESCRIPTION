@@ -24,6 +24,7 @@ Roxygen: list(markdown = TRUE)
 Imports:
     assertthat,
     crayon,
+    ps,
     R6,
     utils
 Suggests:
@@ -31,7 +32,6 @@ Suggests:
     covr,
     debugme,
     parallel,
-    ps,
     testthat,
     withr
 Encoding: UTF-8
