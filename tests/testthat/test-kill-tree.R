@@ -12,7 +12,23 @@ test_that("tree ids are inherited", {
   ep <- ps::ps_handle(p$get_pid())
 
   ev <- paste0("PROCESSX_", get_private(p)$tree_id)
-  expect_equal(ps::ps_environ(ep)[[ev]], "YES")
+
+  ## On Windows, if the process hasn't been initialized yet,
+  ## this will return ERROR_PARTIAL_COPY (System error 299).
+  ## Until this is fixed in ps, we just retry a couple of times.
+  env <- "failed"
+  deadline <- Sys.time() + 3
+  while (TRUE) {
+    if (Sys.time() >= deadline) break
+    tryCatch({
+      env <- ps::ps_environ(ep)[[ev]]
+      break },
+      error = function(e) e)
+    Sys.sleep(0.05)
+  }
+
+  expect_true(Sys.time() < deadline)
+  expect_equal(env, "YES")
 })
 
 test_that("tree ids are inherited if env is specified", {
