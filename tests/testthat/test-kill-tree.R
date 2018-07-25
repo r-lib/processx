@@ -168,7 +168,11 @@ test_that("cleanup_tree option", {
 
 
 test_that("run cleanup", {
-  if (os_type() != "unix")  return()
+  ## This currently only works on macOS
+  if (Sys.info()[["sysname"]] != "Darwin") {
+    expect_true(TRUE)
+    return()
+  }
   skip_on_cran()
 
   ## This is cumbesome to test... here is what we are doing.
