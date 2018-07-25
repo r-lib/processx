@@ -129,7 +129,7 @@ test_that("kill_tree and orphaned children", {
   p1$wait()
   pres <- p1$get_result()
 
-  ps <- ps::ps_handle(pres$pid, pres$create_time)
+  ps <- ps::ps_handle(pres$pid)
   expect_true(ps::ps_is_running(ps))
 
   deadline <- Sys.time() + 2
