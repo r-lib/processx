@@ -129,3 +129,47 @@ test_that("kill_tree and orphaned children", {
   expect_true(Sys.time() < deadline)
   expect_false(ps::ps_is_running(ps))
 })
+
+test_that("cleanup_tree option", {
+  skip_on_cran()
+  skip_if_no_ps()
+
+  px <- get_tool("px")
+  p <- process$new(px, c("sleep", "100"), cleanup_tree = TRUE)
+  on.exit(try(p$kill(), silent = TRUE), add = TRUE)
+
+  ps <- p$as_ps_handle()
+
+  rm(p)
+  gc()
+  gc()
+
+  deadline <- Sys.time() + 1
+  while (ps::ps_is_running(ps) && Sys.time() < deadline) Sys.sleep(0.05)
+  expect_true(Sys.time() < deadline)
+  expect_false(ps::ps_is_running(ps))
+})
+
+test_that("cleanup_tree stress test", {
+  skip_on_cran()
+  skip_if_no_ps()
+
+  do <- function() {
+    px <- get_tool("px")
+    p <- process$new(px, c("sleep", "100"), cleanup_tree = TRUE)
+    on.exit(try(p$kill(), silent = TRUE), add = TRUE)
+
+    ps <- p$as_ps_handle()
+
+    rm(p)
+    gc()
+    gc()
+
+    deadline <- Sys.time() + 1
+    while (ps::ps_is_running(ps) && Sys.time() < deadline) Sys.sleep(0.05)
+    expect_true(Sys.time() < deadline)
+    expect_false(ps::ps_is_running(ps))
+  }
+
+  for (i in 1:50) do()
+})

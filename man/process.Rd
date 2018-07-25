@@ -14,7 +14,7 @@ streams. The process id is then used to manage the process.
 \preformatted{p <- process$new(command = NULL, args,
                  stdin = NULL, stdout = NULL, stderr = NULL,
                  connections = list(), poll_connection = NULL,
-                 env = NULL, cleanup = TRUE,
+                 env = NULL, cleanup = TRUE, cleanup_tree = FALSE,
                  wd = NULL, echo_cmd = FALSE, supervise = FALSE,
                  windows_verbatim_args = FALSE,
                  windows_hide_window = FALSE,
@@ -112,8 +112,10 @@ function correctly if some environment variables are not set, so we
 always set \code{HOMEDRIVE}, \code{HOMEPATH}, \code{LOGONSERVER}, \code{PATH},
 \code{SYSTEMDRIVE}, \code{SYSTEMROOT}, \code{TEMP}, \code{USERDOMAIN}, \code{USERNAME},
 \code{USERPROFILE} and \code{WINDIR}.
-\item \code{cleanup}: Whether to kill the process (and its children)
-if the \code{process} object is garbage collected.
+\item \code{cleanup}: Whether to kill the process when the \code{process} object is
+garbage collected.
+\item \code{cleanup_tree}: Whether to kill the process and its child process tree
+when the \code{process} object is garbage collected.
 \item \code{wd}: working directory of the process. It must exist. If \code{NULL}, then
 the current working directory is used.
 \item \code{echo_cmd}: Whether to print the command to the screen before
@@ -214,7 +216,7 @@ supervisor process.
 \code{$supervise()} if passed \code{TRUE}, tells the supervisor to start
 tracking the process. If \code{FALSE}, tells the supervisor to stop
 tracking the process. Note that even if the supervisor is disabled for a
-process, if it was started with \code{cleanup=TRUE}, the process will
+process, if it was started with \code{cleanup = TRUE}, the process will
 still be killed when the object is garbage collected.
 
 \code{$read_output()} reads from the standard output connection of the

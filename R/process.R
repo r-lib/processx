@@ -15,7 +15,7 @@ NULL
 #' p <- process$new(command = NULL, args,
 #'                  stdin = NULL, stdout = NULL, stderr = NULL,
 #'                  connections = list(), poll_connection = NULL,
-#'                  env = NULL, cleanup = TRUE,
+#'                  env = NULL, cleanup = TRUE, cleanup_tree = FALSE,
 #'                  wd = NULL, echo_cmd = FALSE, supervise = FALSE,
 #'                  windows_verbatim_args = FALSE,
 #'                  windows_hide_window = FALSE,
@@ -110,8 +110,10 @@ NULL
 #'     always set `HOMEDRIVE`, `HOMEPATH`, `LOGONSERVER`, `PATH`,
 #'     `SYSTEMDRIVE`, `SYSTEMROOT`, `TEMP`, `USERDOMAIN`, `USERNAME`,
 #'     `USERPROFILE` and `WINDIR`.
-#' * `cleanup`: Whether to kill the process (and its children)
-#'     if the `process` object is garbage collected.
+#' * `cleanup`: Whether to kill the process when the `process` object is
+#'     garbage collected.
+#' * `cleanup_tree`: Whether to kill the process and its child process tree
+#'     when the `process` object is garbage collected.
 #' * `wd`: working directory of the process. It must exist. If `NULL`, then
 #'     the current working directory is used.
 #' * `echo_cmd`: Whether to print the command to the screen before
@@ -209,7 +211,7 @@ NULL
 #' `$supervise()` if passed `TRUE`, tells the supervisor to start
 #' tracking the process. If `FALSE`, tells the supervisor to stop
 #' tracking the process. Note that even if the supervisor is disabled for a
-#' process, if it was started with `cleanup=TRUE`, the process will
+#' process, if it was started with `cleanup = TRUE`, the process will
 #' still be killed when the object is garbage collected.
 #'
 #' `$read_output()` reads from the standard output connection of the
@@ -382,14 +384,21 @@ process <- R6Class(
 
     initialize = function(command = NULL, args = character(),
       stdin = NULL, stdout = NULL, stderr = NULL, connections = list(),
-      poll_connection = NULL, env = NULL, cleanup = TRUE, wd = NULL,
-      echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
-      windows_hide_window = FALSE, encoding = "",  post_process = NULL)
+      poll_connection = NULL, env = NULL, cleanup = TRUE,
+      cleanup_tree = FALSE, wd = NULL, echo_cmd = FALSE, supervise = FALSE,
+      windows_verbatim_args = FALSE, windows_hide_window = FALSE,
+      encoding = "",  post_process = NULL)
+
       process_initialize(self, private, command, args, stdin,
                          stdout, stderr, connections, poll_connection,
-                         env, cleanup, wd, echo_cmd, supervise,
-                         windows_verbatim_args, windows_hide_window,
-                         encoding, post_process),
+                         env, cleanup, cleanup_tree, wd, echo_cmd,
+                         supervise, windows_verbatim_args,
+                         windows_hide_window, encoding, post_process),
+
+    finalize = function() {
+      if (!is.null(private$tree_id) && private$cleanup_tree &&
+          ps::ps_is_supported()) self$kill_tree()
+    },
 
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
@@ -543,6 +552,7 @@ process <- R6Class(
     command = NULL,       # Save 'command' argument here
     args = NULL,          # Save 'args' argument here
     cleanup = NULL,       # cleanup argument
+    cleanup_tree = NULL,  # cleanup_tree argument
     stdin = NULL,         # stdin argument or stream
     stdout = NULL,        # stdout argument or stream
     stderr = NULL,        # stderr argument or stream

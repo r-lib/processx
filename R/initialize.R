@@ -12,6 +12,7 @@
 #' @param poll_connection Whether to create a connection for polling.
 #' @param env Environment vaiables.
 #' @param cleanup Kill on GC?
+#' @param cleanup_tree Kill process tree on GC?
 #' @param wd working directory (or NULL)
 #' @param echo_cmd Echo command before starting it?
 #' @param supervise Should the process be supervised?
@@ -23,9 +24,10 @@
 
 process_initialize <- function(self, private, command, args,
                                stdin, stdout, stderr, connections,
-                               poll_connection, env, cleanup, wd, echo_cmd,
-                               supervise, windows_verbatim_args,
-                               windows_hide_window, encoding, post_process) {
+                               poll_connection, env, cleanup, cleanup_tree,
+                               wd, echo_cmd, supervise,
+                               windows_verbatim_args, windows_hide_window,
+                               encoding, post_process) {
 
   "!DEBUG process_initialize `command`"
 
@@ -39,6 +41,7 @@ process_initialize <- function(self, private, command, args,
     is.null(poll_connection) || is_flag(poll_connection),
     is.null(env) || is_named_character(env),
     is_flag(cleanup),
+    is_flag(cleanup_tree),
     is_string_or_null(wd),
     is_flag(echo_cmd),
     is_flag(windows_verbatim_args),
@@ -46,9 +49,16 @@ process_initialize <- function(self, private, command, args,
     is_string(encoding),
     is.function(post_process) || is.null(post_process))
 
+  if (cleanup_tree && !cleanup) {
+    warning("`cleanup_tree` overrides `cleanup`, and process will be ",
+            "killed on GC")
+    cleanup <- TRUE
+  }
+
   private$command <- command
   private$args <- args
   private$cleanup <- cleanup
+  private$cleanup_tree <- cleanup_tree
   private$wd <- wd
   private$pstdin <- stdin
   private$pstdout <- stdout
