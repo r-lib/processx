@@ -103,6 +103,7 @@ test_that("multiple polls", {
 })
 
 test_that("polling and buffering", {
+  skip_on_os("windows")
 
   px <- get_tool("px")
 
