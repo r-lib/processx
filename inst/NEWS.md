@@ -1,5 +1,5 @@
 
-# processx 3.1.0.9005
+# processx 3.2.0
 
 * Clean up the process tree rooted at a processx process (#139, #143).
 
