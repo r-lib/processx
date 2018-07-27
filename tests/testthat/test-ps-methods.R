@@ -2,6 +2,8 @@
 context("ps methods")
 
 test_that("ps methods", {
+  skip_if_no_ps()
+
   px <- get_tool("px")
   p <- process$new(px, c("sleep", "100"))
   on.exit(p$kill(), add = TRUE)
