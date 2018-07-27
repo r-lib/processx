@@ -15,7 +15,7 @@ NULL
 #' p <- process$new(command = NULL, args,
 #'                  stdin = NULL, stdout = NULL, stderr = NULL,
 #'                  connections = list(), poll_connection = NULL,
-#'                  env = NULL, cleanup = TRUE,
+#'                  env = NULL, cleanup = TRUE, cleanup_tree = FALSE,
 #'                  wd = NULL, echo_cmd = FALSE, supervise = FALSE,
 #'                  windows_verbatim_args = FALSE,
 #'                  windows_hide_window = FALSE,
@@ -58,6 +58,18 @@ NULL
 #'
 #' p$get_result()
 #'
+#' p$as_ps_handle()
+#' p$get_name()
+#' p$get_exe()
+#' p$get_cmdline()
+#' p$get_status()
+#' p$get_username()
+#' p$get_wd()
+#' p$get_cpu_times()
+#' p$get_memory_info()
+#' p$suspend()
+#' p$resume()
+#'
 #' format(p)
 #' print(p)
 #' ```
@@ -98,8 +110,10 @@ NULL
 #'     always set `HOMEDRIVE`, `HOMEPATH`, `LOGONSERVER`, `PATH`,
 #'     `SYSTEMDRIVE`, `SYSTEMROOT`, `TEMP`, `USERDOMAIN`, `USERNAME`,
 #'     `USERPROFILE` and `WINDIR`.
-#' * `cleanup`: Whether to kill the process (and its children)
-#'     if the `process` object is garbage collected.
+#' * `cleanup`: Whether to kill the process when the `process` object is
+#'     garbage collected.
+#' * `cleanup_tree`: Whether to kill the process and its child process tree
+#'     when the `process` object is garbage collected.
 #' * `wd`: working directory of the process. It must exist. If `NULL`, then
 #'     the current working directory is used.
 #' * `echo_cmd`: Whether to print the command to the screen before
@@ -197,7 +211,7 @@ NULL
 #' `$supervise()` if passed `TRUE`, tells the supervisor to start
 #' tracking the process. If `FALSE`, tells the supervisor to stop
 #' tracking the process. Note that even if the supervisor is disabled for a
-#' process, if it was started with `cleanup=TRUE`, the process will
+#' process, if it was started with `cleanup = TRUE`, the process will
 #' still be killed when the object is garbage collected.
 #'
 #' `$read_output()` reads from the standard output connection of the
@@ -310,6 +324,22 @@ NULL
 #' It can only be called once the process has finished. If the process has
 #' no post-processing function, then `NULL` is returned.
 #'
+#' `$as_ps_handle()` returns a [ps::ps_handle] object, corresponding to
+#' the process. The following methods use the ps package on a `ps_handle`
+#' object, created automatically:
+#' - `p$get_name()` calls [ps::ps_name()] to get the process name.
+#' - `p$get_exe()` calls [ps::ps_exe()] to get the path of the executable.
+#' - `p$get_cmdline()` calls [ps::ps_cmdline()] to get the command line.
+#' - `p$get_status()` calls [ps::ps_status()] to get the process status.
+#' - `p$get_username()` calls [ps::ps_username()] to get the username.
+#' - `p$get_wd()` calls [ps::ps_cwd()] to get the current working
+#'   directory.
+#' - `p$get_cpu_times()` calls [ps::ps_cpu_times()] to get CPU usage data.
+#' - `p$get_memory_info()` calls [ps::ps_memory_info()] to get memory usage
+#'    data.
+#' - `p$suspend()` calls [ps::ps_suspend()] to suspend the process.
+#' - `p$resume()` calls [ps::ps_resume()] to resume a suspended process.
+#'
 #' `format(p)` or `p$format()` creates a string representation of the
 #' process, usually for printing.
 #'
@@ -354,14 +384,21 @@ process <- R6Class(
 
     initialize = function(command = NULL, args = character(),
       stdin = NULL, stdout = NULL, stderr = NULL, connections = list(),
-      poll_connection = NULL, env = NULL, cleanup = TRUE, wd = NULL,
-      echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
-      windows_hide_window = FALSE, encoding = "",  post_process = NULL)
+      poll_connection = NULL, env = NULL, cleanup = TRUE,
+      cleanup_tree = FALSE, wd = NULL, echo_cmd = FALSE, supervise = FALSE,
+      windows_verbatim_args = FALSE, windows_hide_window = FALSE,
+      encoding = "",  post_process = NULL)
+
       process_initialize(self, private, command, args, stdin,
                          stdout, stderr, connections, poll_connection,
-                         env, cleanup, wd, echo_cmd, supervise,
-                         windows_verbatim_args, windows_hide_window,
-                         encoding, post_process),
+                         env, cleanup, cleanup_tree, wd, echo_cmd,
+                         supervise, windows_verbatim_args,
+                         windows_hide_window, encoding, post_process),
+
+    finalize = function() {
+      if (!is.null(private$tree_id) && private$cleanup_tree &&
+          ps::ps_is_supported()) self$kill_tree()
+    },
 
     kill = function(grace = 0.1)
       process_kill(self, private, grace),
@@ -474,7 +511,40 @@ process <- R6Class(
       process_get_poll_connection(self, private),
 
     get_result = function()
-      process_get_result(self, private)
+      process_get_result(self, private),
+
+    as_ps_handle = function()
+      process_as_ps_handle(self, private),
+
+    get_name = function()
+      ps_method(ps::ps_name, self),
+
+    get_exe = function()
+      ps_method(ps::ps_exe, self),
+
+    get_cmdline = function()
+      ps_method(ps::ps_cmdline, self),
+
+    get_status = function()
+      ps_method(ps::ps_status, self),
+
+    get_username = function()
+      ps_method(ps::ps_username, self),
+
+    get_wd = function()
+      ps_method(ps::ps_cwd, self),
+
+    get_cpu_times = function()
+      ps_method(ps::ps_cpu_times, self),
+
+    get_memory_info = function()
+      ps_method(ps::ps_memory_info, self),
+
+    suspend = function()
+      ps_method(ps::ps_suspend, self),
+
+    resume = function()
+      ps_method(ps::ps_resume, self)
   ),
 
   private = list(
@@ -482,6 +552,7 @@ process <- R6Class(
     command = NULL,       # Save 'command' argument here
     args = NULL,          # Save 'args' argument here
     cleanup = NULL,       # cleanup argument
+    cleanup_tree = NULL,  # cleanup_tree argument
     stdin = NULL,         # stdin argument or stream
     stdout = NULL,        # stdout argument or stream
     stderr = NULL,        # stderr argument or stream
@@ -563,11 +634,6 @@ process_kill <- function(self, private, grace) {
 
 process_kill_tree <- function(self, private, grace) {
   "!DEBUG process_kill_tree '`private$get_short_name()`', pid `self$get_pid()`"
-  if (!requireNamespace("ps", quietly = TRUE)) {
-    stop(structure(
-      list(message = "kill_tree needs the ps package"),
-      class = c("missing_import", "error", "condition")))
-  }
   if (!ps::ps_is_supported()) {
     stop(structure(
       list(message = "kill_tree is not supported on this platform"),
@@ -607,4 +673,12 @@ process_get_result <- function(self, private) {
     private$post_process_done <- TRUE
   }
   private$post_process_result
+}
+
+process_as_ps_handle <- function(self, private) {
+  ps::ps_handle(self$get_pid(), self$get_start_time())
+}
+
+ps_method <- function(fun, self) {
+  fun(ps::ps_handle(self$get_pid(), self$get_start_time()))
 }

@@ -9,7 +9,7 @@ run(command = NULL, args = character(), error_on_status = TRUE,
   timeout = Inf, stdout_line_callback = NULL, stdout_callback = NULL,
   stderr_line_callback = NULL, stderr_callback = NULL, env = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = FALSE,
-  encoding = "")
+  encoding = "", cleanup_tree = FALSE)
 }
 \arguments{
 \item{command}{Character scalar, the command to run.}
@@ -69,6 +69,9 @@ application on windows. Ignored on other platforms.}
 \code{stderr}. By default the encoding of the current locale is
 used. Note that \code{processx} always reencodes the output of
 both streams in UTF-8 currently.}
+
+\item{cleanup_tree}{Whether to clean up the child process tree after
+the process has finished.}
 }
 \value{
 A list with components:

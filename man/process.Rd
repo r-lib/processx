@@ -14,7 +14,7 @@ streams. The process id is then used to manage the process.
 \preformatted{p <- process$new(command = NULL, args,
                  stdin = NULL, stdout = NULL, stderr = NULL,
                  connections = list(), poll_connection = NULL,
-                 env = NULL, cleanup = TRUE,
+                 env = NULL, cleanup = TRUE, cleanup_tree = FALSE,
                  wd = NULL, echo_cmd = FALSE, supervise = FALSE,
                  windows_verbatim_args = FALSE,
                  windows_hide_window = FALSE,
@@ -56,6 +56,18 @@ p$get_error_file()
 p$poll_io(timeout)
 
 p$get_result()
+
+p$as_ps_handle()
+p$get_name()
+p$get_exe()
+p$get_cmdline()
+p$get_status()
+p$get_username()
+p$get_wd()
+p$get_cpu_times()
+p$get_memory_info()
+p$suspend()
+p$resume()
 
 format(p)
 print(p)
@@ -100,8 +112,10 @@ function correctly if some environment variables are not set, so we
 always set \code{HOMEDRIVE}, \code{HOMEPATH}, \code{LOGONSERVER}, \code{PATH},
 \code{SYSTEMDRIVE}, \code{SYSTEMROOT}, \code{TEMP}, \code{USERDOMAIN}, \code{USERNAME},
 \code{USERPROFILE} and \code{WINDIR}.
-\item \code{cleanup}: Whether to kill the process (and its children)
-if the \code{process} object is garbage collected.
+\item \code{cleanup}: Whether to kill the process when the \code{process} object is
+garbage collected.
+\item \code{cleanup_tree}: Whether to kill the process and its child process tree
+when the \code{process} object is garbage collected.
 \item \code{wd}: working directory of the process. It must exist. If \code{NULL}, then
 the current working directory is used.
 \item \code{echo_cmd}: Whether to print the command to the screen before
@@ -172,7 +186,7 @@ descendents, even if they are orphaned, i.e. they are not connected
 to the root of the tree cleanup in the process tree any more.
 \code{$kill_tree()} returns a named integer vector of the process ids that
 were killed, the names are the names of the processes (e.g. \code{"sleep"},
-\code{"notepad.exe"}, \code{"Rterm.exe"}, etc.)
+\code{"notepad.exe"}, \code{"Rterm.exe"}, etc.).
 
 \code{$wait()} waits until the process finishes, or a timeout happens.
 Note that if the process never finishes, and the timeout is infinite
@@ -202,7 +216,7 @@ supervisor process.
 \code{$supervise()} if passed \code{TRUE}, tells the supervisor to start
 tracking the process. If \code{FALSE}, tells the supervisor to stop
 tracking the process. Note that even if the supervisor is disabled for a
-process, if it was started with \code{cleanup=TRUE}, the process will
+process, if it was started with \code{cleanup = TRUE}, the process will
 still be killed when the object is garbage collected.
 
 \code{$read_output()} reads from the standard output connection of the
@@ -314,6 +328,24 @@ to poll on multiple processes.
 \code{$get_result()} returns the result of the post processesing function.
 It can only be called once the process has finished. If the process has
 no post-processing function, then \code{NULL} is returned.
+
+\code{$as_ps_handle()} returns a \link[ps:ps_handle]{ps::ps_handle} object, corresponding to
+the process. The following methods use the ps package on a \code{ps_handle}
+object, created automatically:
+\itemize{
+\item \code{p$get_name()} calls \code{\link[ps:ps_name]{ps::ps_name()}} to get the process name.
+\item \code{p$get_exe()} calls \code{\link[ps:ps_exe]{ps::ps_exe()}} to get the path of the executable.
+\item \code{p$get_cmdline()} calls \code{\link[ps:ps_cmdline]{ps::ps_cmdline()}} to get the command line.
+\item \code{p$get_status()} calls \code{\link[ps:ps_status]{ps::ps_status()}} to get the process status.
+\item \code{p$get_username()} calls \code{\link[ps:ps_username]{ps::ps_username()}} to get the username.
+\item \code{p$get_wd()} calls \code{\link[ps:ps_cwd]{ps::ps_cwd()}} to get the current working
+directory.
+\item \code{p$get_cpu_times()} calls \code{\link[ps:ps_cpu_times]{ps::ps_cpu_times()}} to get CPU usage data.
+\item \code{p$get_memory_info()} calls \code{\link[ps:ps_memory_info]{ps::ps_memory_info()}} to get memory usage
+data.
+\item \code{p$suspend()} calls \code{\link[ps:ps_suspend]{ps::ps_suspend()}} to suspend the process.
+\item \code{p$resume()} calls \code{\link[ps:ps_resume]{ps::ps_resume()}} to resume a suspended process.
+}
 
 \code{format(p)} or \code{p$format()} creates a string representation of the
 process, usually for printing.

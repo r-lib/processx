@@ -63,6 +63,8 @@
 #'   `stderr`. By default the encoding of the current locale is
 #'   used. Note that `processx` always reencodes the output of
 #'   both streams in UTF-8 currently.
+#' @param cleanup_tree Whether to clean up the child process tree after
+#'   the process has finished.
 #' @return A list with components:
 #'   * status The exit status of the process. If this is `NA`, then the
 #'     process was killed and had no exit status.
@@ -97,7 +99,7 @@ run <- function(
   timeout = Inf, stdout_line_callback = NULL, stdout_callback = NULL,
   stderr_line_callback = NULL, stderr_callback = NULL, env = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = FALSE,
-  encoding = "") {
+  encoding = "", cleanup_tree = FALSE) {
 
   assert_that(is_flag(error_on_status))
   assert_that(is_time_interval(timeout))
@@ -108,6 +110,7 @@ run <- function(
               is.function(stderr_line_callback))
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
   assert_that(is.null(stderr_callback) || is.function(stderr_callback))
+  assert_that(is_flag(cleanup_tree))
   ## The rest is checked by process$new()
   "!DEBUG run() Checked arguments"
 
@@ -118,7 +121,8 @@ run <- function(
     command, args, echo_cmd = echo_cmd, wd = wd,
     windows_verbatim_args = windows_verbatim_args,
     windows_hide_window = windows_hide_window,
-    stdout = "|", stderr = "|", env = env, encoding = encoding
+    stdout = "|", stderr = "|", env = env, encoding = encoding,
+    cleanup_tree = cleanup_tree
   )
   "#!DEBUG run() Started the process: `pr$get_pid()`"
 

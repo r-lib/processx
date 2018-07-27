@@ -5,8 +5,8 @@
 \title{Start a process}
 \usage{
 process_initialize(self, private, command, args, stdin, stdout, stderr,
-  connections, poll_connection, env, cleanup, wd, echo_cmd, supervise,
-  windows_verbatim_args, windows_hide_window, encoding, post_process)
+  connections, poll_connection, env, cleanup, cleanup_tree, wd, echo_cmd,
+  supervise, windows_verbatim_args, windows_hide_window, encoding, post_process)
 }
 \arguments{
 \item{self}{this}
@@ -30,6 +30,8 @@ process_initialize(self, private, command, args, stdin, stdout, stderr,
 \item{env}{Environment vaiables.}
 
 \item{cleanup}{Kill on GC?}
+
+\item{cleanup_tree}{Kill process tree on GC?}
 
 \item{wd}{working directory (or NULL)}
 
