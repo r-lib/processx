@@ -31,6 +31,10 @@
 
 * Fixed a bug that occasionally caused crashes in `wait()`, on Unix (#138).
 
+* When `run()` is interrupted, no error message is printed, just like
+  for interruption of R code in general. The thrown condition now also
+  has the `interrupt` class (#148).
+
 # processx 3.1.0
 
 * Fix interference with the parallel package, and other packages that

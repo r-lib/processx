@@ -142,10 +142,12 @@ run <- function(
     interrupt = function(e) {
       tryCatch(pr$kill(), error = function(e) NULL)
       "!DEBUG run() process `pr$get_pid()` killed on interrupt"
-      stop(make_condition(
+      signalCondition(make_condition(
         list(interrupt = TRUE),
         runcall
       ))
+      cat("\n")
+      invokeRestart("abort")
     }
   )
 
@@ -286,7 +288,7 @@ make_condition <- function(result, call) {
         stderr = NULL,
         call = call
       ),
-      class = c("system_command_interrupt", "condition")
+      class = c("system_command_interrupt", "interrupt", "condition")
     )
 
   } else if (isTRUE(result$timeout)) {
