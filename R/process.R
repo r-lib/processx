@@ -629,7 +629,9 @@ process_interrupt <- function(self, private) {
 
 process_kill <- function(self, private, grace) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `self$get_pid()`"
-  .Call(c_processx_kill, private$status, as.numeric(grace))
+  ret <- .Call(c_processx_kill, private$status, as.numeric(grace))
+  if (!is.null(p <- private$poll_pipe)) .Call(c_processx_connection_close, p)
+  ret
 }
 
 process_kill_tree <- function(self, private, grace) {
@@ -640,7 +642,9 @@ process_kill_tree <- function(self, private, grace) {
       class = c("not_implemented", "error", "condition")))
   }
 
-  get("ps_kill_tree", asNamespace("ps"))(private$tree_id)
+  ret <- get("ps_kill_tree", asNamespace("ps"))(private$tree_id)
+  if (!is.null(p <- private$poll_pipe)) .Call(c_processx_connection_close, p)
+  ret
 }
 
 process_get_start_time <- function(self, private) {
