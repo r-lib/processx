@@ -2,4 +2,12 @@ library(testthat)
 library(processx)
 
 Sys.setenv("R_TESTS" = "")
-test_check("processx", reporter = "summary")
+
+if (ps::ps_is_supported()) {
+  reporter <- ps::CleanupReporter(testthat::ProgressReporter)$new()
+} else {
+  ## ps does not support this platform
+  reporter <- "summary"
+}
+
+test_check("ps", reporter = reporter)

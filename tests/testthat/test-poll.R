@@ -18,7 +18,7 @@ test_that("polling for output available", {
   expect_equal(p$poll_io(-1), c(output = "ready", error = "nopipe",
                                 process = "nopipe"))
 
-  p$kill()
+  p$kill(close_connections = FALSE)
   expect_equal(p$poll_io(-1), c(output = "ready", error = "nopipe",
                                 process = "nopipe"))
 
@@ -44,7 +44,7 @@ test_that("polling for stderr", {
   expect_equal(p$poll_io(-1), c(output = "nopipe", error = "ready",
                                 process = "nopipe"))
 
-  p$kill()
+  p$kill(close_connections = FALSE)
   expect_equal(p$poll_io(-1), c(output = "nopipe", error = "ready",
                                 process = "nopipe"))
 
@@ -69,7 +69,7 @@ test_that("polling for both stdout and stderr", {
   p$read_error_lines()
   expect_true("ready" %in% p$poll_io(-1))
 
-  p$kill()
+  p$kill(close_connections = FALSE)
   expect_true("ready" %in% p$poll_io(-1))
 
   close(p$get_output_connection())
@@ -84,6 +84,7 @@ test_that("multiple polls", {
   p <- process$new(
     px, c("sleep", "1", "outln", "foo", "sleep", "1", "outln", "bar"),
     stdout = "|", stderr = "|")
+  on.exit(p$kill(), add = TRUE)
 
   out <- character()
   while (p$is_alive()) {

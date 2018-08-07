@@ -36,6 +36,7 @@ test_that("wait after process already exited", {
 
   p <- process$new(
     px, c("outln", "foo", "outln", "bar", "outln", "foobar"))
+  on.exit(p$kill(), add = TRUE)
 
   ## Make sure it is done
   p$wait()

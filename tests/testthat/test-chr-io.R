@@ -6,6 +6,7 @@ test_that("Can read last line without trailing newline", {
   px <- get_tool("px")
 
   p <- process$new(px, c("out", "foobar"), stdout = "|")
+  on.exit(p$kill(), add = TRUE)
   out <- p$read_all_output_lines()
   expect_equal(out, "foobar")
 })
@@ -15,6 +16,7 @@ test_that("Can read single characters", {
   px <- get_tool("px")
 
   p <- process$new(px, c("out", "123"), stdout = "|")
+  on.exit(p$kill(), add = TRUE)
   p$wait()
 
   p$poll_io(-1)
@@ -30,6 +32,7 @@ test_that("Can read multiple characters", {
   px <- get_tool("px")
 
   p <- process$new(px, c("out", "123456789"), stdout = "|")
+  on.exit(p$kill(), add = TRUE)
   p$wait()
 
   p$poll_io(-1)

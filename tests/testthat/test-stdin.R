@@ -52,6 +52,7 @@ test_that("stdin buffer full", {
 
   px <- get_tool("px")
   p <- process$new(px, c("sleep", 100), stdin = "|")
+  on.exit(p$kill(), add = TRUE)
   for (i in 1:100000) {
     ret <- p$write_input("foobar")
     if (length(ret) > 0) break
@@ -73,6 +74,7 @@ test_that("file as stdin", {
   cat(txt, file = tmp)
 
   p <- process$new("cat", stdin = tmp, stdout = tmp2)
+  on.exit(p$kill(), add = TRUE)
   p$wait()
   expect_true(file.exists(tmp2))
   expect_equal(readChar(tmp2, nchar(txt)), txt)
@@ -91,6 +93,7 @@ test_that("large file as stdin", {
   cat(txt, file = tmp)
 
   p <- process$new("cat", stdin = tmp, stdout = tmp2)
+  on.exit(p$kill(), add = TRUE)
   p$wait()
   expect_true(file.exists(tmp2))
   expect_equal(file.info(tmp2)$size, nchar(txt))

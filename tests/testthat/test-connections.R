@@ -8,6 +8,7 @@ test_that("lot of text", {
   cat(txt, file = tmp <- tempfile())
 
   p <- process$new(px, c("cat", tmp), stdout = "|")
+  on.exit(p$kill(), add = TRUE)
   out <- p$read_all_output_lines()
 
   expect_equal(txt, out)
@@ -20,6 +21,7 @@ test_that("UTF-8", {
   writeBin(txt, con = tmp <- tempfile())
 
   p <- process$new(px, c("cat", tmp), stdout = "|", encoding = "UTF-8")
+  on.exit(p$kill(), add = TRUE)
   out <- p$read_all_output_lines()
 
   expect_equal(txt, charToRaw(out))
@@ -34,15 +36,17 @@ test_that("UTF-8 multibyte character cut in half", {
   writeBin(rtxt[1:2], tmp1 <- tempfile())
   writeBin(rtxt[3:4], tmp2 <- tempfile())
 
-  p <- process$new(px, c("cat", tmp1, "cat", tmp2), stdout = "|",
-                   encoding = "UTF-8")
-  out <- p$read_all_output_lines()
+  p1 <- process$new(px, c("cat", tmp1, "cat", tmp2), stdout = "|",
+                    encoding = "UTF-8")
+  on.exit(p1$kill(), add = TRUE)
+  out <- p1$read_all_output_lines()
   expect_equal(rtxt, charToRaw(out))
 
   cmd <- paste("(cat", shQuote(tmp1), ";sleep 1;cat", shQuote(tmp2), ")")
-  p <- process$new(px, c("cat", tmp1, "sleep", "1", "cat", tmp2),
-                   stdout = "|", stderr = "|", encoding = "UTF-8")
-  out <- p$read_all_output_lines()
+  p2 <- process$new(px, c("cat", tmp1, "sleep", "1", "cat", tmp2),
+                    stdout = "|", stderr = "|", encoding = "UTF-8")
+  on.exit(p2$kill(), add = TRUE)
+  out <- p2$read_all_output_lines()
   expect_equal(rtxt, charToRaw(out))
 })
 
@@ -53,6 +57,7 @@ test_that("UTF-8 multibyte character cut in half at the end of the file", {
   writeBin(c(rtxt, rtxt[1:2]), tmp1 <- tempfile())
 
   p <- process$new(px, c("cat", tmp1), stdout = "|", encoding = "UTF-8")
+  on.exit(p$kill(), add = TRUE)
   expect_warning(
     out <- p$read_all_output_lines(),
     "Invalid multi-byte character at end of stream ignored"
@@ -68,6 +73,7 @@ test_that("Invalid UTF-8 characters in the middle of the string", {
   writeBin(rtxt, tmp1 <- tempfile())
 
   p <- process$new(px, c("cat", tmp1), stdout = "|", encoding = "UTF-8")
+  on.exit(p$kill(), add = TRUE)
   suppressWarnings(out <- p$read_all_output_lines())
 
   expect_equal(out, strrep("a", 100))
@@ -81,6 +87,7 @@ test_that("Convert from another encoding to UTF-8", {
   writeBin(charToRaw(latin1), tmp1 <- tempfile())
 
   p <- process$new(px, c("cat", tmp1), stdout = "|", encoding = "latin1")
+  on.exit(p$kill(), add = TRUE)
   suppressWarnings(out <- p$read_all_output_lines())
 
   expect_equal(charToRaw(out), charToRaw("\xc3\xa1\xc3\xa9\xc3\xad"))

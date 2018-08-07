@@ -101,6 +101,7 @@ test_that("is_incomplete", {
 
   px <- get_tool("px")
   p <- process$new(px, c("out", "foo\nbar\nfoobar\n"), stdout = "|")
+  on.exit(p$kill(), add = TRUE)
 
   expect_true(p$is_incomplete_output())
 
@@ -119,6 +120,7 @@ test_that("readChar on IO, unix", {
   px <- get_tool("px")
 
   p <- process$new(px, c("outln", "hello world!"), stdout = "|")
+  on.exit(p$kill(), add = TRUE)
   p$wait()
 
   p$poll_io(-1)
@@ -134,6 +136,7 @@ test_that("readChar on IO, windows", {
 
   px <- get_tool("px")
   p <- process$new(px, c("outln", "hello world!"), stdout = "|")
+  on.exit(p$kill(), add = TRUE)
   p$wait()
 
   p$poll_io(-1)

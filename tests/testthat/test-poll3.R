@@ -14,9 +14,9 @@ test_that("poll connection", {
   expect_equal(p$poll_io(-1), c(output = "nopipe", error = "nopipe",
                                 process = "ready"))
 
-  p$kill()
+  p$kill(close_connections = FALSE)
   expect_equal(p$poll_io(-1), c(output = "nopipe", error = "nopipe",
-                                process = "closed"))
+                                process = "ready"))
 
   close(p$get_poll_connection())
   expect_equal(p$poll_io(-1), c(output = "nopipe", error = "nopipe",
