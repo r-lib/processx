@@ -34,5 +34,5 @@ Suggests:
     testthat,
     withr
 Remotes:
-    r-lib/ps@feature/testthat-open-connections
+    r-lib/ps
 Encoding: UTF-8
