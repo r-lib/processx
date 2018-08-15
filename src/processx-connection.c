@@ -449,9 +449,9 @@ processx_connection_t *processx_c_connection_create(
     class = PROTECT(ScalarString(mkChar("processx_connection")));
     setAttrib(result, R_ClassSymbol, class);
     *r_connection = result;
+    UNPROTECT(2);
   }
 
-  if (r_connection) UNPROTECT(2);
   return con;
 }
 
