@@ -1,30 +1,38 @@
 
 # processx 3.2.0
 
-* Clean up the process tree rooted at a processx process (#139, #143).
+* New `process$kill_tree()` method, and new `cleanup_tree` arguments in
+  `run()` and `process$new()`, to clean up the process tree rooted at a
+  processx process. (#139, #143).
 
-* Send interrupt to a process, SIGINT on Unix, CTRL+C on Windows (#127).
+* New `process$interupt()` method to send an interrupt to a process,
+  SIGINT on Unix, CTRL+C on Windows (#127).
 
-* Support writing to the standard input of a process (#27, #114).
+* New `stdin` argument in `process$new()` to support writing to the
+  standard input of a process (#27, #114).
 
-* Support extra connections, in addition to the standard streams.
+* New `connections` argument in `process$new()` to support passing extra
+  connections to the child process, in addition to the standard streams.
 
-* Poll connection: an extra connection that can be used to poll the
-  process, even if `stdout` and `stderr` are not pipes (#125).
+* New `poll_connection` argument to `process$new()`, an extra connection
+  that can be used to poll the process, even if `stdout` and `stderr` are
+  not pipes (#125).
 
 * `poll()` now works with connections objects, and they can be mixed with
   process objects (#121).
 
-* Set the environment of the child process, optionally (#117, #118).
+* New `env` argument in `run()` and `process$new()`, to set the
+  environment of the child process, optionally (#117, #118).
 
 * Removed the `$restart()` method, because it was less useful than
   expected, and hard to maintain (#116).
 
-* Function to set the standard output or error of the calling process.
+* New `conn_set_stdout()` and `conn_set_stderr()` to set the standard
+  output or error of the calling process.
 
-* Function to disable stdio inheritance. It is suggested that child
-  processes call this immediately after starting, so the file handles
-  are not inherited further.
+* New `conn_disable_inheritance()` to disable stdio inheritance. It is
+  suggested that child processes call this immediately after starting, so
+  the file handles are not inherited further.
 
 * Fixed a signal handler bug on Unix that marked the process as finished,
   even if it has not (d221aa1f).
