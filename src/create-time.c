@@ -158,7 +158,6 @@ void *processx__memmem(const void *haystack, size_t n1,
 double processx__boot_time() {
   char *buf;
   int ret;
-  char *pos;
   const char *btime_str = "\nbtime ";
   size_t btime_size = 7;
   char *btime_pos;
