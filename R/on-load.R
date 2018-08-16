@@ -3,7 +3,7 @@ Internal <- NULL
 
 .onLoad <- function(libname, pkgname) {
   ## This is to circumvent a ps bug
-  ps::ps_handle()
+  if (ps::ps_is_supported()) ps::ps_handle()
   supervisor_reset()
   Internal <<- get(".Internal", asNamespace("base"))
   if (requireNamespace("debugme", quietly = TRUE)) debugme::debugme() # nocov
