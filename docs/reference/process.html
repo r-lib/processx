@@ -21,9 +21,11 @@
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
+<!-- sticky kit -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
 
 
@@ -36,6 +38,7 @@ wrapper around the system base R function, to return the process
 id of the started process, and set its standard output and error
 streams. The process id is then used to manage the process." />
 <meta name="twitter:card" content="summary" />
+
 
 
 <!-- mathjax -->
@@ -62,7 +65,7 @@ streams. The process id is then used to manage the process." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">3.1.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">3.2.0</span>
       </span>
     </div>
 
@@ -84,7 +87,7 @@ streams. The process id is then used to manage the process." />
       
       <ul class="nav navbar-nav navbar-right">
         <li>
-  <a href="https://github.com/r-lib/processx#readme">
+  <a href="https://github.com/r-lib/processx">
     <span class="fa fa-github fa-lg"></span>
      
   </a>
@@ -102,7 +105,7 @@ streams. The process id is then used to manage the process." />
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>External process</h1>
-    <small class="dont-index">Source: <a href='https://github.com/r-lib/processx#readme/blob/master/R/process.R'><code>R/process.R</code></a></small>
+    <small class="dont-index">Source: <a href='https://github.com/r-lib/processx/blob/master/R/process.R'><code>R/process.R</code></a></small>
     <div class="hidden name"><code>process.Rd</code></div>
     </div>
 
@@ -120,34 +123,59 @@ streams. The process id is then used to manage the process.</p>
     <h2 class="hasAnchor" id="usage"><a class="anchor" href="#usage"></a>Usage</h2>
 
     <pre>p &lt;- process$new(command = NULL, args,
-                 stdout = NULL, stderr = NULL, cleanup = TRUE,
+                 stdin = NULL, stdout = NULL, stderr = NULL,
+                 connections = list(), poll_connection = NULL,
+                 env = NULL, cleanup = TRUE, cleanup_tree = FALSE,
                  wd = NULL, echo_cmd = FALSE, supervise = FALSE,
                  windows_verbatim_args = FALSE,
                  windows_hide_window = FALSE,
                  encoding = "", post_process = NULL)
     p$is_alive()
 p$signal(signal)
+p$interrupt()
 p$kill(grace = 0.1)
+p$kill_tree(grace = 0.1)
 p$wait(timeout = -1)
 p$get_pid()
 p$get_exit_status()
-p$restart()
 p$get_start_time()
     p$read_output(n = -1)
 p$read_error(n = -1)
 p$read_output_lines(n = -1)
 p$read_error_lines(n = -1)
+p$has_input_connection()
+p$has_output_connection()
+p$has_error_connection()
+p$has_poll_connection()
+p$get_input_connection()
 p$get_output_connection()
 p$get_error_connection()
+p$get_poll_connection()
 p$is_incomplete_output()
 p$is_incomplete_error()
 p$read_all_output()
 p$read_all_error()
 p$read_all_output_lines()
 p$read_all_error_lines()
+p$write_input(str, sep = "\n")
+p$get_input_file()
+p$get_output_file()
+p$get_error_file()
     p$poll_io(timeout)
     p$get_result()
-    print(p)
+    p$as_ps_handle()
+p$get_name()
+p$get_exe()
+p$get_cmdline()
+p$get_status()
+p$get_username()
+p$get_wd()
+p$get_cpu_times()
+p$get_memory_info()
+p$suspend()
+p$resume()
+    format(p)
+print(p)
 </pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -162,14 +190,37 @@ It should not be quoted with <code><a href='http://www.rdocumentation.org/packag
 <code><a href='http://www.rdocumentation.org/packages/base/topics/normalizePath'>base::normalizePath()</a></code> for tilde-expansion.</p></li>
 <li><p><code>args</code>: Character vector, arguments to the command. They will be
 used as is, without a shell. They don't need to be escaped.</p></li>
+<li><p><code>stdin</code>: What to do with the standard input. Possible values:
+<code>NULL</code>: set to the <em>null device</em>, i.e. no standard input is
+provided; a string, supply the specified string as standard input;
+<code>"|"</code>: create a (writeable) connection for stdin.</p></li>
 <li><p><code>stdout</code>: What to do with the standard output. Possible values:
 <code>NULL</code>: discard it; a string, redirect it to this file;
 <code>"|"</code>: create a connection for it.</p></li>
 <li><p><code>stderr</code>: What to do with the standard error. Possible values:
 <code>NULL</code>: discard it; a string, redirect it to this file;
 <code>"|"</code>: create a connection for it.</p></li>
-<li><p><code>cleanup</code>: Whether to kill the process (and its children)
-if the <code>process</code> object is garbage collected.</p></li>
+<li><p><code>connections</code>: A list of connections to pass to the child process.
+This is an experimental feature currently.</p></li>
+<li><p><code>poll_connection</code>: Whether to create an extra connection to the process
+that allows polling, even if the standard input and standard output
+are not pipes. If this is <code>NULL</code> (the default), then this connection
+will be only created if standard output and standard error are not
+pipes, and <code>connections</code> is an empty list. If the poll connection is
+created, you can query it via <code>p$get_poll_connection()</code> and it is
+also included in the response to <code>p$poll_io()</code> and <code><a href='poll.html'>poll()</a></code>. The
+numeric file descriptor of the poll connection comes right after
+<code>stderr</code> (2), and the connections listed in <code>connections</code>.</p></li>
+<li><p><code>env</code>: Environment variables of the child process. If <code>NULL</code>, the
+parent's environment is inherited. On Windows, many programs cannot
+function correctly if some environment variables are not set, so we
+always set <code>HOMEDRIVE</code>, <code>HOMEPATH</code>, <code>LOGONSERVER</code>, <code>PATH</code>,
+<code>SYSTEMDRIVE</code>, <code>SYSTEMROOT</code>, <code>TEMP</code>, <code>USERDOMAIN</code>, <code>USERNAME</code>,
+<code>USERPROFILE</code> and <code>WINDIR</code>.</p></li>
+<li><p><code>cleanup</code>: Whether to kill the process when the <code>process</code> object is
+garbage collected.</p></li>
+<li><p><code>cleanup_tree</code>: Whether to kill the process and its child process tree
+when the <code>process</code> object is garbage collected.</p></li>
 <li><p><code>wd</code>: working directory of the process. It must exist. If <code>NULL</code>, then
 the current working directory is used.</p></li>
 <li><p><code>echo_cmd</code>: Whether to print the command to the screen before
@@ -187,12 +238,17 @@ the process. See <code><a href='http://www.rdocumentation.org/packages/tools/top
 <li><p><code>timeout</code>: Timeout in milliseconds, for the wait or the I/O
 polling.</p></li>
 <li><p><code>n</code>: Number of characters or lines to read.</p></li>
-<li><p><code>encoding</code>: The encoding to assume for <code>stdout</code> and
+<li><p><code>str</code>: Character or raw vector to write to the standard input of the
+process. If a character vector with a marked encoding, it will be
+converted to <code>encoding</code>.</p></li>
+<li><p><code>sep</code>: Separator to add between <code>str</code> elements if it is a character
+vector. It is ignored if <code>str</code> is a raw vector.</p></li>
+<li><p><code>encoding</code>: The encoding to assume for <code>stdin</code>, <code>stdout</code> and
 <code>stderr</code>. By default the encoding of the current locale is
-used. Note that <code>processx</code> always reencodes the output of
-both streams in UTF-8 currently. If you want to read them
-without any conversion, on all platforms, specify <code>"UTF-8"</code> as
-encoding.</p></li>
+used. Note that <code>processx</code> always reencodes the output of the
+<code>stdout</code>and <code>stderr</code>  streams in UTF-8 currently.
+If you want to read them without any conversion, on all platforms,
+specify <code>"UTF-8"</code> as encoding.</p></li>
 <li><p><code>post_process</code>: An optional function to run when the process has
 finished. Currently it only runs if <code>$get_result()</code> is called.
 It is only run once.</p></li>
@@ -211,11 +267,26 @@ and the special 0 signal, The first three all kill the process. The 0
 signal return <code>TRUE</code> if the process is alive, and <code>FALSE</code>
 otherwise. On Unix all signals are supported that the OS supports, and
 the 0 signal as well.</p>
+<p><code>$interrupt()</code> sends an interrupt to the process. On Unix this is a
+<code>SIGINT</code> signal, and it is usually equivalent to pressing CTRL+C at the
+terminal prompt. On Windows, it is a CTRL+BREAK keypress. Applications
+may catch these events. By default they will quit.</p>
 <p><code>$kill()</code> kills the process. It also kills all of its child
 processes, except if they have created a new process group (on Unix),
 or job object (on Windows). It returns <code>TRUE</code> if the process
 was killed, and <code>FALSE</code> if it was no killed (because it was
 already finished/dead when <code>processx</code> tried to kill it).</p>
+<p><code>$kill_tree()</code> performs process tree cleanup, it kills the process
+(if still alive), together with any child (or grandchild, etc.)
+processes. It uses the <em>ps</em> package, so that needs to be installed,
+and <em>ps</em> needs to support the current platform as well. Process tree
+cleanup works by marking the process with an environment variable,
+which is inherited in all child processes. This allows finding
+descendents, even if they are orphaned, i.e. they are not connected
+to the root of the tree cleanup in the process tree any more.
+<code>$kill_tree()</code> returns a named integer vector of the process ids that
+were killed, the names are the names of the processes (e.g. <code>"sleep"</code>,
+<code>"notepad.exe"</code>, <code>"Rterm.exe"</code>, etc.).</p>
 <p><code>$wait()</code> waits until the process finishes, or a timeout happens.
 Note that if the process never finishes, and the timeout is infinite
 (the default), then R will never regain control. It returns
@@ -232,7 +303,6 @@ overwrites the processx SIGCHLD handler, after the processx process
 has started. In these cases processx cannot determine the real exit
 status of the process. One such package is parallel, if used with
 fork clusters, e.g. through the <code><a href='http://www.rdocumentation.org/packages/parallel/topics/mcparallel'>parallel::mcparallel()</a></code> function.</p>
-<p><code>$restart()</code> restarts a process. It returns the process itself.</p>
 <p><code>$get_start_time()</code> returns the time when the process was
 started.</p>
 <p><code>$is_supervised()</code> returns whether the process is being tracked by
@@ -240,7 +310,7 @@ supervisor process.</p>
 <p><code>$supervise()</code> if passed <code>TRUE</code>, tells the supervisor to start
 tracking the process. If <code>FALSE</code>, tells the supervisor to stop
 tracking the process. Note that even if the supervisor is disabled for a
-process, if it was started with <code>cleanup=TRUE</code>, the process will
+process, if it was started with <code>cleanup = TRUE</code>, the process will
 still be killed when the object is garbage collected.</p>
 <p><code>$read_output()</code> reads from the standard output connection of the
 process. If the standard output connection was not requested, then
@@ -256,16 +326,25 @@ will work only if <code>stdout="|"</code> was used. Otherwise, it will throw an
 error.</p>
 <p><code>$read_error_lines()</code> is similar to <code>$read_output_lines</code>, but
 it reads from the standard error stream.</p>
+<p><code>$has_input_connection()</code> return <code>TRUE</code> if there is a connection
+object for standard input; in other words, if <code>stdout="|"</code>. It returns
+<code>FALSE</code> otherwise.</p>
 <p><code>$has_output_connection()</code> returns <code>TRUE</code> if there is a connection
 object for standard output; in other words, if <code>stdout="|"</code>. It returns
 <code>FALSE</code> otherwise.</p>
 <p><code>$has_error_connection()</code> returns <code>TRUE</code> if there is a connection
 object for standard error; in other words, if <code>stderr="|"</code>. It returns
 <code>FALSE</code> otherwise.</p>
+<p><code>$has_poll_connection()</code> return <code>TRUE</code> if there is a poll connection,
+<code>FALSE</code> otherwise.</p>
+<p><code>$get_input_connection()</code> returns a connection object, to the
+standard input stream of the process.</p>
 <p><code>$get_output_connection()</code> returns a connection object, to the
 standard output stream of the process.</p>
 <p><code>$get_error_conneciton()</code> returns a connection object, to the
 standard error stream of the process.</p>
+<p><code>$get_poll_connetion()</code> returns the poll connection, if the process has
+one.</p>
 <p><code>$is_incomplete_output()</code> return <code>FALSE</code> if the other end of
 the standard output connection was closed (most probably because the
 process exited). It return <code>TRUE</code> otherwise.</p>
@@ -296,6 +375,17 @@ Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several <code>readLines()</code> calls.
 It returns a character vector. This will return content only if
 <code>stderr="|"</code> was used. Otherwise, it will throw an error.</p>
+<p><code>$write_input()</code> writes the character vector (separated by <code>sep</code>) to
+the standard input of the process. It will be converted to the specified
+encoding. This operation is non-blocking, and it will return, even if
+the write fails (because the write buffer is full), or if it suceeds
+partially (i.e. not the full string is written). It returns with a raw
+vector, that contains the bytes that were not written. You can supply
+this raw vector to <code>$write_input()</code> again, until it is fully written,
+and then the return value will be <code>raw(0)</code> (invisibly).</p>
+<p><code>$get_input_file()</code> if the <code>stdin</code> argument was a filename,
+this returns the absolute path to the file. If <code>stdin</code> was <code>"|"</code> or
+<code>NULL</code>, this simply returns that value.</p>
 <p><code>$get_output_file()</code> if the <code>stdout</code> argument was a filename,
 this returns the absolute path to the file. If <code>stdout</code> was <code>"|"</code> or
 <code>NULL</code>, this simply returns that value.</p>
@@ -308,6 +398,24 @@ to poll on multiple processes.</p>
 <p><code>$get_result()</code> returns the result of the post processesing function.
 It can only be called once the process has finished. If the process has
 no post-processing function, then <code>NULL</code> is returned.</p>
+<p><code>$as_ps_handle()</code> returns a <a href='http://www.rdocumentation.org/packages/ps/topics/ps_handle'>ps::ps_handle</a> object, corresponding to
+the process. The following methods use the ps package on a <code>ps_handle</code>
+object, created automatically:</p><ul>
+<li><p><code>p$get_name()</code> calls <code><a href='http://www.rdocumentation.org/packages/ps/topics/ps_name'>ps::ps_name()</a></code> to get the process name.</p></li>
+<li><p><code>p$get_exe()</code> calls <code><a href='http://www.rdocumentation.org/packages/ps/topics/ps_exe'>ps::ps_exe()</a></code> to get the path of the executable.</p></li>
+<li><p><code>p$get_cmdline()</code> calls <code><a href='http://www.rdocumentation.org/packages/ps/topics/ps_cmdline'>ps::ps_cmdline()</a></code> to get the command line.</p></li>
+<li><p><code>p$get_status()</code> calls <code><a href='http://www.rdocumentation.org/packages/ps/topics/ps_status'>ps::ps_status()</a></code> to get the process status.</p></li>
+<li><p><code>p$get_username()</code> calls <code><a href='http://www.rdocumentation.org/packages/ps/topics/ps_username'>ps::ps_username()</a></code> to get the username.</p></li>
+<li><p><code>p$get_wd()</code> calls <code><a href='http://www.rdocumentation.org/packages/ps/topics/ps_cwd'>ps::ps_cwd()</a></code> to get the current working
+directory.</p></li>
+<li><p><code>p$get_cpu_times()</code> calls <code><a href='http://www.rdocumentation.org/packages/ps/topics/ps_cpu_times'>ps::ps_cpu_times()</a></code> to get CPU usage data.</p></li>
+<li><p><code>p$get_memory_info()</code> calls <code><a href='http://www.rdocumentation.org/packages/ps/topics/ps_memory_info'>ps::ps_memory_info()</a></code> to get memory usage
+data.</p></li>
+<li><p><code>p$suspend()</code> calls <code><a href='http://www.rdocumentation.org/packages/ps/topics/ps_suspend'>ps::ps_suspend()</a></code> to suspend the process.</p></li>
+<li><p><code>p$resume()</code> calls <code><a href='http://www.rdocumentation.org/packages/ps/topics/ps_resume'>ps::ps_resume()</a></code> to resume a suspended process.</p></li>
+</ul>
+    <p><code>format(p)</code> or <code>p$format()</code> creates a string representation of the
+process, usually for printing.</p>
 <p><code>print(p)</code> or <code>p$print()</code> shows some information about the
 process on the screen, whether it is running and it's process id, etc.</p>
     
@@ -332,7 +440,7 @@ of them has generated output (or exited).</p>
 <span class='no'>p</span>$<span class='fu'>kill</span>()
 <span class='no'>p</span>$<span class='fu'>is_alive</span>()
 
-<span class='no'>p</span>$<span class='fu'>restart</span>()
+<span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='no'>process</span>$<span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"2"</span>)
 <span class='no'>p</span>$<span class='fu'>is_alive</span>()
 <span class='fu'>Sys.sleep</span>(<span class='fl'>3</span>)
 <span class='no'>p</span>$<span class='fu'>is_alive</span>()
@@ -359,7 +467,7 @@ of them has generated output (or exited).</p>
 
       <footer>
       <div class="copyright">
-  <p>Developed by <a href='https://github.com/gaborcsardi'>Gábor Csárdi</a>, <a href='https://github.com/wch'>Winston Chang</a>, <a href='https://www.rstudio.com'><img src='http://tidyverse.org/rstudio-logo.svg' alt='RStudio' height='24' /></a>, Mango Solutions.</p>
+  <p>Developed by <a href='https://github.com/gaborcsardi'>Gábor Csárdi</a>, <a href='https://github.com/wch'>Winston Chang</a>, <a href='https://www.rstudio.com'><img src='https://tidyverse.org/rstudio-logo.svg' alt='RStudio' height='24' /></a>, Mango Solutions.</p>
 </div>
 
 <div class="pkgdown">

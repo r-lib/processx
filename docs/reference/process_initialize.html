@@ -21,9 +21,11 @@
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
+<!-- sticky kit -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
 
 
@@ -32,6 +34,7 @@
 
 <meta property="og:description" content="Start a process" />
 <meta name="twitter:card" content="summary" />
+
 
 
 <!-- mathjax -->
@@ -58,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">3.1.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">3.2.0</span>
       </span>
     </div>
 
@@ -80,7 +83,7 @@
       
       <ul class="nav navbar-nav navbar-right">
         <li>
-  <a href="https://github.com/r-lib/processx#readme">
+  <a href="https://github.com/r-lib/processx">
     <span class="fa fa-github fa-lg"></span>
      
   </a>
@@ -98,7 +101,7 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Start a process</h1>
-    <small class="dont-index">Source: <a href='https://github.com/r-lib/processx#readme/blob/master/R/initialize.R'><code>R/initialize.R</code></a></small>
+    <small class="dont-index">Source: <a href='https://github.com/r-lib/processx/blob/master/R/initialize.R'><code>R/initialize.R</code></a></small>
     <div class="hidden name"><code>process_initialize.Rd</code></div>
     </div>
 
@@ -108,9 +111,9 @@
     
     </div>
 
-    <pre class="usage"><span class='fu'>process_initialize</span>(<span class='no'>self</span>, <span class='no'>private</span>, <span class='no'>command</span>, <span class='no'>args</span>, <span class='no'>stdout</span>, <span class='no'>stderr</span>, <span class='no'>cleanup</span>, <span class='no'>wd</span>,
-  <span class='no'>echo_cmd</span>, <span class='no'>supervise</span>, <span class='no'>windows_verbatim_args</span>, <span class='no'>windows_hide_window</span>, <span class='no'>encoding</span>,
-  <span class='no'>post_process</span>)</pre>
+    <pre class="usage"><span class='fu'>process_initialize</span>(<span class='no'>self</span>, <span class='no'>private</span>, <span class='no'>command</span>, <span class='no'>args</span>, <span class='no'>stdin</span>, <span class='no'>stdout</span>, <span class='no'>stderr</span>,
+  <span class='no'>connections</span>, <span class='no'>poll_connection</span>, <span class='no'>env</span>, <span class='no'>cleanup</span>, <span class='no'>cleanup_tree</span>, <span class='no'>wd</span>, <span class='no'>echo_cmd</span>,
+  <span class='no'>supervise</span>, <span class='no'>windows_verbatim_args</span>, <span class='no'>windows_hide_window</span>, <span class='no'>encoding</span>, <span class='no'>post_process</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -132,16 +135,36 @@
       <td><p>Command arguments, character vector.</p></td>
     </tr>
     <tr>
+      <th>stdin</th>
+      <td><p>Standard input, NULL to ignore.</p></td>
+    </tr>
+    <tr>
       <th>stdout</th>
-      <td><p>Standard output, FALSE to ignore, TRUE for temp file.</p></td>
+      <td><p>Standard output, NULL to ignore, TRUE for temp file.</p></td>
     </tr>
     <tr>
       <th>stderr</th>
-      <td><p>Standard error, FALSE to ignore, TRUE for temp file.</p></td>
+      <td><p>Standard error, NULL to ignore, TRUE for temp file.</p></td>
+    </tr>
+    <tr>
+      <th>connections</th>
+      <td><p>Connections to inherit in the child process.</p></td>
+    </tr>
+    <tr>
+      <th>poll_connection</th>
+      <td><p>Whether to create a connection for polling.</p></td>
+    </tr>
+    <tr>
+      <th>env</th>
+      <td><p>Environment vaiables.</p></td>
     </tr>
     <tr>
       <th>cleanup</th>
       <td><p>Kill on GC?</p></td>
+    </tr>
+    <tr>
+      <th>cleanup_tree</th>
+      <td><p>Kill process tree on GC?</p></td>
     </tr>
     <tr>
       <th>wd</th>
@@ -178,7 +201,7 @@
 
       <footer>
       <div class="copyright">
-  <p>Developed by <a href='https://github.com/gaborcsardi'>Gábor Csárdi</a>, <a href='https://github.com/wch'>Winston Chang</a>, <a href='https://www.rstudio.com'><img src='http://tidyverse.org/rstudio-logo.svg' alt='RStudio' height='24' /></a>, Mango Solutions.</p>
+  <p>Developed by <a href='https://github.com/gaborcsardi'>Gábor Csárdi</a>, <a href='https://github.com/wch'>Winston Chang</a>, <a href='https://www.rstudio.com'><img src='https://tidyverse.org/rstudio-logo.svg' alt='RStudio' height='24' /></a>, Mango Solutions.</p>
 </div>
 
 <div class="pkgdown">

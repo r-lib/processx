@@ -83,33 +83,6 @@ These functions are currently experimental and will change
 in the future. Note that processx connections are  \emph{not}
 compatible with R's built-in connection system.
 
-\code{conn_create_pipepair()} creates a pair of connected connections, the
-first one is writeable, the second one is readable.
-
-\code{conn_read_chars()} reads UTF-8 characters from the connections. If the
-connection itself is not UTF-8 encoded, it re-encodes it.
-
-\code{conn_read_lines()} reads lines from a connection.
-
-\code{conn_is_incomplete()} returns \code{FALSE} if the connection surely has no
-more data.
-
-\code{conn_write()} writes a character or raw vector to the connection.
-It might not be able to write all bytes into the connection, in which
-case it returns the leftover bytes in a raw vector. Call \code{conn_write()}
-again with this raw vector.
-
-\code{conn_create_file()} creates a connection to a file.
-
-\code{conn_set_stdout()} set the standard output of the R process, to the
-specified connection.
-
-\code{conn_set_stderr()} set the standard error of the R process, to the
-specified connection.
-
-\code{conn_get_fileno()} return the integer file desciptor that belongs to
-the connection.
-
 The function is best effort to close the handles, it might still leave
 some handles open. It should work for \code{stdin}, \code{stdout} and \code{stderr},
 at least.

@@ -6,7 +6,8 @@
 \usage{
 process_initialize(self, private, command, args, stdin, stdout, stderr,
   connections, poll_connection, env, cleanup, cleanup_tree, wd, echo_cmd,
-  supervise, windows_verbatim_args, windows_hide_window, encoding, post_process)
+  supervise, windows_verbatim_args, windows_hide_window, encoding,
+  post_process)
 }
 \arguments{
 \item{self}{this}

@@ -21,14 +21,17 @@
 <!-- clipboard.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
 
+<!-- sticky kit -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
+
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
-<script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
 
 
 
 <meta property="og:title" content="Changelog" />
+
 
 
 <!-- mathjax -->
@@ -55,7 +58,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">3.1.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">3.2.0</span>
       </span>
     </div>
 
@@ -77,7 +80,7 @@
       
       <ul class="nav navbar-nav navbar-right">
         <li>
-  <a href="https://github.com/r-lib/processx#readme">
+  <a href="https://github.com/r-lib/processx">
     <span class="fa fa-github fa-lg"></span>
      
   </a>
@@ -95,19 +98,39 @@
   <div class="col-md-9 contents">
     <div class="page-header">
       <h1>Changelog <small></small></h1>
-      <small>Source: <a href='https://github.com/r-lib/processx#readme/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
+      <small>Source: <a href='https://github.com/r-lib/processx/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
+    <div id="processx-3-2-0" class="section level1">
+<h1 class="page-header">
+<a href="#processx-3-2-0" class="anchor"></a>processx 3.2.0<small> Unreleased </small>
+</h1>
+<ul>
+<li><p>New <code>process$kill_tree()</code> method, and new <code>cleanup_tree</code> arguments in <code><a href="../reference/run.html">run()</a></code> and <code>process$new()</code>, to clean up the process tree rooted at a processx process. (<a href='https://github.com/r-lib/processx/issues/139'>#139</a>, <a href='https://github.com/r-lib/processx/issues/143'>#143</a>).</p></li>
+<li><p>New <code>process$interupt()</code> method to send an interrupt to a process, SIGINT on Unix, CTRL+C on Windows (<a href='https://github.com/r-lib/processx/issues/127'>#127</a>).</p></li>
+<li><p>New <code>stdin</code> argument in <code>process$new()</code> to support writing to the standard input of a process (<a href='https://github.com/r-lib/processx/issues/27'>#27</a>, <a href='https://github.com/r-lib/processx/issues/114'>#114</a>).</p></li>
+<li><p>New <code>connections</code> argument in <code>process$new()</code> to support passing extra connections to the child process, in addition to the standard streams.</p></li>
+<li><p>New <code>poll_connection</code> argument to <code>process$new()</code>, an extra connection that can be used to poll the process, even if <code>stdout</code> and <code>stderr</code> are not pipes (<a href='https://github.com/r-lib/processx/issues/125'>#125</a>).</p></li>
+<li><p><code><a href="../reference/poll.html">poll()</a></code> now works with connections objects, and they can be mixed with process objects (<a href='https://github.com/r-lib/processx/issues/121'>#121</a>).</p></li>
+<li><p>New <code>env</code> argument in <code><a href="../reference/run.html">run()</a></code> and <code>process$new()</code>, to set the environment of the child process, optionally (<a href='https://github.com/r-lib/processx/issues/117'>#117</a>, <a href='https://github.com/r-lib/processx/issues/118'>#118</a>).</p></li>
+<li><p>Removed the <code>$restart()</code> method, because it was less useful than expected, and hard to maintain (<a href='https://github.com/r-lib/processx/issues/116'>#116</a>).</p></li>
+<li><p>New <code><a href="../reference/processx_connections.html">conn_set_stdout()</a></code> and <code><a href="../reference/processx_connections.html">conn_set_stderr()</a></code> to set the standard output or error of the calling process.</p></li>
+<li><p>New <code><a href="../reference/processx_connections.html">conn_disable_inheritance()</a></code> to disable stdio inheritance. It is suggested that child processes call this immediately after starting, so the file handles are not inherited further.</p></li>
+<li><p>Fixed a signal handler bug on Unix that marked the process as finished, even if it has not (d221aa1f).</p></li>
+<li><p>Fixed a bug that occasionally caused crashes in <code>wait()</code>, on Unix (<a href='https://github.com/r-lib/processx/issues/138'>#138</a>).</p></li>
+<li><p>When <code><a href="../reference/run.html">run()</a></code> is interrupted, no error message is printed, just like for interruption of R code in general. The thrown condition now also has the <code>interrupt</code> class (<a href='https://github.com/r-lib/processx/issues/148'>#148</a>).</p></li>
+</ul>
+</div>
     <div id="processx-3-1-0" class="section level1">
 <h1 class="page-header">
-<a href="#processx-3-1-0" class="anchor"></a>processx 3.1.0<small> Unreleased </small>
+<a href="#processx-3-1-0" class="anchor"></a>processx 3.1.0<small> 2018-05-15 </small>
 </h1>
 <ul>
 <li><p>Fix interference with the parallel package, and other packages that redefine the <code>SIGCHLD</code> signal handler on Unix. If the processx signal handler is overwritten, we might miss the exit status of some processes (they are set to <code>NA</code>).</p></li>
-<li><p><code><a href="../reference/run.html">run()</a></code> and <code>process$new()</code> allow specifying the working directory of the process (<a href='https://github.com/r-lib/processx#readme/issues/63'>#63</a>).</p></li>
-<li><p>Make the debugme package an optional dependency (<a href='https://github.com/r-lib/processx#readme/issues/74'>#74</a>).</p></li>
+<li><p><code><a href="../reference/run.html">run()</a></code> and <code>process$new()</code> allow specifying the working directory of the process (<a href='https://github.com/r-lib/processx/issues/63'>#63</a>).</p></li>
+<li><p>Make the debugme package an optional dependency (<a href='https://github.com/r-lib/processx/issues/74'>#74</a>).</p></li>
 <li><p>processx is now compatible with R 3.1.x.</p></li>
-<li><p>Allow polling more than 64 connections on Windows, by using IOCP instead of <code>WaitForMultipleObjects()</code> (<a href='https://github.com/r-lib/processx#readme/issues/81'>#81</a>, <a href='https://github.com/r-lib/processx#readme/issues/106'>#106</a>).</p></li>
+<li><p>Allow polling more than 64 connections on Windows, by using IOCP instead of <code>WaitForMultipleObjects()</code> (<a href='https://github.com/r-lib/processx/issues/81'>#81</a>, <a href='https://github.com/r-lib/processx/issues/106'>#106</a>).</p></li>
 <li><p>Fix a race condition on Windows, when creating named pipes for stdout or stderr. The client sometimes didn’t wait for the server, and processx failed with ERROR_PIPE_BUSY (231, All pipe instances are busy).</p></li>
 </ul>
 </div>
@@ -116,9 +139,9 @@
 <a href="#processx-3-0-3" class="anchor"></a>processx 3.0.3<small> 2018-05-07 </small>
 </h1>
 <ul>
-<li><p>Fix a crash on windows when trying to run a non-existing command (<a href='https://github.com/r-lib/processx#readme/issues/90'>#90</a>)</p></li>
+<li><p>Fix a crash on windows when trying to run a non-existing command (<a href='https://github.com/r-lib/processx/issues/90'>#90</a>)</p></li>
 <li><p>Fix a race condition in <code>process$restart()</code></p></li>
-<li><p><code><a href="../reference/run.html">run()</a></code> and <code>process$new()</code> do not support the <code>commandline</code> argument any more, because process cleanup is error prone with an intermediate shell. (<a href='https://github.com/r-lib/processx#readme/issues/88'>#88</a>)</p></li>
+<li><p><code><a href="../reference/run.html">run()</a></code> and <code>process$new()</code> do not support the <code>commandline</code> argument any more, because process cleanup is error prone with an intermediate shell. (<a href='https://github.com/r-lib/processx/issues/88'>#88</a>)</p></li>
 <li><p><code>processx</code> process objects no longer use R connection objects, because the R connection API was retroactive made private by R-core <code>processx</code> uses its own connection class now to manage standard output and error of the process.</p></li>
 <li><p>The encoding of the standard output and error can be specified now, and <code>processx</code> re-encodes <code>stdout</code> and <code>stderr</code> in UTF-8.</p></li>
 <li><p>Cloning of process objects is disables now, as it is likely that it causes problems (<a href='http://github.com/wch'>@wch</a>).</p></li>
@@ -152,6 +175,7 @@
     <div id="tocnav">
       <h2>Contents</h2>
       <ul class="nav nav-pills nav-stacked">
+        <li><a href="#processx-3-2-0">3.2.0</a></li>
         <li><a href="#processx-3-1-0">3.1.0</a></li>
         <li><a href="#processx-3-0-3">3.0.3</a></li>
         <li><a href="#processx-2-0-0-1">2.0.0.1</a></li>
@@ -164,7 +188,7 @@
 
       <footer>
       <div class="copyright">
-  <p>Developed by <a href='https://github.com/gaborcsardi'>Gábor Csárdi</a>, <a href='https://github.com/wch'>Winston Chang</a>, <a href='https://www.rstudio.com'><img src='http://tidyverse.org/rstudio-logo.svg' alt='RStudio' height='24' /></a>, Mango Solutions.</p>
+  <p>Developed by <a href='https://github.com/gaborcsardi'>Gábor Csárdi</a>, <a href='https://github.com/wch'>Winston Chang</a>, <a href='https://www.rstudio.com'><img src='https://tidyverse.org/rstudio-logo.svg' alt='RStudio' height='24' /></a>, Mango Solutions.</p>
 </div>
 
 <div class="pkgdown">
