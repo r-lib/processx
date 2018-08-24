@@ -1,0 +1,334 @@
+---
+title: processx 3.2.0
+date: 2018-08-24
+slug: processx-3.2.0
+author: Gábor Csárdi
+categories: [package]
+description: >
+    Run external processes with processx
+photo:
+  url: https://unsplash.com/photos/nTfGYGPURFA
+  author: Lemuel Butler @lemuelbutler
+vignette: >
+  %\VignetteIndexEntry{Processx 3.2.0}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+library(roxygen2)
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Introduction
+
+We have recently released version 3.2.0 of the processx package to CRAN,
+so this is a good occasion to blog about it.
+
+Occasionally one needs to run other processes from R. Examples include
+small standalone system processes, e.g. to copy to/from the clipboard on
+Linux, it is easiest to run an external utility. Another example is a
+headless web browser, as in the [webshot](https://github.com/wch/webshot)
+or [shinytest](https://github.com/rstudio/shinytest) packages.
+
+processx has many improvements compared to the base R `system()` and
+`system2()` functions to run external processes, we show some of these in
+this post.
+
+Short of cross-platfom OS utilities, we'll use the `px` program for
+demonstration. This is included in processx itself:
+
+```{r}
+library(processx)
+px <- processx:::get_tool("px")
+px
+```
+
+## Foreground processes
+
+processx deals with two kinds of external processes: foreground and
+background. Foreground processes are synchronous, R waits until they
+finish, and collects the output and the exit code of the process.
+
+The `processx::run()` function runs a foreground external process. It is
+somewhat similar to the `system2()` base R function. Its basic usage is:
+
+```r
+processx::run(command, args)
+```
+
+`command` is a string (length 1 character vector), and `args` is a character
+vector of arguments. `command` can be an absolute file name, a relative
+file name, or a command name. For the latter, the current `PATH` is used
+to find the command. E.g. these both work on Unix systems:
+
+```r
+run("/bin/ls")
+run("ls")
+```
+
+Here is the output of `px --help`:
+
+```{r}
+pxhelp <- run(px, "--help")
+cat(pxhelp$stderr)
+```
+
+### Quoting
+
+processx does not use a shell to start up the external process, so special
+characters in `command` and `args` need _not_ be shell quoted. This makes it
+much easier to support arbitrary file names (that may contain spaces or
+special characters), in calls to external programs.
+
+```{r}
+run(px, c("outln", "arg -   with spaces", "outln", "'arg with quote'"))
+```
+
+### Interruption
+
+Unlike `system()` and `system2()`, `processx::run()` is always
+interruptible, you can use the usual interruption key, e.g. ESC in RStudio,
+or CTRL+C in a terminal. On interruption, the external process is
+terminated.
+
+### Spinner
+
+`run()` can show a friendly spinner while the external process is running.
+If the process takes longer then a few second, it is a good idea to use it.
+The spinner is automatically hidden if R is non-interactive:
+
+```r
+run(px, c("sleep", "5"), spinner = TRUE)
+```
+
+### Time limit
+
+You can specify a time limit in `run()`, in seconds, or as a `difftime`
+object:
+
+```{r error = TRUE}
+run(px, c("sleep", "5"), timeout = 1)
+```
+
+`run()` throws an error of class `system_command_timeout_error`, so you
+can easily catch timeouts using `tryCatch()`, if you wish so. By default
+`run()` also throws an error if the system command fails, as indicated by
+its exit status:
+
+```{r, error = TRUE}
+run(px, c("return", "10"))
+```
+
+The `error_on_status` argument can be set to `FALSE` to avoid errors
+for non-zero exit statuses.
+
+### Standard output and error
+
+By default `run()` collects all standard output and error of the process
+and retuns them in two strings. If desired, it can also echo them to
+the screen while the external process is running. (They are still collected
+and returned, so you can still compute on them.)
+
+```{r}
+outp <- run("ls", "..", echo = TRUE)
+```
+
+### Setting environment variables
+
+You can set environment variables for the external process, via the `env`
+argument. Usually you want to add these variables to those already set in
+the current process, otherwise the external process might fail if some
+essential environment variables (like `PATH`) are not set:
+
+```{r}
+run(px, c("getenv", "FOO"), env = c(Sys.getenv(), FOO = "bar"))
+```
+
+## Advanced usage: background processes
+
+processx really shines when it comes to controlling background processes.
+To start a backgound process, you create an R6 object of class `process`.
+The arguments of `process$new()` mostly correspond to the arguments of
+`run()`.
+
+```{r}
+proc <- process$new(px, c("sleep", "10"))
+proc
+```
+
+`process` objects have methods to query process information and to
+manipulate the subprocess. See `?process` for a complete list of methods.
+
+```{r}
+proc$get_name()
+proc$get_cmdline()
+proc$get_exe()
+proc$is_alive()
+proc$suspend()
+proc$get_status()
+proc$resume()
+proc$get_status()
+proc$kill()
+proc$is_alive()
+proc$get_exit_status()
+```
+
+### Output and polling
+
+The standard output and standard error of a background process is ignored
+by default. To write them to files, set the `stdout` and/or `stderr`
+arguments to the paths of the files. Alternatively, processx can create
+connections for standard output and error, and R can read from these
+connections or poll them. Polling a set of connections or processes means
+that R waits until data is available on any of the connections, or a
+timeout expires. This is useful if the R process is waiting on one or more
+processes.
+
+```{r}
+proc <- process$new(px, c("sleep", "1", "outln", "foo", "sleep", "1",
+     "errln", "bar", "sleep", "1"), stdout = "|", "stderr" = "|")
+proc$poll_io(-1)
+proc$read_output_lines()
+proc$poll_io(-1)
+proc$read_error_lines()
+proc$poll_io(-1)
+proc$is_alive()
+```
+
+`$poll_io()` also returns when the process terminates.
+
+To poll multiple processes, the non-member `poll()` function can be used,
+this takes a list of processes:
+
+```{r}
+proc1 <- process$new(px, c("sleep", "0.5", "outln", "foo1", "sleep", "1"),
+     stdout = "|", "stderr" = "|")
+proc2 <- process$new(px, c("sleep", "1", "outln", "foo2", "sleep", "1"),
+     stdout = "|", "stderr" = "|")
+poll(list(proc1, proc2), -1)
+proc1$read_output_lines()
+poll(list(proc1, proc2), -1)
+proc2$read_output_lines()
+```
+
+### Process tree cleanup
+
+In addition to terminating the subprocess, processx supports terminating
+all child processes that were started by the subprocess, and the child
+processes of those, etc.
+
+To request process tree cleanup, set the `cleanup_tree` argument of `run()`
+or the `cleanup` argument of `process$new()` to  `TRUE`. (It is the
+default for `process$new()`.) To clean up manually, use the `$kill_tree()`
+method.
+
+### Use case: wait for an external process to be ready
+
+When starting up an external process, sometimes you need to wait until
+the process is ready to receive input. E.g. PhantomJS is a headless
+browser, used for testing web applications. It can listen to instructions
+on an HTTP socket. PhantomJS has some startup time, and to make sure that
+it is ready for input, you need need to wait until it logs an INFO line to
+its standard output:
+```
+❯ phantomjs  -w
+[INFO  - 2018-08-21T19:57:53.957Z] GhostDriver - Main - running on port 8910
+^C
+```
+
+So processx must capture the standard output and wait until the message
+is printed. If the message is not printed within a timeout we throw an
+error. On success the function returns the PhantomJS `process` object:
+
+```{r}
+start_program <- function(command, args, message, timeout = 5, ...) {
+  timeout <- as.difftime(timeout, units = "secs")
+  deadline <- Sys.time() + timeout
+  px <- process$new(command, args, stdout = "|", ...)
+  while (px$is_alive() && (now <- Sys.time()) < deadline) {
+    poll_time <- as.double(deadline - now, units = "secs") * 1000
+    px$poll_io(as.integer(poll_time))
+    lines <- px$read_output_lines()
+    if (any(grepl(message, lines))) return(px)
+  }
+
+  px$kill()
+  stop("Cannot start ", command)
+}
+```
+
+Use `start_program` like this:
+```r
+start_program("phantomjs", "-w", "running on port")
+```
+
+Some comments about `start_program()`:
+
+* It waits for `message` to show up in the standard output of the process.
+* If this does not happen within 5 seconds, it throws an error.
+* On success, it returns the process object.
+* The returned process object still has a connection to the standard output
+  of the process. This needs to be read out regularly, otherwise its buffer
+  fills up, and the subprocess stops, until the buffer it freed.
+  Alternatively, one can close it with `close(px$get_output_connection())`.
+* If an error happens, the subprocess is terminated when the process object,
+  referred to by `px` within the function, is garbage collected.
+
+## Related tools
+
+### The ps package
+
+The [ps](https://ps.r-lib.org) package deals with system processes in
+general. processx and ps methods overlap, in fact processx uses ps to
+implement some of its methods. It is also possible to create a `ps_handle`
+object from a processx object, with the `$as_ps_handle()` method.
+This can then be used with the ps functions directly:
+
+```{r}
+proc <- process$new(px, c("sleep", "3"))
+ps <- proc$as_ps_handle()
+ps::ps_memory_info(ps)
+```
+
+### Cleaning up processes and files in testthat tests
+
+The ps package has a new testthat reporter, that can be used to check
+that testthat test cases clean up all their child processes and close
+their connections and open files. See `?ps::CleanupReporter` for details.
+
+Here is a simple example on how to use it. In the `testthat.R` file of your
+package, update the `test_check()` call to use `CleanupReporter`. Since
+ps is not supported on all platforms (only Windows, macOS and Linux
+currently), we also need to check for ps support:
+
+```
+if (ps::ps_is_supported()) {
+  reporter <- ps::CleanupReporter(testthat::SummaryReporter)$new()
+} else {
+  ## ps does not support this platform
+  reporter <- "progress"
+}
+
+test_check("<package-name>", reporter = reporter)
+```
+
+`CleanupReporter` will check for leftover child processes, R connections
+and open files at the end of each `test_that()` block. If a check fails,
+it generates a regular testthat test failure, and also prints out the
+name of the leftover process or open file.
+
+### The callr package
+
+The callr package uses processx to start another R process, and run R
+code in it. It can start R processes synchonously or asynchronously,
+and the R processes can be either state-less or stateful. See `?callr::r`,
+`?callr::r_process` and `?callr::r_session` for details.
+
+## Links:
+
+* [processx on CRAN](https://cran.r-project.org/package=processx)
+* [processx on GitHub](https://github.com/r-lib/processx)
+* [processx documentation](https://processx.r-lib.org)
+* [ps on CRAN](https://cran.r-project.org/package=ps)
+* [callr on CRAN](https://cran.r-project.org/package=callr)
