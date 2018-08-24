@@ -31,7 +31,11 @@ Suggests:
     callr,
     covr,
     debugme,
+    knitr,
     parallel,
+    rmarkdown,
     testthat,
     withr
+VignetteBuilder:
+    knitr
 Encoding: UTF-8
