@@ -315,7 +315,7 @@ of a process. It will return if any of the following events happen:
 
 * data is available on the standard output of the process (assuming there is
   a connection to the standard output).
-* data is available on the standard error of the proces (assuming the is
+* data is available on the standard error of the process (assuming the is
   a connection to the standard error).
 * The process has finished and the standard output and/or error connections
   were closed on the other end.
