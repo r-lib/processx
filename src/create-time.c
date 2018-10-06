@@ -177,6 +177,8 @@ double processx__boot_time() {
   return (double) btime;
 }
 
+static double processx__linux_clock_period = 0.0;
+
 double processx__create_time(long pid) {
   double ct;
   double bt;
@@ -188,9 +190,14 @@ double processx__create_time(long pid) {
   bt = processx__boot_time();
   if (bt == 0) return 0.0;
 
-  clock = sysconf(_SC_CLK_TCK);
+  /* Query if not yet queried */
+  if (processx__linux_clock_period == 0) {
+    clock = sysconf(_SC_CLK_TCK);
+    if (clock == -1) return 0.0;
+    processx__linux_clock_period = 1.0 / clock;
+  }
 
-  return bt + ct / clock;
+  return bt + ct * processx__linux_clock_period;
 }
 
 #endif
