@@ -2,7 +2,22 @@
 Internal <- NULL
 
 .onLoad <- function(libname, pkgname) {
+  ## Copy the shared lib to the session temporary directory
+  copy_lib(libname, pkgname)
 
+  ## This is to circumvent a ps bug
+  if (ps::ps_is_supported()) ps::ps_handle()
+  supervisor_reset()
+  Internal <<- get(".Internal", asNamespace("base"))
+  if (requireNamespace("debugme", quietly = TRUE)) debugme::debugme() # nocov
+}
+
+.onUnload <- function(libpath) {
+  if (os_type() != "windows") .Call(c_processx__killem_all)
+  supervisor_reset()
+}
+
+copy_lib <- function(libname, pkgname) {
   libs <- .dynLibs()
   matchidx <- vapply(libs, "[[", character(1), "name") == pkgname
   pkglibs <- libs[matchidx]
@@ -41,14 +56,5 @@ Internal <- NULL
   ns$.__NAMESPACE__.$DLLs[[.packageName]] <- dll
   for (n in names(routines)) ns[[paste0("c_", n)]] <- routines[[n]]
 
-  ## This is to circumvent a ps bug
-  if (ps::ps_is_supported()) ps::ps_handle()
-  supervisor_reset()
-  Internal <<- get(".Internal", asNamespace("base"))
-  if (requireNamespace("debugme", quietly = TRUE)) debugme::debugme() # nocov
-}
-
-.onUnload <- function(libpath) {
-  if (os_type() != "windows") .Call(c_processx__killem_all)
-  supervisor_reset()
+  invisible()
 }
