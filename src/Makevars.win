@@ -5,6 +5,8 @@ OBJECTS = init.o poll.o processx-connection.o			     \
 
 .PHONY: all clean
 
+PKG_CFLAGS = -DSTRICT_R_HEADERS
+
 all: tools/px.exe tools/interrupt.exe \
 	supervisor/supervisor.exe $(SHLIB)
 
