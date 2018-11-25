@@ -13,17 +13,19 @@ Internal <- NULL
 
   dir.create(tmp <- tempfile(.packageName))
   tmp <- normalizePath(tmp)
-  dir.create(file.path(tmp, pkgname, "libs"), recursive = TRUE)
+  libdir <- file.path(tmp, pkgname, "libs", .Platform$r_arch)
+  dir.create(libdir, recursive = TRUE)
 
   ext <- .Platform$dynlib.ext
 
   ## This is for pkgload / devtools
   lib1 <- file.path(libname, pkgname, "src", paste0(pkgname, ext))
-  if (file.exists(lib1)) file.copy(lib1, file.path(tmp, pkgname, "libs"))
+  if (file.exists(lib1)) file.copy(lib1, libdir)
 
   ## This is the proper R CMD INSTALL
-  lib2 <- file.path(libname, pkgname, "libs", paste0(pkgname, ext))
-  if (file.exists(lib2)) file.copy(lib2, file.path(tmp, pkgname, "libs"))
+  lib2 <- file.path(libname, pkgname, "libs", .Platform$r_arch,
+                    paste0(pkgname, ext))
+  if (file.exists(lib2)) file.copy(lib2, libdir)
 
   ## Plus we need these as well
   file.copy(
