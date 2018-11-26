@@ -61,9 +61,9 @@ copy_lib <- function(libname, pkgname) {
     libs <- .dynLibs()
     matchidx <- vapply(libs, "[[", character(1), "name") == "processx"
     pkglibs <- libs[matchidx]
-    unloadNamespace("processx")
+    try(unloadNamespace("processx"), silent = TRUE)
     for (lib in pkglibs) {
-      dyn.unload(lib[["path"]])
+      try(dyn.unload(lib[["path"]]), silent = TRUE)
     }
     .dynLibs(libs[!(libs %in% pkglibs)])
   }
