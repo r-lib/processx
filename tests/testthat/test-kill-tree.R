@@ -119,14 +119,15 @@ test_that("kill_tree and orphaned children", {
   p1 <- callr::r_bg(
     function(px, tmp) {
       p <- processx::process$new(px, c("outln", "ok", "sleep", "100"),
-        stdout = tmp, cleanup = FALSE)
-      list(pid = p$get_pid(), create_time = p$get_start_time(),
-           id = p$.__enclos_env__$private$tree_id)
+                                 stdout = tmp, cleanup = FALSE)
+      cat(p$get_pid(), "\n", file = "/tmp/xxx")
+      print(list(pid = p$get_pid(), create_time = p$get_start_time(),
+           id = p$.__enclos_env__$private$tree_id))
     },
     args = list(px = get_tool("px"), tmp = tmp)
   )
 
-  p1$wait()
+  p1$wait(3000)
   pres <- p1$get_result()
 
   ps <- ps::ps_handle(pres$pid)
