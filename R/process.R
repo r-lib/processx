@@ -356,7 +356,6 @@ NULL
 #' can poll the output of several processes, and returns as soon as any
 #' of them has generated output (or exited).
 #'
-#' @importFrom R6 R6Class
 #' @name process
 #' @examples
 #' # CRAN does not like long-running examples
@@ -375,9 +374,12 @@ NULL
 #'
 NULL
 
+## Workaround an R CMD check false positive
+dummy_r6 <- function() R6::R6Class
+
 #' @export
 
-process <- R6Class(
+process <- R6::R6Class(
   "process",
   cloneable = FALSE,
   public = list(
