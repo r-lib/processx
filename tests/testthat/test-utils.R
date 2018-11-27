@@ -104,3 +104,12 @@ test_that("sh_quote_smart", {
 
   for (c in cases) expect_equal(sh_quote_smart(c[[1]]), c[[length(c)]])
 })
+
+test_that("base64", {
+  expect_equal(base64_encode(charToRaw("foobar")), "Zm9vYmFy")
+  expect_equal(base64_encode(charToRaw(" ")), "IA==")
+  expect_equal(base64_encode(charToRaw("")), "")
+
+  x <- charToRaw(paste(sample(letters, 10000, replace = TRUE), collapse = ""))
+  expect_equal(base64_decode(base64_encode(x)), x)
+})
