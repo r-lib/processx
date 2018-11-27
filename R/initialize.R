@@ -20,7 +20,6 @@
 #' @param post_process Post processing function.
 #'
 #' @keywords internal
-#' @importFrom utils head tail
 
 process_initialize <- function(self, private, command, args,
                                stdin, stdout, stderr, connections,

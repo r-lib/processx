@@ -193,8 +193,8 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
         pushback_out <<- ""
         lines <- strsplit(newout, "\r?\n")[[1]]
         if (last_char(newout) != "\n") {
-          pushback_out <<- tail(lines, 1)
-          lines <- head(lines, -1)
+          pushback_out <<- utils::tail(lines, 1)
+          lines <- utils::head(lines, -1)
         }
         lapply(lines, function(x) stdout_line_callback(x, proc))
       }
@@ -209,8 +209,8 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
         pushback_err <<- ""
         lines <- strsplit(newerr, "\r?\n")[[1]]
         if (last_char(newerr) != "\n") {
-          pushback_err <<- tail(lines, 1)
-          lines <- head(lines, -1)
+          pushback_err <<- utils::tail(lines, 1)
+          lines <- utils::head(lines, -1)
         }
         lapply(lines, function(x) stderr_line_callback(x, proc))
       }
