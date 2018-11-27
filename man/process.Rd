@@ -141,7 +141,7 @@ vector. It is ignored if \code{str} is a raw vector.
 \item \code{encoding}: The encoding to assume for \code{stdin}, \code{stdout} and
 \code{stderr}. By default the encoding of the current locale is
 used. Note that \code{processx} always reencodes the output of the
-\code{stdout}and \code{stderr}  streams in UTF-8 currently.
+\code{stdout} and \code{stderr}  streams in UTF-8 currently.
 If you want to read them without any conversion, on all platforms,
 specify \code{"UTF-8"} as encoding.
 \item \code{post_process}: An optional function to run when the process has

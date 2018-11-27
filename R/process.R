@@ -139,7 +139,7 @@ NULL
 #' * `encoding`: The encoding to assume for `stdin`, `stdout` and
 #'     `stderr`. By default the encoding of the current locale is
 #'     used. Note that `processx` always reencodes the output of the
-#'     `stdout `and `stderr`  streams in UTF-8 currently.
+#'     `stdout` and `stderr`  streams in UTF-8 currently.
 #'     If you want to read them without any conversion, on all platforms,
 #'     specify `"UTF-8"` as encoding.
 #' * `post_process`: An optional function to run when the process has
