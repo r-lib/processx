@@ -3,7 +3,7 @@
 #include <string.h>
 
 #define BASE64_ENCODE_OUT_SIZE(s) ((unsigned int)((((s) + 2) / 3) * 4))
-#define BASE64_DECODE_OUT_SIZE(s) ((unsigned int)(((s) / 4) * 3 - 1))
+#define BASE64_DECODE_OUT_SIZE(s) ((unsigned int)(((s) / 4) * 3))
 
 #define BASE64_PAD '='
 
@@ -174,7 +174,7 @@ SEXP processx_base64_decode(SEXP array) {
   }
 
   /* We might have allocated to much space, because of the padding... */
-  if (j < outlen) {
+  if (j + 1 < outlen) {
     SEXP rout2 = PROTECT(allocVector(RAWSXP, j));
     memcpy(RAW(rout2), RAW(rout), j);
     UNPROTECT(2);

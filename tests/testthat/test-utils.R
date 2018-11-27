@@ -112,4 +112,10 @@ test_that("base64", {
 
   x <- charToRaw(paste(sample(letters, 10000, replace = TRUE), collapse = ""))
   expect_equal(base64_decode(base64_encode(x)), x)
+
+  for (i in 5:32) {
+    mtcars2 <- unserialize(base64_decode(base64_encode(
+      serialize(mtcars[1:i, ], NULL))))
+    expect_identical(mtcars[1:i,], mtcars2)
+  }
 })
