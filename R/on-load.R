@@ -1,4 +1,6 @@
 
+## nocov start
+
 Internal <- NULL
 
 .onLoad <- function(libname, pkgname) {
@@ -6,10 +8,15 @@ Internal <- NULL
   if (ps::ps_is_supported()) ps::ps_handle()
   supervisor_reset()
   Internal <<- get(".Internal", asNamespace("base"))
-  if (requireNamespace("debugme", quietly = TRUE)) debugme::debugme() # nocov
+  if (Sys.getenv("DEBUGME", "") != "" &&
+      requireNamespace("debugme", quietly = TRUE)) {
+    debugme::debugme()
+  }
 }
 
 .onUnload <- function(libpath) {
   if (os_type() != "windows") .Call(c_processx__killem_all)
   supervisor_reset()
 }
+
+## nocov end
