@@ -1,4 +1,8 @@
 
+# dev
+
+* The crayon package is now an optional dependency.
+
 # processx 3.2.0
 
 * New `process$kill_tree()` method, and new `cleanup_tree` arguments in

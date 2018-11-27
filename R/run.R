@@ -159,13 +159,11 @@ run <- function(
   res
 }
 
-#' @importFrom crayon red
-
 echo_callback <- function(user_callback, type) {
   force(user_callback)
   force(type)
   function(x, ...) {
-    if (type == "stderr") x <- red(x)
+    if (type == "stderr" && has_package("crayon")) x <- crayon::red(x)
     cat(x, sep = "")
     if (!is.null(user_callback)) user_callback(x, ...)
   }
