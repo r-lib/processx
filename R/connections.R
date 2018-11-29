@@ -56,7 +56,7 @@ conn_read_chars <- function(con, n = -1)
 #' @export
 
 conn_read_chars.processx_connection <- function(con, n = -1) {
-  procesx_conn_read_chars(con, n)
+  processx_conn_read_chars(con, n)
 }
 
 #' @rdname processx_connections
