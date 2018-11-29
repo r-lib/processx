@@ -50,12 +50,19 @@ conn_create_pipepair <- function(encoding = "") {
 #' @export
 
 conn_read_chars <- function(con, n = -1)
-  UseMethod("conn_read_chars")
+  UseMethod("conn_read_chars", con)
 
 #' @rdname processx_connections
 #' @export
 
 conn_read_chars.processx_connection <- function(con, n = -1) {
+  procesx_conn_read_chars(con, n)
+}
+
+#' @rdname processx_connections
+#' @export
+
+processx_conn_read_chars <- function(con, n = -1) {
   assert_that(is_connection(con), is_integerish_scalar(n))
   .Call(c_processx_connection_read_chars, con, n)
 }
@@ -67,12 +74,19 @@ conn_read_chars.processx_connection <- function(con, n = -1) {
 #' @export
 
 conn_read_lines <- function(con, n = -1)
-  UseMethod("conn_read_lines")
+  UseMethod("conn_read_lines", con)
 
 #' @rdname processx_connections
 #' @export
 
 conn_read_lines.processx_connection <- function(con, n = -1) {
+  processx_conn_read_lines(con, n)
+}
+
+#' @rdname processx_connections
+#' @export
+
+processx_conn_read_lines <- function(con, n = -1) {
   assert_that(is_connection(con), is_integerish_scalar(n))
   .Call(c_processx_connection_read_lines, con, n)
 }
@@ -85,12 +99,19 @@ conn_read_lines.processx_connection <- function(con, n = -1) {
 #' @export
 
 conn_is_incomplete <- function(con)
-  UseMethod("conn_is_incomplete")
+  UseMethod("conn_is_incomplete", con)
 
 #' @rdname processx_connections
 #' @export
 
 conn_is_incomplete.processx_connection <- function(con) {
+  processx_conn_is_incomplete(con)
+}
+
+#' @rdname processx_connections
+#' @export
+
+processx_conn_is_incomplete <- function(con) {
   assert_that(is_connection(con))
   ! .Call(c_processx_connection_is_eof, con)
 }
@@ -109,13 +130,20 @@ conn_is_incomplete.processx_connection <- function(con) {
 #' @export
 
 conn_write <- function(con, str, sep = "\n", encoding = "")
-  UseMethod("conn_write")
+  UseMethod("conn_write", con)
 
 #' @rdname processx_connections
 #' @export
 
 conn_write.processx_connection <- function(con, str, sep = "\n",
                                            encoding = "") {
+  processx_conn_write(con, str, sep, encoding)
+}
+
+#' @rdname processx_connections
+#' @export
+
+processx_conn_write <- function(con, str, sep = "\n", encoding = "") {
   assert_that(
     is_connection(con),
     (is.character(str) && all(! is.na(str))) || is.raw(str),
@@ -212,4 +240,18 @@ conn_get_fileno <- function(con) {
 
 conn_disable_inheritance <- function() {
   .Call(c_processx_connection_disable_inheritance)
+}
+
+#' @rdname processx_connections
+#' @export
+
+close.processx_connection <- function(con, ...) {
+  processx_conn_close(con, ...)
+}
+
+#' @rdname processx_connections
+#' @export
+
+processx_conn_close <- function(con, ...) {
+  .Call(c_processx_connection_close, con)
 }

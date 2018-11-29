@@ -144,9 +144,3 @@ poll_codes <- c("nopipe", "ready", "timeout", "closed", "silent")
 process_poll_io <- function(self, private, ms) {
   poll(list(self), ms)[[1]]
 }
-
-#' @export
-
-close.processx_connection <- function(con, ...) {
-  .Call(c_processx_connection_close, con)
-}

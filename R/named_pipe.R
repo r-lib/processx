@@ -74,7 +74,6 @@ close_named_pipe.unix_named_pipe <- function(pipe) {
   close(pipe$handle)
 }
 
-
 write_lines_named_pipe <- function(pipe, text) {
   UseMethod("write_lines_named_pipe")
 }
