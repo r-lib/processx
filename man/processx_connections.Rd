@@ -95,6 +95,9 @@ characters or lines.}
 
 \item{drop}{Whether to close the original stdout/stderr, or keep it
 open and return a connection to it.}
+
+\item{...}{Extra arguments, for compatibility with the \code{close()}
+generic, currently ignored by processx.}
 }
 \description{
 These functions are currently experimental and will change

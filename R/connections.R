@@ -249,6 +249,8 @@ close.processx_connection <- function(con, ...) {
   processx_conn_close(con, ...)
 }
 
+#' @param ... Extra arguments, for compatibility with the `close()`
+#'    generic, currently ignored by processx.
 #' @rdname processx_connections
 #' @export
 
