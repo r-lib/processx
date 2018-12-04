@@ -1,5 +1,5 @@
 
-all: README.markdown
+all: README.md
 
-README.markdown: README.Rmd
+README.md: README.Rmd
 	R -e "library(knitr); knit('$<', output = '$@', quiet = FALSE)"
