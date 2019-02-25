@@ -112,10 +112,14 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
     /* use_fd is the fd that the child must use for stdin/out/err. */
     use_fd = pipes[fd][1];
 
-    /* if no pipe, then we open a file. If the stdin/out/err is not
-       requested, then we open a file to /dev/null */
+    /* If no pipe, then we see if this is the 2>&1 case. */
+    if (fd == 2 && use_fd < 0 && out_files[fd] &&
+	! strcmp(out_files[fd], "2>&1")) {
+      use_fd = 1;
 
-    if (use_fd < 0) {
+    } else if (use_fd < 0) {
+      /* Otherwise we open a file. If the stdin/out/err is not
+	 requested, then we open a file to /dev/null */
       /* For fd >= 3, the fd is just passed, and we just use it,
 	 no need to open any file */
       if (fd >= 3) continue;
