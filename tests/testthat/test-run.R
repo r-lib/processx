@@ -74,3 +74,17 @@ test_that("working directory does not exist", {
   px <- get_tool("px")
   expect_error(run(px, wd = tempfile()))
 })
+
+test_that("stderr_to_stdout", {
+  px <- get_tool("px")
+
+  out <- run(
+    px, c("out", "o1", "err", "e1", "out", "o2", "err", "e2", "outln", ""),
+    stderr_to_stdout = TRUE)
+
+  expect_equal(out$status, 0L)
+  expect_equal(
+    out$stdout, paste0("o1e1o2e2", if (is_windows()) "\r", "\n"))
+  expect_equal(out$stderr, "")
+  expect_false(out$timeout)
+})

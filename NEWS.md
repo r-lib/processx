@@ -1,9 +1,11 @@
 
 # dev
 
-* `process` and `run()` can now redirect standard error to the standard
-  output, via specifying `stderr = "2>&1"`. This works both with files
-  and pipes.
+* `process` can now redirect the standard error to the standard output, via
+  specifying `stderr = "2>&1"`. This works both with files and pipes.
+
+* `run()` can now redirect the standard error to the standard output, via
+  the new `stderr_to_stdout` argument.
 
 # processx 3.2.1
 

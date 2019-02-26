@@ -7,7 +7,8 @@
 run(command = NULL, args = character(), error_on_status = TRUE,
   wd = NULL, echo_cmd = FALSE, echo = FALSE, spinner = FALSE,
   timeout = Inf, stdout_line_callback = NULL, stdout_callback = NULL,
-  stderr_line_callback = NULL, stderr_callback = NULL, env = NULL,
+  stderr_line_callback = NULL, stderr_callback = NULL,
+  stderr_to_stdout = FALSE, env = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = FALSE,
   encoding = "", cleanup_tree = FALSE)
 }
@@ -55,6 +56,12 @@ below.}
 of the standard error. A chunk can be as small as a single character.
 At most one of \code{stderr_line_callback} and \code{stderr_callback} can be
 non-\code{NULL}.}
+
+\item{stderr_to_stdout}{Whether to redirect the standard error to the
+standard output. Specifying \code{TRUE} here will keep both in the
+standard output, correctly interleaved. However, it is not possible
+to deduce where pieces of the output were coming from. If this is
+\code{TRUE}, the standard error callbacks  (if any) are never called.}
 
 \item{env}{Environment of the child process, a named character vector.
 IF \code{NULL}, the environment of the parent is inherited.}
