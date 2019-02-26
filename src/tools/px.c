@@ -124,6 +124,7 @@ int main(int argc, const char **argv) {
 
     } else if (!strcmp("err", cmd)) {
       fprintf(stderr, "%s", argv[++idx]);
+      fflush(stderr);
 
     } else if (!strcmp("outln", cmd)) {
       printf("%s\n", argv[++idx]);
@@ -131,6 +132,7 @@ int main(int argc, const char **argv) {
 
     } else if (!strcmp("errln", cmd)) {
       fprintf(stderr, "%s\n", argv[++idx]);
+      fflush(stderr);
 
     } else if (!strcmp("cat", cmd)) {
       cat(argv[++idx]);
