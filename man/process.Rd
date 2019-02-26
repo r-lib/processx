@@ -94,7 +94,9 @@ provided; a string, supply the specified string as standard input;
 \code{"|"}: create a connection for it.
 \item \code{stderr}: What to do with the standard error. Possible values:
 \code{NULL}: discard it; a string, redirect it to this file;
-\code{"|"}: create a connection for it.
+\code{"|"}: create a connection for it; \code{"2>&1"}: redirect it to the
+same connection (i.e. pipe or file) as \code{stdout}. \code{"2>&1"} is a
+way to keep standard output and error correctly interleaved.
 \item \code{connections}: A list of connections to pass to the child process.
 This is an experimental feature currently.
 \item \code{poll_connection}: Whether to create an extra connection to the process

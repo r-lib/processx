@@ -84,12 +84,17 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
 
   setsid();
 
-  /* The dup2 calls make sure that stdin, stdout and stderr use file
-     descriptors 0, 1 and 2 respectively. */
+  /* We want to prevent use_fd < fd, because we will dup2() use_fd into
+     fd later. If use_fd >= fd, then this is always possible,
+     without mixing up stdin, stdout and stderr. Without this, we could
+     have a case when we dup2() 2 into 1, and then 1 is lost. */
 
   for (fd = 0; fd < stdio_count; fd++) {
     use_fd = pipes[fd][1];
+    /* If use_fd < 0 then there is no pipe for fd. */
     if (use_fd < 0 || use_fd >= fd) continue;
+    /* If use_fd < fd, then we create a brand new fd for it,
+       starting at stdio_count, which is bigger then fd, surely. */
     pipes[fd][1] = fcntl(use_fd, F_DUPFD, stdio_count);
     if (pipes[fd][1] == -1) {
       processx__write_int(error_fd, -errno);
@@ -97,21 +102,41 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
     }
   }
 
+  /* This loop initializes the stdin, stdout, stderr fds of the child
+     process properly. */
+
   for (fd = 0; fd < stdio_count; fd++) {
+    /* close_fd is an fd that must be closed. Initially this is the
+       parent's end of a pipe. (-1 if no pipe for this fd.) */
     close_fd = pipes[fd][0];
+    /* use_fd is the fd that the child must use for stdin/out/err. */
     use_fd = pipes[fd][1];
 
-    if (use_fd < 0) {
+    /* If no pipe, then we see if this is the 2>&1 case. */
+    if (fd == 2 && use_fd < 0 && out_files[fd] &&
+	! strcmp(out_files[fd], "2>&1")) {
+      use_fd = 1;
+
+    } else if (use_fd < 0) {
+      /* Otherwise we open a file. If the stdin/out/err is not
+	 requested, then we open a file to /dev/null */
+      /* For fd >= 3, the fd is just passed, and we just use it,
+	 no need to open any file */
       if (fd >= 3) continue;
+
       if (out_files[fd]) {
+	/* A file was requested, open it */
 	if (fd == 0) {
 	  use_fd = open(out_files[fd], O_RDONLY);
 	} else {
 	  use_fd = open(out_files[fd], O_CREAT | O_TRUNC| O_RDWR, 0644);
 	}
       } else {
+	/* NULL, so stdin/out/err is ignored, using /dev/null */
 	use_fd = open("/dev/null", fd == 0 ? O_RDONLY : O_RDWR);
       }
+      /* In the output file case, we might need to close use_fd, after
+	 we dup2()-d it into fd. */
       close_fd = use_fd;
 
       if (use_fd == -1) {
@@ -120,6 +145,10 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
       }
     }
 
+    /* We will use use_fd for fd. If they happen to be equal, make
+       sure that fd is _not_ closed on exec. Otherwise dup2() use_fd
+       into fd. dup2() clears the CLOEXEC flag, so no need for a fcntl
+       call in this case. */
     if (fd == use_fd) {
       processx__cloexec_fcntl(use_fd, 0);
     } else {
@@ -133,6 +162,8 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
 
     if (fd <= 2) processx__nonblock_fcntl(fd, 0);
 
+    /* If we have an extra fd, that we already dup2()-d into fd,
+       we can close it now. */
     if (close_fd >= stdio_count) close(close_fd);
   }
 

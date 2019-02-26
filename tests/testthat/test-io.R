@@ -143,3 +143,42 @@ test_that("readChar on IO, windows", {
   p$poll_io(-1)
   expect_equal(p$read_output(5), "d!\r\n")
 })
+
+test_that("same pipe", {
+  px <- get_tool("px")
+  cmd <- c("out", "o1", "err", "e1", "out", "o2", "err", "e2")
+  p <- process$new(px, cmd, stdout = "|", stderr = "2>&1")
+  p$wait(2000)
+  p$kill()
+  expect_equal(p$get_exit_status(), 0L)
+
+  out <- p$read_all_output()
+  expect_equal(out, "o1e1o2e2")
+  expect_error(p$read_all_error_lines(), "not a pipe")
+})
+
+test_that("same file", {
+  px <- get_tool("px")
+  cmd <- c("out", "o1", "err", "e1", "out", "o2", "errln", "e2")
+  tmp <- tempfile()
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  p <- process$new(px, cmd, stdout = tmp, stderr = "2>&1")
+  p$wait(2000)
+  p$kill()
+  expect_equal(p$get_exit_status(), 0L)
+
+  expect_equal(readLines(tmp), "o1e1o2e2")
+  expect_error(p$read_all_output_lines(), "not a pipe")
+  expect_error(p$read_all_error_lines(), "not a pipe")
+})
+
+test_that("same NULL, for completeness", {
+  px <- get_tool("px")
+  cmd <- c("out", "o1", "err", "e1", "out", "o2", "errln", "e2")
+  p <- process$new(px, cmd, stdout = NULL, stderr = "2>&1")
+  p$wait(2000)
+  p$kill()
+  expect_equal(p$get_exit_status(), 0L)
+  expect_error(p$read_all_output_lines(), "not a pipe")
+  expect_error(p$read_all_error_lines(), "not a pipe")
+})

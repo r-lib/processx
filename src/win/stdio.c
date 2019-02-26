@@ -27,6 +27,13 @@
                  CHILD_STDIO_COUNT((buffer)) +      \
                  sizeof(HANDLE) * (fd)))
 
+#define CHILD_STDIO_COPY(buffer, dst, src) do {     \
+    CHILD_STDIO_HANDLE(buffer, dst) =		    \
+      CHILD_STDIO_HANDLE(buffer, src);		    \
+    CHILD_STDIO_CRT_FLAGS(buffer, dst) =	    \
+      CHILD_STDIO_CRT_FLAGS(buffer, src);	    \
+  } while (0)
+
 /* CRT file descriptor mode flags */
 #define FOPEN       0x01
 #define FEOFLAG     0x02
@@ -349,6 +356,15 @@ int processx__stdio_create(processx_handle_t *handle,
       err = processx__create_nul_handle(&CHILD_STDIO_HANDLE(buffer, i), access);
       if (err) { goto error; }
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
+
+    } else if (i == 2 && output[0] != '\0' && ! strcmp("2>&1", output)) {
+      /* this is stderr, sent to stdout */
+      /* if stdout is a pipe, then we set FDEV on it. This tricks windows
+	 into turning off the CRT buffering */
+      if (std_out && ! strcmp("|", std_out)) {
+	CHILD_STDIO_CRT_FLAGS(buffer, 1) |=  FDEV;
+      }
+      CHILD_STDIO_COPY(buffer, 2, 1);
 
     } else if (output[0] != '\0' && strcmp("|", output)) {
       /* output to file */

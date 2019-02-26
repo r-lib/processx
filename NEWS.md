@@ -1,6 +1,10 @@
 
 # dev
 
+* `process` and `run()` can now redirect standard error to the standard
+  output, via specifying `stderr = "2>&1"`. This works both with files
+  and pipes.
+
 # processx 3.2.1
 
 * processx does not depend on assertthat now, and the crayon package
