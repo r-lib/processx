@@ -359,6 +359,11 @@ int processx__stdio_create(processx_handle_t *handle,
 
     } else if (i == 2 && output[0] != '\0' && ! strcmp("2>&1", output)) {
       /* this is stderr, sent to stdout */
+      /* if stdout is a pipe, then we set FDEV on it. This tricks windows
+	 into turning off the CRT buffering */
+      if (std_out && ! strcmp("|", std_out)) {
+	CHILD_STDIO_CRT_FLAGS(buffer, 1) |=  FDEV;
+      }
       CHILD_STDIO_COPY(buffer, 2, 1);
 
     } else if (output[0] != '\0' && strcmp("|", output)) {
