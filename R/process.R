@@ -92,7 +92,9 @@ NULL
 #'     `"|"`: create a connection for it.
 #' * `stderr`: What to do with the standard error. Possible values:
 #'     `NULL`: discard it; a string, redirect it to this file;
-#'     `"|"`: create a connection for it.
+#'     `"|"`: create a connection for it; `"2>&1"`: redirect it to the
+#'     same connection (i.e. pipe or file) as `stdout`. `"2>&1"` is a
+#'     way to keep standard output and error correctly interleaved.
 #' * `connections`: A list of connections to pass to the child process.
 #'     This is an experimental feature currently.
 #' * `poll_connection`: Whether to create an extra connection to the process
