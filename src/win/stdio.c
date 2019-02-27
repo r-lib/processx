@@ -28,10 +28,12 @@
                  sizeof(HANDLE) * (fd)))
 
 #define CHILD_STDIO_COPY(buffer, dst, src) do {     \
-    CHILD_STDIO_HANDLE(buffer, dst) =		    \
-      CHILD_STDIO_HANDLE(buffer, src);		    \
-    CHILD_STDIO_CRT_FLAGS(buffer, dst) =	    \
-      CHILD_STDIO_CRT_FLAGS(buffer, src);	    \
+  DuplicateHandle(				    \
+    GetCurrentProcess(),		            \
+    CHILD_STDIO_HANDLE(buffer, src),		    \
+    GetCurrentProcess(),			    \
+    &CHILD_STDIO_HANDLE(buffer, dst),		    \
+    0, TRUE, DUPLICATE_SAME_ACCESS);		    \
   } while (0)
 
 /* CRT file descriptor mode flags */
@@ -358,13 +360,14 @@ int processx__stdio_create(processx_handle_t *handle,
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
 
     } else if (i == 2 && output[0] != '\0' && ! strcmp("2>&1", output)) {
-      /* this is stderr, sent to stdout */
-      /* if stdout is a pipe, then we set FDEV on it. This tricks windows
+      /* This is stderr, sent to stdout */
+      /* We need to turn off buffering, otherwise the output on
+	 the two handles won't be correctly interleaved.
+	 We set FDEV on the pipes/files. This tricks windows
 	 into turning off the CRT buffering */
-      if (std_out && ! strcmp("|", std_out)) {
-	CHILD_STDIO_CRT_FLAGS(buffer, 1) |=  FDEV;
-      }
       CHILD_STDIO_COPY(buffer, 2, 1);
+      CHILD_STDIO_CRT_FLAGS(buffer, 1) = FOPEN | FDEV;
+      CHILD_STDIO_CRT_FLAGS(buffer, 2) = FOPEN | FDEV;
 
     } else if (output[0] != '\0' && strcmp("|", output)) {
       /* output to file */
