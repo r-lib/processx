@@ -14,6 +14,7 @@ test_that("inherit by default", {
 
   out <- run(cmd[1], cmd[-1])
   expect_true(out$stdout %in% c("\n", paste0("%", v, "%\r\n")))
+  gc()
 })
 
 test_that("specify custom env", {
@@ -29,4 +30,5 @@ test_that("specify custom env", {
 
   out <- run(cmd[1], cmd[-1], env = structure("bar", names = v))
   expect_true(out$stdout %in% paste0("bar", c("\n", "\r\n")))
+  gc()
 })

@@ -13,12 +13,15 @@ test_that("get_exit_status", {
 
   px <- get_tool("px")
   p <- process$new(px, c("return", "1"))
+  on.exit(p$kill(), add = TRUE)
   p$wait()
   expect_identical(p$get_exit_status(), 1L)
 })
 
 test_that("non existing process", {
   expect_error(process$new(tempfile()))
+  ## This closes connections in finalizers
+  gc()
 })
 
 test_that("post processing", {
@@ -55,6 +58,7 @@ test_that("working directory", {
   cat("foo\nbar\n", file = file.path(tmp, "file"))
 
   p <- process$new(px, c("cat", "file"), wd = tmp, stdout = "|")
+  on.exit(p$kill(), add = TRUE)
   p$wait()
   expect_equal(p$read_all_output_lines(), c("foo", "bar"))
 })
@@ -62,4 +66,6 @@ test_that("working directory", {
 test_that("working directory does not exist", {
   px <- get_tool("px")
   expect_error(process$new(px, wd = tempfile()))
+  ## This closes connections in finalizers
+  gc()
 })

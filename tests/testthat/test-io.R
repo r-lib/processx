@@ -101,6 +101,7 @@ test_that("is_incomplete", {
 
   px <- get_tool("px")
   p <- process$new(px, c("out", "foo\nbar\nfoobar\n"), stdout = "|")
+  on.exit(p$kill(), add = TRUE)
 
   expect_true(p$is_incomplete_output())
 
@@ -119,6 +120,7 @@ test_that("readChar on IO, unix", {
   px <- get_tool("px")
 
   p <- process$new(px, c("outln", "hello world!"), stdout = "|")
+  on.exit(p$kill(), add = TRUE)
   p$wait()
 
   p$poll_io(-1)
@@ -134,6 +136,7 @@ test_that("readChar on IO, windows", {
 
   px <- get_tool("px")
   p <- process$new(px, c("outln", "hello world!"), stdout = "|")
+  on.exit(p$kill(), add = TRUE)
   p$wait()
 
   p$poll_io(-1)
@@ -148,8 +151,8 @@ test_that("same pipe", {
   px <- get_tool("px")
   cmd <- c("out", "o1", "err", "e1", "out", "o2", "err", "e2")
   p <- process$new(px, cmd, stdout = "|", stderr = "2>&1")
+  on.exit(p$kill(), add = TRUE)
   p$wait(2000)
-  p$kill()
   expect_equal(p$get_exit_status(), 0L)
 
   out <- p$read_all_output()

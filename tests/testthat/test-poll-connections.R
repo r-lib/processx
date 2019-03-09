@@ -49,8 +49,8 @@ test_that("poll a connection and a process", {
   pr <- poll(list(out, p2), 2000)
   expect_true(pr[[1]] == "ready"  || pr[[2]][["output"]] == "ready")
 
-  p1$kill()
-  p2$kill()
+  p1$kill(close_connections = FALSE)
+  p2$kill(close_connections = FALSE)
   pr <- poll(list(out, p2), 2000)
   expect_true(pr[[1]] == "ready"  || pr[[2]][["output"]] == "ready")
 

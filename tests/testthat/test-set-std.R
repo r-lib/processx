@@ -20,11 +20,12 @@ test_that("setting stdout to a file", {
   p <- callr::r_process$new(opt)
 
   p$wait(5000)
-  expect_false(p$kill())
+  expect_false(p$kill(close_connections = FALSE))
   expect_equal(p$get_result(), 42)
   expect_equal(p$read_all_error_lines(), "error")
   expect_equal(p$read_all_output_lines(), character())
   expect_equal(readLines(tmp), "output")
+  p$kill()
 })
 
 test_that("setting stderr to a file", {
@@ -46,11 +47,12 @@ test_that("setting stderr to a file", {
   p <- callr::r_process$new(opt)
 
   p$wait(5000)
-  expect_false(p$kill())
+  expect_false(p$kill(close_connections = FALSE))
   expect_equal(p$get_result(), 42)
   expect_equal(p$read_all_output_lines(), "output")
   expect_equal(p$read_all_error_lines(), character())
   expect_equal(readLines(tmp), "error")
+  p$kill()
 })
 
 test_that("setting stdout multiple times", {
@@ -80,12 +82,13 @@ test_that("setting stdout multiple times", {
   p <- callr::r_process$new(opt)
 
   p$wait(5000)
-  expect_false(p$kill())
+  expect_false(p$kill(close_connections = FALSE))
   expect_equal(p$get_result(), 42)
   expect_equal(p$read_all_error_lines(), c("error", "error2"))
   expect_equal(p$read_all_output_lines(), character())
   expect_equal(readLines(tmp1), "output")
   expect_equal(readLines(tmp2), "output2")
+  p$kill()
 })
 
 test_that("set stdout to a pipe", {

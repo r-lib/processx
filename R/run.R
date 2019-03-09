@@ -239,7 +239,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
   while (proc$is_alive()) {
     ## Timeout? Maybe finished by now...
     if (!is.null(timeout) && Sys.time() - start_time > timeout) {
-      if (proc$kill()) timeout_happened <- TRUE
+      if (proc$kill(close_connections = FALSE)) timeout_happened <- TRUE
       "!DEBUG Timeout killed run() process `proc$get_pid()`"
       break
     }

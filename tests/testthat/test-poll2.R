@@ -26,7 +26,7 @@ test_that("single process", {
     list(c(output = "ready", error = "nopipe", process = "nopipe"))
   )
 
-  p$kill()
+  p$kill(close_connections = FALSE)
   expect_equal(
     poll(list(p), -1),
     list(c(output = "ready", error = "nopipe", process = "nopipe"))
@@ -92,6 +92,7 @@ test_that("multiple polls", {
   px <- get_tool("px")
   cmd <- c("sleep", "1", "outln", "foo", "sleep", "1", "outln", "bar")
   p <- process$new(px, cmd, stdout = "|", stderr = "|")
+  on.exit(p$kill(), add = TRUE)
 
   out <- character()
   while (p$is_alive()) {

@@ -24,8 +24,8 @@ NULL
 #' p$is_alive()
 #' p$signal(signal)
 #' p$interrupt()
-#' p$kill(grace = 0.1)
-#' p$kill_tree(grace = 0.1)
+#' p$kill(grace = 0.1, close_connections = TRUE)
+#' p$kill_tree(grace = 0.1, close_connections = TRUE)
 #' p$wait(timeout = -1)
 #' p$get_pid()
 #' p$get_exit_status()
@@ -130,6 +130,9 @@ NULL
 #' * `signal`: An integer scalar, the id of the signal to send to
 #'     the process. See [tools::pskill()] for the list of signals.
 #' * `grace`: Currently not used.
+#' * `close_connections`: Whether to close standard input, standard output,
+#'    standard error connections and the poll connection, after killing
+#'    the process.
 #' * `timeout`: Timeout in milliseconds, for the wait or the I/O
 #'     polling.
 #' * `n`: Number of characters or lines to read.
@@ -404,11 +407,11 @@ process <- R6::R6Class(
           ps::ps_is_supported()) self$kill_tree()
     },
 
-    kill = function(grace = 0.1)
-      process_kill(self, private, grace),
+    kill = function(grace = 0.1, close_connections = TRUE)
+      process_kill(self, private, grace, close_connections),
 
-    kill_tree = function(grace = 0.1)
-      process_kill_tree(self, private, grace),
+    kill_tree = function(grace = 0.1, close_connections = TRUE)
+      process_kill_tree(self, private, grace, close_connections),
 
     signal = function(signal)
       process_signal(self, private, signal),
@@ -592,7 +595,9 @@ process <- R6::R6Class(
     tree_id = NULL,
 
     get_short_name = function()
-      process_get_short_name(self, private)
+      process_get_short_name(self, private),
+    close_connections = function()
+      process_close_connections(self, private)
   )
 )
 
@@ -631,14 +636,14 @@ process_interrupt <- function(self, private) {
   }
 }
 
-process_kill <- function(self, private, grace) {
+process_kill <- function(self, private, grace, close_connections) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `self$get_pid()`"
   ret <- .Call(c_processx_kill, private$status, as.numeric(grace))
-  if (!is.null(p <- private$poll_pipe)) .Call(c_processx_connection_close, p)
+  if (close_connections) private$close_connections()
   ret
 }
 
-process_kill_tree <- function(self, private, grace) {
+process_kill_tree <- function(self, private, grace, close_connections) {
   "!DEBUG process_kill_tree '`private$get_short_name()`', pid `self$get_pid()`"
   if (!ps::ps_is_supported()) {
     stop(structure(
@@ -647,7 +652,7 @@ process_kill_tree <- function(self, private, grace) {
   }
 
   ret <- get("ps_kill_tree", asNamespace("ps"))(private$tree_id)
-  if (!is.null(p <- private$poll_pipe)) .Call(c_processx_connection_close, p)
+  if (close_connections) private$close_connections()
   ret
 }
 
@@ -689,4 +694,12 @@ process_as_ps_handle <- function(self, private) {
 
 ps_method <- function(fun, self) {
   fun(ps::ps_handle(self$get_pid(), self$get_start_time()))
+}
+
+process_close_connections <- function(self, private) {
+  for (f in c("stdin_pipe", "stdout_pipe", "stderr_pipe", "poll_pipe")) {
+    if (!is.null(p <- private[[f]])) {
+      .Call(c_processx_connection_close, p)
+    }
+  }
 }
