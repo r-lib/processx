@@ -2,6 +2,9 @@
 #ifndef R_PROCESSX_UNIX_H
 #define R_PROCESSX_UNIX_H
 
+#include <unistd.h>
+#include <sys/types.h>
+
 # ifndef O_CLOEXEC
 #  define O_CLOEXEC 02000000
 # endif

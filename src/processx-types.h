@@ -7,6 +7,8 @@
 typedef DWORD pid_t;
 #else
 #include <signal.h>
+#include <unistd.h>
+#include <sys/types.h>
 #endif
 
 typedef struct {
