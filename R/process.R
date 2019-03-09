@@ -700,7 +700,6 @@ process_close_connections <- function(self, private) {
   for (f in c("stdin_pipe", "stdout_pipe", "stderr_pipe", "poll_pipe")) {
     if (!is.null(p <- private[[f]])) {
       .Call(c_processx_connection_close, p)
-      private[[f]] <- NULL
     }
   }
 }
