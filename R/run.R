@@ -11,6 +11,7 @@
 #' * Calling a callback function for each line or each chunk of the
 #'   standard output and/or error. A chunk may contain multiple lines, and
 #'   can be as short as a single character.
+#' * Cleaning up the subprocess, or the whole process tree, before exiting.
 #'
 #' @section Callbacks:
 #'
@@ -133,6 +134,13 @@ run <- function(
     cleanup_tree = cleanup_tree
   )
   "#!DEBUG run() Started the process: `pr$get_pid()`"
+
+  ## We make sure that the process is eliminated
+  if (cleanup_tree) {
+    on.exit(pr$kill_tree(), add = TRUE)
+  } else {
+    on.exit(pr$kill(), add = TRUE)
+  }
 
   ## If echo, then we need to create our own callbacks.
   ## These are merged to user callbacks if there are any.

@@ -10,6 +10,10 @@
 * The `$kill()` and `$kill_tree()` methods get a `close_connection = TRUE`
   argument that closes all pipe connections of the process.
 
+* `run()` now always kill the process (and its process tree if
+  `cleanup_tree` is `TRUE`) before exiting. This also closes all
+  pipe connections. Closes #149.
+
 # processx 3.2.1
 
 * processx does not depend on assertthat now, and the crayon package

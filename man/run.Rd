@@ -104,6 +104,7 @@ passed, and the process is still running, it will be killed
 \item Calling a callback function for each line or each chunk of the
 standard output and/or error. A chunk may contain multiple lines, and
 can be as short as a single character.
+\item Cleaning up the subprocess, or the whole process tree, before exiting.
 }
 }
 \section{Callbacks}{

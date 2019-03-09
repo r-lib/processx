@@ -23,8 +23,8 @@ streams. The process id is then used to manage the process.
 p$is_alive()
 p$signal(signal)
 p$interrupt()
-p$kill(grace = 0.1)
-p$kill_tree(grace = 0.1)
+p$kill(grace = 0.1, close_connections = TRUE)
+p$kill_tree(grace = 0.1, close_connections = TRUE)
 p$wait(timeout = -1)
 p$get_pid()
 p$get_exit_status()
@@ -132,6 +132,9 @@ on Windows. It is ignored on other platforms.
 \item \code{signal}: An integer scalar, the id of the signal to send to
 the process. See \code{\link[tools:pskill]{tools::pskill()}} for the list of signals.
 \item \code{grace}: Currently not used.
+\item \code{close_connections}: Whether to close standard input, standard output,
+standard error connections and the poll connection, after killing
+the process.
 \item \code{timeout}: Timeout in milliseconds, for the wait or the I/O
 polling.
 \item \code{n}: Number of characters or lines to read.
