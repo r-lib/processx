@@ -371,6 +371,33 @@ can poll the output of several processes, and returns as soon as any
 of them has generated output (or exited).
 }
 
+\section{Cleaning up background processes}{
+
+processx kills processes that are not referenced any more (if \code{cleanup}
+is set to \code{TRUE}), or the whole subprocess tree (if \code{cleanup_tree} is
+also set to \code{TRUE}).
+
+The cleanup happens when the references of the processes object are
+garbage collected. To clean up earlier, you can call the \code{kill()} or
+\code{kill_tree()} method of the process(es), from an \code{on.exit()} expression,
+or an error handler:\preformatted{process_manager <- function() {
+  on.exit({
+    try(p1$kill(), silent = TRUE)
+    try(p2$kill(), silent = TRUE)
+  }, add = TRUE)
+  p1 <- process$new("sleep", "3")
+  p2 <- process$new("sleep", "10")
+  p1$wait()
+  p2$wait()
+}
+process_manager()
+}
+
+If you interrupt \code{process_manager()} or an error happens then both \code{p1}
+and \code{p2} are cleaned up immediately. Their connections will also be
+closed. The same happens at a regular exit.
+}
+
 \examples{
 # CRAN does not like long-running examples
 \dontrun{

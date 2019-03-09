@@ -361,6 +361,33 @@ NULL
 #' can poll the output of several processes, and returns as soon as any
 #' of them has generated output (or exited).
 #'
+#' @section Cleaning up background processes:
+#' processx kills processes that are not referenced any more (if `cleanup`
+#' is set to `TRUE`), or the whole subprocess tree (if `cleanup_tree` is
+#' also set to `TRUE`).
+#'
+#' The cleanup happens when the references of the processes object are
+#' garbage collected. To clean up earlier, you can call the `kill()` or
+#' `kill_tree()` method of the process(es), from an `on.exit()` expression,
+#' or an error handler:
+#' ```r
+#' process_manager <- function() {
+#'   on.exit({
+#'     try(p1$kill(), silent = TRUE)
+#'     try(p2$kill(), silent = TRUE)
+#'   }, add = TRUE)
+#'   p1 <- process$new("sleep", "3")
+#'   p2 <- process$new("sleep", "10")
+#'   p1$wait()
+#'   p2$wait()
+#' }
+#' process_manager()
+#' ```
+#'
+#' If you interrupt `process_manager()` or an error happens then both `p1`
+#' and `p2` are cleaned up immediately. Their connections will also be
+#' closed. The same happens at a regular exit.
+#'
 #' @name process
 #' @examples
 #' # CRAN does not like long-running examples
