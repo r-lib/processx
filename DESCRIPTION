@@ -33,6 +33,4 @@ Suggests:
     parallel,
     testthat,
     withr
-Remotes:
-    r-lib/ps
 Encoding: UTF-8
