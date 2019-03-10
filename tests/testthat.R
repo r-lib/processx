@@ -10,4 +10,4 @@ if (ps::ps_is_supported()) {
   reporter <- "summary"
 }
 
-test_check("ps", reporter = reporter)
+test_check("processx", reporter = reporter)
