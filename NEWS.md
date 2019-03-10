@@ -10,7 +10,7 @@
 * The `$kill()` and `$kill_tree()` methods get a `close_connection = TRUE`
   argument that closes all pipe connections of the process.
 
-* `run()` now always kill the process (and its process tree if
+* `run()` now always kills the process (and its process tree if
   `cleanup_tree` is `TRUE`) before exiting. This also closes all
   pipe connections (#149).
 
