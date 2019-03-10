@@ -12,7 +12,7 @@
 
 * `run()` now always kill the process (and its process tree if
   `cleanup_tree` is `TRUE`) before exiting. This also closes all
-  pipe connections. Closes #149.
+  pipe connections (#149).
 
 # processx 3.2.1
 
