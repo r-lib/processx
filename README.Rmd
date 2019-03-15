@@ -195,7 +195,7 @@ process. (See more below about `process` objects.) You can manipulate
 this object in the callback, if you want. For example you can kill it in
 response to an error or some text on the standard output:
 
-```{r}
+```{r, error = TRUE}
 cb <- function(line, proc) {
   cat("Got:", line, "\n")
   if (line == "done") proc$kill()
