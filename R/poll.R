@@ -78,7 +78,7 @@ poll <- function(processes, ms) {
     list(get_private(p)$status, get_private(p)$poll_pipe)
   })
 
-  res <- .Call(c_processx_poll, processes, conn, as.integer(ms))
+  res <- safecall(c_processx_poll, processes, conn, as.integer(ms))
   res <- lapply(res, function(x) poll_codes[x])
   res[!conn] <- lapply(res[!conn], function(x) {
     set_names(x, c("output", "error", "process"))

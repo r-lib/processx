@@ -86,7 +86,7 @@ process_initialize <- function(self, private, command, args,
   private$tree_id <- get_id()
 
   "!DEBUG process_initialize exec()"
-  private$status <- .Call(
+  private$status <- safecall(
     c_processx_exec,
     command, c(command, args), stdin, stdout, stderr, connections, env,
     windows_verbatim_args, windows_hide_window,
@@ -100,7 +100,7 @@ process_initialize <- function(self, private, command, args,
   ## macOS and Windows and on other OSes it returns 0.0, so we just use the
   ## current time instead. (In the C process handle, there will be 0,
   ## still.)
-  private$starttime <- .Call(c_processx__proc_start_time, private$status)
+  private$starttime <- safecall(c_processx__proc_start_time, private$status)
   if (private$starttime == 0) private$starttime <- Sys.time()
 
   ## Need to close this, otherwise the child's end of the pipe

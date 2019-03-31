@@ -1,5 +1,6 @@
 
 #include "processx.h"
+#include "safecall.h"
 
 #include <R_ext/Rdynload.h>
 #include <R.h>
@@ -50,6 +51,8 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_disable_crash_dialog",  (DL_FUNC) &processx_disable_crash_dialog,   0 },
   { "processx_base64_encode", (DL_FUNC) &processx_base64_encode, 1 },
   { "processx_base64_decode", (DL_FUNC) &processx_base64_decode, 1 },
+
+  SAFECALL_REGISTRATION_RECORD,
 
   { NULL, NULL, 0 }
 };
