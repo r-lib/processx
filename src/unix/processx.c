@@ -2,6 +2,7 @@
 #ifndef _WIN32
 
 #include "../processx.h"
+#include "../safecall.h"
 
 #include <stdio.h>
 
@@ -479,6 +480,11 @@ void processx__collect_exit_status(SEXP status, int retval, int wstat) {
   handle->collected = 1;
 }
 
+void processx__cleanup_close(void *data) {
+  int *fd = data;
+  if (*fd >= 0) close(*fd);
+}
+
 /* In general we need to worry about three asynchronous processes here:
  * 1. The main code, i.e. the code in this function.
  * 2. The finalizer, that can be triggered by any R function.
@@ -535,6 +541,8 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
     processx__unblock_sigchld();
     error("processx error: %s", strerror(errno));
   }
+  r_on_exit(processx__cleanup_close, handle->waitpipe);
+  r_on_exit(processx__cleanup_close, handle->waitpipe + 1);
   processx__nonblock_fcntl(handle->waitpipe[0], 1);
   processx__nonblock_fcntl(handle->waitpipe[1], 1);
 
