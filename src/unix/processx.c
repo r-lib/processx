@@ -480,7 +480,7 @@ void processx__collect_exit_status(SEXP status, int retval, int wstat) {
   handle->collected = 1;
 }
 
-void processx__cleanup_close(void *data) {
+static void processx__cleanup_close(void *data) {
   int *fd = data;
   if (*fd >= 0) close(*fd);
 }
