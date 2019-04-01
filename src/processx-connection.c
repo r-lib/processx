@@ -398,6 +398,8 @@ SEXP processx_connection_disable_inheritance() {
 
 /* Api from C -----------------------------------------------------------*/
 
+#define PROCESSX_CONNECTION_MARKER 1539897404
+
 processx_connection_t *processx_c_connection_create(
   processx_file_handle_t os_handle,
   processx_file_type_t type,
@@ -410,6 +412,7 @@ processx_connection_t *processx_c_connection_create(
   con = malloc(sizeof(processx_connection_t));
   if (!con) error("out of memory");
 
+  con->marker = PROCESSX_CONNECTION_MARKER;
   con->type = type;
   con->is_closed_ = 0;
   con->is_eof_  = 0;
@@ -676,27 +679,31 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
     if (overlapped) {
       /* data */
       processx_connection_t *con = (processx_connection_t*) key;
-      int poll_idx = con->poll_idx;
-      con->handle.read_pending = FALSE;
-      con->buffer_data_size += bytes;
-      if (con->buffer_data_size > 0) processx__connection_to_utf8(con);
-      if (con->type == PROCESSX_FILE_TYPE_ASYNCFILE) {
-	/* TODO: larget files */
-	con->handle.overlapped.Offset += bytes;
-      }
-
-      if (!bytes) {
-	con->is_eof_raw_ = 1;
-	if (con->utf8_data_size == 0 && con->buffer_data_size == 0) {
-	  con->is_eof_ = 1;
+      if (con && con->marker == PROCESSX_CONNECTION_MARKER) {
+	int poll_idx = con->poll_idx;
+	con->handle.read_pending = FALSE;
+	con->buffer_data_size += bytes;
+	if (con->buffer_data_size > 0) processx__connection_to_utf8(con);
+	if (con->type == PROCESSX_FILE_TYPE_ASYNCFILE) {
+	  /* TODO: larger files */
+	  con->handle.overlapped.Offset += bytes;
 	}
-      }
 
-      if (poll_idx < npollables &&
-	  pollables[poll_idx].object == con) {
-	pollables[poll_idx].event = PXREADY;
-	hasdata++;
-	break;
+	if (!bytes) {
+	  con->is_eof_raw_ = 1;
+	  if (con->utf8_data_size == 0 && con->buffer_data_size == 0) {
+	    con->is_eof_ = 1;
+	  }
+	}
+
+	if (poll_idx < npollables &&
+	    pollables[poll_idx].object == con) {
+	  pollables[poll_idx].event = PXREADY;
+	  hasdata++;
+	  break;
+	}
+      } else {
+	bytes = 0;
       }
 
     } else if (GetLastError() != WAIT_TIMEOUT) {
@@ -1149,25 +1156,29 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
 
       if (overlapped) {
 	processx_connection_t *con = (processx_connection_t *) key;
-	con->handle.read_pending = FALSE;
-	con->buffer_data_size += bytes;
-	if (con->buffer && con->buffer_data_size > 0) {
-	  bytes = processx__connection_to_utf8(con);
-	}
-	if (con->type == PROCESSX_FILE_TYPE_ASYNCFILE) {
-	  /* TODO: large files */
-	  con->handle.overlapped.Offset += bytes;
-	}
-	if (!bytes) {
-	  con->is_eof_raw_ = 1;
-	  if (con->utf8_data_size == 0 && con->buffer_data_size == 0) {
-	    con->is_eof_ = 1;
+	if (con && con->marker == PROCESSX_CONNECTION_MARKER) {
+	  con->handle.read_pending = FALSE;
+	  con->buffer_data_size += bytes;
+	  if (con->buffer && con->buffer_data_size > 0) {
+	    bytes = processx__connection_to_utf8(con);
 	  }
-	}
+	  if (con->type == PROCESSX_FILE_TYPE_ASYNCFILE) {
+	    /* TODO: large files */
+	    con->handle.overlapped.Offset += bytes;
+	  }
+	  if (!bytes) {
+	    con->is_eof_raw_ = 1;
+	    if (con->utf8_data_size == 0 && con->buffer_data_size == 0) {
+	      con->is_eof_ = 1;
+	    }
+	  }
 
-	if (con == ccon) {
-	  bytes_read = bytes;
-	  break;
+	  if (con == ccon) {
+	    bytes_read = bytes;
+	    break;
+	  }
+	} else {
+	  bytes_read = 0;
 	}
 
       } else if (GetLastError() != WAIT_TIMEOUT) {

@@ -43,6 +43,7 @@ typedef enum {
 } processx_file_type_t;
 
 typedef struct processx_connection_s {
+  int marker;
   processx_file_type_t type;
 
   int is_closed_;
