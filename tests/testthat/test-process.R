@@ -54,6 +54,7 @@ test_that("post processing", {
 test_that("working directory", {
   px  <- get_tool("px")
   dir.create(tmp <- tempfile())
+  tmp <- normalizePath(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
   cat("foo\nbar\n", file = file.path(tmp, "file"))
 
