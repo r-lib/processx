@@ -55,7 +55,16 @@ void R_init_processx_win() {
   /* Nothing to do currently */
 }
 
-SEXP processx__killem_all() {
+SEXP processx__unload_cleanup() {
+
+  if (processx__connection_iocp) CloseHandle(processx__connection_iocp);
+  if (processx__iocp_thread) TerminateThread(processx__iocp_thread, 0);
+  if (processx__thread_start) CloseHandle(processx__thread_start);
+  if (processx__thread_done) CloseHandle(processx__thread_done);
+
+  processx__connection_iocp = processx__iocp_thread =
+    processx__thread_start = processx__thread_done = NULL;
+
   if (processx__global_job_handle) {
     TerminateJobObject(processx__global_job_handle, 1);
     CloseHandle(processx__global_job_handle);

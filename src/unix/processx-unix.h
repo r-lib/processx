@@ -1,4 +1,3 @@
-
 #ifndef R_PROCESSX_UNIX_H
 #define R_PROCESSX_UNIX_H
 
@@ -36,7 +35,6 @@ void processx__block_sigchld();
 void processx__unblock_sigchld();
 
 void processx__finalizer(SEXP status);
-SEXP processx__killem_all();
 
 /* Child list and its functions */
 

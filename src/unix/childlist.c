@@ -77,7 +77,7 @@ processx__child_list_t *processx__child_find(pid_t pid) {
 
 /* LCOV_EXCL_STOP */
 
-SEXP processx__killem_all() {
+SEXP processx__unload_cleanup() {
   processx__child_list_t *ptr = child_list->next;
   int killed = 0;
 
