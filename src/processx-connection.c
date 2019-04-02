@@ -627,25 +627,11 @@ int processx_c_connection_is_closed(processx_connection_t *ccon) {
 #ifdef _WIN32
 int processx_c_connection_poll(processx_pollable_t pollables[],
 			       size_t npollables, int timeout) {
-  processx__start_thread();
-  processx__thread_cmd = PROCESSX__THREAD_POLL;
-  processx__thread_pollables = pollables;
-  processx__thread_npollables = npollables;
-  processx__thread_timeout = timeout;
-  SetEvent(processx__thread_start);
-  WaitForSingleObject(processx__thread_done, INFINITE);
-  processx__thread_cmd = PROCESSX__THREAD_IDLE;
-  return processx__thread_hasdata;
-}
-
-int processx_c_connection_poll_thr(processx_pollable_t pollables[],
-				   size_t npollables, int timeout) {
 
   int hasdata = 0;
   size_t i, j = 0;
   int *ptr;
   int timeleft = timeout;
-  HANDLE iocp = processx__get_default_iocp();
   DWORD bytes;
   OVERLAPPED *overlapped = 0;
   ULONG_PTR key;
@@ -681,12 +667,7 @@ int processx_c_connection_poll_thr(processx_pollable_t pollables[],
       poll_timeout = timeleft;
     }
 
-    GetQueuedCompletionStatus(
-      /* CompletionPort  = */ iocp,
-      /* lpNumberOfBytes = */ &bytes,
-      /* lpCompletionKey = */ &key,
-      /* lpOverlapped    = */ &overlapped,
-      /* dwMilliseconds  = */ poll_timeout);
+    processx__thread_getstatus(&bytes, &key, &overlapped, poll_timeout);
 
     if (overlapped) {
       /* data */
@@ -718,8 +699,8 @@ int processx_c_connection_poll_thr(processx_pollable_t pollables[],
 	bytes = 0;
       }
 
-    } else if (GetLastError() != WAIT_TIMEOUT) {
-      PROCESSX_ERROR("Cannot poll", GetLastError());
+    } else if (processx__thread_get_last_error() != WAIT_TIMEOUT) {
+      PROCESSX_ERROR("Cannot poll", processx__thread_get_last_error());
     }
 
     R_CheckUserInterrupt();
@@ -819,47 +800,18 @@ void processx__connection_start_read(processx_connection_t *ccon) {
 
   if (ccon->handle.read_pending) return;
 
-  if (! ccon->handle.overlapped.hEvent &&
-      (ccon->type == PROCESSX_FILE_TYPE_ASYNCFILE ||
-       ccon->type == PROCESSX_FILE_TYPE_ASYNCPIPE)) {
-    ccon->handle.overlapped.hEvent = CreateEvent(
-      /* lpEventAttributes = */ NULL,
-      /* bManualReset = */      FALSE,
-      /* bInitialState = */     FALSE,
-      /* lpName = */            NULL);
-
-    if (ccon->handle.overlapped.hEvent == NULL) {
-      PROCESSX_ERROR("Cannot read from connection", GetLastError());
-    }
-
-    HANDLE iocp = processx__get_default_iocp();
-    HANDLE res = CreateIoCompletionPort(
-      /* FileHandle =  */                ccon->handle.handle,
-      /* ExistingCompletionPort = */     iocp,
-      /* CompletionKey = */              (ULONG_PTR) ccon,
-      /* NumberOfConcurrentThreads = */  0);
-
-    if (!res) PROCESSX_ERROR("cannot add file to IOCP", GetLastError());
-  }
-
   if (!ccon->buffer) processx__connection_alloc(ccon);
 
   todo = ccon->buffer_allocated_size - ccon->buffer_data_size;
 
-  /* These need to be set to zero for non-file handles */
-  if (ccon->type != PROCESSX_FILE_TYPE_ASYNCFILE) {
-     ccon->handle.overlapped.Offset = 0;
-     ccon->handle.overlapped.OffsetHigh = 0;
-  }
-  res = ReadFile(
-    /* hfile = */                ccon->handle.handle,
-    /* lpBuffer = */             ccon->buffer + ccon->buffer_data_size,
-    /* nNumberOfBytesToRead = */ todo,
-    /* lpNumberOfBytesRead = */  &bytes_read,
-    /* lpOverlapped = */         &ccon->handle.overlapped);
+  res = processx__thread_readfile(
+    ccon,
+    ccon->buffer + ccon->buffer_data_size,
+    todo,
+    &bytes_read);
 
   if (!res) {
-    DWORD err = GetLastError();
+    DWORD err = processx__thread_get_last_error();
     if (err == ERROR_BROKEN_PIPE || err == ERROR_HANDLE_EOF) {
       ccon->is_eof_raw_ = 1;
       if (ccon->utf8_data_size == 0 && ccon->buffer_data_size == 0) {
@@ -1133,17 +1085,7 @@ static void processx__connection_realloc(processx_connection_t *ccon) {
 
 #ifdef _WIN32
 
-static ssize_t processx__connection_read(processx_connection_t *ccon) {
-  processx__start_thread();
-  processx__thread_cmd = PROCESSX__THREAD_READ;
-  processx__thread_conn = ccon;
-  SetEvent(processx__thread_start);
-  WaitForSingleObject(processx__thread_done, INFINITE);
-  processx__thread_cmd = PROCESSX__THREAD_IDLE;
-  return processx__thread_bytes_read;
-}
-
-ssize_t processx__connection_read_thr(processx_connection_t *ccon) {
+ssize_t processx__connection_read(processx_connection_t *ccon) {
   DWORD todo, bytes_read = 0;
 
   /* Nothing to read, nothing to convert to UTF8 */
@@ -1163,18 +1105,12 @@ ssize_t processx__connection_read_thr(processx_connection_t *ccon) {
 
   /* A read might be pending at this point. See if it has finished. */
   if (ccon->handle.read_pending) {
-    HANDLE iocp = processx__get_default_iocp();
     ULONG_PTR key;
     DWORD bytes;
     OVERLAPPED *overlapped = 0;
 
     while (1) {
-      GetQueuedCompletionStatus(
-        /* CompletionPort  = */ iocp,
-	/* lpNumberOfBytes = */ &bytes,
-	/* lpCompletionKey = */ &key,
-	/* lpOverlapped    = */ &overlapped,
-	/* dwMilliseconds  = */ 0);
+      processx__thread_getstatus(&bytes, &key, &overlapped, 0);
 
       if (overlapped) {
 	processx_connection_t *con = (processx_connection_t *) key;
@@ -1203,8 +1139,8 @@ ssize_t processx__connection_read_thr(processx_connection_t *ccon) {
 	  bytes_read = 0;
 	}
 
-      } else if (GetLastError() != WAIT_TIMEOUT) {
-	PROCESSX_ERROR("Read error", GetLastError());
+      } else if (processx__thread_get_last_error() != WAIT_TIMEOUT) {
+	PROCESSX_ERROR("Read error", processx__thread_get_last_error());
 
       } else {
 	break;
