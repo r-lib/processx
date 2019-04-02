@@ -625,9 +625,21 @@ int processx_c_connection_is_closed(processx_connection_t *ccon) {
 }
 
 #ifdef _WIN32
-
 int processx_c_connection_poll(processx_pollable_t pollables[],
 			       size_t npollables, int timeout) {
+  processx__start_thread();
+  processx__thread_cmd = PROCESSX__THREAD_POLL;
+  processx__thread_pollables = pollables;
+  processx__thread_npollables = npollables;
+  processx__thread_timeout = timeout;
+  SetEvent(processx__thread_start);
+  WaitForSingleObject(processx__thread_done, INFINITE);
+  processx__thread_cmd = PROCESSX__THREAD_IDLE;
+  return processx__thread_hasdata;
+}
+
+int processx_c_connection_poll_thr(processx_pollable_t pollables[],
+				   size_t npollables, int timeout) {
 
   int hasdata = 0;
   size_t i, j = 0;
@@ -1122,6 +1134,16 @@ static void processx__connection_realloc(processx_connection_t *ccon) {
 #ifdef _WIN32
 
 static ssize_t processx__connection_read(processx_connection_t *ccon) {
+  processx__start_thread();
+  processx__thread_cmd = PROCESSX__THREAD_READ;
+  processx__thread_conn = ccon;
+  SetEvent(processx__thread_start);
+  WaitForSingleObject(processx__thread_done, INFINITE);
+  processx__thread_cmd = PROCESSX__THREAD_IDLE;
+  return processx__thread_bytes_read;
+}
+
+ssize_t processx__connection_read_thr(processx_connection_t *ccon) {
   DWORD todo, bytes_read = 0;
 
   /* Nothing to read, nothing to convert to UTF8 */

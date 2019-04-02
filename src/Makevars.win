@@ -1,7 +1,7 @@
 OBJECTS = init.o poll.o processx-connection.o			     \
           processx-vector.o create-time.o base64.o                   \
           win/processx.o win/stdio.o win/named_pipe.o win/cleanup.o  \
-	  win/iocp.o win/utils.o
+	  win/iocp.o win/utils.o win/thread.o
 
 .PHONY: all clean
 

@@ -217,6 +217,28 @@ typedef unsigned long DWORD;
 #ifdef _WIN32
 extern HANDLE processx__connection_iocp;
 HANDLE processx__get_default_iocp();
+int processx__start_thread();
+#define PROCESSX__THREAD_SUCCESS 0
+#define PROCESSX__THREAD_ERROR 1
+#define PROCESSX__THREAD_INIT 0
+#define PROCESSX__THREAD_IDLE 1
+#define PROCESSX__THREAD_READ 2
+#define PROCESSX__THREAD_POLL 3
+extern int processx__thread_result;
+
+ssize_t processx__connection_read_thr(processx_connection_t *ccon);
+int processx_c_connection_poll_thr(processx_pollable_t pollables[],
+				   size_t npollables, int timeout);
+extern HANDLE processx__iocp_thread;
+extern HANDLE processx__thread_start;
+extern HANDLE processx__thread_done;
+extern int processx__thread_cmd;
+extern processx_connection_t *processx__thread_conn;
+extern ssize_t processx__thread_bytes_read;
+extern processx_pollable_t *processx__thread_pollables;
+extern size_t processx__thread_npollables;
+extern int processx__thread_timeout;
+extern int processx__thread_hasdata;
 #endif
 
 #define PROCESSX_ERROR(m,c) processx__error((m),(c),__FILE__,__LINE__)
