@@ -26,9 +26,10 @@
 typedef HANDLE processx_file_handle_t;
 typedef struct {
   HANDLE handle;
-  BOOLEAN async;
   OVERLAPPED overlapped;
+  BOOLEAN async;
   BOOLEAN read_pending;
+  BOOLEAN freelist;
 } processx_i_connection_t;
 #else
 typedef int processx_file_handle_t;
@@ -43,7 +44,6 @@ typedef enum {
 } processx_file_type_t;
 
 typedef struct processx_connection_s {
-  int marker;
   processx_file_type_t type;
 
   int is_closed_;
@@ -214,6 +214,8 @@ processx_file_handle_t processx_c_connection_fileno(
 typedef unsigned long DWORD;
 #endif
 
+/* Threading in Windows */
+
 #ifdef _WIN32
 int processx__start_thread();
 extern HANDLE processx__iocp_thread;
@@ -240,5 +242,16 @@ DWORD processx__thread_get_last_error();
 #define PROCESSX_ERROR(m,c) processx__error((m),(c),__FILE__,__LINE__)
 void processx__error(const char *message, DWORD errorcode,
 		     const char *file, int line);
+
+/* Free-list of connection in Windows */
+
+typedef struct processx__connection_freelist_s {
+  processx_connection_t *ccon;
+  struct processx__connection_freelist_s *next;
+} processx__connection_freelist_t;
+
+int processx__connection_freelist_add(processx_connection_t *con);
+void processx__connection_freelist_remove(processx_connection_t *con);
+int processx__connection_schedule_destroy(processx_connection_t *con);
 
 #endif
