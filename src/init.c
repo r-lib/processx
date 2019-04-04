@@ -6,7 +6,7 @@
 
 void R_init_processx_win();
 void R_init_processx_unix();
-SEXP processx__killem_all();
+SEXP processx__unload_cleanup();
 SEXP run_testthat_tests();
 
 static const R_CallMethodDef callMethods[]  = {
@@ -21,7 +21,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_create_time",        (DL_FUNC) &processx_create_time,        1 },
   { "processx_poll",               (DL_FUNC) &processx_poll,               3 },
   { "processx__process_exists",    (DL_FUNC) &processx__process_exists,    1 },
-  { "processx__killem_all",        (DL_FUNC) &processx__killem_all,        0 },
+  { "processx__unload_cleanup",    (DL_FUNC) &processx__unload_cleanup,    0 },
   { "processx_is_named_pipe_open", (DL_FUNC) &processx_is_named_pipe_open, 1 },
   { "processx_close_named_pipe",   (DL_FUNC) &processx_close_named_pipe,   1 },
   { "processx_create_named_pipe",  (DL_FUNC) &processx_create_named_pipe,  2 },

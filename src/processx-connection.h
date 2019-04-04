@@ -26,9 +26,10 @@
 typedef HANDLE processx_file_handle_t;
 typedef struct {
   HANDLE handle;
-  BOOLEAN async;
   OVERLAPPED overlapped;
+  BOOLEAN async;
   BOOLEAN read_pending;
+  BOOLEAN freelist;
 } processx_i_connection_t;
 #else
 typedef int processx_file_handle_t;
@@ -213,13 +214,44 @@ processx_file_handle_t processx_c_connection_fileno(
 typedef unsigned long DWORD;
 #endif
 
+/* Threading in Windows */
+
 #ifdef _WIN32
-extern HANDLE processx__connection_iocp;
-HANDLE processx__get_default_iocp();
+int processx__start_thread();
+extern HANDLE processx__iocp_thread;
+extern HANDLE processx__thread_start;
+extern HANDLE processx__thread_done;
+extern int processx__thread_cmd;
+#define PROCESSX__THREAD_CMD_INIT 0
+#define PROCESSX__THREAD_CMD_IDLE 1
+#define PROCESSX__THREAD_CMD_READFILE 2
+#define PROCESSX__THREAD_CMD_GETSTATUS 3
+
+BOOL processx__thread_readfile(processx_connection_t *ccon,
+			       LPVOID lpBuffer,
+			       DWORD nNumberOfBytesToRead,
+			       LPDWORD lpNumberOfBytesRead);
+BOOL processx__thread_getstatus(LPDWORD lpNumberOfBytes,
+				PULONG_PTR lpCompletionKey,
+				LPOVERLAPPED *lpOverlapped,
+				DWORD dwMilliseconds);
+DWORD processx__thread_get_last_error();
+
 #endif
 
 #define PROCESSX_ERROR(m,c) processx__error((m),(c),__FILE__,__LINE__)
 void processx__error(const char *message, DWORD errorcode,
 		     const char *file, int line);
+
+/* Free-list of connection in Windows */
+
+typedef struct processx__connection_freelist_s {
+  processx_connection_t *ccon;
+  struct processx__connection_freelist_s *next;
+} processx__connection_freelist_t;
+
+int processx__connection_freelist_add(processx_connection_t *con);
+void processx__connection_freelist_remove(processx_connection_t *con);
+int processx__connection_schedule_destroy(processx_connection_t *con);
 
 #endif

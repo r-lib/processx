@@ -86,6 +86,9 @@ process_initialize <- function(self, private, command, args,
   private$tree_id <- get_id()
 
   "!DEBUG process_initialize exec()"
+  if (!is.null(wd)) {
+    wd <- normalizePath(wd, winslash = "\\", mustWork = FALSE)
+  }
   private$status <- .Call(
     c_processx_exec,
     command, c(command, args), stdin, stdout, stderr, connections, env,

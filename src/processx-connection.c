@@ -439,6 +439,7 @@ processx_connection_t *processx_c_connection_create(
   con->handle.handle = os_handle;
   memset(&con->handle.overlapped, 0, sizeof(OVERLAPPED));
   con->handle.read_pending = FALSE;
+  con->handle.freelist = FALSE;
 #else
   con->handle = os_handle;
 #endif
@@ -462,11 +463,28 @@ void processx_c_connection_destroy(processx_connection_t *ccon) {
 
   if (ccon->close_on_destroy) processx_c_connection_close(ccon);
 
+  /* Even if not close_on_destroy, for us the connection is closed. */
+  ccon->is_closed_ = 1;
+
+#ifdef _WIN32
+  /* Check if we can free the connection. If there is a pending read,
+     then we cannot. In this case schedule_destroy will add it to a free
+     list and return 1. */
+  if (processx__connection_schedule_destroy(ccon)) return;
+#endif
+
   if (ccon->iconv_ctx) Riconv_close(ccon->iconv_ctx);
 
   if (ccon->buffer) free(ccon->buffer);
   if (ccon->utf8) free(ccon->utf8);
   if (ccon->encoding) free(ccon->encoding);
+
+ #ifdef _WIN32
+  if (ccon->handle.overlapped.hEvent) {
+    CloseHandle(ccon->handle.overlapped.hEvent);
+  }
+  ccon->handle.overlapped.hEvent = 0;
+#endif
 
   free(ccon);
 }
@@ -602,14 +620,9 @@ int processx_c_connection_is_eof(processx_connection_t *ccon) {
 void processx_c_connection_close(processx_connection_t *ccon) {
 #ifdef _WIN32
   if (ccon->handle.handle) {
-    CancelIo(ccon->handle.handle);
     CloseHandle(ccon->handle.handle);
   }
   ccon->handle.handle = 0;
-  if (ccon->handle.overlapped.hEvent) {
-    CloseHandle(ccon->handle.overlapped.hEvent);
-  }
-  ccon->handle.overlapped.hEvent = 0;
 #else
   if (ccon->handle >= 0) close(ccon->handle);
   ccon->handle = -1;
@@ -622,7 +635,6 @@ int processx_c_connection_is_closed(processx_connection_t *ccon) {
 }
 
 #ifdef _WIN32
-
 int processx_c_connection_poll(processx_pollable_t pollables[],
 			       size_t npollables, int timeout) {
 
@@ -630,7 +642,6 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
   size_t i, j = 0;
   int *ptr;
   int timeleft = timeout;
-  HANDLE iocp = processx__get_default_iocp();
   DWORD bytes;
   OVERLAPPED *overlapped = 0;
   ULONG_PTR key;
@@ -666,12 +677,9 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
       poll_timeout = timeleft;
     }
 
-    GetQueuedCompletionStatus(
-      /* CompletionPort  = */ iocp,
-      /* lpNumberOfBytes = */ &bytes,
-      /* lpCompletionKey = */ &key,
-      /* lpOverlapped    = */ &overlapped,
-      /* dwMilliseconds  = */ poll_timeout);
+    BOOL sres = processx__thread_getstatus(&bytes, &key, &overlapped,
+					   poll_timeout);
+    DWORD err = sres ? ERROR_SUCCESS : processx__thread_get_last_error();
 
     if (overlapped) {
       /* data */
@@ -681,7 +689,7 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
       con->buffer_data_size += bytes;
       if (con->buffer_data_size > 0) processx__connection_to_utf8(con);
       if (con->type == PROCESSX_FILE_TYPE_ASYNCFILE) {
-	/* TODO: larget files */
+	/* TODO: larger files */
 	con->handle.overlapped.Offset += bytes;
       }
 
@@ -692,6 +700,8 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 	}
       }
 
+      if (con->handle.freelist) processx__connection_freelist_remove(con);
+
       if (poll_idx < npollables &&
 	  pollables[poll_idx].object == con) {
 	pollables[poll_idx].event = PXREADY;
@@ -699,8 +709,8 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 	break;
       }
 
-    } else if (GetLastError() != WAIT_TIMEOUT) {
-      PROCESSX_ERROR("Cannot poll", GetLastError());
+    } else if (err != WAIT_TIMEOUT) {
+      PROCESSX_ERROR("Cannot poll", err);
     }
 
     R_CheckUserInterrupt();
@@ -800,47 +810,18 @@ void processx__connection_start_read(processx_connection_t *ccon) {
 
   if (ccon->handle.read_pending) return;
 
-  if (! ccon->handle.overlapped.hEvent &&
-      (ccon->type == PROCESSX_FILE_TYPE_ASYNCFILE ||
-       ccon->type == PROCESSX_FILE_TYPE_ASYNCPIPE)) {
-    ccon->handle.overlapped.hEvent = CreateEvent(
-      /* lpEventAttributes = */ NULL,
-      /* bManualReset = */      FALSE,
-      /* bInitialState = */     FALSE,
-      /* lpName = */            NULL);
-
-    if (ccon->handle.overlapped.hEvent == NULL) {
-      PROCESSX_ERROR("Cannot read from connection", GetLastError());
-    }
-
-    HANDLE iocp = processx__get_default_iocp();
-    HANDLE res = CreateIoCompletionPort(
-      /* FileHandle =  */                ccon->handle.handle,
-      /* ExistingCompletionPort = */     iocp,
-      /* CompletionKey = */              (ULONG_PTR) ccon,
-      /* NumberOfConcurrentThreads = */  0);
-
-    if (!res) PROCESSX_ERROR("cannot add file to IOCP", GetLastError());
-  }
-
   if (!ccon->buffer) processx__connection_alloc(ccon);
 
   todo = ccon->buffer_allocated_size - ccon->buffer_data_size;
 
-  /* These need to be set to zero for non-file handles */
-  if (ccon->type != PROCESSX_FILE_TYPE_ASYNCFILE) {
-     ccon->handle.overlapped.Offset = 0;
-     ccon->handle.overlapped.OffsetHigh = 0;
-  }
-  res = ReadFile(
-    /* hfile = */                ccon->handle.handle,
-    /* lpBuffer = */             ccon->buffer + ccon->buffer_data_size,
-    /* nNumberOfBytesToRead = */ todo,
-    /* lpNumberOfBytesRead = */  &bytes_read,
-    /* lpOverlapped = */         &ccon->handle.overlapped);
+  res = processx__thread_readfile(
+    ccon,
+    ccon->buffer + ccon->buffer_data_size,
+    todo,
+    &bytes_read);
 
   if (!res) {
-    DWORD err = GetLastError();
+    DWORD err = processx__thread_get_last_error();
     if (err == ERROR_BROKEN_PIPE || err == ERROR_HANDLE_EOF) {
       ccon->is_eof_raw_ = 1;
       if (ccon->utf8_data_size == 0 && ccon->buffer_data_size == 0) {
@@ -1114,7 +1095,7 @@ static void processx__connection_realloc(processx_connection_t *ccon) {
 
 #ifdef _WIN32
 
-static ssize_t processx__connection_read(processx_connection_t *ccon) {
+ssize_t processx__connection_read(processx_connection_t *ccon) {
   DWORD todo, bytes_read = 0;
 
   /* Nothing to read, nothing to convert to UTF8 */
@@ -1134,19 +1115,13 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
 
   /* A read might be pending at this point. See if it has finished. */
   if (ccon->handle.read_pending) {
-    HANDLE iocp = processx__get_default_iocp();
     ULONG_PTR key;
     DWORD bytes;
     OVERLAPPED *overlapped = 0;
 
     while (1) {
-      GetQueuedCompletionStatus(
-        /* CompletionPort  = */ iocp,
-	/* lpNumberOfBytes = */ &bytes,
-	/* lpCompletionKey = */ &key,
-	/* lpOverlapped    = */ &overlapped,
-	/* dwMilliseconds  = */ 0);
-
+      BOOL sres = processx__thread_getstatus(&bytes, &key, &overlapped, 0);
+      DWORD err = sres ? ERROR_SUCCESS : processx__thread_get_last_error();
       if (overlapped) {
 	processx_connection_t *con = (processx_connection_t *) key;
 	con->handle.read_pending = FALSE;
@@ -1165,13 +1140,15 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
 	  }
 	}
 
+	if (con->handle.freelist) processx__connection_freelist_remove(con);
+
 	if (con == ccon) {
 	  bytes_read = bytes;
 	  break;
 	}
 
-      } else if (GetLastError() != WAIT_TIMEOUT) {
-	PROCESSX_ERROR("Read error", GetLastError());
+      } else if (err != WAIT_TIMEOUT) {
+	PROCESSX_ERROR("Read error", err);
 
       } else {
 	break;
@@ -1370,6 +1347,53 @@ int processx__interruptible_poll(struct pollfd fds[],
   }
 
   return ret;
+}
+
+#endif
+
+#ifdef _WIN32
+
+processx__connection_freelist_t freelist_head = { 0, 0 };
+processx__connection_freelist_t *freelist = &freelist_head;
+
+int processx__connection_freelist_add(processx_connection_t *ccon) {
+  if (ccon->handle.freelist) return 0;
+  processx__connection_freelist_t *node =
+    calloc(1, sizeof(processx__connection_freelist_t));
+  if (!node) error("Cannot add to connection freelist, this is a leak");
+
+  node->ccon = ccon;
+  node->next = freelist->next;
+  freelist->next = node;
+  ccon->handle.freelist = TRUE;
+
+  return 0;
+}
+
+void processx__connection_freelist_remove(processx_connection_t *ccon) {
+  processx__connection_freelist_t *prev = freelist, *ptr = freelist->next;
+  while (ptr) {
+    if (ptr->ccon == ccon) {
+      prev->next = ptr->next;
+      free(ptr);
+      return;
+    }
+    prev = ptr;
+    ptr = ptr->next;
+  }
+}
+
+int processx__connection_schedule_destroy(processx_connection_t *ccon) {
+  /* The connection is already closed here, but reads might still be
+     pending... if this is the case, then we add the connection to the
+     free list. */
+  if (ccon->handle.read_pending) {
+    processx__connection_freelist_add(ccon);
+    return 1;
+
+  } else {
+    return 0;
+  }
 }
 
 #endif
