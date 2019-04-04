@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/signal.h>
 
 # ifndef O_CLOEXEC
 #  define O_CLOEXEC 02000000
