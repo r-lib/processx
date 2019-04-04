@@ -1,8 +1,8 @@
 
 # dev
 
-* Fix a crash on Windows, when polling and R or another package creates
-  an IOCP from the main R thread (#184).
+* Fix a crash on Windows, when a connection that has a pending read internally
+  is finalized.
 
 # processx 3.3.0
 
