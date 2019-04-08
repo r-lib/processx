@@ -3,6 +3,8 @@
 
 #include "../processx.h"
 
+#include "cleancall.h"
+
 #include <stdio.h>
 
 /* Internals */
@@ -504,6 +506,11 @@ void processx__collect_exit_status(SEXP status, int retval, int wstat) {
  * 7. We keep polling until the timeout expires or the process finishes.
  */
 
+static void processx__close_fd(void *ptr) {
+  int *fd = ptr;
+  if (*fd >= 0) close(*fd);
+}
+
 SEXP processx_wait(SEXP status, SEXP timeout) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   int ctimeout = INTEGER(timeout)[0], timeleft = ctimeout;
@@ -535,6 +542,8 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
     processx__unblock_sigchld();
     error("processx error: %s", strerror(errno));
   }
+  r_call_on_exit(processx__close_fd, handle->waitpipe);
+  r_call_on_exit(processx__close_fd, handle->waitpipe + 1);
   processx__nonblock_fcntl(handle->waitpipe[0], 1);
   processx__nonblock_fcntl(handle->waitpipe[1], 1);
 

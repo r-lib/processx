@@ -633,7 +633,8 @@ process <- R6::R6Class(
 
 process_wait <- function(self, private, timeout) {
   "!DEBUG process_wait `private$get_short_name()`"
-  .Call(c_processx_wait, private$status, as.integer(timeout))
+  cleancall::call_with_cleanup(c_processx_wait, private$status,
+                               as.integer(timeout))
   invisible(self)
 }
 

@@ -16,6 +16,8 @@
 
 #include "processx.h"
 
+#include <cleancall.h>
+
 #ifdef _WIN32
 #include "win/processx-win.h"
 #else

@@ -22,9 +22,12 @@ BugReports: https://github.com/r-lib/processx/issues
 RoxygenNote: 6.1.1
 Roxygen: list(markdown = TRUE)
 Imports:
+    cleancall,
     ps (>= 1.2.0),
     R6,
     utils
+LinkingTo: 
+    cleancall
 Suggests:
     callr,
     covr,
@@ -33,4 +36,6 @@ Suggests:
     parallel,
     testthat,
     withr
+Remotes: 
+    r-lib/cleancall
 Encoding: UTF-8
