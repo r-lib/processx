@@ -504,7 +504,33 @@ void processx__collect_exit_status(SEXP status, int retval, int wstat) {
  * 7. We keep polling until the timeout expires or the process finishes.
  */
 
+struct processx_wait_data {
+  SEXP status;
+  SEXP timeout;
+  int fds[2];
+};
+
+SEXP processx_wait_internal(void *data);
+
+void processx_wait_cleanup(void *data) {
+  struct processx_wait_data *pdata = data;
+  if (pdata->fds[0] >= 0) close(pdata->fds[0]);
+  if (pdata->fds[1] >= 0) close(pdata->fds[1]);
+}
+
 SEXP processx_wait(SEXP status, SEXP timeout) {
+  struct processx_wait_data pdata = { status, timeout, { -1, -1 } };
+  SEXP result = R_ExecWithCleanup(processx_wait_internal, &pdata,
+                                  processx_wait_cleanup, &pdata);
+  return result;
+}
+
+SEXP processx_wait_internal(void *data) {
+  struct processx_wait_data *pdata = data;
+  SEXP status = pdata->status;
+  SEXP timeout = pdata->timeout;
+  int *fds = pdata->fds;
+
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   int ctimeout = INTEGER(timeout)[0], timeleft = ctimeout;
   struct pollfd fd;
@@ -535,6 +561,8 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
     processx__unblock_sigchld();
     error("processx error: %s", strerror(errno));
   }
+  fds[0] = handle->waitpipe[0];
+  fds[1] = handle->waitpipe[1];
   processx__nonblock_fcntl(handle->waitpipe[0], 1);
   processx__nonblock_fcntl(handle->waitpipe[1], 1);
 
