@@ -504,12 +504,19 @@ void processx__collect_exit_status(SEXP status, int retval, int wstat) {
  * 7. We keep polling until the timeout expires or the process finishes.
  */
 
+static void processx__wait_finalizer(SEXP xptr) {
+  SEXP tag = R_ExternalPtrTag(xptr);
+  if (INTEGER(tag)[0] >= 0) close(INTEGER(tag)[0]);
+  if (INTEGER(tag)[1] >= 0) close(INTEGER(tag)[1]);
+}
+
 SEXP processx_wait(SEXP status, SEXP timeout) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   int ctimeout = INTEGER(timeout)[0], timeleft = ctimeout;
   struct pollfd fd;
   int ret = 0;
   pid_t pid;
+  SEXP tag, xptr;
 
   processx__block_sigchld();
 
@@ -531,10 +538,15 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   processx__block_sigchld();
 
   /* Setup the self-pipe that we can poll */
+  tag = PROTECT(allocVector(INTSXP, 2));
+  xptr = PROTECT(R_MakeExternalPtr(handle, tag, R_NilValue));
+  R_RegisterCFinalizerEx(xptr, processx__wait_finalizer, 0);
   if (pipe(handle->waitpipe)) {
     processx__unblock_sigchld();
     error("processx error: %s", strerror(errno));
   }
+  INTEGER(tag)[0] = handle->waitpipe[0];
+  INTEGER(tag)[1] = handle->waitpipe[1];
   processx__nonblock_fcntl(handle->waitpipe[0], 1);
   processx__nonblock_fcntl(handle->waitpipe[1], 1);
 
@@ -585,6 +597,7 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   handle->waitpipe[0] = -1;
   handle->waitpipe[1] = -1;
 
+  UNPROTECT(2);
   return ScalarLogical(ret != 0);
 }
 
