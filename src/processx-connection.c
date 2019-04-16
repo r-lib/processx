@@ -652,7 +652,7 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
     processx_pollable_t *el = pollables + i;
     processx_file_handle_t handle = 0;
     int again;
-    el->event = el->poll_func(el->object, 0, &handle, &again);
+    el->event = el->poll_func(el, 0, &handle, &again);
     if (el->event == PXNOPIPE || el->event == PXCLOSED) {
       /* Do nothing */
     } else if (el->event == PXREADY) {
@@ -753,7 +753,7 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
     processx_pollable_t *el = pollables + i;
     processx_file_handle_t handle;
     int again;
-    el->event = el->poll_func(el->object, 0, &handle, &again);
+    el->event = el->poll_func(el, 0, &handle, &again);
     if (el->event == PXNOPIPE || el->event == PXCLOSED) {
       /* Do nothing */
     } else if (el->event == PXREADY) {
@@ -871,12 +871,12 @@ void processx__connection_start_read(processx_connection_t *ccon) {
   } } while (0)
 
 int processx_i_poll_func_connection(
-  void * object,
+  processx_pollable_t *pollable,
   int status,
   processx_file_handle_t *handle,
   int *again) {
 
-  processx_connection_t *ccon = (processx_connection_t*) object;
+  processx_connection_t *ccon = pollable->object;
 
   PROCESSX__I_POLL_FUNC_CONNECTION_READY;
 

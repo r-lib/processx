@@ -67,6 +67,8 @@ typedef struct processx_connection_s {
   int poll_idx;
 } processx_connection_t;
 
+struct processx_pollable_s;
+
 /* Generic poll method
  *
  * @param object The thing to poll.
@@ -83,7 +85,7 @@ typedef struct processx_connection_s {
  */
 
 typedef int (*processx_connection_poll_func_t)(
-  void *object,
+  struct processx_pollable_s *pollable,
   int status,
   processx_file_handle_t *handle,
   int *again);
