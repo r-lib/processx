@@ -93,6 +93,12 @@ poll <- function(processes, ms) {
   res
 }
 
+#' Create a pollable object from a curl multi handle's file descriptors
+#'
+#' @param fds A list of file descriptors, as returned by
+#'   [curl::multi_fdset()].
+#' @return Pollable object, that be used with [poll()] directly.
+#'
 #' @export
 
 curl_fds <- function(fds) {
