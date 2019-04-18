@@ -72,7 +72,6 @@ struct processx_pollable_s;
 /* Generic poll method
  *
  * @param object The thing to poll.
- * @param status Currently not used.
  * @param handle A handle can be returned here, to `poll` or wait on.
  *   If this is not needed, set it to NULL.
  * @param timeout A timeout value can be returned here, for the next
@@ -82,17 +81,16 @@ struct processx_pollable_s;
  *     (But maybe not a full line.)
  *   PXSILENT: we don't know if data is available, we need to check the
  *     operating system via `poll` or `WaitForStatus`.
+ *   PXHANDLE
+ *   PXPOLLFD
  */
 
-typedef int (*processx_connection_poll_func_t)(
-  struct processx_pollable_s *pollable,
-  int status,
-  processx_file_handle_t *handle,
-  int *again);
+typedef int (*processx_connection_pre_poll_func_t)(
+  struct processx_pollable_s *pollable);
 
 /* Data structure for a pollable object
  *
- * @member poll_func The function to call on the object, before
+ * @member pre_poll_func The function to call on the object, before
  *   the poll/wait system call. The pollable object might have data
  *   available without immediately, without poll/wait. If not, it
  *   will return the file descriptor or HANDLE to poll.
@@ -101,13 +99,17 @@ typedef int (*processx_connection_poll_func_t)(
  *   `processx_pollable_t` objects.
  * @member event The result of the polling is stored here. Possible values:
  *   `PXSILENT` (no data), `PXREADY` (data), `PXTIMEOUT` (timeout).
+ * @member fd If the pollable is an fd, then it is stored here instead of
+ *   in `object`, for simplicity.
  */
 
 typedef struct processx_pollable_s {
-  processx_connection_poll_func_t poll_func;
+  processx_connection_pre_poll_func_t pre_poll_func;
   void *object;
   int free;
   int event;
+  processx_file_handle_t handle;
+  SEXP fds;
 } processx_pollable_t;
 
 /* --------------------------------------------------------------------- */
@@ -204,6 +206,9 @@ int processx_c_connection_poll(
 int processx_c_pollable_from_connection(
   processx_pollable_t *pollable,
   processx_connection_t *ccon);
+
+int processx_c_pollable_from_curl(
+  processx_pollable_t *pollable, SEXP fds);
 
 processx_file_handle_t processx_c_connection_fileno(
   const processx_connection_t *con);

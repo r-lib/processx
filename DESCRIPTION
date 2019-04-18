@@ -29,6 +29,7 @@ Suggests:
     callr,
     covr,
     crayon,
+    curl,
     debugme,
     parallel,
     testthat,

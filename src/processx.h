@@ -89,6 +89,12 @@ SEXP processx_base64_decode(SEXP array);
 #define PXCLOSED  4		/* fd was already closed when started polling */
 #define PXSILENT  5		/* still open, but no data or EOF for now. No timeout, either */
                                 /* but there were events on other fds */
+#define PXEVENT   6             /* some event, this is used for curl fds */
+
+/* These statuses can be only returned by the pre-poll functions */
+
+#define PXHANDLE  7             /* need to poll the set handle */
+#define PXSELECT  8             /* need to poll/select the set fd */
 
 typedef struct {
   int windows_verbatim_args;
