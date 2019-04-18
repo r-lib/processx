@@ -11,6 +11,8 @@ extern "C" {
 #define _POSIX_C_SOURCE  200809L
 #endif
 
+#include "processx-connection.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -26,7 +28,6 @@ extern "C" {
 #endif
 
 #include <Rinternals.h>
-#include "processx-connection.h"
 
 #ifdef _WIN32
 #include "win/processx-win.h"

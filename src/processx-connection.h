@@ -7,14 +7,18 @@
 #define _POSIX_C_SOURCE  200809L
 #endif
 
-#include <Rinternals.h>
-#include <R_ext/Riconv.h>
-
 #ifdef _WIN32
+#ifndef FD_SETSIZE
+#define FD_SETSIZE 32767
+#endif
+#include <winsock2.h>
 #include <windows.h>
 #else
 #include <unistd.h>
 #endif
+
+#include <Rinternals.h>
+#include <R_ext/Riconv.h>
 
 /* --------------------------------------------------------------------- */
 /* Data types                                                            */

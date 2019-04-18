@@ -18,7 +18,6 @@
 
 #ifdef _WIN32
 #include "win/processx-win.h"
-#include "winsock2.h"
 #else
 #include "unix/processx-unix.h"
 #endif
@@ -640,44 +639,81 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 			       size_t npollables, int timeout) {
 
   int hasdata = 0;
-  size_t i, j = 0;
+  size_t i, j = 0, selj = 0;
   int *ptr;
   int timeleft = timeout;
   DWORD bytes;
   OVERLAPPED *overlapped = 0;
   ULONG_PTR key;
-  fd_set readfds;
+  fd_set readfds, writefds, exceptionfds;
+  int *events;
 
   FD_ZERO(&readfds);
-  ptr = (int*) R_alloc(npollables, sizeof(int));
+  FD_ZERO(&writefds);
+  FD_ZERO(&exceptionfds);
 
+  events = (int*) R_alloc(npollables, sizeof(int));
+
+  /* First iteration, we call the pre-poll method, and collect the
+     handles for the IOCP, and the fds for select(). */
   for (i = 0; i < npollables; i++) {
     processx_pollable_t *el = pollables + i;
-    el->event = PXSILENT;
-    if (el->pre_poll_func) el->event = el->pre_poll_func(el);
-    if (el->event == PXNOPIPE || el->event == PXCLOSED) {
-      /* Do nothing */
-
-    } else if (el->event == PXREADY) {
-      hasdata++;
-
-    } else if (el->event == PXHANDLE) {
-      /* Need to do overlapped I/O via IOCP */
-      el->event = PXSILENT;
-      ptr[j] = i;
+    events[i] = PXSILENT;
+    if (el->pre_poll_func) events[i] = el->pre_poll_func(el);
+    switch (events[i]) {
+    case PXHANDLE:
       j++;
-
-    } else if (el->event == PXPOLLFD) {
-      /* Need to select() */
-      el->event = PXSILENT;
-      FD_SET(el->fd, &readfds);
-
-    } else {
-      error("Cannnot poll pollable, not ready, and no handle");
+      break;
+    default:
+      break;
     }
   }
 
-  if (j == 0) return hasdata;
+  /* j contains the number of IOCP handles to poll */
+
+  ptr = (int*) R_alloc(j, sizeof(int));
+
+  for (i = 0, j = 0; i < npollables; i++) {
+    processx_pollable_t *el = pollables + i;
+
+    switch (events[i]) {
+    case PXNOPIPE:
+    case PXCLOSED:
+    case PXSILENT:
+      el->event = events[i];
+      break;
+
+    case PXREADY:
+      hasdata++;
+      el->event = events[i];
+      break;
+
+    case PXHANDLE:
+      el->event = PXSILENT;
+      ptr[j] = i;
+      j++;
+      break;
+
+    case PXSELECT: {
+      SEXP elem;
+      el->event = PXSILENT;
+      int k, n;
+      elem = VECTOR_ELT(el->fds, 0);
+      n = LENGTH(elem);
+      selj += n;
+      for (k = 0; k < n; k++) FD_SET(INTEGER(elem)[k], &readfds);
+      elem = VECTOR_ELT(el->fds, 1);
+      n = LENGTH(elem);
+      selj += n;
+      for (k = 0; k < n; k++) FD_SET(INTEGER(elem)[k], &writefds);
+      elem = VECTOR_ELT(el->fds, 2);
+      n = LENGTH(elem);
+      selj += n;
+      for (k = 0; k < n; k++) FD_SET(INTEGER(elem)[k], &exceptionfds);
+    } }
+  }
+
+  if (j == 0 && selj == 0) return hasdata;
 
   if (hasdata) timeout = timeleft = 0;
 
@@ -689,8 +725,13 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
       poll_timeout = timeleft;
     }
 
-    BOOL sres = processx__thread_getstatus(&bytes, &key, &overlapped,
-					   poll_timeout);
+    BOOL sres;
+    if (selj == 0) {
+      sres = processx__thread_getstatus(&bytes, &key, &overlapped,
+					poll_timeout);
+    } else {
+      error("This is not implemented yet");
+    }
     DWORD err = sres ? ERROR_SUCCESS : processx__thread_get_last_error();
 
     if (overlapped) {
@@ -760,20 +801,24 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
   /* Need to allocate this, because we need to put in the fds, maybe */
   events = (int*) R_alloc(npollables, sizeof(int));
 
-  /* First iteration, we cann the pre-poll method, and collect the
+  /* First iteration, we call the pre-poll method, and collect the
      fds to poll. */
   for (i = 0; i < npollables; i++) {
     processx_pollable_t *el = pollables + i;
     events[i] = PXSILENT;
     if (el->pre_poll_func) events[i] = el->pre_poll_func(el);
-    if (events[i] == PXHANDLE) {
+    switch (events[i]) {
+    case PXHANDLE:
       j++;
-    } else if (events[i] == PXSELECT) {
+      break;
+    case PXSELECT: {
       /* This is three vectors of fds to poll, in an R list */
       int w;
       for (w = 0; w < 3; w++) {
         j += LENGTH(VECTOR_ELT(el->fds, w));
-      }
+      } }
+    default:
+      break;
     }
   }
 
