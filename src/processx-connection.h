@@ -232,6 +232,13 @@ int processx__start_thread();
 extern HANDLE processx__iocp_thread;
 extern HANDLE processx__thread_start;
 extern HANDLE processx__thread_done;
+
+extern fd_set processx__readfds, processx__writefds,
+  processx__exceptionfds;
+extern SOCKET processx__notify_socket[2];
+extern int processx__select;
+extern ULONG_PTR processx__key_none;
+
 extern int processx__thread_cmd;
 #define PROCESSX__THREAD_CMD_INIT 0
 #define PROCESSX__THREAD_CMD_IDLE 1
@@ -246,6 +253,10 @@ BOOL processx__thread_getstatus(LPDWORD lpNumberOfBytes,
 				PULONG_PTR lpCompletionKey,
 				LPOVERLAPPED *lpOverlapped,
 				DWORD dwMilliseconds);
+BOOL processx__thread_getstatus_select(LPDWORD lpNumberOfBytes,
+				       PULONG_PTR lpCompletionKey,
+				       LPOVERLAPPED *lpOverlapped,
+				       DWORD dwMilliseconds);
 DWORD processx__thread_get_last_error();
 
 #endif

@@ -44,7 +44,7 @@ test_that("curl fds", {
     xfds <- c(xfds, fds["reads"])
     pr <- poll(list(curl_fds(fds)), 2000)
     xpr <- c(xpr, pr[[1]])
-    state <- curl::multi_run(timeout = 0, pool = pool, poll = TRUE)
+    state <- curl::multi_run(timeout = 0.1, pool = pool, poll = TRUE)
   }
 
   expect_true(all(vapply(xfds, length, 1L) > 0))

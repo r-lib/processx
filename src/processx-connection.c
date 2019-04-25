@@ -635,6 +635,30 @@ int processx_c_connection_is_closed(processx_connection_t *ccon) {
 }
 
 #ifdef _WIN32
+
+/* TODO: errors */
+int processx__socket_pair(SOCKET fds[2]) {
+  struct sockaddr_in inaddr;
+  struct sockaddr addr;
+  SOCKET lst = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  memset(&inaddr, 0, sizeof(inaddr));
+  memset(&addr, 0, sizeof(addr));
+  inaddr.sin_family = AF_INET;
+  inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  inaddr.sin_port = 0;
+  int yes = 1;
+  setsockopt(lst, SOL_SOCKET, SO_REUSEADDR, (char*)&yes, sizeof(yes));
+  bind(lst, (struct sockaddr *)&inaddr, sizeof(inaddr));
+  listen(lst, 1);
+  int len = sizeof(inaddr);
+  getsockname(lst, &addr,&len);
+  fds[0] = socket(AF_INET, SOCK_STREAM, 0);
+  connect(fds[0], &addr, len);
+  fds[1] = accept(lst,0,0);
+  closesocket(lst);
+  return 0;
+}
+
 int processx_c_connection_poll(processx_pollable_t pollables[],
 			       size_t npollables, int timeout) {
 
@@ -645,12 +669,11 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
   DWORD bytes;
   OVERLAPPED *overlapped = 0;
   ULONG_PTR key;
-  fd_set readfds, writefds, exceptionfds;
   int *events;
 
-  FD_ZERO(&readfds);
-  FD_ZERO(&writefds);
-  FD_ZERO(&exceptionfds);
+  FD_ZERO(&processx__readfds);
+  FD_ZERO(&processx__writefds);
+  FD_ZERO(&processx__exceptionfds);
 
   events = (int*) R_alloc(npollables, sizeof(int));
 
@@ -701,21 +724,29 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
       elem = VECTOR_ELT(el->fds, 0);
       n = LENGTH(elem);
       selj += n;
-      for (k = 0; k < n; k++) FD_SET(INTEGER(elem)[k], &readfds);
+      for (k = 0; k < n; k++) FD_SET(INTEGER(elem)[k], &processx__readfds);
       elem = VECTOR_ELT(el->fds, 1);
       n = LENGTH(elem);
       selj += n;
-      for (k = 0; k < n; k++) FD_SET(INTEGER(elem)[k], &writefds);
+      for (k = 0; k < n; k++) FD_SET(INTEGER(elem)[k], &processx__writefds);
       elem = VECTOR_ELT(el->fds, 2);
       n = LENGTH(elem);
       selj += n;
-      for (k = 0; k < n; k++) FD_SET(INTEGER(elem)[k], &exceptionfds);
+      for (k = 0; k < n; k++) FD_SET(INTEGER(elem)[k], &processx__exceptionfds);
     } }
   }
 
   if (j == 0 && selj == 0) return hasdata;
 
   if (hasdata) timeout = timeleft = 0;
+
+  if (selj != 0) {
+    processx__socket_pair(processx__notify_socket);
+    FD_SET(processx__notify_socket[0], &processx__readfds);
+    processx__select = 1;
+  } else {
+    processx__select = 0;
+  }
 
   while (timeout < 0 || timeleft >= 0) {
     int poll_timeout;
@@ -730,9 +761,47 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
       sres = processx__thread_getstatus(&bytes, &key, &overlapped,
 					poll_timeout);
     } else {
-      error("This is not implemented yet");
+      sres = processx__thread_getstatus_select(&bytes, &key, &overlapped,
+					       poll_timeout);
     }
     DWORD err = sres ? ERROR_SUCCESS : processx__thread_get_last_error();
+
+    /* See if there was any data from the curl sockets */
+
+    if (processx__select) {
+      for (i = 0; i < npollables; i++) {
+	if (events[i] == PXSELECT) {
+	  processx_pollable_t *el = pollables + i;
+	  SEXP elem;
+	  int k, n;
+	  int has = 0;
+	  elem = VECTOR_ELT(el->fds, 0);
+	  n = LENGTH(elem);
+	  for (k = 0; k < n; k++) {
+	    if (FD_ISSET(INTEGER(elem)[k], &processx__readfds)) has = 1;
+	    FD_SET(INTEGER(elem)[k], &processx__readfds);
+	  }
+	  elem = VECTOR_ELT(el->fds, 1);
+	  n = LENGTH(elem);
+	  for (k = 0; k < n; k++) {
+	    if (FD_ISSET(INTEGER(elem)[k], &processx__writefds)) has = 1;
+	    FD_SET(INTEGER(elem)[k], &processx__writefds);
+	  }
+	  elem = VECTOR_ELT(el->fds, 2);
+	  n = LENGTH(elem);
+	  for (k = 0; k < n; k++) {
+	    if (FD_ISSET(INTEGER(elem)[k], &processx__exceptionfds)) has = 1;
+	    FD_SET(INTEGER(elem)[k], &processx__exceptionfds);
+	  }
+	  if (has) {
+	    el->event = PXEVENT;
+	    hasdata++;
+	  }
+	}
+      }
+    }
+
+    /* See if there was any data from the IOCP */
 
     if (overlapped) {
       /* data */
@@ -759,20 +828,23 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 	  pollables[poll_idx].object == con) {
 	pollables[poll_idx].event = PXREADY;
 	hasdata++;
-	break;
       }
-
-    } else if (err != WAIT_TIMEOUT) {
+    } else if (err != WAIT_TIMEOUT && err != ERROR_SUCCESS) {
       PROCESSX_ERROR("Cannot poll", err);
     }
 
+    if (hasdata) break;
+
     R_CheckUserInterrupt();
-    timeleft -= PROCESSX_INTERRUPT_INTERVAL;
+    if (err == WAIT_TIMEOUT) timeleft -= PROCESSX_INTERRUPT_INTERVAL;
   }
 
   if (hasdata == 0) {
     for (i = 0; i < j; i++) pollables[ptr[i]].event = PXTIMEOUT;
   }
+
+  closesocket(processx__notify_socket[0]);
+  closesocket(processx__notify_socket[1]);
 
   return hasdata;
 }

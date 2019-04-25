@@ -22,6 +22,12 @@ void *processx__thread_data = NULL;
 DWORD processx__thread_last_error = 0;
 int processx__thread_cmd = PROCESSX__THREAD_CMD_INIT;
 
+fd_set processx__readfds,
+  processx__writefds,
+  processx__exceptionfds;
+SOCKET processx__notify_socket[2] = { 0, 0 };
+int processx__select = 0;
+
 struct processx__thread_readfile_data {
   processx_connection_t *ccon;
   LPVOID lpBuffer;
@@ -35,6 +41,8 @@ struct processx__thread_getstatus_data {
   LPOVERLAPPED *lpOverlapped;
   DWORD dwMilliseconds;
 } processx__thread_getstatus_data;
+
+ULONG_PTR processx__key_none = 1;
 
 DWORD processx_i_thread_readfile() {
 
@@ -78,6 +86,7 @@ DWORD processx_i_thread_readfile() {
 }
 
 DWORD processx_i_thread_getstatus() {
+  static const char *ok_buf = "OK";
   HANDLE iocp = processx__get_default_iocp();
   if (!iocp) return FALSE;
 
@@ -87,6 +96,11 @@ DWORD processx_i_thread_getstatus() {
     processx__thread_getstatus_data.lpCompletionKey,
     processx__thread_getstatus_data.lpOverlapped,
     processx__thread_getstatus_data.dwMilliseconds);
+
+  if (processx__select) {
+    /* TODO: error */
+    send(processx__notify_socket[1], ok_buf, 2, 0);
+  }
 
   return res;
 }
@@ -204,6 +218,45 @@ BOOL  processx__thread_getstatus(LPDWORD lpNumberOfBytes,
   processx__thread_getstatus_data.dwMilliseconds = dwMilliseconds;
 
   SetEvent(processx__thread_start);
+  WaitForSingleObject(processx__thread_done, INFINITE);
+
+  return processx__thread_success;
+}
+
+BOOL processx__thread_getstatus_select(LPDWORD lpNumberOfBytes,
+				       PULONG_PTR lpCompletionKey,
+				       LPOVERLAPPED *lpOverlapped,
+				       DWORD dwMilliseconds) {
+  TIMEVAL timeout;
+  char buf[10];
+  HANDLE iocp = processx__get_default_iocp();
+  int ret;
+
+  processx__start_thread();
+
+  timeout.tv_sec = dwMilliseconds / 1000;
+  timeout.tv_usec = dwMilliseconds % 1000 * 1000;
+
+  processx__thread_cmd = PROCESSX__THREAD_CMD_GETSTATUS;
+
+  processx__select = 1;
+  processx__thread_getstatus_data.lpNumberOfBytes = lpNumberOfBytes;
+  processx__thread_getstatus_data.lpCompletionKey = lpCompletionKey;
+  processx__thread_getstatus_data.lpOverlapped = lpOverlapped;
+  processx__thread_getstatus_data.dwMilliseconds = dwMilliseconds;
+
+  SetEvent(processx__thread_start);
+  ret = select(/* (ignored) */ 0, &processx__readfds, &processx__writefds,
+	 &processx__exceptionfds, &timeout);
+  if (FD_ISSET(processx__notify_socket[0], &processx__readfds)) {
+    /* TODO: error */
+    recv(processx__notify_socket[0], buf, 10, 0);
+  } else {
+    /* Wake up the IO thread. */
+    PostQueuedCompletionStatus(iocp, 0, processx__key_none, 0);
+  }
+
+  /* This waits until the IO thread is done */
   WaitForSingleObject(processx__thread_done, INFINITE);
 
   return processx__thread_success;
