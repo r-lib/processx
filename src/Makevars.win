@@ -7,6 +7,8 @@ OBJECTS = init.o poll.o processx-connection.o			     \
 
 PKG_CFLAGS = -DSTRICT_R_HEADERS
 
+PKG_LIBS = -lws2_32
+
 all: tools/px.exe tools/interrupt.exe \
 	supervisor/supervisor.exe $(SHLIB)
 

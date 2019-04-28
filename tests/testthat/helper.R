@@ -59,3 +59,11 @@ get_pid_by_name_linux <- function(name) {
 skip_in_covr <- function() {
   if (Sys.getenv("R_COVR", "") == "true") skip("in covr")
 }
+
+httpbin <- local({
+  cache <- NULL
+  function(url = "") {
+    if (is.null(cache)) cache <<- curl::nslookup("eu.httpbin.org")
+    paste0("http://", cache, url)
+  }
+})

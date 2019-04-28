@@ -635,39 +635,118 @@ int processx_c_connection_is_closed(processx_connection_t *ccon) {
 }
 
 #ifdef _WIN32
+
+/* TODO: errors */
+int processx__socket_pair(SOCKET fds[2]) {
+  struct sockaddr_in inaddr;
+  struct sockaddr addr;
+  SOCKET lst = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  memset(&inaddr, 0, sizeof(inaddr));
+  memset(&addr, 0, sizeof(addr));
+  inaddr.sin_family = AF_INET;
+  inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  inaddr.sin_port = 0;
+  int yes = 1;
+  setsockopt(lst, SOL_SOCKET, SO_REUSEADDR, (char*)&yes, sizeof(yes));
+  bind(lst, (struct sockaddr *)&inaddr, sizeof(inaddr));
+  listen(lst, 1);
+  int len = sizeof(inaddr);
+  getsockname(lst, &addr,&len);
+  fds[0] = socket(AF_INET, SOCK_STREAM, 0);
+  connect(fds[0], &addr, len);
+  fds[1] = accept(lst,0,0);
+  closesocket(lst);
+  return 0;
+}
+
 int processx_c_connection_poll(processx_pollable_t pollables[],
 			       size_t npollables, int timeout) {
 
   int hasdata = 0;
-  size_t i, j = 0;
+  size_t i, j = 0, selj = 0;
   int *ptr;
   int timeleft = timeout;
   DWORD bytes;
   OVERLAPPED *overlapped = 0;
   ULONG_PTR key;
+  int *events;
 
-  ptr = (int*) R_alloc(npollables, sizeof(int));
+  FD_ZERO(&processx__readfds);
+  FD_ZERO(&processx__writefds);
+  FD_ZERO(&processx__exceptionfds);
 
+  events = (int*) R_alloc(npollables, sizeof(int));
+
+  /* First iteration, we call the pre-poll method, and collect the
+     handles for the IOCP, and the fds for select(). */
   for (i = 0; i < npollables; i++) {
     processx_pollable_t *el = pollables + i;
-    processx_file_handle_t handle = 0;
-    int again;
-    el->event = el->poll_func(el->object, 0, &handle, &again);
-    if (el->event == PXNOPIPE || el->event == PXCLOSED) {
-      /* Do nothing */
-    } else if (el->event == PXREADY) {
-      hasdata++;
-    } else if (el->event == PXSILENT && handle != 0) {
-      ptr[j] = i;
+    events[i] = PXSILENT;
+    if (el->pre_poll_func) events[i] = el->pre_poll_func(el);
+    switch (events[i]) {
+    case PXHANDLE:
       j++;
-    } else {
-      error("Cannnot poll pollable, not ready, and no handle");
+      break;
+    default:
+      break;
     }
   }
 
-  if (j == 0) return hasdata;
+  /* j contains the number of IOCP handles to poll */
+
+  ptr = (int*) R_alloc(j, sizeof(int));
+
+  for (i = 0, j = 0; i < npollables; i++) {
+    processx_pollable_t *el = pollables + i;
+
+    switch (events[i]) {
+    case PXNOPIPE:
+    case PXCLOSED:
+    case PXSILENT:
+      el->event = events[i];
+      break;
+
+    case PXREADY:
+      hasdata++;
+      el->event = events[i];
+      break;
+
+    case PXHANDLE:
+      el->event = PXSILENT;
+      ptr[j] = i;
+      j++;
+      break;
+
+    case PXSELECT: {
+      SEXP elem;
+      el->event = PXSILENT;
+      int k, n;
+      elem = VECTOR_ELT(el->fds, 0);
+      n = LENGTH(elem);
+      selj += n;
+      for (k = 0; k < n; k++) FD_SET(INTEGER(elem)[k], &processx__readfds);
+      elem = VECTOR_ELT(el->fds, 1);
+      n = LENGTH(elem);
+      selj += n;
+      for (k = 0; k < n; k++) FD_SET(INTEGER(elem)[k], &processx__writefds);
+      elem = VECTOR_ELT(el->fds, 2);
+      n = LENGTH(elem);
+      selj += n;
+      for (k = 0; k < n; k++) FD_SET(INTEGER(elem)[k], &processx__exceptionfds);
+    } }
+  }
+
+  if (j == 0 && selj == 0) return hasdata;
 
   if (hasdata) timeout = timeleft = 0;
+
+  if (selj != 0) {
+    processx__socket_pair(processx__notify_socket);
+    FD_SET(processx__notify_socket[0], &processx__readfds);
+    processx__select = 1;
+  } else {
+    processx__select = 0;
+  }
 
   while (timeout < 0 || timeleft >= 0) {
     int poll_timeout;
@@ -677,9 +756,52 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
       poll_timeout = timeleft;
     }
 
-    BOOL sres = processx__thread_getstatus(&bytes, &key, &overlapped,
-					   poll_timeout);
+    BOOL sres;
+    if (selj == 0) {
+      sres = processx__thread_getstatus(&bytes, &key, &overlapped,
+					poll_timeout);
+    } else {
+      sres = processx__thread_getstatus_select(&bytes, &key, &overlapped,
+					       poll_timeout);
+    }
     DWORD err = sres ? ERROR_SUCCESS : processx__thread_get_last_error();
+
+    /* See if there was any data from the curl sockets */
+
+    if (processx__select) {
+      for (i = 0; i < npollables; i++) {
+	if (events[i] == PXSELECT) {
+	  processx_pollable_t *el = pollables + i;
+	  SEXP elem;
+	  int k, n;
+	  int has = 0;
+	  elem = VECTOR_ELT(el->fds, 0);
+	  n = LENGTH(elem);
+	  for (k = 0; k < n; k++) {
+	    if (FD_ISSET(INTEGER(elem)[k], &processx__readfds)) has = 1;
+	    FD_SET(INTEGER(elem)[k], &processx__readfds);
+	  }
+	  elem = VECTOR_ELT(el->fds, 1);
+	  n = LENGTH(elem);
+	  for (k = 0; k < n; k++) {
+	    if (FD_ISSET(INTEGER(elem)[k], &processx__writefds)) has = 1;
+	    FD_SET(INTEGER(elem)[k], &processx__writefds);
+	  }
+	  elem = VECTOR_ELT(el->fds, 2);
+	  n = LENGTH(elem);
+	  for (k = 0; k < n; k++) {
+	    if (FD_ISSET(INTEGER(elem)[k], &processx__exceptionfds)) has = 1;
+	    FD_SET(INTEGER(elem)[k], &processx__exceptionfds);
+	  }
+	  if (has) {
+	    el->event = PXEVENT;
+	    hasdata++;
+	  }
+	}
+      }
+    }
+
+    /* See if there was any data from the IOCP */
 
     if (overlapped) {
       /* data */
@@ -706,20 +828,23 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 	  pollables[poll_idx].object == con) {
 	pollables[poll_idx].event = PXREADY;
 	hasdata++;
-	break;
       }
-
-    } else if (err != WAIT_TIMEOUT) {
+    } else if (err != WAIT_TIMEOUT && err != ERROR_SUCCESS) {
       PROCESSX_ERROR("Cannot poll", err);
     }
 
+    if (hasdata) break;
+
     R_CheckUserInterrupt();
-    timeleft -= PROCESSX_INTERRUPT_INTERVAL;
+    if (err == WAIT_TIMEOUT) timeleft -= PROCESSX_INTERRUPT_INTERVAL;
   }
 
   if (hasdata == 0) {
     for (i = 0; i < j; i++) pollables[ptr[i]].event = PXTIMEOUT;
   }
+
+  closesocket(processx__notify_socket[0]);
+  closesocket(processx__notify_socket[1]);
 
   return hasdata;
 }
@@ -728,7 +853,7 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 
 static int processx__poll_decode(short code) {
   if (code & POLLNVAL) return PXCLOSED;
-  if (code & POLLIN || code & POLLHUP) return PXREADY;
+  if (code & POLLIN || code & POLLHUP || code & POLLOUT) return PXREADY;
   return PXSILENT;
 }
 
@@ -741,35 +866,81 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
   struct pollfd *fds;
   int *ptr;
   int ret;
+  int *events;
 
   if (npollables == 0) return 0;
 
   /* Need to allocate this, because we need to put in the fds, maybe */
-  ptr = (int*) R_alloc(npollables, sizeof(int));
-  fds = (struct pollfd*) R_alloc(npollables, sizeof(struct pollfd));
+  events = (int*) R_alloc(npollables, sizeof(int));
 
-  /* Need to call the poll method for every pollable */
+  /* First iteration, we call the pre-poll method, and collect the
+     fds to poll. */
   for (i = 0; i < npollables; i++) {
     processx_pollable_t *el = pollables + i;
-    processx_file_handle_t handle;
-    int again;
-    el->event = el->poll_func(el->object, 0, &handle, &again);
-    if (el->event == PXNOPIPE || el->event == PXCLOSED) {
-      /* Do nothing */
-    } else if (el->event == PXREADY) {
-      hasdata++;
-    } else if (el->event == PXSILENT && handle >= 0) {
-      fds[j].fd = handle;
-      fds[j].events = POLLIN;
-      fds[j].revents = 0;
-      ptr[j] = (int) i;
+    events[i] = PXSILENT;
+    if (el->pre_poll_func) events[i] = el->pre_poll_func(el);
+    switch (events[i]) {
+    case PXHANDLE:
       j++;
-    } else {
-      error("Cannot poll pollable: not ready and no fd");
+      break;
+    case PXSELECT: {
+      /* This is three vectors of fds to poll, in an R list */
+      int w;
+      for (w = 0; w < 3; w++) {
+        j += LENGTH(VECTOR_ELT(el->fds, w));
+      } }
+    default:
+      break;
     }
   }
 
   /* j contains the number of fds to poll now */
+
+  fds = (struct pollfd*) R_alloc(j, sizeof(struct pollfd));
+  ptr = (int*) R_alloc(j, sizeof(int));
+
+  /* Need to go over them again, collect the ones that we need to poll */
+  for (i = 0, j = 0; i < npollables; i++) {
+    processx_pollable_t *el = pollables + i;
+    switch (events[i]) {
+    case PXNOPIPE:
+    case PXCLOSED:
+    case PXSILENT:
+      el->event = events[i];
+      break;
+
+    case PXREADY:
+      hasdata++;
+      el->event = events[i];
+      break;
+
+    case PXHANDLE:
+      el->event = PXSILENT;
+      fds[j].fd = el->handle;
+      fds[j].events = POLLIN;
+      fds[j].revents = 0;
+      ptr[j] = (int) i;
+      j++;
+      break;
+
+    case PXSELECT: {
+      int pollevs[3] = { POLLIN, POLLOUT, POLLIN | POLLOUT };
+      int w;
+      el->event = PXSILENT;
+      for (w = 0; w < 3; w++) {
+        SEXP elem = VECTOR_ELT(el->fds, w);
+        int k, n = LENGTH(elem);
+        for (k = 0; k < n; k++) {
+          fds[j].fd = INTEGER(elem)[k];
+          fds[j].events = pollevs[w];
+          fds[j].revents = 0;
+          ptr[j] = (int) i;
+          j++;
+        }
+      }
+      break; }
+    }
+  }
 
   /* Nothing to poll */
   if (j == 0) return hasdata;
@@ -789,8 +960,17 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 
   } else {
     for (i = 0; i < j; i++) {
-      pollables[ptr[i]].event = processx__poll_decode(fds[i].revents);
-      hasdata += (pollables[ptr[i]].event == PXREADY);
+      if (events[ptr[i]] == PXSELECT) {
+        if (pollables[ptr[i]].event == PXSILENT) {
+          int ev = fds[i].revents;
+          if (ev & (POLLNVAL | POLLIN | POLLHUP | POLLOUT)) {
+            pollables[ptr[i]].event = PXEVENT;
+          }
+        }
+      } else {
+        pollables[ptr[i]].event = processx__poll_decode(fds[i].revents);
+        hasdata += (pollables[ptr[i]].event == PXREADY);
+      }
     }
   }
 
@@ -859,7 +1039,7 @@ void processx__connection_start_read(processx_connection_t *ccon) {
  *    to convert it to UTF8.
  */
 
-#define PROCESSX__I_POLL_FUNC_CONNECTION_READY do {			\
+#define PROCESSX__I_PRE_POLL_FUNC_CONNECTION_READY do {			\
   if (!ccon) return PXNOPIPE;						\
   if (ccon->is_closed_) return PXCLOSED;				\
   if (ccon->is_eof_) return PXREADY;					\
@@ -870,37 +1050,47 @@ void processx__connection_start_read(processx_connection_t *ccon) {
     if (ccon->utf8_data_size > 0) return PXREADY;			\
   } } while (0)
 
-int processx_i_poll_func_connection(
-  void * object,
-  int status,
-  processx_file_handle_t *handle,
-  int *again) {
+int processx_i_pre_poll_func_connection(processx_pollable_t *pollable) {
 
-  processx_connection_t *ccon = (processx_connection_t*) object;
+  processx_connection_t *ccon = pollable->object;
 
-  PROCESSX__I_POLL_FUNC_CONNECTION_READY;
+  PROCESSX__I_PRE_POLL_FUNC_CONNECTION_READY;
 
 #ifdef _WIN32
   processx__connection_start_read(ccon);
   /* Starting to read may actually get some data, or an EOF, so check again */
-  PROCESSX__I_POLL_FUNC_CONNECTION_READY;
-  if (handle) *handle = ccon->handle.overlapped.hEvent;
+  PROCESSX__I_PRE_POLL_FUNC_CONNECTION_READY;
+  pollable->handle = ccon->handle.overlapped.hEvent;
 #else
-  if (handle) *handle = ccon->handle;
+  pollable->handle = ccon->handle;
 #endif
 
-  if (again) *again = 0;
-
-  return PXSILENT;
+  return PXHANDLE;
 }
 
 int processx_c_pollable_from_connection(
   processx_pollable_t *pollable,
   processx_connection_t *ccon) {
 
-  pollable->poll_func = processx_i_poll_func_connection;
+  pollable->pre_poll_func = processx_i_pre_poll_func_connection;
   pollable->object = ccon;
   pollable->free = 0;
+  pollable->fds = R_NilValue;
+  return 0;
+}
+
+int processx_i_pre_poll_func_curl(processx_pollable_t *pollable) {
+  return PXSELECT;
+}
+
+int processx_c_pollable_from_curl(
+  processx_pollable_t *pollable,
+  SEXP fds) {
+
+  pollable->pre_poll_func = processx_i_pre_poll_func_curl;
+  pollable->object = NULL;
+  pollable->free = 0;
+  pollable->fds = fds;
   return 0;
 }
 

@@ -139,7 +139,7 @@ process_get_error_file <- function(self, private) {
   private$stderr
 }
 
-poll_codes <- c("nopipe", "ready", "timeout", "closed", "silent")
+poll_codes <- c("nopipe", "ready", "timeout", "closed", "silent", "event")
 
 process_poll_io <- function(self, private, ms) {
   poll(list(self), ms)[[1]]

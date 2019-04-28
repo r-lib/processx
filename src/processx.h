@@ -11,6 +11,8 @@ extern "C" {
 #define _POSIX_C_SOURCE  200809L
 #endif
 
+#include "processx-connection.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -26,7 +28,6 @@ extern "C" {
 #endif
 
 #include <Rinternals.h>
-#include "processx-connection.h"
 
 #ifdef _WIN32
 #include "win/processx-win.h"
@@ -89,6 +90,12 @@ SEXP processx_base64_decode(SEXP array);
 #define PXCLOSED  4		/* fd was already closed when started polling */
 #define PXSILENT  5		/* still open, but no data or EOF for now. No timeout, either */
                                 /* but there were events on other fds */
+#define PXEVENT   6             /* some event, this is used for curl fds */
+
+/* These statuses can be only returned by the pre-poll functions */
+
+#define PXHANDLE  7             /* need to poll the set handle */
+#define PXSELECT  8             /* need to poll/select the set fd */
 
 typedef struct {
   int windows_verbatim_args;

@@ -68,21 +68,41 @@
 #' }
 
 poll <- function(processes, ms) {
-  assert_that(is_list_of_pollables(processes))
+  pollables <- processes
+  assert_that(is_list_of_pollables(pollables))
   assert_that(is_integerish_scalar(ms))
-  if (length(processes) == 0) {
-    return(structure(list(), names = names(processes)))
+
+  if (length(pollables) == 0) {
+    return(structure(list(), names = names(pollables)))
   }
-  conn <- vapply(processes, is_connection, logical(1))
-  processes[!conn] <- lapply(processes[!conn], function(p) {
+
+  proc <- vapply(pollables, inherits, logical(1), "process")
+  conn <- vapply(pollables, is_connection, logical(1))
+  type <- ifelse(proc, 1L, ifelse(conn, 2L, 3L))
+
+  pollables[proc] <- lapply(pollables[proc], function(p) {
     list(get_private(p)$status, get_private(p)$poll_pipe)
   })
 
-  res <- .Call(c_processx_poll, processes, conn, as.integer(ms))
+  res <- .Call(c_processx_poll, pollables, type, as.integer(ms))
   res <- lapply(res, function(x) poll_codes[x])
-  res[!conn] <- lapply(res[!conn], function(x) {
+  res[proc] <- lapply(res[proc], function(x) {
     set_names(x, c("output", "error", "process"))
   })
-  names(res) <- names(processes)
+  names(res) <- names(pollables)
   res
+}
+
+#' Create a pollable object from a curl multi handle's file descriptors
+#'
+#' @param fds A list of file descriptors, as returned by
+#'   [curl::multi_fdset()].
+#' @return Pollable object, that be used with [poll()] directly.
+#'
+#' @export
+
+curl_fds <- function(fds) {
+  structure(
+    list(fds$reads, fds$writes, fds$exceptions),
+    class = "processx_curl_fds")
 }

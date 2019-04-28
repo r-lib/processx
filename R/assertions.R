@@ -72,7 +72,8 @@ is_list_of_pollables <- function(x) {
   if (!is.list(x)) return(FALSE)
   proc <- vapply(x, inherits, FUN.VALUE = logical(1), "process")
   conn <- vapply(x, is_connection, logical(1))
-  all(proc | conn)
+  curl <- vapply(x, inherits, FUN.VALUE = logical(1), "processx_curl_fds")
+  all(proc | conn | curl)
 }
 
 on_failure(is_list_of_pollables) <- function(call, env) {
