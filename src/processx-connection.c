@@ -834,9 +834,8 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
     }
 
     if (hasdata) break;
-
     R_CheckUserInterrupt();
-    if (err == WAIT_TIMEOUT) timeleft -= PROCESSX_INTERRUPT_INTERVAL;
+    timeleft -= PROCESSX_INTERRUPT_INTERVAL;
   }
 
   if (hasdata == 0) {
