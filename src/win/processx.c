@@ -859,6 +859,7 @@ void processx__finalizer(SEXP status) {
   }
 
   if (handle->hProcess) CloseHandle(handle->hProcess);
+  handle->hProcess = NULL;
   R_ClearExternalPtr(status);
   processx__handle_destroy(handle);
 }
@@ -1100,6 +1101,7 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   DWORD err, err2, exitcode;
 
+  if (!handle) return R_NilValue;
   if (handle->collected) return R_NilValue;
 
   err2 = WAIT_TIMEOUT;
@@ -1134,6 +1136,10 @@ SEXP processx_is_alive(SEXP status) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   DWORD err, exitcode;
 
+  /* This might happen if it was finalized at the end of the session,
+     even though there are some references to the R object. */
+  if (!handle) return ScalarLogical(0);
+
   if (handle->collected) return ScalarLogical(0);
 
   /* Otherwise try to get exit code */
@@ -1154,6 +1160,10 @@ SEXP processx_get_exit_status(SEXP status) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   DWORD err, exitcode;
 
+  /* This might happen if it was finalized at the end of the session,
+     even though there are some references to the R object. */
+  if (!handle) return R_NilValue;
+
   if (handle->collected) return ScalarInteger(handle->exitcode);
 
   /* Otherwise try to get exit code */
@@ -1172,6 +1182,7 @@ SEXP processx_signal(SEXP status, SEXP signal) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   DWORD err, exitcode = STILL_ACTIVE;
 
+  if (!handle) return ScalarLogical(0);
   if (handle->collected) return ScalarLogical(0);
 
   switch (INTEGER(signal)[0]) {
@@ -1229,7 +1240,9 @@ SEXP processx_kill(SEXP status, SEXP grace) {
 SEXP processx_get_pid(SEXP status) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
 
-  if (!handle) { error("Internal processx error, handle already removed"); }
+  /* This might happen if it was finalized at the end of the session,
+     even though there are some references to the R object. */
+  if (!handle) return ScalarInteger(NA_INTEGER);
 
   return ScalarInteger(handle->dwProcessId);
 }
