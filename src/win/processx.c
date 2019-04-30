@@ -1101,8 +1101,8 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   DWORD err, err2, exitcode;
 
-  if (!handle) return R_NilValue;
-  if (handle->collected) return R_NilValue;
+  if (!handle) return ScalarLogical(1);
+  if (handle->collected) return ScalarLogical(1);
 
   err2 = WAIT_TIMEOUT;
   while (ctimeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
