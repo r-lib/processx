@@ -1188,11 +1188,6 @@ SEXP processx_signal(SEXP status, SEXP signal) {
     }
 
     if (exitcode == STILL_ACTIVE) {
-
-      /* We only cleanup the tree if the process is still running. */
-      /* TODO: we are not running this for now, until we can properly
-	 work around pid reuse. */
-      /* processx__cleanup_child_tree(handle->dwProcessId); */
       err = processx__terminate(handle, status);
       return ScalarLogical(err != 0);
 

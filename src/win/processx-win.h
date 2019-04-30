@@ -33,8 +33,6 @@ int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child
 
 void processx__handle_destroy(processx_handle_t *handle);
 
-void processx__cleanup_child_tree(DWORD pid);
-
 #define PROCESSX_ERROR(m,c) processx__error((m),(c),__FILE__,__LINE__)
 void processx__error(const char *message, DWORD errorcode, const char *file, int line);
 
