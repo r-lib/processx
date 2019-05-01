@@ -446,7 +446,7 @@ processx_connection_t *processx_c_connection_create(
 
   if (r_connection) {
     result = PROTECT(R_MakeExternalPtr(con, R_NilValue, R_NilValue));
-    R_RegisterCFinalizerEx(result, processx__connection_xfinalizer, 1);
+    R_RegisterCFinalizerEx(result, processx__connection_xfinalizer, 0);
     class = PROTECT(ScalarString(mkChar("processx_connection")));
     setAttrib(result, R_ClassSymbol, class);
     *r_connection = result;
@@ -473,11 +473,14 @@ void processx_c_connection_destroy(processx_connection_t *ccon) {
   if (processx__connection_schedule_destroy(ccon)) return;
 #endif
 
-  if (ccon->iconv_ctx) Riconv_close(ccon->iconv_ctx);
+  if (ccon->iconv_ctx) {
+    Riconv_close(ccon->iconv_ctx);
+    ccon->iconv_ctx = NULL;
+  }
 
-  if (ccon->buffer) free(ccon->buffer);
-  if (ccon->utf8) free(ccon->utf8);
-  if (ccon->encoding) free(ccon->encoding);
+  if (ccon->buffer) { free(ccon->buffer); ccon->buffer = NULL; }
+  if (ccon->utf8) { free(ccon->utf8); ccon->utf8 = NULL; }
+  if (ccon->encoding) { free(ccon->encoding); ccon->encoding = NULL; }
 
  #ifdef _WIN32
   if (ccon->handle.overlapped.hEvent) {
