@@ -1,8 +1,8 @@
 
 # dev
 
-* Fix a crash on Windows, when a connection that has a pending read internally
-  is finalized.
+* Fix a crash on Windows, when a connection that has a pending read
+  internally is finalized.
 
 # processx 3.3.0
 
