@@ -1,5 +1,5 @@
 
-# dev
+# processx 3.3.1
 
 * Fix a crash on Windows, when a connection that has a pending read
   internally is finalized.
