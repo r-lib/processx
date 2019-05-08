@@ -14,3 +14,4 @@
 ^.*\.dSYM$
 ^CODE_OF_CONDUCT\.md$
 ^processx\.Rproj$
+^pkgdown$
