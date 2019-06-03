@@ -5,9 +5,9 @@
 \title{Start a process}
 \usage{
 process_initialize(self, private, command, args, stdin, stdout, stderr,
-  connections, poll_connection, env, cleanup, cleanup_tree, wd, echo_cmd,
-  supervise, windows_verbatim_args, windows_hide_window, encoding,
-  post_process)
+  pty, pty_options, connections, poll_connection, env, cleanup,
+  cleanup_tree, wd, echo_cmd, supervise, windows_verbatim_args,
+  windows_hide_window, encoding, post_process)
 }
 \arguments{
 \item{self}{this}
@@ -23,6 +23,8 @@ process_initialize(self, private, command, args, stdin, stdout, stderr,
 \item{stdout}{Standard output, NULL to ignore, TRUE for temp file.}
 
 \item{stderr}{Standard error, NULL to ignore, TRUE for temp file.}
+
+\item{pty}{Whether we create a PTY.}
 
 \item{connections}{Connections to inherit in the child process.}
 

@@ -23,9 +23,9 @@
 #' @keywords internal
 
 process_initialize <- function(self, private, command, args,
-                               stdin, stdout, stderr, pty, connections,
-                               poll_connection, env, cleanup, cleanup_tree,
-                               wd, echo_cmd, supervise,
+                               stdin, stdout, stderr, pty, pty_options,
+                               connections, poll_connection, env, cleanup,
+                               cleanup_tree, wd, echo_cmd, supervise,
                                windows_verbatim_args, windows_hide_window,
                                encoding, post_process) {
 
@@ -38,6 +38,7 @@ process_initialize <- function(self, private, command, args,
     is_string_or_null(stdout),
     is_string_or_null(stderr),
     is_flag(pty),
+    is.list(pty_options), is_named(pty_options),
     is_connection_list(connections),
     is.null(poll_connection) || is_flag(poll_connection),
     is.null(env) || is_named_character(env),
@@ -55,6 +56,11 @@ process_initialize <- function(self, private, command, args,
             "killed on GC")
     cleanup <- TRUE
   }
+
+  def <- default_pty_options()
+  pty_options <- modifyList(def, pty_options)
+  ## TODO: warn/error (?) for unknown options
+  pty_options <- pty_options[names(def)]
 
   private$command <- command
   private$args <- args
@@ -93,8 +99,8 @@ process_initialize <- function(self, private, command, args,
   }
   private$status <- .Call(
     c_processx_exec,
-    command, c(command, args), stdin, stdout, stderr, pty, connections, env,
-    windows_verbatim_args, windows_hide_window,
+    command, c(command, args), stdin, stdout, stderr, pty, pty_options,
+    connections, env, windows_verbatim_args, windows_hide_window,
     private, cleanup, wd, encoding,
     paste0("PROCESSX_", private$tree_id, "=YES")
   )

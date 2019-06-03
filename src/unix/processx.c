@@ -13,7 +13,7 @@ static void processx__child_init(processx_handle_t *handle, int (*pipes)[2],
 				 const char *std_out,
 				 const char *std_err,
                                  const char *pty_name, char **env,
-				 processx_options_t *options,
+                                 processx_options_t *options,
 				 const char *tree_id);
 
 static SEXP processx__make_handle(SEXP private, int cleanup);
@@ -42,6 +42,9 @@ void processx__create_connections(processx_handle_t *handle, SEXP private,
 #else
 extern char **environ;
 #endif
+
+#include <termios.h>
+#include <sys/ioctl.h>
 
 extern processx__child_list_t child_list_head;
 extern processx__child_list_t *child_list;
@@ -158,7 +161,25 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
     }
 #endif
 
-    /* TODO: set terminal attributes and size */
+    struct termios tp, save;
+
+    if (tcgetattr(slave_fd, &tp) == -1) {
+      processx__write_int(error_fd, -errno);
+      raise(SIGKILL);
+    }
+
+    if (options->pty_echo) {
+      tp.c_lflag |= ECHO;
+    } else {
+      tp.c_lflag &= ~ECHO;
+    }
+
+    if (tcsetattr(slave_fd, TCSAFLUSH, &tp) == -1) {
+      processx__write_int(error_fd, -errno);
+      raise(SIGKILL);
+    }
+
+    /* TODO: set other terminal attributes and size */
 
     /* Duplicate pty slave to be child's stdin, stdout, and stderr */
     if (dup2(slave_fd, STDIN_FILENO) != STDIN_FILENO) {
@@ -388,10 +409,10 @@ skip:
 }
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
-		   SEXP std_err, SEXP pty, SEXP connections, SEXP env,
-		   SEXP windows_verbatim_args, SEXP windows_hide_window,
-		   SEXP private, SEXP cleanup,  SEXP wd, SEXP encoding,
-		   SEXP tree_id) {
+		   SEXP std_err, SEXP pty, SEXP pty_options,
+                   SEXP connections, SEXP env, SEXP windows_verbatim_args,
+                   SEXP windows_hide_window, SEXP private, SEXP cleanup,
+                   SEXP wd, SEXP encoding, SEXP tree_id) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
@@ -442,6 +463,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
     if (pty_master_fd == -1) {
       PROCESSX__ERROR("Cannot open pty", strerror(errno));
     }
+    options.pty_echo = LOGICAL(VECTOR_ELT(pty_options, 0))[0];
 
   } else {
     /* Create pipes, if requested. */
