@@ -417,14 +417,14 @@ process <- R6::R6Class(
   public = list(
 
     initialize = function(command = NULL, args = character(),
-      stdin = NULL, stdout = NULL, stderr = NULL, connections = list(),
-      poll_connection = NULL, env = NULL, cleanup = TRUE,
-      cleanup_tree = FALSE, wd = NULL, echo_cmd = FALSE, supervise = FALSE,
-      windows_verbatim_args = FALSE, windows_hide_window = FALSE,
-      encoding = "",  post_process = NULL)
+      stdin = NULL, stdout = NULL, stderr = NULL, pty = FALSE,
+      connections = list(), poll_connection = NULL, env = NULL,
+      cleanup = TRUE, cleanup_tree = FALSE, wd = NULL, echo_cmd = FALSE,
+      supervise = FALSE, windows_verbatim_args = FALSE,
+      windows_hide_window = FALSE, encoding = "",  post_process = NULL)
 
       process_initialize(self, private, command, args, stdin,
-                         stdout, stderr, connections, poll_connection,
+                         stdout, stderr, pty, connections, poll_connection,
                          env, cleanup, cleanup_tree, wd, echo_cmd,
                          supervise, windows_verbatim_args,
                          windows_hide_window, encoding, post_process),
@@ -590,6 +590,7 @@ process <- R6::R6Class(
     stdin = NULL,         # stdin argument or stream
     stdout = NULL,        # stdout argument or stream
     stderr = NULL,        # stderr argument or stream
+    pty = NULL,           # whether we should create a PTY
     pstdin = NULL,        # the original stdin argument
     pstdout = NULL,       # the original stdout argument
     pstderr = NULL,       # the original stderr argument

@@ -49,4 +49,20 @@ void processx__create_connections(processx_handle_t *handle, SEXP private,
       private,
       encoding);
   }
+
+  if (handle->ptyfd >= 0) {
+    handle->fd0 = handle->ptyfd;
+    handle->pipes[0] = processx__create_connection(
+      handle->ptyfd,
+      "stdin_pipe",
+      private,
+      encoding);
+
+    handle->fd1 = handle->ptyfd;
+    handle->pipes[1] = processx__create_connection(
+      handle->ptyfd,
+      "stdout_pipe",
+      private,
+      encoding);
+  }
 }

@@ -8,6 +8,7 @@
 #' @param stdin Standard input, NULL to ignore.
 #' @param stdout Standard output, NULL to ignore, TRUE for temp file.
 #' @param stderr Standard error, NULL to ignore, TRUE for temp file.
+#' @param pty Whether we create a PTY.
 #' @param connections Connections to inherit in the child process.
 #' @param poll_connection Whether to create a connection for polling.
 #' @param env Environment vaiables.
@@ -22,7 +23,7 @@
 #' @keywords internal
 
 process_initialize <- function(self, private, command, args,
-                               stdin, stdout, stderr, connections,
+                               stdin, stdout, stderr, pty, connections,
                                poll_connection, env, cleanup, cleanup_tree,
                                wd, echo_cmd, supervise,
                                windows_verbatim_args, windows_hide_window,
@@ -36,6 +37,7 @@ process_initialize <- function(self, private, command, args,
     is_string_or_null(stdin),
     is_string_or_null(stdout),
     is_string_or_null(stderr),
+    is_flag(pty),
     is_connection_list(connections),
     is.null(poll_connection) || is_flag(poll_connection),
     is.null(env) || is_named_character(env),
@@ -91,7 +93,7 @@ process_initialize <- function(self, private, command, args,
   }
   private$status <- .Call(
     c_processx_exec,
-    command, c(command, args), stdin, stdout, stderr, connections, env,
+    command, c(command, args), stdin, stdout, stderr, pty, connections, env,
     windows_verbatim_args, windows_hide_window,
     private, cleanup, wd, encoding,
     paste0("PROCESSX_", private$tree_id, "=YES")
