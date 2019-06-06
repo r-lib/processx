@@ -104,7 +104,13 @@ If it is \code{TRUE}, then the \code{stdin}, \code{stdout} and \code{stderr} arg
 must be \code{NULL}. If a pseudo terminal is created, then processx
 will create pipes for standard input and standard output. There is
 no separate pipe for standard error, because there is no way to
-distinguish between stdout and stderr on a pty.
+distinguish between stdout and stderr on a pty. Note that the
+standard output connection of the pty is \emph{blocking}, so we always
+poll the standard output connection before reading from it using
+the \code{$read_output()} method. Also, because \code{$read_output_lines()}
+could still block if no complete line is available, this function
+always fails if the process has a pty. Use \code{$read_output()} to
+read from ptys.
 \item \code{pty_options}: Unix pseudo terminal options, a named list. see
 \code{\link[=default_pty_options]{default_pty_options()}} for details and defaults.
 \item \code{connections}: A list of connections to pass to the child process.

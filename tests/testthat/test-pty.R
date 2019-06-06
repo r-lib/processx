@@ -48,3 +48,16 @@ test_that("pty echo", {
   if (pr[["output"]] != "ready") stop("no output")
   expect_equal(p$read_output(), "bar\r\nfoobar\r\n")
 })
+
+test_that("read_output_lines() fails for pty", {
+  skip_other_platforms("unix")
+
+  p <- process$new("cat", pty = TRUE)
+  p$write_input("foobar\n")
+  expect_error(p$read_output_lines(), "Cannot read lines from a pty")
+
+  pr <- p$poll_io(300)
+  expect_equal(pr[["output"]], "ready")
+  if (pr[["output"]] != "ready") stop("no output")
+  expect_equal(p$read_output(), "foobar\r\n")
+})

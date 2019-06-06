@@ -102,7 +102,13 @@ NULL
 #'     must be `NULL`. If a pseudo terminal is created, then processx
 #'     will create pipes for standard input and standard output. There is
 #'     no separate pipe for standard error, because there is no way to
-#'     distinguish between stdout and stderr on a pty.
+#'     distinguish between stdout and stderr on a pty. Note that the
+#'     standard output connection of the pty is _blocking_, so we always
+#'     poll the standard output connection before reading from it using
+#'     the `$read_output()` method. Also, because `$read_output_lines()`
+#'     could still block if no complete line is available, this function
+#'     always fails if the process has a pty. Use `$read_output()` to
+#'     read from ptys.
 #' * `pty_options`: Unix pseudo terminal options, a named list. see
 #'     [default_pty_options()] for details and defaults.
 #' * `connections`: A list of connections to pass to the child process.
