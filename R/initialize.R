@@ -58,7 +58,7 @@ process_initialize <- function(self, private, command, args,
   }
 
   def <- default_pty_options()
-  pty_options <- modifyList(def, pty_options)
+  pty_options <- utils::modifyList(def, pty_options)
   ## TODO: warn/error (?) for unknown options
   pty_options <- pty_options[names(def)]
 
