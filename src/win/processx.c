@@ -886,12 +886,11 @@ void processx__handle_destroy(processx_handle_t *handle) {
   free(handle);
 }
 
-SEXP processx_exec(SEXP command, SEXP args,
-		   SEXP std_in, SEXP std_out, SEXP std_err,
-		   SEXP connections, SEXP env,
-		   SEXP windows_verbatim_args, SEXP windows_hide,
-		   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding,
-		   SEXP tree_id) {
+SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
+                   SEXP std_err, SEXP pty, SEXP pty_options,
+		   SEXP connections, SEXP env, SEXP windows_verbatim_args,
+                   SEXP windows_hide, SEXP private, SEXP cleanup,
+                   SEXP wd, SEXP encoding, SEXP tree_id) {
 
   const char *cstd_in = isNull(std_in) ? 0 : CHAR(STRING_ELT(std_in, 0));
   const char *cstd_out = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
