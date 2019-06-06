@@ -1,10 +1,31 @@
 
 #ifndef _WIN32
 
-#include "../processx.h"
+#if ! defined(__sun)
+        /* Prevents ptsname() declaration being visible on Solaris 8 */
+#if ! defined(_XOPEN_SOURCE) || _XOPEN_SOURCE < 600
+#define _XOPEN_SOURCE 600
+#endif
+#endif
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <stdio.h>
+
+/* Some implementations don't have posix_openpt() */
+
+#if defined(__sun)                      /* Not on Solaris 8 */
+#define NO_POSIX_OPENPT
+#endif
+
+#ifdef NO_POSIX_OPENPT
+static int posix_openpt(int flags) {
+    return open("/dev/ptmx", flags);
+}
+
+#endif
+
+#include "../processx.h"
 
 /* Internals */
 
@@ -51,19 +72,6 @@ extern processx__child_list_t child_list_head;
 extern processx__child_list_t *child_list;
 extern processx__child_list_t child_free_list_head;
 extern processx__child_list_t *child_free_list;
-
-/* Some implementations don't have posix_openpt() */
-
-#if defined(__sun)                      /* Not on Solaris 8 */
-#define NO_POSIX_OPENPT
-#endif
-
-#ifdef NO_POSIX_OPENPT
-static int posix_openpt(int flags) {
-    return open("/dev/ptmx", flags);
-}
-
-#endif
 
 /* We are trying to make sure that the variables in the library are
    properly set to their initial values after a library (re)load.
@@ -162,7 +170,7 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
     }
 #endif
 
-    struct termios tp, save;
+    struct termios tp;
 
     if (tcgetattr(slave_fd, &tp) == -1) {
       processx__write_int(error_fd, -errno);
@@ -434,7 +442,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   int signal_pipe[2] = { -1, -1 };
   int (*pipes)[2];
   int i;
-  int pty_master_fd, pty_slave_fd;
+  int pty_master_fd;
 #define R_PROCESSX_PTY_NAME_LEN 2014
   char pty_namex[R_PROCESSX_PTY_NAME_LEN];
   char *pty_name = cpty ? pty_namex : 0;
