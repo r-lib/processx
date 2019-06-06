@@ -49,6 +49,7 @@ process_get_poll_connection <- function(self, private) {
 process_read_output <- function(self, private, n) {
   "!DEBUG process_read_output `private$get_short_name()`"
   con <- process_get_output_connection(self, private)
+  if (private$pty) if (poll(list(con), 0)[[1]] == "timeout") return("")
   .Call(c_processx_connection_read_chars, con, n)
 }
 
@@ -62,6 +63,7 @@ process_read_error <- function(self, private, n) {
 process_read_output_lines <- function(self, private, n) {
   "!DEBUG process_read_output_lines `private$get_short_name()`"
   con <- process_get_output_connection(self, private)
+  if (private$pty) if (poll(list(con), 0)[[1]] == "timeout") return(character())
   .Call(c_processx_connection_read_lines, con, n)
 }
 

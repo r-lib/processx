@@ -86,6 +86,8 @@ process_initialize <- function(self, private, command, args,
   private$pstdin <- stdin
   private$pstdout <- stdout
   private$pstderr <- stderr
+  private$pty <- pty
+  private$pty_options <- pty_options
   private$connections <- connections
   private$env <- env
   private$echo_cmd <- echo_cmd
