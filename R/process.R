@@ -14,6 +14,7 @@ NULL
 #' ```
 #' p <- process$new(command = NULL, args,
 #'                  stdin = NULL, stdout = NULL, stderr = NULL,
+#'                  pty = FALSE, pty_options = list(),
 #'                  connections = list(), poll_connection = NULL,
 #'                  env = NULL, cleanup = TRUE, cleanup_tree = FALSE,
 #'                  wd = NULL, echo_cmd = FALSE, supervise = FALSE,
@@ -95,6 +96,15 @@ NULL
 #'     `"|"`: create a connection for it; `"2>&1"`: redirect it to the
 #'     same connection (i.e. pipe or file) as `stdout`. `"2>&1"` is a
 #'     way to keep standard output and error correctly interleaved.
+#' * `pty`: Whether to create a pseudo terminal (pty) for the background
+#'     process. This is currently only supported on Unix systems.
+#'     If it is `TRUE`, then the `stdin`, `stdout` and `stderr` arguments
+#'     must be `NULL`. If a pseudo terminal is created, then processx
+#'     will create pipes for standard input and standard output. There is
+#'     no separate pipe for standard error, because there is no way to
+#'     distinguish between stdout and stderr on a pty.
+#' * `pty_options`: Unix pseudo terminal options, a named list. see
+#'     [default_pty_options()] for details and defaults.
 #' * `connections`: A list of connections to pass to the child process.
 #'     This is an experimental feature currently.
 #' * `poll_connection`: Whether to create an extra connection to the process
@@ -733,6 +743,14 @@ process_close_connections <- function(self, private) {
   }
 }
 
+#' Default options for pseudo terminals (ptys)
+#'
+#' @return Named list of default values of pty options.
+#'
+#' Options and default values:
+#' * `echo` whether to keep the echo on the terminal. `FALSE` turns echo
+#'   off.
+#'
 #' @export
 
 default_pty_options <- function() {

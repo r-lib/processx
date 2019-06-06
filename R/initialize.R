@@ -57,6 +57,19 @@ process_initialize <- function(self, private, command, args,
     cleanup <- TRUE
   }
 
+  if (pty && os_type() != "unix") {
+    stop("`pty == TRUE` is only implemented on Unix")
+  }
+  if (pty && !is.null(stdin)) {
+    stop("`stdin` must be `NULL` if `pty == TRUE`")
+  }
+  if (pty && !is.null(stdout)) {
+    stop("`stdout` must be `NULL` if `pty == TRUE`")
+  }
+  if (pty && !is.null(stderr)) {
+    stop("`stderr` must be `NULL` if `pty == TRUE`")
+  }
+
   def <- default_pty_options()
   pty_options <- utils::modifyList(def, pty_options)
   if (length(bad <- setdiff(names(def), names(pty_options)))) {
