@@ -211,3 +211,11 @@ disable_crash_dialog <- function() {
 has_package <- function(pkg) {
   requireNamespace(pkg, quietly = TRUE)
 }
+
+tty_echo_off <- function() {
+  .Call(c_processx__echo_off)
+}
+
+tty_echo_on <- function() {
+  .Call(c_processx__echo_on)
+}

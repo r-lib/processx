@@ -1,6 +1,9 @@
 
 #include "../processx.h"
 
+#include <termios.h>
+#include <sys/ioctl.h>
+
 char *processx__tmp_string(SEXP str, int i) {
   const char *ptr = CHAR(STRING_ELT(str, i));
   char *cstr = R_alloc(1, (int) strlen(ptr) + 1);
@@ -63,5 +66,37 @@ SEXP processx_disable_crash_dialog() {
 #ifdef SIGBUS
   sigaction(SIGBUS,  &action, /* oldact= */ NULL);
 #endif
+  return R_NilValue;
+}
+
+SEXP processx__echo_on() {
+  struct termios tp;
+
+  if (tcgetattr(STDOUT_FILENO, &tp) == -1) {
+    error("Cannot turn terminal echo on");
+  }
+
+  tp.c_lflag |= ECHO;
+
+  if (tcsetattr(STDOUT_FILENO, TCSAFLUSH, &tp) == -1) {
+    error("Cannot turn terminal echo on");
+  }
+
+  return R_NilValue;
+}
+
+SEXP processx__echo_off() {
+  struct termios tp;
+
+  if (tcgetattr(STDOUT_FILENO, &tp) == -1) {
+    error("Cannot turn terminal echo off");
+  }
+
+  tp.c_lflag &= ~ECHO;
+
+  if (tcsetattr(STDOUT_FILENO, TCSAFLUSH, &tp) == -1) {
+    error("Cannot turn terminal echo off");
+  }
+
   return R_NilValue;
 }

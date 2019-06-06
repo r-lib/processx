@@ -24,6 +24,7 @@ typedef struct processx_handle_s {
   int cleanup;
   double create_time;
   processx_connection_t *pipes[3];
+  int ptyfd;
 } processx_handle_t;
 
 char *processx__tmp_string(SEXP str, int i);

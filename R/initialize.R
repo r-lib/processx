@@ -8,6 +8,7 @@
 #' @param stdin Standard input, NULL to ignore.
 #' @param stdout Standard output, NULL to ignore, TRUE for temp file.
 #' @param stderr Standard error, NULL to ignore, TRUE for temp file.
+#' @param pty Whether we create a PTY.
 #' @param connections Connections to inherit in the child process.
 #' @param poll_connection Whether to create a connection for polling.
 #' @param env Environment vaiables.
@@ -22,9 +23,9 @@
 #' @keywords internal
 
 process_initialize <- function(self, private, command, args,
-                               stdin, stdout, stderr, connections,
-                               poll_connection, env, cleanup, cleanup_tree,
-                               wd, echo_cmd, supervise,
+                               stdin, stdout, stderr, pty, pty_options,
+                               connections, poll_connection, env, cleanup,
+                               cleanup_tree, wd, echo_cmd, supervise,
                                windows_verbatim_args, windows_hide_window,
                                encoding, post_process) {
 
@@ -36,6 +37,8 @@ process_initialize <- function(self, private, command, args,
     is_string_or_null(stdin),
     is_string_or_null(stdout),
     is_string_or_null(stderr),
+    is_flag(pty),
+    is.list(pty_options), is_named(pty_options),
     is_connection_list(connections),
     is.null(poll_connection) || is_flag(poll_connection),
     is.null(env) || is_named_character(env),
@@ -54,6 +57,27 @@ process_initialize <- function(self, private, command, args,
     cleanup <- TRUE
   }
 
+  if (pty && os_type() != "unix") {
+    stop("`pty == TRUE` is only implemented on Unix")
+  }
+  if (pty && !is.null(stdin)) {
+    stop("`stdin` must be `NULL` if `pty == TRUE`")
+  }
+  if (pty && !is.null(stdout)) {
+    stop("`stdout` must be `NULL` if `pty == TRUE`")
+  }
+  if (pty && !is.null(stderr)) {
+    stop("`stderr` must be `NULL` if `pty == TRUE`")
+  }
+
+  def <- default_pty_options()
+  pty_options <- utils::modifyList(def, pty_options)
+  if (length(bad <- setdiff(names(def), names(pty_options)))) {
+    stop("Uknown pty option(s): ",
+         paste(paste0("`", bad, "`"), collapse = ", "))
+  }
+  pty_options <- pty_options[names(def)]
+
   private$command <- command
   private$args <- args
   private$cleanup <- cleanup
@@ -62,6 +86,8 @@ process_initialize <- function(self, private, command, args,
   private$pstdin <- stdin
   private$pstdout <- stdout
   private$pstderr <- stderr
+  private$pty <- pty
+  private$pty_options <- pty_options
   private$connections <- connections
   private$env <- env
   private$echo_cmd <- echo_cmd
@@ -91,8 +117,8 @@ process_initialize <- function(self, private, command, args,
   }
   private$status <- .Call(
     c_processx_exec,
-    command, c(command, args), stdin, stdout, stderr, connections, env,
-    windows_verbatim_args, windows_hide_window,
+    command, c(command, args), stdin, stdout, stderr, pty, pty_options,
+    connections, env, windows_verbatim_args, windows_hide_window,
     private, cleanup, wd, encoding,
     paste0("PROCESSX_", private$tree_id, "=YES")
   )

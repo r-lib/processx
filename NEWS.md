@@ -4,6 +4,8 @@
 * `run()` now prints the last 10 lines of the standard error stream on
   error, if `echo = FALSE`.
 
+* `process` now supports creating pseudo terminals on Unix systems.
+
 # processx 3.3.1
 
 * Fix a crash on Windows, when a connection that has a pending read
