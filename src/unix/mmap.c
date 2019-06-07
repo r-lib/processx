@@ -170,10 +170,6 @@ void *processx__alloc(R_allocator_t *allocator, size_t size) {
  *     allocator->mem_free(allocator, (void*)allocator);
  */
 
-void processx__free(R_allocator_t *allocator, void *data) {
-  /* TODO: munmap eventually, when all is freed */
-}
-
 /* Unpack data from shared memory.
  *
  * This is the inverse of pack().
@@ -197,6 +193,12 @@ SEXP processx__mmap_unpack(SEXP fd) {
   SEXP ret = R_NilValue;
   int c_fd = INTEGER(fd)[0];
   R_xlen_t fullsize;
+=======
+SEXP processx__mmap_unpack(SEXP fd, SEXP size) {
+  SEXP ret = R_NilValue;
+  int c_fd = INTEGER(fd)[0];
+  int c_size = INTEGER(size)[0];
+>>>>>>> Unix mmap implementation poc
   static int sexpsize = sizeof(SEXPTYPE);
   static int xlensize = sizeof(R_xlen_t);
   static int lglsize = sizeof(LOGICAL(ScalarLogical(0))[0]);
