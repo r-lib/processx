@@ -57,6 +57,8 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_base64_decode", (DL_FUNC) &processx_base64_decode, 1 },
   { "processx__echo_on", (DL_FUNC) &processx__echo_on, 0 },
   { "processx__echo_off", (DL_FUNC) &processx__echo_off, 0 },
+  { "processx__mmap_pack", (DL_FUNC) &processx__mmap_pack, 2 },
+  { "processx__mmap_unpack", (DL_FUNC) &processx__mmap_unpack, 2 },
 
   { "processx_serialize_to_raw", (DL_FUNC) &processx_serialize_to_raw, 2 },
   { "processx_unserialize_from_raw", (DL_FUNC) &processx_unserialize_from_raw, 1 },

@@ -9,10 +9,10 @@
 #'
 #' @param fd Integer scalar, a Unix file descriptor.
 #' @param encoding Encoding of the readable connection when reading.
+#'   Encoding to re-encode `str` into when writing.
 #' @param close Whether to close the OS file descriptor when closing
 #'   the connection. Sometimes you want to leave it open, and use it again
 #'   in a `conn_create_fd` call.
-#' Encoding to re-encode `str` into when writing.
 #'
 #' @rdname processx_connections
 #' @export
@@ -263,4 +263,23 @@ close.processx_connection <- function(con, ...) {
 
 processx_conn_close <- function(con, ...) {
   rethrow_call(c_processx_connection_close, con)
+}
+
+conn_create_mmap <- function(data, close = TRUE) {
+  assert_that(
+    is.list(data),
+    is_flag(close))
+  map <- .Call(c_processx__mmap_pack, tempfile(), data)
+  ret <- .Call(c_processx_connection_create_fd, map[[1]], "", close)
+  attr(ret, "size") <- map[[2]]
+  ret
+}
+
+conn_unpack_mmap <- function(fd, size) {
+  assert_that(
+    is_integerish_scalar(fd),
+    is_integerish_scalar(size))
+  fd <- as.integer(fd)
+  size <- as.integer(size)
+  .Call(c_processx__mmap_unpack, fd, size)
 }

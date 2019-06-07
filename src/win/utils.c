@@ -15,3 +15,13 @@ SEXP processx__echo_off() {
   R_THROW_ERROR("Only implemented on Unix");
   return R_NilValue;
 }
+
+SEXP processx__mmap_pack(SEXP filename, SEXP data) {
+  error("Only implemented on Unix");
+  return R_NilValue;
+}
+
+SEXP processx__mmap_unpack(SEXP fd, SEXP size) {
+  error("Only implemented on Unix");
+  return R_NilValue;
+}

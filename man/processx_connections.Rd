@@ -70,12 +70,12 @@ processx_conn_close(con, ...)
 \arguments{
 \item{fd}{Integer scalar, a Unix file descriptor.}
 
-\item{encoding}{Encoding of the readable connection when reading.}
+\item{encoding}{Encoding of the readable connection when reading.
+Encoding to re-encode \code{str} into when writing.}
 
 \item{close}{Whether to close the OS file descriptor when closing
 the connection. Sometimes you want to leave it open, and use it again
-in a \code{conn_create_fd} call.
-Encoding to re-encode \code{str} into when writing.}
+in a \code{conn_create_fd} call.}
 
 \item{nonblocking}{Whether the writeable and the readable ends of
 the pipe should be non-blocking connections.}
