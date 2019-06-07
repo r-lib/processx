@@ -47,7 +47,7 @@ SEXP processx__mmap_pack(SEXP filename, SEXP data) {
     fullsize += len * eltsize;
   }
 
-  int fd = open(c_filename, O_RDWR | O_CREAT | O_TRUNC);
+  int fd = open(c_filename, O_RDWR | O_CREAT | O_TRUNC, 0644);
   if (fd == -1) {
     error("Cannot open file '%s': '%s'", c_filename, strerror(errno));
   }
