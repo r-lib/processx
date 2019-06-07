@@ -26,7 +26,7 @@
 \usage{
 conn_create_fd(fd, encoding = "", close = TRUE)
 
-conn_create_pipepair(encoding = "")
+conn_create_pipepair(encoding = "", nonblocking = c(TRUE, FALSE))
 
 conn_read_chars(con, n = -1)
 
@@ -76,6 +76,9 @@ processx_conn_close(con, ...)
 the connection. Sometimes you want to leave it open, and use it again
 in a \code{conn_create_fd} call.
 Encoding to re-encode \code{str} into when writing.}
+
+\item{nonblocking}{Whether the writeable and the readable ends of
+the pipe should be non-blocking connections.}
 
 \item{con}{Processx connection object.}
 

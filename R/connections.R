@@ -30,12 +30,19 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 #' `conn_create_pipepair()` creates a pair of connected connections, the
 #' first one is writeable, the second one is readable.
 #'
+#' @param nonblocking Whether the writeable and the readable ends of
+#'   the pipe should be non-blocking connections.
+#'
 #' @rdname processx_connections
 #' @export
 
-conn_create_pipepair <- function(encoding = "") {
-  assert_that(is_string(encoding))
-  .Call(c_processx_connection_create_pipepair, encoding)
+conn_create_pipepair <- function(encoding = "",
+                                 nonblocking = c(TRUE, FALSE)) {
+  assert_that(
+    is_string(encoding),
+    is.logical(nonblocking), length(nonblocking) == 2,
+    !any(is.na(nonblocking)))
+  .Call(c_processx_connection_create_pipepair, encoding, nonblocking)
 }
 
 #' @details

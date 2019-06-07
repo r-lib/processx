@@ -8,7 +8,7 @@ test_that("writing to extra connection", {
   msg <- "foobar"
   cmd <- c(get_tool("px"), "echo", "3", "1", nchar(msg))
 
-  pipe <- conn_create_pipepair()
+  pipe <- conn_create_pipepair(nonblocking = c(FALSE, FALSE))
 
   expect_silent(
     p <- process$new(cmd[1], cmd[-1],
@@ -61,7 +61,7 @@ test_that("reading and writing to extra connection", {
   msg <- "foobar\n"
   cmd <- c(get_tool("px"), "echo", "3", "4", nchar(msg), "outln", "ok")
 
-  pipe1 <- conn_create_pipepair()
+  pipe1 <- conn_create_pipepair(nonblocking = c(FALSE, FALSE))
   pipe2 <- conn_create_pipepair()
 
   expect_silent(

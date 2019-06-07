@@ -6,6 +6,13 @@
 
 * `process` now supports creating pseudo terminals on Unix systems.
 
+* `conn_create_pipepair()` gets new argument to set the pipes as blocking
+  or non-blocking.
+
+* `process` does not set the inherited extra connections as blocking,
+  and it also does not close them. This now the responsibility of the
+  user. Note that this is a breaking change.
+
 # processx 3.3.1
 
 * Fix a crash on Windows, when a connection that has a pending read

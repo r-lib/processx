@@ -246,8 +246,9 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout) {
   return R_NilValue;
 }
 
-SEXP processx_connection_create_pipepair(SEXP encoding) {
+SEXP processx_connection_create_pipepair(SEXP encoding, SEXP nonblocking) {
   const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
+  int *c_nonblocking = LOGICAL(nonblocking);
   SEXP result, con1, con2;
 
 #ifdef _WIN32
@@ -257,17 +258,19 @@ SEXP processx_connection_create_pipepair(SEXP encoding) {
 #else
   int pipe[2], h1, h2;
   processx__make_socketpair(pipe);
-  processx__nonblock_fcntl(pipe[0], 1);
-  processx__nonblock_fcntl(pipe[1], 0);
+  processx__nonblock_fcntl(pipe[0], c_nonblocking[0]);
+  processx__nonblock_fcntl(pipe[1], c_nonblocking[1]);
   h1 = pipe[0];
   h2 = pipe[1];
 #endif
 
-  processx_c_connection_create(h1, PROCESSX_FILE_TYPE_ASYNCPIPE,
-			       c_encoding, &con1);
+  processx_c_connection_create(h1, c_nonblocking[0] ?
+    PROCESSX_FILE_TYPE_ASYNCPIPE : PROCESSX_FILE_TYPE_PIPE, c_encoding,
+    &con1);
   PROTECT(con1);
-  processx_c_connection_create(h2, PROCESSX_FILE_TYPE_ASYNCPIPE,
-			       c_encoding, &con2);
+  processx_c_connection_create(h2, c_nonblocking[1] ?
+    PROCESSX_FILE_TYPE_ASYNCPIPE : PROCESSX_FILE_TYPE_PIPE, c_encoding,
+    &con2);
   PROTECT(con2);
 
   result = PROTECT(allocVector(VECSXP, 2));
