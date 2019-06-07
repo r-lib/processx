@@ -93,6 +93,8 @@
 #'   both streams in UTF-8 currently.
 #' @param cleanup_tree Whether to clean up the child process tree after
 #'   the process has finished.
+#' @param ... Extra arguments are passed to `process$new()`, see
+#'   [process].
 #' @return A list with components:
 #'   * status The exit status of the process. If this is `NA`, then the
 #'     process was killed and had no exit status.
@@ -128,7 +130,7 @@ run <- function(
   stderr_line_callback = NULL, stderr_callback = NULL,
   stderr_to_stdout = FALSE, env = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = FALSE,
-  encoding = "", cleanup_tree = FALSE) {
+  encoding = "", cleanup_tree = FALSE, ...) {
 
   assert_that(is_flag(error_on_status))
   assert_that(is_time_interval(timeout))
@@ -153,7 +155,7 @@ run <- function(
     windows_verbatim_args = windows_verbatim_args,
     windows_hide_window = windows_hide_window,
     stdout = "|", stderr = stderr, env = env, encoding = encoding,
-    cleanup_tree = cleanup_tree
+    cleanup_tree = cleanup_tree, ...
   )
   "#!DEBUG run() Started the process: `pr$get_pid()`"
 

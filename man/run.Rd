@@ -10,7 +10,7 @@ run(command = NULL, args = character(), error_on_status = TRUE,
   stderr_line_callback = NULL, stderr_callback = NULL,
   stderr_to_stdout = FALSE, env = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = FALSE,
-  encoding = "", cleanup_tree = FALSE)
+  encoding = "", cleanup_tree = FALSE, ...)
 }
 \arguments{
 \item{command}{Character scalar, the command to run.}
@@ -79,6 +79,9 @@ both streams in UTF-8 currently.}
 
 \item{cleanup_tree}{Whether to clean up the child process tree after
 the process has finished.}
+
+\item{...}{Extra arguments are passed to \code{process$new()}, see
+\link{process}.}
 }
 \value{
 A list with components:

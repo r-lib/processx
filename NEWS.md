@@ -18,6 +18,8 @@
   This is now the responsibility of the user. Note that this is a
   breaking change.
 
+* `run()` now passes extra `...` arguments to `process$new()`.
+
 # processx 3.3.1
 
 * Fix a crash on Windows, when a connection that has a pending read

@@ -110,3 +110,17 @@ test_that("condition on interrupt", {
   expect_s3_class(cnd, "system_command_interrupt")
   expect_equal(str_trim(cnd$stderr), "oops")
 })
+
+test_that("stdin", {
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+
+  txt <- "foobar\nthis is the input\n"
+  cat(txt, file = tmp)
+  px <- get_tool("px")
+  res <- run(px, c("echo", "0", "1", file_size(tmp)), stdin = tmp)
+
+  expect_equal(
+    strsplit(res$stdout, "\r?\n")[[1]],
+    c("foobar", "this is the input"))
+})
