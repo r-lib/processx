@@ -22,13 +22,35 @@
 #' `$kill()` on it to terminate it, as a response to a message on the
 #' standard output or error.
 #'
+#' @section Error conditions:
+#'
+#' `run()` throws error condition objects if the process is interrupted,
+#' timeouts or fails (if `error_on_status` is `TRUE`):
+#' * On interrupt, a condition with classes `system_command_interrupt`,
+#'   `interrupt`, `condition` is signalled. This can be caught with
+#'   `tryCatch(..., interrupt = ...)`.
+#' * On timeout, a condition with classes `system_command_timeout_error`,
+#'   `system_command_error`, `error`, `condition` is thrown.
+#' * On error (if `error_on_status` is `TRUE`), an error with classes
+#'   `system_command_status_error`, `system_command_error`, `error`,
+#'   `condition` is thrown.
+#'
+#' All of these conditions have the fields:
+#' * `message`: the error message,
+#' * `stderr`: the standard error of the process, or the standard output
+#'    of the process if `stderr_to_stdout` was `TRUE`.
+#' * `call`: the captured call to `run()`.
+#' * `echo`: the value of the `echo` argument.
+#' * `stderr_to_stdout`: the value of the `stderr_to_stdout` argument.
+#' * `status`: the exit status for `system_command_status_error` errors.
+#'
 #' @param command Character scalar, the command to run.
 #' @param args Character vector, arguments to the command.
 #' @param error_on_status Whether to throw an error if the command returns
 #'   with a non-zero status, or it is interrupted. The error clases are
 #'   `system_command_status_error` and `system_command_timeout_error`,
 #'   respectively, and both errors have class `system_command_error` as
-#'   well.
+#'   well. See also "Error conditions" below.
 #' @param wd Working directory of the process. If `NULL`, the current
 #'   working directory is used.
 #' @param echo_cmd Whether to print the command to run to the screen.
