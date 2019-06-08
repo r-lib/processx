@@ -86,7 +86,7 @@ NULL
 #'     used as is, without a shell. They don't need to be escaped.
 #' * `stdin`: What to do with the standard input. Possible values:
 #'     `NULL`: set to the _null device_, i.e. no standard input is
-#'     provided; a string, supply the specified string as standard input;
+#'     provided; a file name, use this file as standard input;
 #'     `"|"`: create a (writeable) connection for stdin.
 #' * `stdout`: What to do with the standard output. Possible values:
 #'     `NULL`: discard it; a string, redirect it to this file;

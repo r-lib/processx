@@ -88,7 +88,7 @@ It should not be quoted with \code{\link[base:shQuote]{base::shQuote()}}. See
 used as is, without a shell. They don't need to be escaped.
 \item \code{stdin}: What to do with the standard input. Possible values:
 \code{NULL}: set to the \emph{null device}, i.e. no standard input is
-provided; a string, supply the specified string as standard input;
+provided; a file name, use this file as standard input;
 \code{"|"}: create a (writeable) connection for stdin.
 \item \code{stdout}: What to do with the standard output. Possible values:
 \code{NULL}: discard it; a string, redirect it to this file;
