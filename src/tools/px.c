@@ -25,6 +25,8 @@ void usage() {
 	  "print string to stdout, add newline\n");
   fprintf(stderr, "  errln  <string>            -- "
 	  "print string to stderr, add newline\n");
+  fprintf(stderr, "  errflush                   -- "
+	  "flush stderr stream\n");
   fprintf(stderr, "  cat    <filename>          -- "
 	  "print file to stdout\n");
   fprintf(stderr, "  return <exitcode>          -- "
@@ -131,6 +133,9 @@ int main(int argc, const char **argv) {
 
     } else if (!strcmp("errln", cmd)) {
       fprintf(stderr, "%s\n", argv[++idx]);
+
+    } else if (!strcmp("errflush", cmd)) {
+      fflush(stderr);
 
     } else if (!strcmp("cat", cmd)) {
       cat(argv[++idx]);

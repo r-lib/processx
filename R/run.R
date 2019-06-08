@@ -179,8 +179,10 @@ run <- function(
                stdout_callback, stderr_line_callback,
                stderr_callback, resenv),
     interrupt = function(e) {
-      tryCatch(pr$kill(), error = function(e) NULL)
       "!DEBUG run() process `pr$get_pid()` killed on interrupt"
+      resenv$stdout <- paste0(resenv$stdout, pr$read_output(), pr$read_output())
+      resenv$stderr <- paste0(resenv$stderr, pr$read_error(), pr$read_error())
+      tryCatch(pr$kill(), error = function(e) NULL)
       signalCondition(make_condition(
         list(interrupt = TRUE, stderr = resenv$stderr,
              stdout = resenv$stdout),
@@ -228,7 +230,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
     newout <- proc$read_output(2000)
     if (length(newout) && nzchar(newout)) {
       if (!is.null(stdout_callback)) stdout_callback(newout, proc)
-      resenv$stdout <<- paste0(resenv$stdout, newout)
+      resenv$stdout <- paste0(resenv$stdout, newout)
       if (!is.null(stdout_line_callback)) {
         newout <- paste0(pushback_out, newout)
         pushback_out <<- ""
@@ -243,7 +245,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 
     newerr <- if (proc$has_error_connection()) proc$read_error(2000)
     if (length(newerr) && nzchar(newerr)) {
-      resenv$stderr <<- paste0(resenv$stderr, newerr)
+      resenv$stderr <- paste0(resenv$stderr, newerr)
       if (!is.null(stderr_callback)) stderr_callback(newerr, proc)
       if (!is.null(stderr_line_callback)) {
         newerr <- paste0(pushback_err, newerr)

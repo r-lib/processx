@@ -102,7 +102,7 @@ test_that("condition on interrupt", {
 
   px <- get_tool("px")
   cnd <- tryCatch(
-    interrupt_me(run(px, c("errln", "oops", "sleep", 3)), 0.3),
+    interrupt_me(run(px, c("errln", "oops", "errflush", "sleep", 3)), 0.5),
     error = function(c) c,
     interrupt = function(c) c)
 
