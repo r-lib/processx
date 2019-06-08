@@ -54,7 +54,12 @@ void cat2(int f, const char *s) {
 }
 
 void cat(const char* filename) {
-  int f = open(filename, O_RDONLY);
+  int f;
+  if (!strcmp("<stdin>", filename)) {
+    f = STDIN_FILENO;
+  } else {
+    f = open(filename, O_RDONLY);
+  }
 
   if (f < 0) {
     fprintf(stderr, "can't open %s", filename);

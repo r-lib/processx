@@ -118,7 +118,7 @@ test_that("stdin", {
   txt <- "foobar\nthis is the input\n"
   cat(txt, file = tmp)
   px <- get_tool("px")
-  res <- run(px, c("echo", "0", "1", file_size(tmp)), stdin = tmp)
+  res <- run(px, c("cat", "<stdin>"), stdin = tmp)
 
   expect_equal(
     strsplit(res$stdout, "\r?\n")[[1]],
