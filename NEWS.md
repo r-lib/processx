@@ -2,7 +2,8 @@
 # processx dev
 
 * `run()` now prints the last 10 lines of the standard error stream on
-  error, if `echo = FALSE`.
+  error, if `echo = FALSE`, and it also prints the exit status of the
+  process.
 
 * `process` now supports creating pseudo terminals on Unix systems.
 

@@ -170,7 +170,7 @@ run <- function(
   if (error_on_status && (is.na(res$status) || res$status != 0)) {
     "!DEBUG run() error on status `res$status` for process `pr$get_pid()`"
     stop(make_condition(res, call = sys.call(), echo = echo,
-                        stderr_to_stdout))
+                        stderr_to_stdout, res$status))
   }
 
   res
@@ -295,16 +295,18 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
   )
 }
 
-make_condition <- function(result, call, echo, stderr_to_stdout) {
+make_condition <- function(result, call, echo, stderr_to_stdout,
+                           status = NA_integer_) {
 
   if (isTRUE(result$interrupt)) {
     structure(
       list(
         message = "System command interrupted",
-        stderr = NULL,
+        stderr = if (stderr_to_stdout) result$stdout else result$stderr,
         call = call,
         echo = echo,
-        stderr_to_stdout = stderr_to_stdout
+        stderr_to_stdout = stderr_to_stdout,
+        status = status
       ),
       class = c("system_command_interrupt", "interrupt", "condition")
     )
@@ -316,7 +318,8 @@ make_condition <- function(result, call, echo, stderr_to_stdout) {
         stderr = if (stderr_to_stdout) result$stdout else result$stderr,
         call = call,
         echo = echo,
-        stderr_to_stdout = stderr_to_stdout
+        stderr_to_stdout = stderr_to_stdout,
+        status = status
       ),
       class = c("system_command_timeout_error", "system_command_error",
         "error", "condition")
@@ -329,7 +332,8 @@ make_condition <- function(result, call, echo, stderr_to_stdout) {
         stderr = if (stderr_to_stdout) result$stdout else result$stderr,
         call = call,
         echo = echo,
-        stderr_to_stdout = stderr_to_stdout
+        stderr_to_stdout = stderr_to_stdout,
+        status = status
       ),
       class = c("system_command_status_error", "system_command_error",
         "error", "condition")
@@ -341,10 +345,11 @@ make_condition <- function(result, call, echo, stderr_to_stdout) {
 
 conditionMessage.system_command_status_error <- function(c) {
   std <- if (c$stderr_to_stdout) "stdout + stderr" else "stderr"
+  exit <- if (!is.na(c$status)) paste0(", exit status: ", c$status)
   if (c$echo) {
-    paste0(c$message, ", see stdout + stderr above")
+    paste0(c$message, exit, ", see stdout + stderr above")
   } else {
-    paste0(c$message, last_stderr_lines(c$stderr, std))
+    paste0(c$message, exit, last_stderr_lines(c$stderr, std))
   }
 }
 
