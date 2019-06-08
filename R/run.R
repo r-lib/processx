@@ -151,16 +151,18 @@ run <- function(
 
   ## Make the process interruptible, and kill it on interrupt
   runcall <- sys.call()
+  resenv <- new.env(parent = emptyenv())
   res <- tryCatch(
     run_manage(pr, timeout, spinner, stdout_line_callback,
                stdout_callback, stderr_line_callback,
-               stderr_callback),
+               stderr_callback, resenv),
     interrupt = function(e) {
       tryCatch(pr$kill(), error = function(e) NULL)
       "!DEBUG run() process `pr$get_pid()` killed on interrupt"
       signalCondition(make_condition(
-        list(interrupt = TRUE), runcall, echo = echo,
-        stderr_to_stdout = stderr_to_stdout
+        list(interrupt = TRUE, stderr = resenv$stderr,
+             stdout = resenv$stdout),
+        runcall, echo = echo, stderr_to_stdout = stderr_to_stdout
       ))
       cat("\n")
       invokeRestart("abort")
@@ -188,13 +190,13 @@ echo_callback <- function(user_callback, type) {
 
 run_manage <- function(proc, timeout, spinner, stdout_line_callback,
                        stdout_callback, stderr_line_callback,
-                       stderr_callback) {
+                       stderr_callback, resenv) {
 
   timeout <- as.difftime(timeout, units = "secs")
   start_time <- proc$get_start_time()
 
-  stdout <- ""
-  stderr <- ""
+  resenv$stdout <- ""
+  resenv$stderr <- ""
 
   pushback_out <- ""
   pushback_err <- ""
@@ -204,7 +206,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
     newout <- proc$read_output(2000)
     if (length(newout) && nzchar(newout)) {
       if (!is.null(stdout_callback)) stdout_callback(newout, proc)
-      stdout <<- paste0(stdout, newout)
+      resenv$stdout <<- paste0(resenv$stdout, newout)
       if (!is.null(stdout_line_callback)) {
         newout <- paste0(pushback_out, newout)
         pushback_out <<- ""
@@ -219,7 +221,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 
     newerr <- if (proc$has_error_connection()) proc$read_error(2000)
     if (length(newerr) && nzchar(newerr)) {
-      stderr <<- paste0(stderr, newerr)
+      resenv$stderr <<- paste0(resenv$stderr, newerr)
       if (!is.null(stderr_callback)) stderr_callback(newerr, proc)
       if (!is.null(stderr_line_callback)) {
         newerr <- paste0(pushback_err, newerr)
@@ -289,8 +291,8 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 
   list(
     status = proc$get_exit_status(),
-    stdout = stdout,
-    stderr = stderr,
+    stdout = resenv$stdout,
+    stderr = resenv$stderr,
     timeout = timeout_happened
   )
 }

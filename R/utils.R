@@ -219,3 +219,7 @@ tty_echo_off <- function() {
 tty_echo_on <- function() {
   .Call(c_processx__echo_on)
 }
+
+str_trim <- function(x) {
+  sub("^\\s+", "", sub("\\s+$", "", x))
+}

@@ -95,3 +95,17 @@ test_that("stderr_to_stdout", {
   expect_equal(out$stderr, "")
   expect_false(out$timeout)
 })
+
+test_that("condition on interrupt", {
+  skip_if_no_ps()
+  skip_on_cran()
+
+  px <- get_tool("px")
+  cnd <- tryCatch(
+    interrupt_me(run(px, c("errln", "oops", "sleep", 3)), 0.3),
+    error = function(c) c,
+    interrupt = function(c) c)
+
+  expect_s3_class(cnd, "system_command_interrupt")
+  expect_equal(str_trim(cnd$stderr), "oops")
+})

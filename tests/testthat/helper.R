@@ -67,3 +67,14 @@ httpbin <- local({
     paste0("http://", cache, url)
   }
 })
+
+interrupt_me <- function(expr, after = 1) {
+  tryCatch({
+    p <- callr::r_bg(function(pid, after) {
+      Sys.sleep(after)
+      ps::ps_interrupt(ps::ps_handle(pid))
+    }, list(pid = Sys.getpid(), after = after))
+    expr
+    p$kill()
+  }, interrupt = function(e) e)
+}
