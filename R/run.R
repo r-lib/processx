@@ -159,8 +159,8 @@ run <- function(
       tryCatch(pr$kill(), error = function(e) NULL)
       "!DEBUG run() process `pr$get_pid()` killed on interrupt"
       signalCondition(make_condition(
-        list(interrupt = TRUE),
-        runcall
+        list(interrupt = TRUE), runcall, echo = echo,
+        stderr_to_stdout = stderr_to_stdout
       ))
       cat("\n")
       invokeRestart("abort")
