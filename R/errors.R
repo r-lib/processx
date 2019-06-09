@@ -17,6 +17,8 @@ stop <- function(..., call. = TRUE, domain = NULL) {
       class = c("simpleError", "error", "condition"))
   }
 
+  class(cond) <- rev(unique(rev(c(class(cond),
+                                  "rlang_error", "error", "condition"))))
   signalCondition(cond)
 
   if (! "org:r-lib" %in% search()) {
@@ -24,8 +26,59 @@ stop <- function(..., call. = TRUE, domain = NULL) {
                            name = "org:r-lib"))
   }
   env <- as.environment("org:r-lib")
+
+  cond$trace <- trace_back()
+  conditionMessage(cond)
   env$.Last.error <- cond
 
   class(cond) <- c("duplicate_condition", "condition")
   base::stop(cond)
+}
+
+trace_back <- function() {
+  idx <- seq_len(sys.parent(1L))
+  frames <- sys.frames()[idx]
+  parents <- sys.parents()[idx]
+  calls <- as.list(sys.calls()[idx])
+  envs <- lapply(frames, env_label)
+  trace <- new_trace(calls, parents, envs)
+  trace
+}
+
+new_trace <- function (calls, parents, envs){
+  indices <- seq_along(calls)
+  n <- length(calls)
+  structure(list(calls = calls, parents = parents, envs = envs,
+                 indices = indices), class = "rlang_trace")
+}
+
+env_label <- function(env) {
+  nm <- env_name(env)
+  if (nzchar(nm)) {
+    nm
+  } else {
+    env_address(env)
+  }
+}
+
+env_address <- function(env) {
+  class(env) <- "environment"
+  sub("^.*(0x[0-9a-f]+)>$", "\\1", format(env), perl = TRUE)
+}
+
+env_name <- function(env) {
+  if (identical(env, globalenv())) {
+    return("global")
+  }
+  if (identical(env, baseenv())) {
+    return("package:base")
+  }
+  if (identical(env, emptyenv())) {
+    return("empty")
+  }
+  nm <- environmentName(env)
+  if (isNamespace(env)) {
+    return(paste0("namespace:", nm))
+  }
+  nm
 }
