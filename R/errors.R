@@ -1,5 +1,5 @@
 
-stop <- local({
+err <- local({
 
   trace_back <- function() {
     idx <- seq_len(sys.parent(1L))
@@ -48,7 +48,7 @@ stop <- local({
     nm
   }
 
-  function(..., call. = TRUE, domain = NULL) {
+  stop <- function(..., call. = TRUE, domain = NULL) {
     args <- list(...)
 
     if (length(args) == 1L && inherits(args[[1L]], "condition")) {
@@ -83,4 +83,14 @@ stop <- local({
     class(cond) <- c("duplicate_condition", "condition")
     base::stop(cond)
   }
+
+  structure(
+    list(
+      .internal = environment(),
+      stop = stop,
+      trace_back = trace_back
+    ),
+    class = c("standalone_err", "standalone"))
 })
+
+stop <- err$stop
