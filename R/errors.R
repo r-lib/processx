@@ -26,6 +26,6 @@ stop <- function(..., call. = TRUE, domain = NULL) {
   env <- as.environment("org:r-lib")
   env$.Last.error <- cond
 
-  class(cond) <- "condition"
+  class(cond) <- c("duplicate_condition", "condition")
   base::stop(cond)
 }
