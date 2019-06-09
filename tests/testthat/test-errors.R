@@ -41,3 +41,18 @@ test_that("run() only prints the last 10 lines of stderr", {
   expect_match(conditionMessage(err), "foobar2--")
   expect_match(conditionMessage(err), "foobar11--")
 })
+
+test_that("stop() is standalone", {
+  ## baseenv() makes sure that the remotes package env is not used
+  env <- new.env(parent = baseenv())
+  env$stop <- stop
+  stenv <- environment(env$stop)
+  objs <- ls(stenv, all.names = TRUE)
+  funs <- Filter(function(x) is.function(stenv[[x]]), objs)
+  funobjs <- mget(funs, stenv)
+
+  expect_message(
+    mapply(codetools::checkUsage, funobjs, funs,
+           MoreArgs = list(report = message)),
+    NA)
+})
