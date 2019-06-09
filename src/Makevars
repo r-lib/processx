@@ -1,5 +1,5 @@
 
-OBJECTS = init.o poll.o processx-connection.o            \
+OBJECTS = init.o poll.o error.o processx-connection.o    \
           processx-vector.o create-time.o base64.o       \
 	  unix/childlist.o unix/connection.o             \
           unix/processx.o unix/sigchld.o unix/utils.o    \

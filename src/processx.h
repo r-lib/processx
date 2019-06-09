@@ -68,6 +68,8 @@ SEXP processx_disable_crash_dialog();
 SEXP processx_base64_encode(SEXP array);
 SEXP processx_base64_decode(SEXP array);
 
+SEXP processx__stop(SEXP call, SEXP message);
+
 /* Common declarations */
 
 /* Interruption interval in ms */
