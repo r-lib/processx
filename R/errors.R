@@ -26,5 +26,6 @@ stop <- function(..., call. = TRUE, domain = NULL) {
   env <- as.environment("org:r-lib")
   env$.Last.error <- cond
 
-  .Call(c_processx__stop, call., message)
+  class(cond) <- "condition"
+  base::stop(cond)
 }
