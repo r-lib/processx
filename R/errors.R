@@ -48,12 +48,13 @@ err <- local({
     nm
   }
 
-  stop <- function(..., call. = TRUE, domain = NULL) {
+  stop <- function(..., call. = TRUE, domain = NULL, parent = NULL) {
     args <- list(...)
 
     if (length(args) == 1L && inherits(args[[1L]], "condition")) {
       if (nargs() > 1L) warning("additional arguments in stop()")
       cond <- args[[1L]]
+      cond$parent <- parent
       message <- conditionMessage(cond)
       call. <- conditionCall(cond)
       if (is.null(call.) || isTRUE(call.)) call. <- sys.call(-1)
@@ -62,7 +63,7 @@ err <- local({
       message <- .makeMessage(..., domain = domain)
       if (is.null(call.) || isTRUE(call.)) call. <- sys.call(-1)
       cond <- structure(
-        list(message = message, call = call.),
+        list(message = message, call = call., parent = parent),
         class = c("simpleError", "error", "condition"))
     }
 
@@ -84,11 +85,32 @@ err <- local({
     base::stop(cond)
   }
 
+  rethrow <- function(expr, ..., finally = NULL) {
+    cl_wch <- cl_tc <- match.call()
+    anms <- names(cl_wch)
+
+    cl_wch[[1]] <- quote(withCallingHandlers)
+    if ("finally" %in% anms) cl_wch <- cl_wch[anms != "finally"]
+    error <- NULL
+    saver <- function(e) { e$trace <- trace_back(); error <<- e }
+    cl_wch[3:length(cl_wch)] <- list(saver)
+
+    cl_tc[[1]] <- quote(tryCatch)
+    cl_tc[["expr"]] <- quote(eval(cl_wch))
+    handlers <- list(...)
+    for (h in names(handlers)) {
+      cl_tc[[h]] <- function(e) handlers[[h]](error)
+    }
+
+    eval(cl_tc)
+  }
+
   structure(
     list(
       .internal = environment(),
       stop = stop,
-      trace_back = trace_back
+      trace_back = trace_back,
+      rethrow = rethrow
     ),
     class = c("standalone_err", "standalone"))
 })
