@@ -374,11 +374,13 @@ make_condition <- function(result, call, echo, stderr_to_stdout,
 conditionMessage.system_command_status_error <- function(c) {
   std <- if (c$stderr_to_stdout) "stdout + stderr" else "stderr"
   exit <- if (!is.na(c$status)) paste0(", exit status: ", c$status)
-  if (c$echo) {
+  res <- if (c$echo) {
     paste0(c$message, exit, ", see stdout + stderr above")
   } else {
     paste0(c$message, exit, last_stderr_lines(c$stderr, std))
   }
+  NextMethod("conditionMessage")
+  res
 }
 
 last_stderr_lines <- function(text, std) {
