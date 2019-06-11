@@ -3,7 +3,7 @@ assert_that <- function(..., env = parent.frame(), msg = NULL) {
   res <- see_if(..., env = env, msg = msg)
   if (res) return(TRUE)
 
-  stop(assertError(attr(res, "msg")))
+  throw(assertError(attr(res, "msg")))
 }
 
 assertError <- function (message, call = NULL) {
@@ -35,11 +35,11 @@ see_if <- function(..., env = parent.frame(), msg = NULL) {
 
 check_result <- function(x) {
   if (!is.logical(x))
-    stop("assert_that: assertion must return a logical value", call. = FALSE)
+    throw("assert_that: assertion must return a logical value", call. = FALSE)
   if (any(is.na(x)))
-    stop("assert_that: missing values present in assertion", call. = FALSE)
+    throw("assert_that: missing values present in assertion", call. = FALSE)
   if (length(x) != 1) {
-    stop("assert_that: length of assertion is not 1", call. = FALSE)
+    throw("assert_that: length of assertion is not 1", call. = FALSE)
   }
 
   TRUE

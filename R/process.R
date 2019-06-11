@@ -691,7 +691,7 @@ process_kill <- function(self, private, grace, close_connections) {
 process_kill_tree <- function(self, private, grace, close_connections) {
   "!DEBUG process_kill_tree '`private$get_short_name()`', pid `self$get_pid()`"
   if (!ps::ps_is_supported()) {
-    stop(structure(
+    throw(structure(
       list(message = "kill_tree is not supported on this platform"),
       class = c("not_implemented", "error", "condition")))
   }
@@ -725,7 +725,7 @@ process_supervise <- function(self, private, status) {
 }
 
 process_get_result <- function(self, private) {
-  if (self$is_alive()) stop("Process is still alive")
+  if (self$is_alive()) throw("Process is still alive")
   if (!private$post_process_done && is.function(private$post_process)) {
     private$post_process_result <- private$post_process()
     private$post_process_done <- TRUE

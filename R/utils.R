@@ -49,7 +49,7 @@ full_path <- function(path) {
 
       # Must have a name, like "//server"
       if (drive == "//")
-        stop("Server name not found in network path.")
+        throw("Server name not found in network path.")
 
     } else {
       drive <- substring(getwd(), 1, 2)

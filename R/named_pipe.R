@@ -28,7 +28,7 @@ is_pipe_open.unix_named_pipe <- function(pipe) {
   # isOpen() gives an error when passed a closed fifo object, so this is a more
   # robust version.
   if (!inherits(pipe$handle, "fifo"))
-    stop("pipe$handle must be a fifo object")
+    throw("pipe$handle must be a fifo object")
 
   is_open <- NA
   tryCatch(
