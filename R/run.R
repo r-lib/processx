@@ -197,8 +197,8 @@ run <- function(
 
   if (error_on_status && (is.na(res$status) || res$status != 0)) {
     "!DEBUG run() error on status `res$status` for process `pr$get_pid()`"
-    stop(make_condition(res, call = sys.call(), echo = echo,
-                        stderr_to_stdout, res$status))
+    throw(make_condition(res, call = sys.call(), echo = echo,
+                         stderr_to_stdout, res$status))
   }
 
   res

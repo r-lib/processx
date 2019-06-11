@@ -11,10 +11,12 @@ err <- local({
     trace
   }
 
-  new_trace <- function (calls, parents, envs){
+  new_trace <- function (calls, parents, envs) {
     indices <- seq_along(calls)
-    structure(list(calls = calls, parents = parents, envs = envs,
-                   indices = indices), class = "rlib_trace")
+    structure(
+      list(calls = calls, parents = parents, envs = envs,
+           indices = indices),
+      class = "rlib_trace")
   }
 
   env_label <- function(env) {
@@ -51,10 +53,6 @@ err <- local({
   print_rlib_error <- function(x, ...) {
     ## TODO: better printing
     NextMethod("print")
-    if (!is.null(x$parent)) {
-      cat("--->\n")
-      print(x$parent)
-    }
     invisible(x)
   }
 
@@ -64,13 +62,12 @@ err <- local({
     invisible(x)
   }
 
-  stop <- function(..., call. = TRUE, domain = NULL, parent = NULL) {
+  throw <- function(..., call. = TRUE, domain = NULL) {
     args <- list(...)
 
     if (length(args) == 1L && inherits(args[[1L]], "condition")) {
-      if (nargs() > 1L) warning("additional arguments in stop()")
+      if (nargs() > 1L) warning("additional arguments in throw()")
       cond <- args[[1L]]
-      cond$parent <- parent
       message <- conditionMessage(cond)
       call. <- conditionCall(cond)
       if (is.null(call.) || isTRUE(call.)) call. <- sys.call(-1)
@@ -79,11 +76,13 @@ err <- local({
       message <- .makeMessage(..., domain = domain)
       if (is.null(call.) || isTRUE(call.)) call. <- sys.call(-1)
       cond <- structure(
-        list(message = message, call = call., parent = parent),
+        list(message = message, call = call.),
         class = c("simpleError", "error", "condition"))
     }
 
-    class(cond) <- union("rlib_error", setdiff(class(cond), "simpleError"))
+    class(cond) <- c(
+      setdiff(class(cond), c("simpleError", "error", "condition")),
+      "rlib_error", "error", "condition")
     signalCondition(cond)
 
     if (! "org:r-lib" %in% search()) {
@@ -95,41 +94,19 @@ err <- local({
     env$print.rlib_trace <- print_rlib_trace
 
     cond$trace <- trace_back()
-    conditionMessage(cond)
     env$.Last.error <- cond
 
     class(cond) <- c("duplicate_condition", "condition")
-    base::stop(cond)
-  }
-
-  rethrow <- function(expr, ..., finally = NULL) {
-    cl_wch <- cl_tc <- match.call()
-    anms <- names(cl_wch)
-
-    cl_wch[[1]] <- quote(withCallingHandlers)
-    if ("finally" %in% anms) cl_wch <- cl_wch[anms != "finally"]
-    error <- NULL
-    saver <- function(e) { e$trace <- trace_back(); error <<- e }
-    cl_wch[3:length(cl_wch)] <- list(saver)
-
-    cl_tc[[1]] <- quote(tryCatch)
-    cl_tc[["expr"]] <- quote(eval(cl_wch))
-    handlers <- list(...)
-    for (h in names(handlers)) {
-      cl_tc[[h]] <- function(e) handlers[[h]](error)
-    }
-
-    eval(cl_tc)
+    stop(cond)
   }
 
   structure(
     list(
       .internal = environment(),
-      stop = stop,
-      trace_back = trace_back,
-      rethrow = rethrow
+      throw = throw,
+      trace_back = trace_back
     ),
     class = c("standalone_err", "standalone"))
 })
 
-stop <- err$stop
+throw <- err$throw
