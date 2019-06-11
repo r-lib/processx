@@ -14,7 +14,7 @@ err <- local({
   new_trace <- function (calls, parents, envs){
     indices <- seq_along(calls)
     structure(list(calls = calls, parents = parents, envs = envs,
-                   indices = indices), class = "rlang_trace")
+                   indices = indices), class = "rlib_trace")
   }
 
   env_label <- function(env) {
@@ -48,6 +48,22 @@ err <- local({
     nm
   }
 
+  print_rlib_error <- function(x, ...) {
+    ## TODO: better printing
+    NextMethod("print")
+    if (!is.null(x$parent)) {
+      cat("--->\n")
+      print(x$parent)
+    }
+    invisible(x)
+  }
+
+  print_rlib_trace <- function(x, ...) {
+    ## TODO: better printing
+    print(x$calls)
+    invisible(x)
+  }
+
   stop <- function(..., call. = TRUE, domain = NULL, parent = NULL) {
     args <- list(...)
 
@@ -67,8 +83,7 @@ err <- local({
         class = c("simpleError", "error", "condition"))
     }
 
-    class(cond) <- rev(unique(rev(c(class(cond),
-                                    "rlang_error", "error", "condition"))))
+    class(cond) <- union("rlib_error", setdiff(class(cond), "simpleError"))
     signalCondition(cond)
 
     if (! "org:r-lib" %in% search()) {
@@ -76,6 +91,8 @@ err <- local({
                              name = "org:r-lib"))
     }
     env <- as.environment("org:r-lib")
+    env$print.rlib_error <- print_rlib_error
+    env$print.rlib_trace <- print_rlib_trace
 
     cond$trace <- trace_back()
     conditionMessage(cond)
