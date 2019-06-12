@@ -205,7 +205,7 @@ file_size <- function(x) {
 }
 
 disable_crash_dialog <- function() {
-  .Call(c_processx_disable_crash_dialog)
+  rethrow_call(c_processx_disable_crash_dialog)
 }
 
 has_package <- function(pkg) {
@@ -213,11 +213,11 @@ has_package <- function(pkg) {
 }
 
 tty_echo_off <- function() {
-  .Call(c_processx__echo_off)
+  rethrow_call(c_processx__echo_off)
 }
 
 tty_echo_on <- function() {
-  .Call(c_processx__echo_on)
+  rethrow_call(c_processx__echo_on)
 }
 
 str_trim <- function(x) {

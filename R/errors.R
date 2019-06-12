@@ -36,7 +36,6 @@
 #   copy it back to the main process, and create a nice error object).
 # - print source references in the errors
 # - print source references in the trace
-# - method to handle errors from C, maybe by having a .Call wrapper?
 #
 # ## NEWS:
 # - date of first release will be here
