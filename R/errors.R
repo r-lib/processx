@@ -226,6 +226,17 @@ err <- local({
     )
   }
 
+  #' Version of .Call that throw()s errors
+  #'
+  #' It re-throws error from interpreted code. If the error had class
+  #' `simpleError`, like all errors, thrown via `error()` in C do, it also
+  #' adds the `c_error` class.
+  #'
+  #' @noRd
+  #' @param .NAME Compiled function to call, see [.Call()].
+  #' @param ... Function arguments, see [.Call()].
+  #' @return Result of the call.
+
   rethrow_call <- function(.NAME, ...) {
     call <- sys.call()
     nframe <- sys.nframe()
