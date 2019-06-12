@@ -31,10 +31,11 @@
 # ```
 #
 # ## Roadmap:
-# - better printing of the trace
 # - better printing of the error
 # - better programmatic trace API (so we can capture it in the subprocess,
 #   copy it back to the main process, and create a nice error object).
+# - print source references in the errors
+# - print source references in the trace
 # - method to handle errors from C, maybe by having a .Call wrapper?
 #
 # ## NEWS:
@@ -286,17 +287,52 @@ err <- local({
     ## TODO: better printing
     NextMethod("print")
     if (!is.null(x$parent)) {
-      cat("----\n")
+      cat("-->\n")
       print(x$parent)
     }
     invisible(x)
   }
 
   print_rlib_trace <- function(x, ...) {
-    ## TODO: better printing
-    print(x$calls)
+    callstr <- vapply(x$calls, format_call, character(1))
+    callstr[x$nframes] <-
+      paste0(callstr[x$nframes], "\n--> ERROR: ", x$messages, "\n")
+
+    # Drop the machinery to create parent errors. For both catch_rethrow()
+    # and rethrow() we need to drop until the next withCallingHandlers call.
+    wch <- vapply(
+      x$calls,
+      function(x) identical(x[[1]], quote(withCallingHandlers)), logical(1))
+    wchidx <- which(wch)
+    drop_from <- x$nframes + 1L
+    drop_to <- vapply(x$nframes, function(x) wchidx[wchidx >= x][1], 1L)
+    drop_from <- drop_from[!is.na(drop_to)]
+    drop_to <- drop_to[!is.na(drop_to)]
+    drop <- unlist(mapply(FUN = seq, drop_from, drop_to, SIMPLIFY = FALSE))
+
+    # Drop the tail, that is usually not interesting (?), especially for
+    # parent errors
+    last_nframe <- x$nframes[length(x$nframes)]
+    if (length(callstr) > last_nframe) {
+      drop <- c(drop, seq(last_nframe + 1L, length(callstr)))
+    }
+    if (length(drop)) callstr <- callstr[-drop]
+
+    cat(enumerate(callstr), sep = "\n")
     invisible(x)
   }
+
+  format_call <- function(call) {
+    width <- getOption("width")
+    str <- format(call)
+    if (length(str) > 1 || nchar(str[1]) > width) {
+      paste0(substr(str[1], 1, width - 5), " ...")
+    } else {
+      str[1]
+    }
+  }
+
+  enumerate <- function(x) paste0(seq_along(x), ". ", x)
 
   structure(
     list(
