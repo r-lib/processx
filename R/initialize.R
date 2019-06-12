@@ -58,23 +58,23 @@ process_initialize <- function(self, private, command, args,
   }
 
   if (pty && os_type() != "unix") {
-    throw("`pty == TRUE` is only implemented on Unix")
+    throw(new_error("`pty == TRUE` is only implemented on Unix"))
   }
   if (pty && !is.null(stdin)) {
-    throw("`stdin` must be `NULL` if `pty == TRUE`")
+    throw(new_error("`stdin` must be `NULL` if `pty == TRUE`"))
   }
   if (pty && !is.null(stdout)) {
-    throw("`stdout` must be `NULL` if `pty == TRUE`")
+    throw(new_error("`stdout` must be `NULL` if `pty == TRUE`"))
   }
   if (pty && !is.null(stderr)) {
-    throw("`stderr` must be `NULL` if `pty == TRUE`")
+    throw(new_error("`stderr` must be `NULL` if `pty == TRUE`"))
   }
 
   def <- default_pty_options()
   pty_options <- utils::modifyList(def, pty_options)
   if (length(bad <- setdiff(names(def), names(pty_options)))) {
-    throw("Uknown pty option(s): ",
-          paste(paste0("`", bad, "`"), collapse = ", "))
+    throw(new_error("Uknown pty option(s): ",
+                    paste(paste0("`", bad, "`"), collapse = ", ")))
   }
   pty_options <- pty_options[names(def)]
 

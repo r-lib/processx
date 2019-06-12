@@ -185,7 +185,7 @@ run <- function(
       resenv$stdout <- paste0(resenv$stdout, pr$read_output(), pr$read_output())
       resenv$stderr <- paste0(resenv$stderr, pr$read_error(), pr$read_error())
       tryCatch(pr$kill(), error = function(e) NULL)
-      signalCondition(make_condition(
+      signalCondition(new_process_interrupt_cond(
         list(interrupt = TRUE, stderr = resenv$stderr,
              stdout = resenv$stdout),
         runcall, echo = echo, stderr_to_stdout = stderr_to_stdout
@@ -197,8 +197,8 @@ run <- function(
 
   if (error_on_status && (is.na(res$status) || res$status != 0)) {
     "!DEBUG run() error on status `res$status` for process `pr$get_pid()`"
-    throw(make_condition(res, call = sys.call(), echo = echo,
-                         stderr_to_stdout, res$status))
+    throw(new_process_error(res, call = sys.call(), echo = echo,
+                            stderr_to_stdout, res$status))
   }
 
   res
@@ -323,50 +323,46 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
   )
 }
 
-make_condition <- function(result, call, echo, stderr_to_stdout,
-                           status = NA_integer_) {
-
-  if (isTRUE(result$interrupt)) {
-    structure(
-      list(
-        message = "System command interrupted",
-        stderr = if (stderr_to_stdout) result$stdout else result$stderr,
-        call = call,
-        echo = echo,
-        stderr_to_stdout = stderr_to_stdout,
-        status = status
-      ),
-      class = c("system_command_interrupt", "interrupt", "condition")
-    )
-
-  } else if (isTRUE(result$timeout)) {
-    structure(
-      list(
-        message = "System command timeout",
-        stderr = if (stderr_to_stdout) result$stdout else result$stderr,
-        call = call,
-        echo = echo,
-        stderr_to_stdout = stderr_to_stdout,
-        status = status
-      ),
-      class = c("system_command_timeout_error", "system_command_error",
-        "error", "condition")
-    )
-
+new_process_error <- function(result, call, echo, stderr_to_stdout,
+                              status = NA_integer_) {
+  if (isTRUE(result$timeout)) {
+    new_process_timeout_error(result, call, echo, stderr_to_stdout, status)
   } else {
-    structure(
-      list(
-        message = "System command error",
-        stderr = if (stderr_to_stdout) result$stdout else result$stderr,
-        call = call,
-        echo = echo,
-        stderr_to_stdout = stderr_to_stdout,
-        status = status
-      ),
-      class = c("system_command_status_error", "system_command_error",
-        "error", "condition")
-    )
+    new_process_status_error(result, call, echo, stderr_to_stdout, status)
   }
+}
+
+new_process_status_error <- function(result, call, echo, stderr_to_stdout,
+                                     status = NA_integer_) {
+  err <- new_error("System command error", call. = call)
+  err$stderr <- if (stderr_to_stdout) result$stdout else result$stderr
+  err$echo <- echo
+  err$stderr_to_stdout <- stderr_to_stdout
+  err$status <- status
+
+  add_class(err, c("system_command_status_error", "system_command_error"))
+}
+
+new_process_interrupt_cond <- function(result, call, echo, stderr_to_stdout,
+                                      status = NA_integer_) {
+  cond <- new_cond("System command interrupted", call. = call)
+  cond$stderr <- if (stderr_to_stdout) result$stdout else result$stderr
+  cond$echo <- echo
+  cond$stderr_to_stdout <- stderr_to_stdout
+  cond$status <- status
+
+  add_class(cond, c("system_command_interrupt", "interrupt"))
+}
+
+new_process_timeout_error <- function(result, call, echo, stderr_to_stdout,
+                                      status = NA_integer_) {
+  err <- new_error("System command timeout", call. = call)
+  err$stderr <- if (stderr_to_stdout) result$stdout else result$stderr
+  err$echo <- echo
+  err$stderr_to_stdout <- stderr_to_stdout
+  err$status <- status
+
+  add_class(err, c("system_command_timeout_error", "system_command_error"))
 }
 
 #' @export

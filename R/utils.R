@@ -49,7 +49,7 @@ full_path <- function(path) {
 
       # Must have a name, like "//server"
       if (drive == "//")
-        throw("Server name not found in network path.")
+        throw(new_error("Server name not found in network path."))
 
     } else {
       drive <- substring(getwd(), 1, 2)
@@ -222,4 +222,14 @@ tty_echo_on <- function() {
 
 str_trim <- function(x) {
   sub("^\\s+", "", sub("\\s+$", "", x))
+}
+
+new_not_implemented_error <- function(message, call) {
+  add_class(new_error(message, call. = call),
+            c("not_implemented_error", "not_implemented"))
+}
+
+add_class <- function(obj, class) {
+  class(obj) <- c(class, class(obj))
+  obj
 }

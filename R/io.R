@@ -22,27 +22,27 @@ process_has_poll_connection <- function(self, private) {
 process_get_input_connection <- function(self, private) {
   "!DEBUG process_get_input_connection `private$get_short_name()`"
   if (!self$has_input_connection())
-    throw("stdin is not a pipe.")
+    throw(new_error("stdin is not a pipe."))
   private$stdin_pipe
 }
 
 process_get_output_connection <- function(self, private) {
   "!DEBUG process_get_output_connection `private$get_short_name()`"
   if (!self$has_output_connection())
-    throw("stdout is not a pipe.")
+    throw(new_error("stdout is not a pipe."))
   private$stdout_pipe
 }
 
 process_get_error_connection <- function(self, private) {
   "!DEBUG process_get_error_connection `private$get_short_name()`"
   if (!self$has_error_connection())
-    throw("stderr is not a pipe.")
+    throw(new_error("stderr is not a pipe."))
   private$stderr_pipe
 }
 
 process_get_poll_connection <- function(self, private) {
   "!DEBUG process_get_poll_connection `private$get_short_name()`"
-  if (!self$has_poll_connection()) throw("No poll connection")
+  if (!self$has_poll_connection()) throw(new_error("No poll connection"))
   private$poll_pipe
 }
 
@@ -63,7 +63,9 @@ process_read_error <- function(self, private, n) {
 process_read_output_lines <- function(self, private, n) {
   "!DEBUG process_read_output_lines `private$get_short_name()`"
   con <- process_get_output_connection(self, private)
-  if (private$pty) throw("Cannot read lines from a pty (see manual)")
+  if (private$pty) {
+    throw(new_error("Cannot read lines from a pty (see manual)"))
+  }
   .Call(c_processx_connection_read_lines, con, n)
 }
 

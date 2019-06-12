@@ -1,5 +1,213 @@
 
+# Standalone file for better error handling -----------------------------
+#
+# If can allow package dependencies, then you are probably better off
+# using rlang's functions for errors.
+#
+# The canonical location of this file is in the processx package:
+# https://github.com/r-lib/processx/master/R/errors.R
+#
+# Features:
+# - Throw conditions and errors with the same API.
+# - Automatically captures the right calls and adds them to the conditions.
+# - Sets `.Last.error`, so you can easily inspect the errors, even if they
+#   were not caught.
+# - It only sets `.Last.error` for the errors that are not caught.
+# - Hierarchical errors, to allow higher level error messages, that are
+#   more meaningful for the users, while also keeping the lower level
+#   details in the error object. (So in `.Last.error` as well.)
+# - `.Last.error` always includes a stack trace. (The stack trace is
+#   common for the whole error hierarchy.)
+#
+# API:
+# new_cond(..., call. = TRUE, domain = NULL)
+# new_error(..., call. = TRUE, domain = NULL)
+# throw(cond, parent = NULL)
+# catch_rethrow(expr, ...)
+# rethrow(expr, cond)
+# trace_back()
+#
+# NEWS:
+# - first release will be here
+
 err <- local({
+
+  # -- condition constructors -------------------------------------------
+
+  #' Create a new condition
+  #'
+  #' @noRd
+  #' @param ... Parts of the error message, they will be converted to
+  #'   character and then concatenated, like in [stop()].
+  #' @param call. A call object to include in the condition, or `TRUE`
+  #'   or `NULL`, meaning that [throw()] should add a call object
+  #'   automatically.
+  #' @param domain Translation domain, see [stop()].
+  #' @return Condition object. Currently a list, but you should not rely
+  #'   on that.
+
+  new_cond <- function(..., call. = TRUE, domain = NULL) {
+    message <- .makeMessage(..., domain = domain)
+    structure(
+      list(message = message, call = call.),
+      class = c("condition"))
+  }
+
+  #' Create a new error condition
+  #'
+  #' It also adds the `rlib_error` class.
+  #'
+  #' @noRd
+  #' @param ... Passed to [new_cond()].
+  #' @param call. Passed to [new_cond()].
+  #' @param domain Passed to [new_cond()].
+  #' @return Error condition object with classes `rlib_error`, `error`
+  #'   and `condition`.
+
+  new_error <- function(..., call. = TRUE, domain = NULL) {
+    cond <- new_cond(..., call. = call., domain = domain)
+    class(cond) <- c("rlib_error", "error", "condition")
+    cond
+  }
+
+  # -- throwing conditions ----------------------------------------------
+
+  #' Throw a condition
+  #'
+  #' If the condition is an error, it will also call [stop()], after
+  #' signalling the condition first. This means that if the condition is
+  #' caught by an exiting handler, then [stop()] is not called.
+  #'
+  #' @noRd
+  #' @param cond Condition object to throw. If it is an error condition,
+  #'   then it calls [stop()].
+  #' @param parent Parent condition. Use this within [rethrow()] and
+  #'   [catch_rethrow()].
+
+  throw <- function(cond, parent = NULL) {
+    if (is.null(cond$call) || isTRUE(cond$call)) cond$call <- sys.call(-1)
+
+    # Eventually the nframe numbers will help us print a better trace
+    # When a child condition is created, the child will use the parent
+    # error object to make note of its own nframe. Here we copy that back
+    # to the parent.
+    cond$nframe <- sys.parent()
+    if (!is.null(parent)) {
+      cond$parent <- parent
+      cond$call <- cond$parent$childcall
+      cond$parent$childcall <- NULL
+      cond$nframe <- cond$parent$childframe
+      cond$parent$childframe <- NULL
+    }
+
+    signalCondition(cond)
+
+    # If this is not an error, then we'll just return here. This allows
+    # throwing interrupt conditions for example, with the same UI.
+    if (! inherits(cond, "error")) return(invisible())
+
+    # If we get here that means that the condition was not caught by
+    # an exiting handler. That means that we need to create a trace.
+    cond$trace <- trace_back()
+
+    # Set up environment to store .Last.error, it will be just before
+    # baseenv(), so it is almost as if it was in baseenv() itself, like
+    # .Last.value. We save the print methos here as well, and then they
+    # will be found automatically.
+    if (! "org:r-lib" %in% search()) {
+      do.call("attach", list(new.env(), pos = length(search()),
+                             name = "org:r-lib"))
+    }
+    env <- as.environment("org:r-lib")
+    env$print.rlib_error <- print_rlib_error
+    env$print.rlib_trace <- print_rlib_trace
+    env$.Last.error <- cond
+
+    # Dropping the classes and adding "duplicate_condition" is a workaround
+    # for the case when we have an non-exiting handlers on throw()-n
+    # conditions. These would get the conditions twice, because stop()
+    # will also signal them. If we drop the classes, then only handlers
+    # on "condition" objects (i.e. all conditions) get duplicate signals.
+    # This is probably quite rare, but for this rare case they can also
+    # recognize the duplicates from the "duplicate_condition" extra class.
+    class(cond) <- c("duplicate_condition", "condition")
+    stop(cond)
+  }
+
+  # -- rethrowing conditions --------------------------------------------
+
+  #' Catch and re-throw conditions
+  #'
+  #' See [rethrow()] for a simpler interface that handles `error`
+  #' conditions automatically.
+  #'
+  #' @noRd
+  #' @param expr Expression to evaluate.
+  #' @param ... Condition handler specification, the same way as in
+  #'   [withCallingHandlers()]. You are supposed to call [throw()] from
+  #'   the error handler, with a new error object, setting the original
+  #'   error object as parent. See examples below.
+  #' @examples
+  #' f <- function() {
+  #'   ...
+  #'   err$catch_rethrow(
+  #'     ... code that potentially errors ...,
+  #'     error = function(e) {
+  #'       throw(new_error("This will be the child error"), parent = e)
+  #'     }
+  #'   )
+  #' }
+
+  catch_rethrow <- function(expr, ...) {
+    realcall <- sys.call(-1)
+    realframe <- sys.parent()
+    parent <- parent.frame()
+
+    cl <- match.call()
+    cl[[1]] <- quote(withCallingHandlers)
+    handlers <- list(...)
+    for (h in names(handlers)) {
+      cl[[h]] <- function(e) {
+        e$childcall <- realcall
+        e$childframe <- realframe
+        handlers[[h]](e)
+      }
+    }
+    eval(cl, envir = parent)
+  }
+
+  #' Catch and re-throw conditions
+  #'
+  #' `rethrow()` is similar to [catch_rethrow()], but it has a simpler
+  #' interface. It catches conditions with class `error`, and re-throws
+  #' `cond` instead, using the original condition as the parent.
+  #'
+  #' @noRd
+  #' @param expr Expression to evaluate.
+  #' @param ... Condition handler specification, the same way as in
+  #'   [withCallingHandlers()].
+
+  rethrow <- function(expr, cond) {
+    realcall <- sys.call(-1)
+    realframe <- sys.parent()
+    withCallingHandlers(
+      expr,
+      error = function(e) {
+        e$childcall <- realcall
+        e$childframe <- realframe
+        throw(cond, parent = e)
+      }
+    )
+  }
+
+  # -- create traceback -------------------------------------------------
+
+  #' Create a traceback
+  #'
+  #' [throw()] calls this function automatically if an error is not caught,
+  #' so there is currently not much use to call it directly.
+  #'
+  #' @return An `rlib_trace` object.
 
   trace_back <- function() {
     idx <- seq_len(sys.parent(1L))
@@ -50,9 +258,15 @@ err <- local({
     nm
   }
 
+  # -- printing ---------------------------------------------------------
+
   print_rlib_error <- function(x, ...) {
     ## TODO: better printing
     NextMethod("print")
+    if (!is.null(x$parent)) {
+      cat("----\n")
+      print(x$parent)
+    }
     invisible(x)
   }
 
@@ -62,51 +276,23 @@ err <- local({
     invisible(x)
   }
 
-  throw <- function(..., call. = TRUE, domain = NULL) {
-    args <- list(...)
-
-    if (length(args) == 1L && inherits(args[[1L]], "condition")) {
-      if (nargs() > 1L) warning("additional arguments in throw()")
-      cond <- args[[1L]]
-      message <- conditionMessage(cond)
-      call. <- conditionCall(cond)
-      if (is.null(call.) || isTRUE(call.)) call. <- sys.call(-1)
-
-    } else {
-      message <- .makeMessage(..., domain = domain)
-      if (is.null(call.) || isTRUE(call.)) call. <- sys.call(-1)
-      cond <- structure(
-        list(message = message, call = call.),
-        class = c("simpleError", "error", "condition"))
-    }
-
-    class(cond) <- c(
-      setdiff(class(cond), c("simpleError", "error", "condition")),
-      "rlib_error", "error", "condition")
-    signalCondition(cond)
-
-    if (! "org:r-lib" %in% search()) {
-      do.call("attach", list(new.env(), pos = length(search()),
-                             name = "org:r-lib"))
-    }
-    env <- as.environment("org:r-lib")
-    env$print.rlib_error <- print_rlib_error
-    env$print.rlib_trace <- print_rlib_trace
-
-    cond$trace <- trace_back()
-    env$.Last.error <- cond
-
-    class(cond) <- c("duplicate_condition", "condition")
-    stop(cond)
-  }
-
   structure(
     list(
-      .internal = environment(),
-      throw = throw,
-      trace_back = trace_back
+      .internal     = environment(),
+      new_cond      = new_cond,
+      new_error     = new_error,
+      throw         = throw,
+      rethrow       = rethrow,
+      catch_rethrow = catch_rethrow,
+      trace_back    = trace_back
     ),
-    class = c("standalone_err", "standalone"))
+    class = c("standalone_errors", "standalone"))
 })
 
-throw <- err$throw
+# These are optional, and feel free to remove them if you prefer to
+# call them through the `err` object.
+
+new_cond  <- err$new_cond
+new_error <- err$new_error
+throw     <- err$throw
+rethrow   <- err$rethrow
