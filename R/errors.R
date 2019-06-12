@@ -1,5 +1,5 @@
 
-# Standalone file for better error handling -----------------------------
+# # Standalone file for better error handling ----------------------------
 #
 # If can allow package dependencies, then you are probably better off
 # using rlang's functions for errors.
@@ -7,7 +7,8 @@
 # The canonical location of this file is in the processx package:
 # https://github.com/r-lib/processx/master/R/errors.R
 #
-# Features:
+# ## Features
+#
 # - Throw conditions and errors with the same API.
 # - Automatically captures the right calls and adds them to the conditions.
 # - Sets `.Last.error`, so you can easily inspect the errors, even if they
@@ -19,15 +20,24 @@
 # - `.Last.error` always includes a stack trace. (The stack trace is
 #   common for the whole error hierarchy.)
 #
-# API:
+# ## API
+# ```
 # new_cond(..., call. = TRUE, domain = NULL)
 # new_error(..., call. = TRUE, domain = NULL)
 # throw(cond, parent = NULL)
 # catch_rethrow(expr, ...)
 # rethrow(expr, cond)
 # trace_back()
+# ```
 #
-# NEWS:
+# ## Roadmap:
+# - better printing of the trace
+# - better printing of the error
+# - better programmatic trace API (so we can capture it in the subprocess,
+#   copy it back to the main process, and create a nice error object).
+# - method to handle errors from C, maybe by having a .Call wrapper?
+#
+# ## NEWS:
 # - first release will be here
 
 err <- local({
