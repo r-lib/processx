@@ -190,6 +190,8 @@ err <- local({
     handlers <- list(...)
     for (h in names(handlers)) {
       cl[[h]] <- function(e) {
+        # This will be NULL if the error is not throw()-n
+        if (is.null(e$nframe)) e$nframe <- sys.parent()
         e$childcall <- realcall
         e$childframe <- realframe
         handlers[[h]](e)
@@ -215,6 +217,8 @@ err <- local({
     withCallingHandlers(
       expr,
       error = function(e) {
+        # This will be NULL if the error is not throw()-n
+        if (is.null(e$nframe)) e$nframe <- sys.parent()
         e$childcall <- realcall
         e$childframe <- realframe
         throw(cond, parent = e)
