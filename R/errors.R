@@ -144,6 +144,7 @@ err <- local({
     env$print.rlib_error <- print_rlib_error
     env$print.rlib_trace <- print_rlib_trace
     env$.Last.error <- cond
+    env$.Last.error.trace <- cond$trace
 
     # Dropping the classes and adding "duplicate_condition" is a workaround
     # for the case when we have an non-exiting handlers on throw()-n
