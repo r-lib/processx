@@ -27,6 +27,7 @@
 # throw(cond, parent = NULL)
 # catch_rethrow(expr, ...)
 # rethrow(expr, cond)
+# rethrow_call(.NAME, ...)
 # trace_back()
 # ```
 #
