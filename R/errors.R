@@ -110,6 +110,18 @@ err <- local({
     # an exiting handler. That means that we need to create a trace.
     cond$trace <- trace_back()
 
+    # We need to add the nframes and the error messages to the trace itself,
+    # to be able to print it nicely, with the error messages.
+    nframes <- cond$nframe
+    messages <- list(conditionMessage(cond))
+    parent <- cond
+    while (!is.null(parent <- parent$parent)) {
+      nframes <- c(nframes, parent$nframe)
+      messages <- c(messages, list(conditionMessage(parent)))
+    }
+    cond$trace$nframes <- nframes
+    cond$trace$messages <- messages
+
     # Set up environment to store .Last.error, it will be just before
     # baseenv(), so it is almost as if it was in baseenv() itself, like
     # .Last.value. We save the print methos here as well, and then they
