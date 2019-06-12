@@ -243,7 +243,8 @@ err <- local({
     call <- sys.call()
     nframe <- sys.nframe()
     withCallingHandlers(
-      .Call(.NAME, ...),
+      # do.call to work around an R CMD check issue
+      do.call(".Call", list(.NAME, ...)),
       error = function(e) {
         e$nframe <- nframe
         e$call <- call
