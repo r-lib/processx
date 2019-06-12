@@ -39,7 +39,7 @@
 # - method to handle errors from C, maybe by having a .Call wrapper?
 #
 # ## NEWS:
-# - first release will be here
+# - date of first release will be here
 
 err <- local({
 
@@ -102,7 +102,7 @@ err <- local({
     # When a child condition is created, the child will use the parent
     # error object to make note of its own nframe. Here we copy that back
     # to the parent.
-    cond$nframe <- sys.parent()
+    if (is.null(cond$nframe)) cond$nframe <- sys.parent()
     if (!is.null(parent)) {
       cond$parent <- parent
       cond$call <- cond$parent$childcall
@@ -219,6 +219,22 @@ err <- local({
         e$childcall <- realcall
         e$childframe <- realframe
         throw(cond, parent = e)
+      }
+    )
+  }
+
+  rethrow_call <- function(.NAME, ...) {
+    call <- sys.call()
+    nframe <- sys.nframe()
+    withCallingHandlers(
+      .Call(.NAME, ...),
+      error = function(e) {
+        e$nframe <- nframe
+        e$call <- call
+        if (inherits(e, "simpleError")) {
+          class(e) <- c("c_error", "error", "condition")
+        }
+        throw(e)
       }
     )
   }
@@ -342,6 +358,7 @@ err <- local({
       throw         = throw,
       rethrow       = rethrow,
       catch_rethrow = catch_rethrow,
+      rethrow_call  = rethrow_call,
       trace_back    = trace_back
     ),
     class = c("standalone_errors", "standalone"))
@@ -354,3 +371,4 @@ new_cond  <- err$new_cond
 new_error <- err$new_error
 throw     <- err$throw
 rethrow   <- err$rethrow
+rethrow_call <- err$rethrow_call
