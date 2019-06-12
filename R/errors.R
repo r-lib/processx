@@ -147,9 +147,9 @@ err <- local({
     env$.Last.error.trace <- cond$trace
 
     # Dropping the classes and adding "duplicate_condition" is a workaround
-    # for the case when we have an non-exiting handlers on throw()-n
-    # conditions. These would get the conditions twice, because stop()
-    # will also signal them. If we drop the classes, then only handlers
+    # for the case when we have non-exiting handlers on throw()-n
+    # conditions. These would get the condition twice, because stop()
+    # will also signal it. If we drop the classes, then only handlers
     # on "condition" objects (i.e. all conditions) get duplicate signals.
     # This is probably quite rare, but for this rare case they can also
     # recognize the duplicates from the "duplicate_condition" extra class.
