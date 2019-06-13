@@ -73,13 +73,13 @@ SEXP processx__echo_on() {
   struct termios tp;
 
   if (tcgetattr(STDOUT_FILENO, &tp) == -1) {
-    error("Cannot turn terminal echo on");
+    R_THROW_ERROR("Cannot turn terminal echo on");
   }
 
   tp.c_lflag |= ECHO;
 
   if (tcsetattr(STDOUT_FILENO, TCSAFLUSH, &tp) == -1) {
-    error("Cannot turn terminal echo on");
+    R_THROW_ERROR("Cannot turn terminal echo on");
   }
 
   return R_NilValue;
@@ -89,13 +89,13 @@ SEXP processx__echo_off() {
   struct termios tp;
 
   if (tcgetattr(STDOUT_FILENO, &tp) == -1) {
-    error("Cannot turn terminal echo off");
+    R_THROW_ERROR("Cannot turn terminal echo off");
   }
 
   tp.c_lflag &= ~ECHO;
 
   if (tcsetattr(STDOUT_FILENO, TCSAFLUSH, &tp) == -1) {
-    error("Cannot turn terminal echo off");
+    R_THROW_ERROR("Cannot turn terminal echo off");
   }
 
   return R_NilValue;

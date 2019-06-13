@@ -17,6 +17,8 @@
 #include <unistd.h>
 #endif
 
+#include "errors.h"
+
 #include <Rinternals.h>
 #include <R_ext/Riconv.h>
 
@@ -260,10 +262,6 @@ BOOL processx__thread_getstatus_select(LPDWORD lpNumberOfBytes,
 DWORD processx__thread_get_last_error();
 
 #endif
-
-#define PROCESSX_ERROR(m,c) processx__error((m),(c),__FILE__,__LINE__)
-void processx__error(const char *message, DWORD errorcode,
-		     const char *file, int line);
 
 /* Free-list of connection in Windows */
 

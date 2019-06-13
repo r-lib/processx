@@ -91,7 +91,7 @@ void processx__block_sigchld() {
   sigemptyset(&blockMask);
   sigaddset(&blockMask, SIGCHLD);
   if (sigprocmask(SIG_BLOCK, &blockMask, NULL) == -1) {
-    error("processx error setting up signal handlers");
+    R_THROW_ERROR("processx error setting up signal handlers");
   }
 }
 
@@ -100,6 +100,6 @@ void processx__unblock_sigchld() {
   sigemptyset(&unblockMask);
   sigaddset(&unblockMask, SIGCHLD);
   if (sigprocmask(SIG_UNBLOCK, &unblockMask, NULL) == -1) {
-    error("processx error setting up signal handlers");
+    R_THROW_ERROR("processx error setting up signal handlers");
   }
 }

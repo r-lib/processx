@@ -40,14 +40,14 @@ static void processx__init_global_job_handle(void) {
 
   processx__global_job_handle = CreateJobObjectW(&attr, NULL);
   if (processx__global_job_handle == NULL) {
-    PROCESSX_ERROR("Creating global job object", GetLastError());
+    R_THROW_SYSTEM_ERROR("Creating global job object");
   }
 
   if (!SetInformationJobObject(processx__global_job_handle,
                                JobObjectExtendedLimitInformation,
                                &info,
                                sizeof info)) {
-    PROCESSX_ERROR("Setting up global job object", GetLastError());
+    R_THROW_SYSTEM_ERROR("Setting up global job object");
   }
 }
 
@@ -99,7 +99,7 @@ int processx__utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr) {
     /* cchWideChar =    */ ws_len);
 
   if (r != ws_len) {
-    error("processx error interpreting UTF8 command or arguments");
+    R_THROW_ERROR("processx error interpreting UTF8 command or arguments");
   }
 
   *ws_ptr = ws;
@@ -319,10 +319,10 @@ int env_strncmp(const wchar_t* a, int na, const wchar_t* b) {
   B = alloca((nb+1) * sizeof(wchar_t));
 
   r = LCMapStringW(LOCALE_INVARIANT, LCMAP_UPPERCASE, a, na, A, na);
-  if (!r) PROCESSX_ERROR("make environment", GetLastError());
+  if (!r) R_THROW_SYSTEM_ERROR("make environment");
   A[na] = L'\0';
   r = LCMapStringW(LOCALE_INVARIANT, LCMAP_UPPERCASE, b, nb, B, nb);
-  if (!r) PROCESSX_ERROR("make environment", GetLastError());
+  if (!r) R_THROW_SYSTEM_ERROR("make environment");
   B[nb] = L'\0';
 
   while (1) {
@@ -511,7 +511,7 @@ static int processx__make_program_env(SEXP env_block, const char *tree_id, WCHAR
                                            ptr,
                                            (int) (env_len - (ptr - dst)));
         if (var_size != len-1) { /* race condition? */
-          PROCESSX_ERROR("GetEnvironmentVariableW", GetLastError());
+          R_THROW_SYSTEM_ERROR("GetEnvironmentVariableW");
         }
       }
       i++;
@@ -811,29 +811,6 @@ static WCHAR* processx__search_path(const WCHAR *file,
   return result;
 }
 
-void processx__error(const char *message, DWORD errorcode,
-		     const char *file, int line) {
-  LPVOID lpMsgBuf;
-  char *msg;
-
-  FormatMessage(
-    FORMAT_MESSAGE_ALLOCATE_BUFFER |
-    FORMAT_MESSAGE_FROM_SYSTEM |
-    FORMAT_MESSAGE_IGNORE_INSERTS,
-    NULL,
-    errorcode,
-    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-    (LPTSTR) &lpMsgBuf,
-    0, NULL );
-
-  msg = R_alloc(1, strlen(lpMsgBuf) + 1);
-  strcpy(msg, lpMsgBuf);
-  LocalFree(lpMsgBuf);
-
-  error("processx error, %s: #%d %s at '%s:%d'", message,
-	(int) errorcode, msg, file, line);
-}
-
 void processx__collect_exit_status(SEXP status, DWORD exitcode);
 
 DWORD processx__terminate(processx_handle_t *handle, SEXP status) {
@@ -869,7 +846,7 @@ SEXP processx__make_handle(SEXP private, int cleanup) {
   SEXP result;
 
   handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
-  if (!handle) { error("Out of memory"); }
+  if (!handle) { R_THROW_ERROR("Out of memory"); }
   memset(handle, 0, sizeof(processx_handle_t));
 
   result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
@@ -921,26 +898,26 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 
   err = processx__utf8_to_utf16_alloc(CHAR(STRING_ELT(command, 0)),
 				      &application);
-  if (err) { PROCESSX_ERROR("utf8 -> utf16 conversion", err); }
+  if (err) { R_THROW_SYSTEM_ERROR_CODE("utf8 -> utf16 conversion", err); }
 
   err = processx__make_program_args(
       args,
       options.windows_verbatim_args,
       &arguments);
-  if (err) { PROCESSX_ERROR("making program args", err); }
+  if (err) { R_THROW_SYSTEM_ERROR_CODE("making program args", err); }
 
   if (isNull(env)) {
     err = processx__add_tree_id_env(ctree_id, &cenv);
   } else {
     err = processx__make_program_env(env, ctree_id, &cenv);
   }
-  if (err) PROCESSX_ERROR("making environment", err);
+  if (err) R_THROW_SYSTEM_ERROR_CODE("making environment", err);
 
   if (ccwd) {
     /* Explicit cwd */
     err = processx__utf8_to_utf16_alloc(ccwd, &cwd);
     if (err) {
-      PROCESSX_ERROR("convert current directory encoding", GetLastError());
+      R_THROW_SYSTEM_ERROR("convert current directory encoding");
     }
 
   } else {
@@ -949,14 +926,14 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 
     cwd_len = GetCurrentDirectoryW(0, NULL);
     if (!cwd_len) {
-      PROCESSX_ERROR("get current directory length", GetLastError());
+      R_THROW_SYSTEM_ERROR("get current directory length");
     }
 
     cwd = (WCHAR*) R_alloc(cwd_len, sizeof(WCHAR));
 
     r = GetCurrentDirectoryW(cwd_len, cwd);
     if (r == 0 || r >= cwd_len) {
-      PROCESSX_ERROR("get current directory", GetLastError());
+      R_THROW_SYSTEM_ERROR("get current directory");
     }
   }
 
@@ -966,14 +943,14 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 
     path_len = GetEnvironmentVariableW(L"PATH", NULL, 0);
     if (!path_len) {
-      PROCESSX_ERROR("get env var length", GetLastError());
+      R_THROW_SYSTEM_ERROR("get env var length");
     }
 
     path = (WCHAR*) R_alloc(path_len, sizeof(WCHAR));
 
     r = GetEnvironmentVariableW(L"PATH", path, path_len);
     if (r == 0 || r >= path_len) {
-      PROCESSX_ERROR("get env var", GetLastError());
+      R_THROW_SYSTEM_ERROR("get env var");
     }
   }
 
@@ -990,14 +967,14 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 			       cstd_in, cstd_out, cstd_err,
 			       &handle->child_stdio_buffer, private,
 			       cencoding);
-  if (err) { PROCESSX_ERROR("setup stdio", err); }
+  if (err) { R_THROW_SYSTEM_ERROR_CODE("setup stdio", err); }
 
   application_path = processx__search_path(application, cwd, path);
   if (!application_path) {
     R_ClearExternalPtr(result);
     processx__stdio_destroy(handle->child_stdio_buffer);
     free(handle);
-    error("Command not found");
+    R_THROW_ERROR("Command not found");
   }
 
   startup.cb = sizeof(startup);
@@ -1045,7 +1022,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
     /* lpStartupInfo =        */ &startup,
     /* lpProcessInformation = */ &info);
 
-  if (!err) { PROCESSX_ERROR("create process", GetLastError()); }
+  if (!err) { R_THROW_SYSTEM_ERROR("create process"); }
 
   handle->hProcess = info.hProcess;
   handle->dwProcessId = info.dwProcessId;
@@ -1073,13 +1050,13 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
        */
       DWORD err = GetLastError();
       if (err != ERROR_ACCESS_DENIED) {
-	PROCESSX_ERROR("Assign to job object", err);
+	R_THROW_SYSTEM_ERROR_CODE("Assign to job object", err);
       }
     }
   }
 
   dwerr = ResumeThread(info.hThread);
-  if (dwerr == (DWORD) -1) PROCESSX_ERROR("resume thread", GetLastError());
+  if (dwerr == (DWORD) -1) R_THROW_SYSTEM_ERROR("resume thread");
   CloseHandle(info.hThread);
 
   processx__stdio_destroy(handle->child_stdio_buffer);
@@ -1117,14 +1094,14 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   }
 
   if (err2 == WAIT_FAILED) {
-    PROCESSX_ERROR("wait on process", GetLastError());
+    R_THROW_SYSTEM_ERROR("wait on process");
   } else if (err2 == WAIT_TIMEOUT) {
     return ScalarLogical(FALSE);
   }
 
   /* Collect  */
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
-  if (!err) { PROCESSX_ERROR("get exit code after wait", GetLastError()); }
+  if (!err) { R_THROW_SYSTEM_ERROR("get exit code after wait"); }
 
   processx__collect_exit_status(status, exitcode);
 
@@ -1144,7 +1121,7 @@ SEXP processx_is_alive(SEXP status) {
   /* Otherwise try to get exit code */
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
   if (!err) {
-    PROCESSX_ERROR("get exit code to check if alive", GetLastError());
+    R_THROW_SYSTEM_ERROR("get exit code to check if alive");
   }
 
   if (exitcode == STILL_ACTIVE) {
@@ -1167,7 +1144,7 @@ SEXP processx_get_exit_status(SEXP status) {
 
   /* Otherwise try to get exit code */
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
-  if (!err) {PROCESSX_ERROR("get exit status", GetLastError()); }
+  if (!err) {R_THROW_SYSTEM_ERROR("get exit status"); }
 
   if (exitcode == STILL_ACTIVE) {
     return R_NilValue;
@@ -1194,7 +1171,7 @@ SEXP processx_signal(SEXP status, SEXP signal) {
        we are terminating it... */
     err = GetExitCodeProcess(handle->hProcess, &exitcode);
     if (!err) {
-      PROCESSX_ERROR("get exit code after signal", GetLastError());
+      R_THROW_SYSTEM_ERROR("get exit code after signal");
     }
 
     if (exitcode == STILL_ACTIVE) {
@@ -1211,7 +1188,7 @@ SEXP processx_signal(SEXP status, SEXP signal) {
     /* Health check: is the process still alive? */
     err = GetExitCodeProcess(handle->hProcess, &exitcode);
     if (!err) {
-      PROCESSX_ERROR("get exit code for signal 0", GetLastError());
+      R_THROW_SYSTEM_ERROR("get exit code for signal 0");
     }
 
     if (exitcode == STILL_ACTIVE) {
@@ -1222,13 +1199,13 @@ SEXP processx_signal(SEXP status, SEXP signal) {
   }
 
   default:
-    error("Unsupported signal on this platform");
+    R_THROW_ERROR("Unsupported signal on this platform");
     return R_NilValue;
   }
 }
 
 SEXP processx_interrupt(SEXP status) {
-  error("Internal processx error, `processx_interrupt()` should not be called");
+  R_THROW_ERROR("Internal processx error, `processx_interrupt()` should not be called");
   return R_NilValue;
 }
 
@@ -1252,7 +1229,7 @@ SEXP processx__process_exists(SEXP pid) {
   if (proc == NULL) {
     DWORD err = GetLastError();
     if (err == ERROR_INVALID_PARAMETER) return ScalarLogical(0);
-    PROCESSX_ERROR("open process to check if it exists", err);
+    R_THROW_SYSTEM_ERROR_CODE("open process to check if it exists", err);
     return R_NilValue;
   } else {
     /* Maybe just finished, and in that case we still have a valid handle.
@@ -1261,9 +1238,7 @@ SEXP processx__process_exists(SEXP pid) {
     DWORD err = GetExitCodeProcess(proc, &exitcode);
     CloseHandle(proc);
     if (!err) {
-      PROCESSX_ERROR(
-	"get exit code to check if it exists",
-	GetLastError());
+      R_THROW_SYSTEM_ERROR("get exit code to check if it exists");
     }
     return ScalarLogical(exitcode == STILL_ACTIVE);
   }

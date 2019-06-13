@@ -198,7 +198,7 @@ int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_
  error:
   if (hOutputRead != INVALID_HANDLE_VALUE) CloseHandle(hOutputRead);
   if (hOutputWrite != INVALID_HANDLE_VALUE) CloseHandle(hOutputWrite);
-  PROCESSX_ERROR(errmessage, err);
+  R_THROW_SYSTEM_ERROR_CODE(errmessage, err);
   return 0;			/* never reached */
 }
 
@@ -263,7 +263,7 @@ int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child
  error:
   if (hOutputRead != INVALID_HANDLE_VALUE) CloseHandle(hOutputRead);
   if (hOutputWrite != INVALID_HANDLE_VALUE) CloseHandle(hOutputWrite);
-  PROCESSX_ERROR(errmessage, err);
+  R_THROW_SYSTEM_ERROR_CODE(errmessage, err);
   return 0;			/* never reached */
 }
 
@@ -325,11 +325,11 @@ int processx__stdio_create(processx_handle_t *handle,
   int i;
   int err;
 
-  if (count > 255) error("Too many processx connections to inherit");
+  if (count > 255) R_THROW_ERROR("Too many processx connections to inherit");
 
   /* Allocate the child stdio buffer */
   buffer = malloc(CHILD_STDIO_SIZE(count));
-  if (!buffer) { error("Out of memory"); }
+  if (!buffer) { R_THROW_ERROR("Out of memory"); }
 
   /* Prepopulate the buffer with INVALID_HANDLE_VALUE handles, so we can
      clean up on failure*/

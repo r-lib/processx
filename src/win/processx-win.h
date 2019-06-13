@@ -33,9 +33,6 @@ int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child
 
 void processx__handle_destroy(processx_handle_t *handle);
 
-#define PROCESSX_ERROR(m,c) processx__error((m),(c),__FILE__,__LINE__)
-void processx__error(const char *message, DWORD errorcode, const char *file, int line);
-
 void processx__stdio_noinherit(BYTE* buffer);
 int processx__stdio_verify(BYTE* buffer, WORD size);
 double processx__create_time(HANDLE process);
