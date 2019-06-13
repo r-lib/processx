@@ -58,23 +58,23 @@ process_initialize <- function(self, private, command, args,
   }
 
   if (pty && os_type() != "unix") {
-    stop("`pty == TRUE` is only implemented on Unix")
+    throw(new_error("`pty == TRUE` is only implemented on Unix"))
   }
   if (pty && !is.null(stdin)) {
-    stop("`stdin` must be `NULL` if `pty == TRUE`")
+    throw(new_error("`stdin` must be `NULL` if `pty == TRUE`"))
   }
   if (pty && !is.null(stdout)) {
-    stop("`stdout` must be `NULL` if `pty == TRUE`")
+    throw(new_error("`stdout` must be `NULL` if `pty == TRUE`"))
   }
   if (pty && !is.null(stderr)) {
-    stop("`stderr` must be `NULL` if `pty == TRUE`")
+    throw(new_error("`stderr` must be `NULL` if `pty == TRUE`"))
   }
 
   def <- default_pty_options()
   pty_options <- utils::modifyList(def, pty_options)
   if (length(bad <- setdiff(names(def), names(pty_options)))) {
-    stop("Uknown pty option(s): ",
-         paste(paste0("`", bad, "`"), collapse = ", "))
+    throw(new_error("Uknown pty option(s): ",
+                    paste(paste0("`", bad, "`"), collapse = ", ")))
   }
   pty_options <- pty_options[names(def)]
 
@@ -115,7 +115,7 @@ process_initialize <- function(self, private, command, args,
   if (!is.null(wd)) {
     wd <- normalizePath(wd, winslash = "\\", mustWork = FALSE)
   }
-  private$status <- .Call(
+  private$status <- rethrow_call(
     c_processx_exec,
     command, c(command, args), stdin, stdout, stderr, pty, pty_options,
     connections, env, windows_verbatim_args, windows_hide_window,
@@ -129,7 +129,8 @@ process_initialize <- function(self, private, command, args,
   ## macOS and Windows and on other OSes it returns 0.0, so we just use the
   ## current time instead. (In the C process handle, there will be 0,
   ## still.)
-  private$starttime <- .Call(c_processx__proc_start_time, private$status)
+  private$starttime <-
+    rethrow_call(c_processx__proc_start_time, private$status)
   if (private$starttime == 0) private$starttime <- Sys.time()
 
   ## Need to close this, otherwise the child's end of the pipe

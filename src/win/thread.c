@@ -153,7 +153,7 @@ int processx__start_thread() {
     if (processx__thread_start) CloseHandle(processx__thread_start);
     if (processx__thread_done ) CloseHandle(processx__thread_done);
     processx__thread_start = processx__thread_done = NULL;
-    PROCESSX_ERROR("Cannot create I/O events", GetLastError());
+    R_THROW_SYSTEM_ERROR("Cannot create I/O events");
   }
 
   processx__thread_cmd = PROCESSX__THREAD_CMD_INIT;
@@ -171,7 +171,7 @@ int processx__start_thread() {
     CloseHandle(processx__thread_start);
     CloseHandle(processx__thread_done);
     processx__thread_start = processx__thread_done = NULL;
-    PROCESSX_ERROR("Cannot start I/O thread", GetLastError());
+    R_THROW_SYSTEM_ERROR("Cannot start I/O thread");
   }
 
   /* Wait for thread to be ready */

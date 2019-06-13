@@ -651,23 +651,23 @@ process <- R6::R6Class(
 
 process_wait <- function(self, private, timeout) {
   "!DEBUG process_wait `private$get_short_name()`"
-  .Call(c_processx_wait, private$status, as.integer(timeout))
+  rethrow_call(c_processx_wait, private$status, as.integer(timeout))
   invisible(self)
 }
 
 process_is_alive <- function(self, private) {
   "!DEBUG process_is_alive `private$get_short_name()`"
-  .Call(c_processx_is_alive, private$status)
+  rethrow_call(c_processx_is_alive, private$status)
 }
 
 process_get_exit_status <- function(self, private) {
   "!DEBUG process_get_exit_status `private$get_short_name()`"
-  .Call(c_processx_get_exit_status, private$status)
+  rethrow_call(c_processx_get_exit_status, private$status)
 }
 
 process_signal <- function(self, private, signal) {
   "!DEBUG process_signal `private$get_short_name()` `signal`"
-  .Call(c_processx_signal, private$status, as.integer(signal))
+  rethrow_call(c_processx_signal, private$status, as.integer(signal))
 }
 
 process_interrupt <- function(self, private) {
@@ -677,13 +677,13 @@ process_interrupt <- function(self, private) {
     st <- run(get_tool("interrupt"), c(pid, "c"), error_on_status = FALSE)
     if (st$status == 0) TRUE else FALSE
   } else {
-    .Call(c_processx_interrupt, private$status)
+    rethrow_call(c_processx_interrupt, private$status)
   }
 }
 
 process_kill <- function(self, private, grace, close_connections) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `self$get_pid()`"
-  ret <- .Call(c_processx_kill, private$status, as.numeric(grace))
+  ret <- rethrow_call(c_processx_kill, private$status, as.numeric(grace))
   if (close_connections) private$close_connections()
   ret
 }
@@ -691,9 +691,8 @@ process_kill <- function(self, private, grace, close_connections) {
 process_kill_tree <- function(self, private, grace, close_connections) {
   "!DEBUG process_kill_tree '`private$get_short_name()`', pid `self$get_pid()`"
   if (!ps::ps_is_supported()) {
-    stop(structure(
-      list(message = "kill_tree is not supported on this platform"),
-      class = c("not_implemented", "error", "condition")))
+    throw(new_not_implemented_error(
+      "kill_tree is not supported on this platform"))
   }
 
   ret <- get("ps_kill_tree", asNamespace("ps"))(private$tree_id)
@@ -706,7 +705,7 @@ process_get_start_time <- function(self, private) {
 }
 
 process_get_pid <- function(self, private) {
-  .Call(c_processx_get_pid, private$status)
+  rethrow_call(c_processx_get_pid, private$status)
 }
 
 process_is_supervised <- function(self, private) {
@@ -725,7 +724,7 @@ process_supervise <- function(self, private, status) {
 }
 
 process_get_result <- function(self, private) {
-  if (self$is_alive()) stop("Process is still alive")
+  if (self$is_alive()) throw(new_error("Process is still alive"))
   if (!private$post_process_done && is.function(private$post_process)) {
     private$post_process_result <- private$post_process()
     private$post_process_done <- TRUE
@@ -744,7 +743,7 @@ ps_method <- function(fun, self) {
 process_close_connections <- function(self, private) {
   for (f in c("stdin_pipe", "stdout_pipe", "stderr_pipe", "poll_pipe")) {
     if (!is.null(p <- private[[f]])) {
-      .Call(c_processx_connection_close, p)
+      rethrow_call(c_processx_connection_close, p)
     }
   }
 }

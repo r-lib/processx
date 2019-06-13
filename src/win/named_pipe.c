@@ -7,10 +7,11 @@
 #include <Rdefines.h>
 #include <windows.h>
 
+#include "../errors.h"
 
 SEXP processx_is_named_pipe_open(SEXP pipe_ext) {
     if (pipe_ext == R_NilValue)
-        error("Not a named pipe handle.");
+        R_THROW_ERROR("Not a named pipe handle.");
 
     // This function currently only tests if the named pipe has been closed
     // "properly", by processx_close_named_pipe(). It doesn't test if the
@@ -44,11 +45,11 @@ void named_pipe_finalizer(SEXP pipe_ext) {
 
 SEXP processx_create_named_pipe(SEXP name, SEXP mode) {
     if (!isString(name) || name == R_NilValue || length(name) != 1) {
-        error("`name` must be a character vector of length 1.");
+        R_THROW_ERROR("`name` must be a character vector of length 1.");
     }
 
     if (!isString(mode) || mode == R_NilValue || length(mode) != 1) {
-        error("`mode` must be either 'w' or 'r'.");
+        R_THROW_ERROR("`mode` must be either 'w' or 'r'.");
     }
 
     const char* name_str = CHAR(STRING_ELT(name, 0));
@@ -56,7 +57,7 @@ SEXP processx_create_named_pipe(SEXP name, SEXP mode) {
 
 
     if (strncmp("\\\\.\\pipe\\", name_str, sizeof("\\\\.\\pipe\\") - 1) != 0) {
-        error("`name` must start with \"\\\\.\\pipe\\\"");
+        R_THROW_ERROR("`name` must start with \"\\\\.\\pipe\\\"");
     }
 
     // int mode_num;
@@ -65,7 +66,7 @@ SEXP processx_create_named_pipe(SEXP name, SEXP mode) {
     // else if (strcmp(mode_str, "w") == 0)
     //     mode_num = 1;
     // else
-    //     error("`mode` must be either 'w' or 'r'.");
+    //     R_THROW_ERROR("`mode` must be either 'w' or 'r'.");
 
 
     HANDLE hPipe = CreateNamedPipe(
@@ -84,8 +85,7 @@ SEXP processx_create_named_pipe(SEXP name, SEXP mode) {
 
 
     if (hPipe == INVALID_HANDLE_VALUE) {
-        error("Error creating named pipe. Error %d.",
-              (int)GetLastError());
+        R_THROW_SYSTEM_ERROR("Error creating named pipe");
     }
 
     // Wrap it in an external pointer
@@ -98,16 +98,16 @@ SEXP processx_create_named_pipe(SEXP name, SEXP mode) {
     
 SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text) {
     if (!isString(text) || text == R_NilValue || length(text) != 1) {
-        error("`text` must be a character vector of length 1.");
+        R_THROW_ERROR("`text` must be a character vector of length 1.");
     }
 
     if (pipe_ext == R_NilValue) {
-        error("Pipe must not be NULL.");
+        R_THROW_ERROR("Pipe must not be NULL.");
     }
 
     HANDLE hPipe = (HANDLE) R_ExternalPtrAddr(pipe_ext);
     if (hPipe == NULL) {
-        error("Pipe handle is NULL.");
+        R_THROW_ERROR("Pipe handle is NULL.");
     }
 
 
@@ -130,8 +130,9 @@ SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text) {
             extra_info = " No process is listening on other end of pipe.";
         }
 
-        error("An error occurred when writing to the named pipe. Error %d.%s",
-            (int)last_error, extra_info);
+        R_THROW_SYSTEM_ERROR_CODE(
+          last_error, "An error occurred when writing to the named pipe. %s",
+          extra_info);
     }
 
     FlushFileBuffers(hPipe);

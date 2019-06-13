@@ -3,12 +3,13 @@ assert_that <- function(..., env = parent.frame(), msg = NULL) {
   res <- see_if(..., env = env, msg = msg)
   if (res) return(TRUE)
 
-  stop(assertError(attr(res, "msg")))
+  throw(new_assert_error(attr(res, "msg")))
 }
 
-assertError <- function (message, call = NULL) {
-  class <- c("assertError", "simpleError", "error", "condition")
-  structure(list(message = message, call = call), class = class)
+new_assert_error <- function (message, call = NULL) {
+  cond <- new_error(message, call. = call)
+  class(cond) <- c("assert_error", class(cond))
+  cond
 }
 
 see_if <- function(..., env = parent.frame(), msg = NULL) {
@@ -17,7 +18,7 @@ see_if <- function(..., env = parent.frame(), msg = NULL) {
   for (assertion in asserts) {
     res <- tryCatch({
       eval(assertion, env)
-    }, assertError = function(e) {
+    }, new_assert_error = function(e) {
       structure(FALSE, msg = e$message)
     })
     check_result(res)
@@ -35,11 +36,11 @@ see_if <- function(..., env = parent.frame(), msg = NULL) {
 
 check_result <- function(x) {
   if (!is.logical(x))
-    stop("assert_that: assertion must return a logical value", call. = FALSE)
+    throw(new_assert_error("assert_that: assertion must return a logical value"))
   if (any(is.na(x)))
-    stop("assert_that: missing values present in assertion", call. = FALSE)
+    throw(new_assert_error("assert_that: missing values present in assertion"))
   if (length(x) != 1) {
-    stop("assert_that: length of assertion is not 1", call. = FALSE)
+    throw(new_assert_error("assert_that: length of assertion is not 1"))
   }
 
   TRUE

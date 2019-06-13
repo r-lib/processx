@@ -12,7 +12,7 @@
 }
 
 .onUnload <- function(libpath) {
-  .Call(c_processx__unload_cleanup)
+  rethrow_call(c_processx__unload_cleanup)
   supervisor_reset()
 }
 

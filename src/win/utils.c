@@ -7,11 +7,11 @@ SEXP processx_disable_crash_dialog() {
 }
 
 SEXP processx__echo_on() {
-  error("Only implemented on Unix");
+  R_THROW_ERROR("Only implemented on Unix");
   return R_NilValue;
 }
 
 SEXP processx__echo_off() {
-  error("Only implemented on Unix");
+  R_THROW_ERROR("Only implemented on Unix");
   return R_NilValue;
 }

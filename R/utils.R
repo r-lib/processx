@@ -49,7 +49,7 @@ full_path <- function(path) {
 
       # Must have a name, like "//server"
       if (drive == "//")
-        stop("Server name not found in network path.")
+        throw(new_error("Server name not found in network path."))
 
     } else {
       drive <- substring(getwd(), 1, 2)
@@ -205,7 +205,7 @@ file_size <- function(x) {
 }
 
 disable_crash_dialog <- function() {
-  .Call(c_processx_disable_crash_dialog)
+  rethrow_call(c_processx_disable_crash_dialog)
 }
 
 has_package <- function(pkg) {
@@ -213,13 +213,23 @@ has_package <- function(pkg) {
 }
 
 tty_echo_off <- function() {
-  .Call(c_processx__echo_off)
+  rethrow_call(c_processx__echo_off)
 }
 
 tty_echo_on <- function() {
-  .Call(c_processx__echo_on)
+  rethrow_call(c_processx__echo_on)
 }
 
 str_trim <- function(x) {
   sub("^\\s+", "", sub("\\s+$", "", x))
+}
+
+new_not_implemented_error <- function(message, call) {
+  add_class(new_error(message, call. = call),
+            c("not_implemented_error", "not_implemented"))
+}
+
+add_class <- function(obj, class) {
+  class(obj) <- c(class, class(obj))
+  obj
 }

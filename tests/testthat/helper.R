@@ -78,3 +78,7 @@ interrupt_me <- function(expr, after = 1) {
     p$kill()
   }, interrupt = function(e) e)
 }
+
+expect_error <- function(..., class = "error") {
+  testthat::expect_error(..., class = class)
+}

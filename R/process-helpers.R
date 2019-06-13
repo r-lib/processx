@@ -1,4 +1,4 @@
 
 process__exists <- function(pid) {
-  .Call(c_processx__process_exists, pid)
+  rethrow_call(c_processx__process_exists, pid)
 }

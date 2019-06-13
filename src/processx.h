@@ -12,6 +12,7 @@ extern "C" {
 #endif
 
 #include "processx-connection.h"
+#include "errors.h"
 
 #ifdef _WIN32
 #include <windows.h>

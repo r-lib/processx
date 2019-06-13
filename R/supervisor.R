@@ -116,7 +116,7 @@ supervisor_start <- function() {
   # Two ways of reaching this: if process has died, or if it hasn't emitted
   # "Ready" after 5 seconds.
   if (!ready)
-    stop("processx supervisor was not ready after 5 seconds.")
+    throw(new_error("processx supervisor was not ready after 5 seconds."))
 
   supervisor_info$pid <- p$get_pid()
 }

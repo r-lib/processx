@@ -27,6 +27,7 @@ Imports:
     utils
 Suggests:
     callr,
+    codetools,
     covr,
     crayon,
     curl,

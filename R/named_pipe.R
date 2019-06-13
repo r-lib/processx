@@ -20,7 +20,7 @@ is_pipe_open <- function(pipe) {
 
 #' @export
 is_pipe_open.windows_named_pipe <- function(pipe) {
-  .Call(c_processx_is_named_pipe_open, pipe$handle)
+  rethrow_call(c_processx_is_named_pipe_open, pipe$handle)
 }
 
 #' @export
@@ -28,7 +28,7 @@ is_pipe_open.unix_named_pipe <- function(pipe) {
   # isOpen() gives an error when passed a closed fifo object, so this is a more
   # robust version.
   if (!inherits(pipe$handle, "fifo"))
-    stop("pipe$handle must be a fifo object")
+    throw(new_error("pipe$handle must be a fifo object"))
 
   is_open <- NA
   tryCatch(
@@ -44,7 +44,7 @@ create_named_pipe <- function(name) {
   if (is_windows()) {
     structure(
       list(
-        handle = .Call(c_processx_create_named_pipe, name, "")
+        handle = rethrow_call(c_processx_create_named_pipe, name, "")
       ),
       class = c("windows_named_pipe", "named_pipe")
     )
@@ -66,7 +66,7 @@ close_named_pipe <- function(pipe) {
 
 #' @export
 close_named_pipe.windows_named_pipe <- function(pipe) {
-  .Call(c_processx_close_named_pipe, pipe$handle)
+  rethrow_call(c_processx_close_named_pipe, pipe$handle)
 }
 
 #' @export
@@ -87,7 +87,7 @@ write_lines_named_pipe.windows_named_pipe <- function(pipe, text) {
   if (substr(text, len, len) != "\n")
     text <- paste0(text, "\n")
 
-  .Call(c_processx_write_named_pipe, pipe$handle, text)
+  rethrow_call(c_processx_write_named_pipe, pipe$handle, text)
 }
 
 #' @export
