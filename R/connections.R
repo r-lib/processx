@@ -19,10 +19,10 @@
 
 conn_create_fd <- function(fd, encoding = "", close = TRUE) {
   assert_that(
-    is_integerish_scalar(fd),
+    is_integerish_scalar(fd) || typeof(fd) == "externalptr",
     is_string(encoding),
     is_flag(close))
-  fd <- as.integer(fd)
+  if (typeof(df) != "externalptr") fd <- as.integer(fd)
   rethrow_call(c_processx_connection_create_fd, fd, encoding, close)
 }
 

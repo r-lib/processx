@@ -344,14 +344,26 @@ static int qsort_wcscmp(const void *a, const void *b) {
   return env_strncmp(astr, -1, bstr);
 }
 
-static int processx__add_tree_id_env(const char *ctree_id, WCHAR **dst_ptr) {
+int wnsprintfW(
+  PWSTR  pszDest,
+  int    cchDest,
+  PCWSTR pszFmt,
+  ...    
+);
+
+static int processx__add_tree_id_env(const char *ctree_id, WCHAR **dst_ptr,
+				     HANDLE *extra_connections,
+				     int num_connections) {
   WCHAR *env = GetEnvironmentStringsW();
-  int len = 0, len2 = 0;
+  int i, len = 0, len2 = 0, len3 = 0;
   WCHAR *ptr = env;
   WCHAR *id = 0;
   int err;
   int idlen;
   WCHAR *dst_copy;
+  const WCHAR *conn_envvar = L"PROCESSX_CONNECTIONS=";
+#define PROCESSX_HANDLELEN 21
+  WCHAR buff[PROCESSX_HANDLELEN];
 
   if (!env) return GetLastError();
 
@@ -373,6 +385,9 @@ static int processx__add_tree_id_env(const char *ctree_id, WCHAR **dst_ptr) {
   idlen = wcslen(id) + 1;
   len2 = len + idlen;
 
+  /* Plus the extra connections */
+  len3 = len2 + (wcslen(conn_envvar) + PROCESSX_HANDLELEN) * num_connections;
+
   /* Allocate, copy */
   dst_copy = (WCHAR*) R_alloc(len2 + 1, sizeof(WCHAR)); /* +1 for final zero */
   memcpy(dst_copy, env, len * sizeof(WCHAR));
@@ -380,13 +395,20 @@ static int processx__add_tree_id_env(const char *ctree_id, WCHAR **dst_ptr) {
 
   /* Final \0 */
   *(dst_copy + len2) = L'\0';
+
+  /* Extra connections */
+  for (i = 0; i < num_connections; i++) {
+    wsprintfW(buff, L"%p", extra_connections[i]);
+  }
+
   *dst_ptr = dst_copy;
 
   FreeEnvironmentStringsW(env);
   return 0;
 }
 
-static int processx__make_program_env(SEXP env_block, const char *tree_id, WCHAR** dst_ptr) {
+static int processx__make_program_env(SEXP env_block, const char *tree_id, WCHAR** dst_ptr,
+				      HANDLE *extra_connections, int num_connections) {
   WCHAR* dst;
   WCHAR* ptr;
   size_t env_len = 0;
@@ -906,13 +928,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
       &arguments);
   if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "making program args"); }
 
-  if (isNull(env)) {
-    err = processx__add_tree_id_env(ctree_id, &cenv);
-  } else {
-    err = processx__make_program_env(env, ctree_id, &cenv);
-  }
-  if (err) R_THROW_SYSTEM_ERROR_CODE(err, "making environment");
-
   if (ccwd) {
     /* Explicit cwd */
     err = processx__utf8_to_utf16_alloc(ccwd, &cwd);
@@ -969,6 +984,13 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 			       cencoding);
   if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "setup stdio"); }
 
+  if (isNull(env)) {
+    err = processx__add_tree_id_env(ctree_id, &cenv, extra_connections, num_connections);
+  } else {
+    err = processx__make_program_env(env, ctree_id, &cenv, extra_connections, num_connections);
+  }
+  if (err) PROCESSX_ERROR("making environment", err);
+  
   application_path = processx__search_path(application, cwd, path);
   if (!application_path) {
     R_ClearExternalPtr(result);

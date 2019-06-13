@@ -83,16 +83,20 @@ SEXP processx_connection_create(SEXP handle, SEXP encoding) {
 }
 
 SEXP processx_connection_create_fd(SEXP handle, SEXP encoding, SEXP close) {
-  int fd = INTEGER(handle)[0];
   const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
   processx_file_handle_t os_handle;
   processx_connection_t *con;
   SEXP result = R_NilValue;
 
 #ifdef _WIN32
-  os_handle = (HANDLE) _get_osfhandle(fd);
+  if (Rf_isInteger(handle)) {
+    int fd = INTEGER(handle)[0];
+    os_handle = (HANDLE) _get_osfhandle(fd);
+  } else {
+    os_handle = (HANDLE) R_ExternalPtrAddr(handle);
+  }
 #else
-  os_handle = fd;
+    os_handle = INTEGER(handle)[0];
 #endif
 
   con = processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
