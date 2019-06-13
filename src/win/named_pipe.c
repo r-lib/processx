@@ -7,6 +7,7 @@
 #include <Rdefines.h>
 #include <windows.h>
 
+#include "../errors.h"
 
 SEXP processx_is_named_pipe_open(SEXP pipe_ext) {
     if (pipe_ext == R_NilValue)

@@ -198,7 +198,7 @@ int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_
  error:
   if (hOutputRead != INVALID_HANDLE_VALUE) CloseHandle(hOutputRead);
   if (hOutputWrite != INVALID_HANDLE_VALUE) CloseHandle(hOutputWrite);
-  R_THROW_SYSTEM_ERROR_CODE(errmessage, err);
+  R_THROW_SYSTEM_ERROR_CODE(err, errmessage);
   return 0;			/* never reached */
 }
 
@@ -263,7 +263,7 @@ int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child
  error:
   if (hOutputRead != INVALID_HANDLE_VALUE) CloseHandle(hOutputRead);
   if (hOutputWrite != INVALID_HANDLE_VALUE) CloseHandle(hOutputWrite);
-  R_THROW_SYSTEM_ERROR_CODE(errmessage, err);
+  R_THROW_SYSTEM_ERROR_CODE(err, errmessage);
   return 0;			/* never reached */
 }
 

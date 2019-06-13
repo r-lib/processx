@@ -601,7 +601,7 @@ ssize_t processx_c_connection_write_bytes(
     /* nNumberOfBytesToWrite =  */ nbytes,
     /* lpNumberOfBytesWritten = */ &written,
     /* lpOverlapped =           */ NULL);
-  if (!ret) R_THROW_SYSTEM_R_THROW_ERROR("Cannot write connection ");
+  if (!ret) R_THROW_SYSTEM_ERROR("Cannot write connection ");
   return (ssize_t) written;
 #else
   ssize_t ret = write(ccon->handle, buffer, nbytes);
@@ -835,7 +835,7 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 	hasdata++;
       }
     } else if (err != WAIT_TIMEOUT && err != ERROR_SUCCESS) {
-      R_THROW_SYSTEM_ERROR_CODE("Cannot poll", err);
+      R_THROW_SYSTEM_ERROR_CODE(err, "Cannot poll");
     }
 
     if (hasdata) break;
@@ -1016,7 +1016,7 @@ void processx__connection_start_read(processx_connection_t *ccon) {
       ccon->handle.read_pending = TRUE;
     } else {
       ccon->handle.read_pending = FALSE;
-      R_THROW_SYSTEM_ERROR_CODE("reading from connection", err);
+      R_THROW_SYSTEM_ERROR_CODE(err, "reading from connection");
     }
   } else {
     /* Returned synchronously, but the event will be still signalled,
@@ -1342,7 +1342,7 @@ ssize_t processx__connection_read(processx_connection_t *ccon) {
 	}
 
       } else if (err != WAIT_TIMEOUT) {
-	R_THROW_SYSTEM_ERROR_CODE("Read error", err);
+	R_THROW_SYSTEM_ERROR_CODE(err, "Read error");
 
       } else {
 	break;

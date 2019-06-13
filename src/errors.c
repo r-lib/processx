@@ -1,5 +1,5 @@
 
-#import "errors.h"
+#include "errors.h"
 
 #include <Rinternals.h>
 
@@ -27,11 +27,11 @@ SEXP r_throw_system_error(const char *filename, int line,
 
   va_list args;
   LPVOID lpMsgBuf;
-  char *msg;
+  char *realsysmsg = sysmsg ? (char*) sysmsg : NULL;
 
   if (errorcode == -1) errorcode = GetLastError();
 
-  if (!sysmsg) {
+  if (!realsysmsg) {
     FormatMessage(
       FORMAT_MESSAGE_ALLOCATE_BUFFER |
       FORMAT_MESSAGE_FROM_SYSTEM |
@@ -42,15 +42,15 @@ SEXP r_throw_system_error(const char *filename, int line,
       (LPTSTR) &lpMsgBuf,
       0, NULL);
     
-    sysmsg = R_alloc(1, strlen(lpMsgBuf) + 1);
-    strcpy(sysmsg, lpMsgBuf);
+    realsysmsg = R_alloc(1, strlen(lpMsgBuf) + 1);
+    strcpy(realsysmsg, lpMsgBuf);
     LocalFree(lpMsgBuf);
   }
 
   va_start(args, msg);
   vsnprintf(errorbuf, ERRORBUF_SIZE, msg, args);
   va_end(args);
-  error("%s (system error %d, %s) @%s:%d", errorbuf, errorcode, sysmsg,
+  error("%s (system error %d, %s) @%s:%d", errorbuf, errorcode, realsysmsg,
         filename, line);
   return R_NilValue;
 }

@@ -898,20 +898,20 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 
   err = processx__utf8_to_utf16_alloc(CHAR(STRING_ELT(command, 0)),
 				      &application);
-  if (err) { R_THROW_SYSTEM_ERROR_CODE("utf8 -> utf16 conversion", err); }
+  if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "utf8 -> utf16 conversion"); }
 
   err = processx__make_program_args(
       args,
       options.windows_verbatim_args,
       &arguments);
-  if (err) { R_THROW_SYSTEM_ERROR_CODE("making program args", err); }
+  if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "making program args"); }
 
   if (isNull(env)) {
     err = processx__add_tree_id_env(ctree_id, &cenv);
   } else {
     err = processx__make_program_env(env, ctree_id, &cenv);
   }
-  if (err) R_THROW_SYSTEM_ERROR_CODE("making environment", err);
+  if (err) R_THROW_SYSTEM_ERROR_CODE(err, "making environment");
 
   if (ccwd) {
     /* Explicit cwd */
@@ -967,7 +967,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 			       cstd_in, cstd_out, cstd_err,
 			       &handle->child_stdio_buffer, private,
 			       cencoding);
-  if (err) { R_THROW_SYSTEM_ERROR_CODE("setup stdio", err); }
+  if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "setup stdio"); }
 
   application_path = processx__search_path(application, cwd, path);
   if (!application_path) {
@@ -1050,7 +1050,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
        */
       DWORD err = GetLastError();
       if (err != ERROR_ACCESS_DENIED) {
-	R_THROW_SYSTEM_ERROR_CODE("Assign to job object", err);
+	R_THROW_SYSTEM_ERROR_CODE(err, "Assign to job object");
       }
     }
   }
@@ -1229,7 +1229,7 @@ SEXP processx__process_exists(SEXP pid) {
   if (proc == NULL) {
     DWORD err = GetLastError();
     if (err == ERROR_INVALID_PARAMETER) return ScalarLogical(0);
-    R_THROW_SYSTEM_ERROR_CODE("open process to check if it exists", err);
+    R_THROW_SYSTEM_ERROR_CODE(err, "open process to check if it exists");
     return R_NilValue;
   } else {
     /* Maybe just finished, and in that case we still have a valid handle.
