@@ -67,7 +67,7 @@ facilities, with a timeout.
 * Kill background processes and all their child processes.
 * Works on Linux, macOS and Windows.
 * Lightweight, it only depends on the also lightweight
-  R6, assertthat and crayon packages.
+  R6 and ps packages.
 
 ## Installation
 
