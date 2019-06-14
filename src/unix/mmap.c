@@ -10,7 +10,7 @@
 
 SEXP processx__mmap_pack(SEXP filename, SEXP data) {
   const char *c_filename = CHAR(STRING_ELT(filename, 0));
-  int i, n = LENGTH(data);
+  R_xlen_t i, n = XLENGTH(data);
   static int sexpsize = sizeof(SEXPTYPE);
   static int xlensize = sizeof(R_xlen_t);
   static int lglsize = sizeof(LOGICAL(ScalarLogical(0))[0]);
@@ -19,14 +19,15 @@ SEXP processx__mmap_pack(SEXP filename, SEXP data) {
   static int sexprecsize = sizeof(SEXPREC_ALIGN);
   static int allocatorsize = sizeof(R_allocator_t);
   int elementsize = sexpsize + xlensize + allocatorsize + sexprecsize;
-  int fullsize = sizeof(int) + elementsize * n;
+  /* Full length + number of elements + data */
+  R_xlen_t fullsize = xlensize + xlensize + elementsize * n;
   void *map_orig, *map;
 
   /* Calculate the size we need */
   for (i = 0; i < n; i++) {
     SEXP elt = VECTOR_ELT(data, i);
     SEXPTYPE type = TYPEOF(elt);
-    R_xlen_t len = LENGTH(elt);
+    R_xlen_t len = XLENGTH(elt);
     int eltsize;
     switch (type) {
     case LGLSXP:
@@ -67,9 +68,11 @@ SEXP processx__mmap_pack(SEXP filename, SEXP data) {
   if (map == MAP_FAILED) error("mmap failed: '%s'", strerror(errno));
 
   /* Need to copy the elements in place */
-  /* number of elements first */
-  memcpy(map, &n, sizeof(int));
-  map += sizeof(int);
+  /* Full length, thne number of elements */
+  memcpy(map, &fullsize, xlensize);
+  map += xlensize;
+  memcpy(map, &n, xlensize);
+  map += xlensize;
 
   /* then the map of objects */
   for (i = 0; i < n; i++) {
@@ -142,6 +145,7 @@ SEXP processx__mmap_unpack(SEXP fd, SEXP size) {
   SEXP ret = R_NilValue;
   int c_fd = INTEGER(fd)[0];
   int c_size = INTEGER(size)[0];
+  R_xlen_t fullsize;
   static int sexpsize = sizeof(SEXPTYPE);
   static int xlensize = sizeof(R_xlen_t);
   static int lglsize = sizeof(LOGICAL(ScalarLogical(0))[0]);
@@ -150,7 +154,7 @@ SEXP processx__mmap_unpack(SEXP fd, SEXP size) {
   static int sexprecsize = sizeof(SEXPREC_ALIGN);
   static int allocatorsize = sizeof(R_allocator_t);
   int elementsize = sexpsize + xlensize + allocatorsize + sexprecsize;
-  int i, n;
+  R_xlen_t i, n;
   void *map, *map_orig;
 
   map = map_orig = mmap(NULL, c_size, PROT_READ | PROT_WRITE,
@@ -158,8 +162,10 @@ SEXP processx__mmap_unpack(SEXP fd, SEXP size) {
   close(c_fd);
   if (map == MAP_FAILED) error("mmap failed: '%s'", strerror(errno));
 
-  memcpy(&n, map, sizeof(int));
-  map += sizeof(int);
+  memcpy(&fullsize, map, xlensize);
+  map += xlensize;
+  memcpy(&n, map, xlensize);
+  map += xlensize;
   ret = PROTECT(allocVector(VECSXP, n));
   void *data = map + n * (sexpsize + xlensize);
 
