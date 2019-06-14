@@ -1,6 +1,58 @@
 
 context("extra connections")
 
+test_that("env var is set in child", {
+
+  skip_on_cran()
+
+  msg <- "foobar\n"
+  cmd <- c(
+    get_tool("px"), "echo", "3", "1", nchar(msg),
+    "getenv", "__PROCESSX_CONNECTIONS")
+
+  pipe <- conn_create_pipepair(nonblocking = c(FALSE, FALSE))
+
+  expect_silent(
+    p <- process$new(cmd[1], cmd[-1],
+      stdout = "|", stderr = "|", connections = list(pipe[[1]]))
+  )
+  close(pipe[[1]])
+  on.exit(p$kill(), add = TRUE)
+
+  conn_write(pipe[[2]], msg)
+  p$poll_io(2000);
+  expect_identical(p$read_all_output_lines(), c("foobar", "3"))
+})
+
+test_that("env var is set in child, multiple connections", {
+
+  skip_on_cran()
+
+  msg <- "foobar\n"
+  cmd <- c(get_tool("px"), "echo", "3", "4", nchar(msg), "outln", "ok",
+           "getenv", "__PROCESSX_CONNECTIONS")
+
+  pipe1 <- conn_create_pipepair(nonblocking = c(FALSE, FALSE))
+  pipe2 <- conn_create_pipepair()
+
+  expect_silent(
+    p <- process$new(cmd[1], cmd[-1], stdout = "|", stderr = "|",
+      connections = list(pipe1[[1]], pipe2[[2]])
+    )
+  )
+  close(pipe1[[1]])
+  close(pipe2[[2]])
+
+  on.exit(p$kill(), add = TRUE)
+
+  conn_write(pipe1[[2]], msg)
+  p$poll_io(2000)
+  expect_equal(conn_read_chars(pipe2[[1]]), msg)
+  expect_equal(p$read_output_lines(), c("ok", "3;4"))
+  close(pipe1[[2]])
+  close(pipe2[[1]])
+})
+
 test_that("writing to extra connection", {
 
   skip_on_cran()

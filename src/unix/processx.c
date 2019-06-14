@@ -133,8 +133,25 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
   int close_fd, use_fd, fd, i;
   const char *out_files[3] = { std_in, std_out, std_err };
   int min_fd = 0;
+  char *handle_env = 0, *env_ptr = 0;
+  int ret, env_size = 0;
+  const char *env_prefix = "__PROCESSX_CONNECTIONS=";
+  int env_prefix_len = strlen(env_prefix);
 
   setsid();
+
+  if (stdio_count > 3) {
+    env_size = stdio_count * 6 + env_prefix_len;
+    handle_env = env_ptr = malloc(env_size + 1);
+    if (!handle_env) {
+      processx__write_int(error_fd, -errno);
+      raise(SIGKILL);
+    }
+    memset(handle_env, 0, env_size);
+    memcpy(env_ptr, env_prefix, env_prefix_len);
+    env_size -= env_prefix_len;
+    env_ptr += env_prefix_len;
+  }
 
   /* Do we need a pty? */
   if (pty_name) {
@@ -227,9 +244,6 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
     } else if (use_fd < 0) {
       /* Otherwise we open a file. If the stdin/out/err is not
 	 requested, then we open a file to /dev/null */
-      /* For fd >= 3, the fd is just passed, and we just use it,
-	 no need to open any file */
-      if (fd >= 3) continue;
 
       if (out_files[fd]) {
 	/* A file was requested, open it */
@@ -260,6 +274,19 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
       processx__cloexec_fcntl(use_fd, 0);
     } else {
       fd = dup2(use_fd, fd);
+    }
+
+    /* Pass the extra fds in an env var. This is mostly redundant on Unix,
+       because they'll always be 3, 4, etc. But on Windows we do have
+       such an env var, so let's have it here as well. */
+    if (fd >= 3) {
+      ret = snprintf(env_ptr, env_size, fd == 3 ? "%d" : ";%d", fd);
+      if (ret < 0) {
+        processx__write_int(error_fd, -errno);
+        raise(SIGKILL);
+      }
+      env_size -= ret;
+      env_ptr += ret;
     }
 
     if (fd == -1) {
@@ -296,6 +323,13 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
   if (putenv(strdup(tree_id))) {
     processx__write_int(error_fd, - errno);
     raise(SIGKILL);
+  }
+
+  if (handle_env) {
+    if (putenv(strdup(handle_env))) {
+      processx__write_int(error_fd, - errno);
+      raise(SIGKILL);
+    }
   }
 
   execvp(command, args);
