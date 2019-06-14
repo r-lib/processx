@@ -2,6 +2,7 @@
 #define USE_RINTERNALS
 
 #include "../processx.h"
+#include "../errors.h"
 
 #include <sys/mman.h>
 #include <unistd.h>
@@ -141,10 +142,9 @@ void processx__free(R_allocator_t *allocator, void *data) {
   /* TODO: munmap eventually, when all is freed */
 }
 
-SEXP processx__mmap_unpack(SEXP fd, SEXP size) {
+SEXP processx__mmap_unpack(SEXP fd) {
   SEXP ret = R_NilValue;
   int c_fd = INTEGER(fd)[0];
-  int c_size = INTEGER(size)[0];
   R_xlen_t fullsize;
   static int sexpsize = sizeof(SEXPTYPE);
   static int xlensize = sizeof(R_xlen_t);
@@ -157,12 +157,19 @@ SEXP processx__mmap_unpack(SEXP fd, SEXP size) {
   R_xlen_t i, n;
   void *map, *map_orig;
 
-  map = map_orig = mmap(NULL, c_size, PROT_READ | PROT_WRITE,
+  /* First mmap to get the correct size */
+  map = mmap(NULL, xlensize, PROT_READ, MAP_FILE | MAP_PRIVATE, c_fd, 0);
+  if (map == MAP_FAILED) error("mmap failed: '%s'", strerror(errno));
+  memcpy(&fullsize, map, xlensize);
+  if (munmap(map, xlensize) == -1) R_THROW_SYSTEM_ERROR("munmap failed");
+
+  /* OK, now we know the size */
+  map = map_orig = mmap(NULL, fullsize, PROT_READ | PROT_WRITE,
                    MAP_FILE | MAP_PRIVATE, c_fd, 0);
   close(c_fd);
   if (map == MAP_FAILED) error("mmap failed: '%s'", strerror(errno));
 
-  memcpy(&fullsize, map, xlensize);
+  /* skip fullsize, we have that already. */
   map += xlensize;
   memcpy(&n, map, xlensize);
   map += xlensize;

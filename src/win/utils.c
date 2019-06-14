@@ -21,7 +21,7 @@ SEXP processx__mmap_pack(SEXP filename, SEXP data) {
   return R_NilValue;
 }
 
-SEXP processx__mmap_unpack(SEXP fd, SEXP size) {
+SEXP processx__mmap_unpack(SEXP fd) {
   error("Only implemented on Unix");
   return R_NilValue;
 }

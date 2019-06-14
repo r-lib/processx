@@ -74,7 +74,7 @@ SEXP processx_base64_encode(SEXP array);
 SEXP processx_base64_decode(SEXP array);
 
 SEXP processx__mmap_pack(SEXP filename, SEXP data);
-SEXP processx__mmap_unpack(SEXP fd, SEXP size);
+SEXP processx__mmap_unpack(SEXP fd);
 
 /* Common declarations */
 

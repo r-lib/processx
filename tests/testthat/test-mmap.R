@@ -9,7 +9,7 @@ test_that("mmap for myself", {
 
   map <- .Call(c_processx__mmap_pack, tempfile(), data)
 
-  ret <- .Call(c_processx__mmap_unpack, map[[1]], map[[2]])
+  ret <- .Call(c_processx__mmap_unpack, map[[1]])
 
   expect_identical(data, ret)
 })
@@ -23,10 +23,9 @@ test_that("mmap to subprocess", {
   on.exit(close(map), add = TRUE)
 
   proc <- callr::r_bg(
-    function(size) {
-      .Call(asNamespace("processx")$c_processx__mmap_unpack, 3L, size)
+    function() {
+      .Call(asNamespace("processx")$c_processx__mmap_unpack, 3L)
     },
-    list(size = attr(map, "size")),
     poll_connection = FALSE,
     connections = list(map))
   on.exit(proc$kill(), add = TRUE)
