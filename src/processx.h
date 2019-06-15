@@ -73,6 +73,9 @@ SEXP processx_disable_crash_dialog();
 SEXP processx_base64_encode(SEXP array);
 SEXP processx_base64_decode(SEXP array);
 
+SEXP processx_handle_create(SEXP desc);
+SEXP processx_handle_describe(SEXP handle);
+
 SEXP processx__mmap_pack(SEXP filename, SEXP data);
 SEXP processx__mmap_unpack(SEXP fd);
 
