@@ -44,20 +44,20 @@ SEXP processx__mmap_pack(SEXP filename, SEXP data) {
       eltsize = 1;
       break;
     default:
-      error("Unsupported type in mmap packing");
+      R_THROW_ERROR("Unsupported type in mmap packing");
     }
     fullsize += len * eltsize;
   }
 
   int fd = open(c_filename, O_RDWR | O_CREAT | O_TRUNC, 0644);
   if (fd == -1) {
-    error("Cannot open file '%s': '%s'", c_filename, strerror(errno));
+    R_THROW_SYSTEM_ERROR("Cannot open file '%s'", c_filename);
   }
   if (unlink(c_filename) == -1) {
-    error("Cannot delete file '%s': '%s'", c_filename, strerror(errno));
+    R_THROW_SYSTEM_ERROR("Cannot delete file '%s'", c_filename);
   }
   if (ftruncate(fd, fullsize) == -1) {
-    error("Cannot truncate file '%s': '%s'", c_filename, strerror(errno));
+    R_THROW_SYSTEM_ERROR("Cannot truncate file '%s'", c_filename);
   }
 
   /* Do not close on exec */
@@ -66,7 +66,7 @@ SEXP processx__mmap_pack(SEXP filename, SEXP data) {
   map = map_orig = mmap(
     NULL, fullsize, PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, fd, 0);
 
-  if (map == MAP_FAILED) error("mmap failed: '%s'", strerror(errno));
+  if (map == MAP_FAILED) R_THROW_SYSTEM_ERROR("mmap failed");
 
   /* Need to copy the elements in place */
   /* Full length, thne number of elements */
@@ -111,7 +111,7 @@ SEXP processx__mmap_pack(SEXP filename, SEXP data) {
       src = RAW(elt);
       break;
     default:
-      error("Unsupported type in mmap packing");
+      R_THROW_ERROR("Unsupported type in mmap packing");
     }
     map += sexprecsize + allocatorsize;
     memcpy(map, src, eltsize * len);
@@ -119,11 +119,11 @@ SEXP processx__mmap_pack(SEXP filename, SEXP data) {
   }
 
   if (msync(map_orig, fullsize, MS_SYNC) == -1) {
-    error("Cannot sync mmap: '%s'", strerror(errno));
+    R_THROW_SYSTEM_ERROR("Cannot sync mmap");
   }
 
   if (munmap(map_orig, fullsize) == -1) {
-    error("Cannot unmap mmap: '%s'", strerror(errno));
+    R_THROW_SYSTEM_ERROR("Cannot unmap mmap");
   }
 
   SEXP ret = PROTECT(allocVector(VECSXP, 2));
@@ -159,7 +159,7 @@ SEXP processx__mmap_unpack(SEXP fd) {
 
   /* First mmap to get the correct size */
   map = mmap(NULL, xlensize, PROT_READ, MAP_FILE | MAP_PRIVATE, c_fd, 0);
-  if (map == MAP_FAILED) error("mmap failed: '%s'", strerror(errno));
+  if (map == MAP_FAILED) R_THROW_SYSTEM_ERROR("mmap failed");
   memcpy(&fullsize, map, xlensize);
   if (munmap(map, xlensize) == -1) R_THROW_SYSTEM_ERROR("munmap failed");
 
@@ -167,7 +167,7 @@ SEXP processx__mmap_unpack(SEXP fd) {
   map = map_orig = mmap(NULL, fullsize, PROT_READ | PROT_WRITE,
                    MAP_FILE | MAP_PRIVATE, c_fd, 0);
   close(c_fd);
-  if (map == MAP_FAILED) error("mmap failed: '%s'", strerror(errno));
+  if (map == MAP_FAILED) R_THROW_SYSTEM_ERROR("mmap failed");
 
   /* skip fullsize, we have that already. */
   map += xlensize;
@@ -202,7 +202,7 @@ SEXP processx__mmap_unpack(SEXP fd) {
       eltsize = 1;
       break;
     default:
-      error("Unsupported type in mmap unpacking");
+      R_THROW_ERROR("Unsupported type in mmap unpacking");
     }
 
     allocator.data = data;
