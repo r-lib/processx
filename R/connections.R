@@ -275,11 +275,10 @@ conn_create_mmap <- function(data, close = TRUE) {
   ret
 }
 
-conn_unpack_mmap <- function(fd, size) {
+conn_unpack_mmap <- function(fd) {
   assert_that(
-    is_integerish_scalar(fd),
-    is_integerish_scalar(size))
+    is_integerish_scalar(fd))
   fd <- as.integer(fd)
   size <- as.integer(size)
-  .Call(c_processx__mmap_unpack, fd, size)
+  .Call(c_processx__mmap_unpack, fd)
 }
