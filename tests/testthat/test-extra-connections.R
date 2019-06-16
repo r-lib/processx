@@ -53,6 +53,22 @@ test_that("env var is set in child, multiple connections", {
   close(pipe2[[1]])
 })
 
+test_that("env var for handles", {
+
+  skip_other_platforms("unix")
+
+  cmd <- c(get_tool("px"), "getenv", "__PROCESSX_CONNECTIONS")
+  h1 <- handle_create(1)
+  h2 <- handle_create(2)
+
+  p <- process$new(cmd[1], cmd[-1], stdout = "|", stderr = "|",
+                   connections = list(h1, h2))
+  on.exit(p$kill(), add = TRUE)
+
+  p$wait(2000)
+  expect_equal(p$read_all_output_lines(), "3;4")
+})
+
 test_that("writing to extra connection", {
 
   skip_on_cran()

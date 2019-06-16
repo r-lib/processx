@@ -104,10 +104,20 @@ on_failure(is_connection) <- function(call, env) {
   paste0(deparse(call$x), " must be a processx connection")
 }
 
-is_connection_list <- function(x) {
-  all(vapply(x, is_connection, logical(1)))
+is_handle <- function(x) {
+  inherits(x, "processx_handle")
 }
 
-on_failure(is_connection_list) <- function(call, env) {
-  paste0(deparse(call$x), " must be a list of processx connections")
+on_failure(is_handle) <- function(call, env) {
+  paste0(deparse(call$x), " must be a processx handle")
+}
+
+is_connection_handle_list <- function(x) {
+  all(vapply(x, is_connection, logical(1)) |
+      vapply(x, is_handle, logical(1)))
+}
+
+on_failure(is_connection_handle_list) <- function(call, env) {
+  paste0(deparse(call$x),
+         " must be a list of processx connections and handles")
 }

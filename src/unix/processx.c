@@ -437,9 +437,10 @@ skip:
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 		   SEXP std_err, SEXP pty, SEXP pty_options,
-                   SEXP connections, SEXP env, SEXP windows_verbatim_args,
-                   SEXP windows_hide_window, SEXP private, SEXP cleanup,
-                   SEXP wd, SEXP encoding, SEXP tree_id) {
+                   SEXP connections, SEXP conn_types, SEXP env,
+                   SEXP windows_verbatim_args, SEXP windows_hide_window,
+                   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding,
+                   SEXP tree_id) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
@@ -453,6 +454,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   const char *ctree_id = CHAR(STRING_ELT(tree_id, 0));
   processx_options_t options = { 0 };
   int num_connections = LENGTH(connections) + 3;
+  int *c_conn_types = INTEGER(conn_types);
 
   pid_t pid;
   int err, exec_errorno = 0, status;
@@ -500,9 +502,18 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   }
 
   for (i = 0; i < num_connections - 3; i++) {
-    processx_connection_t *ccon =
-      R_ExternalPtrAddr(VECTOR_ELT(connections, i));
-    int fd = processx_c_connection_fileno(ccon);
+    int fd;
+    if (c_conn_types[i] == 1) {
+      /* connection */
+      processx_connection_t *ccon =
+        R_ExternalPtrAddr(VECTOR_ELT(connections, i));
+      fd = processx_c_connection_fileno(ccon);
+    } else if (c_conn_types[i] == 2) {
+      int *fdp = R_ExternalPtrAddr(VECTOR_ELT(connections, i));
+      fd = *fdp;
+    } else {
+      R_THROW_ERROR("Unknown processx connection/handle type");
+    }
     pipes[i + 3][1] = fd;
   }
 

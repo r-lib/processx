@@ -39,7 +39,7 @@ process_initialize <- function(self, private, command, args,
     is_string_or_null(stderr),
     is_flag(pty),
     is.list(pty_options), is_named(pty_options),
-    is_connection_list(connections),
+    is_connection_handle_list(connections),
     is.null(poll_connection) || is_flag(poll_connection),
     is.null(env) || is_named_character(env),
     is_flag(cleanup),
@@ -107,6 +107,9 @@ process_initialize <- function(self, private, command, args,
     connections <- c(connections, list(pipe[[2]]))
     private$poll_pipe <- pipe[[1]]
   }
+  conn_consts <- c("processx_connection" = 1L, "processx_handle" = 2L)
+  connection_types <-
+    conn_consts[vapply(connections, function(x) class(x)[1], "")]
 
   if (echo_cmd) do_echo_cmd(command, args)
 
@@ -121,8 +124,8 @@ process_initialize <- function(self, private, command, args,
   private$status <- rethrow_call(
     c_processx_exec,
     command, c(command, args), stdin, stdout, stderr, pty, pty_options,
-    connections, env, windows_verbatim_args, windows_hide_window,
-    private, cleanup, wd, encoding,
+    connections, connection_types, env, windows_verbatim_args,
+    windows_hide_window, private, cleanup, wd, encoding,
     paste0("PROCESSX_", private$tree_id, "=YES")
   )
 
