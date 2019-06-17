@@ -147,15 +147,23 @@ err <- local({
     env$.Last.error <- cond
     env$.Last.error.trace <- cond$trace
 
-    # Dropping the classes and adding "duplicate_condition" is a workaround
-    # for the case when we have non-exiting handlers on throw()-n
-    # conditions. These would get the condition twice, because stop()
-    # will also signal it. If we drop the classes, then only handlers
-    # on "condition" objects (i.e. all conditions) get duplicate signals.
-    # This is probably quite rare, but for this rare case they can also
-    # recognize the duplicates from the "duplicate_condition" extra class.
-    class(cond) <- c("duplicate_condition", "condition")
-    stop(cond)
+    # Top-level handler, this is intended for testing only for now,
+    # and its design might change.
+    if (!is.null(th <- getOption("rlib_error_handler")) &&
+        is.function(th)) {
+      th(cond)
+
+    } else {
+      # Dropping the classes and adding "duplicate_condition" is a workaround
+      # for the case when we have non-exiting handlers on throw()-n
+      # conditions. These would get the condition twice, because stop()
+      # will also signal it. If we drop the classes, then only handlers
+      # on "condition" objects (i.e. all conditions) get duplicate signals.
+      # This is probably quite rare, but for this rare case they can also
+      # recognize the duplicates from the "duplicate_condition" extra class.
+      class(cond) <- c("duplicate_condition", "condition")
+      stop(cond)
+    }
   }
 
   # -- rethrowing conditions --------------------------------------------
