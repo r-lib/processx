@@ -28,7 +28,7 @@
 # catch_rethrow(expr, ...)
 # rethrow(expr, cond)
 # rethrow_call(.NAME, ...)
-# trace_back()
+# add_trace_back(cond)
 # ```
 #
 # ## Roadmap:
@@ -119,19 +119,7 @@ err <- local({
 
     # If we get here that means that the condition was not caught by
     # an exiting handler. That means that we need to create a trace.
-    cond$trace <- trace_back()
-
-    # We need to add the nframes and the error messages to the trace itself,
-    # to be able to print it nicely, with the error messages.
-    nframes <- cond$nframe
-    messages <- list(conditionMessage(cond))
-    parent <- cond
-    while (!is.null(parent <- parent$parent)) {
-      nframes <- c(nframes, parent$nframe)
-      messages <- c(messages, list(conditionMessage(parent)))
-    }
-    cond$trace$nframes <- nframes
-    cond$trace$messages <- messages
+    cond <- add_trace_back(cond)
 
     # Set up environment to store .Last.error, it will be just before
     # baseenv(), so it is almost as if it was in baseenv() itself, like
@@ -271,23 +259,36 @@ err <- local({
   #' [throw()] calls this function automatically if an error is not caught,
   #' so there is currently not much use to call it directly.
   #'
-  #' @return An `rlib_trace` object.
+  #' @param cond Condition to add the trace to
+  #'
+  #' @return A condition object, with the trace added.
 
-  trace_back <- function() {
+  add_trace_back <- function(cond) {
     idx <- seq_len(sys.parent(1L))
     frames <- sys.frames()[idx]
     parents <- sys.parents()[idx]
     calls <- as.list(sys.calls()[idx])
     envs <- lapply(frames, env_label)
-    trace <- new_trace(calls, parents, envs)
-    trace
+
+    # We need to add the nframes and the error messages to the trace itself,
+    # to be able to print it nicely, with the error messages.
+    nframes <- cond$nframe
+    messages <- list(conditionMessage(cond))
+    parent <- cond
+    while (!is.null(parent <- parent$parent)) {
+      nframes <- c(nframes, parent$nframe)
+      messages <- c(messages, list(conditionMessage(parent)))
+    }
+
+    cond$trace <- new_trace(calls, parents, envs, nframes, messages)
+    cond
   }
 
-  new_trace <- function (calls, parents, envs) {
+  new_trace <- function (calls, parents, envs, nframes, messages) {
     indices <- seq_along(calls)
     structure(
       list(calls = calls, parents = parents, envs = envs,
-           indices = indices),
+           indices = indices, nframes = nframes, messages = messages),
       class = "rlib_trace")
   }
 
@@ -377,14 +378,14 @@ err <- local({
 
   structure(
     list(
-      .internal     = environment(),
-      new_cond      = new_cond,
-      new_error     = new_error,
-      throw         = throw,
-      rethrow       = rethrow,
-      catch_rethrow = catch_rethrow,
-      rethrow_call  = rethrow_call,
-      trace_back    = trace_back
+      .internal      = environment(),
+      new_cond       = new_cond,
+      new_error      = new_error,
+      throw          = throw,
+      rethrow        = rethrow,
+      catch_rethrow  = catch_rethrow,
+      rethrow_call   = rethrow_call,
+      add_trace_back = add_trace_back
     ),
     class = c("standalone_errors", "standalone"))
 })
