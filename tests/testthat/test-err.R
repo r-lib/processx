@@ -303,6 +303,6 @@ test_that("error trace from throw() in subprocess", {
 
   expect_equal(length(cond$trace$nframe), 2)
   expect_true(cond$trace$nframe[1] < cond$trace$nframe[2])
-  expect_match(cond$trace$messages[[1]], "subprocess failed: cannot start")
-  expect_match(cond$trace$messages[[2]], "cannot start processx process")
+  expect_match(cond$trace$messages[[1]], "subprocess failed: .*processx\\.c")
+  expect_match(cond$trace$messages[[2]], "@.*processx\\.c")
 })
