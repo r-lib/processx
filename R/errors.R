@@ -109,7 +109,7 @@ err <- local({
     # When a child condition is created, the child will use the parent
     # error object to make note of its own nframe. Here we copy that back
     # to the parent.
-    if (is.null(cond$nframe)) cond$nframe <- sys.parent()
+    if (is.null(cond$nframe)) cond$nframe <- sys.nframe()
     if (!is.null(parent)) {
       cond$parent <- parent
       cond$call <- cond$parent$childcall
@@ -187,7 +187,7 @@ err <- local({
 
   catch_rethrow <- function(expr, ...) {
     realcall <- sys.call(-1)
-    realframe <- sys.parent()
+    realframe <- sys.nframe()
     parent <- parent.frame()
 
     cl <- match.call()
@@ -218,7 +218,7 @@ err <- local({
 
   rethrow <- function(expr, cond) {
     realcall <- sys.call(-1)
-    realframe <- sys.parent()
+    realframe <- sys.nframe()
     withCallingHandlers(
       expr,
       error = function(e) {

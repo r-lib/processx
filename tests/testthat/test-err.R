@@ -183,8 +183,8 @@ test_that("trace when rethrowing", {
   expect_equal(length(cond$trace$nframe), 2)
   expect_true(cond$trace$nframe[1] < cond$trace$nframe[2])
   expect_equal(cond$trace$messages, list("and again", "oooops"))
-  expect_equal(cond$trace$calls[[cond$trace$nframe[1]]], quote(h()))
-  expect_equal(cond$trace$calls[[cond$trace$nframe[2]]], quote(g()))
+  expect_equal(cond$trace$calls[[cond$trace$nframe[1]-1]], quote(h()))
+  expect_equal(cond$trace$calls[[cond$trace$nframe[2]-1]], quote(g()))
 })
 
 test_that("rethrowing non rlib errors", {
@@ -223,7 +223,7 @@ test_that("rethrowing non rlib errors", {
   expect_equal(length(cond$trace$nframe), 2)
   expect_true(cond$trace$nframe[1] < cond$trace$nframe[2])
   expect_equal(cond$trace$messages, list("and again", "oooopsie"))
-  expect_equal(cond$trace$calls[[cond$trace$nframe[1]]], quote(h()))
+  expect_equal(cond$trace$calls[[cond$trace$nframe[1]-1]], quote(h()))
 })
 
 test_that("errors from subprocess", {
