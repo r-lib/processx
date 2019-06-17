@@ -363,6 +363,7 @@ err <- local({
     callstr <- vapply(x$calls, format_call, character(1))
     callstr[x$nframes] <-
       paste0(callstr[x$nframes], "\n--> ERROR: ", x$messages, "\n")
+    callstr <- enumerate(callstr)
 
     # Drop the machinery to create parent errors. For both catch_rethrow()
     # and rethrow() we need to drop until the next withCallingHandlers call.
@@ -384,7 +385,7 @@ err <- local({
     }
     if (length(drop)) callstr <- callstr[-drop]
 
-    cat(enumerate(callstr), sep = "\n")
+    cat(callstr, sep = "\n")
     invisible(x)
   }
 
