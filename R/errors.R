@@ -39,7 +39,7 @@
 # - print source references in the trace
 #
 # ## NEWS:
-# - date of first release will be here
+# - 2019-06-17: first release
 
 err <- local({
 
