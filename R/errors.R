@@ -273,18 +273,35 @@ err <- local({
   add_trace_back <- function(cond) {
     idx <- seq_len(sys.parent(1L))
     frames <- sys.frames()[idx]
+
     parents <- sys.parents()[idx]
     calls <- as.list(sys.calls()[idx])
     envs <- lapply(frames, env_label)
-
-    # We need to add the nframes and the error messages to the trace itself,
-    # to be able to print it nicely, with the error messages.
-    nframes <- cond$nframe
+    nframes <- if (!is.null(cond$nframe)) cond$nframe else sys.parent()
     messages <- list(conditionMessage(cond))
-    parent <- cond
-    while (!is.null(parent <- parent$parent)) {
-      nframes <- c(nframes, parent$nframe)
-      messages <- c(messages, list(conditionMessage(parent)))
+
+    if (is.null(cond$parent)) {
+      # Nothing to do, no parent
+
+    } else if (is.null(cond$parent$trace)) {
+      # If the parent does not have a trace, that means that it is using
+      # the same trace as us.
+      parent <- cond
+      while (!is.null(parent <- parent$parent)) {
+        nframes <- c(nframes, parent$nframe)
+        messages <- c(messages, list(conditionMessage(parent)))
+      }
+
+    } else {
+      # If it has a trace, that means that it is coming from another
+      # process or top level evaluation. In this case we'll merge the two
+      # traces.
+      pt <- cond$parent$trace
+      parents <- c(parents, pt$parents + length(calls))
+      nframes <- c(nframes, pt$nframes + length(calls))
+      envs <- c(envs, pt$envs)
+      calls <- c(calls, pt$calls)
+      messages <- c(messages, pt$messages)
     }
 
     cond$trace <- new_trace(calls, parents, envs, nframes, messages)
