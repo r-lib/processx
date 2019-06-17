@@ -249,7 +249,7 @@ err <- local({
         e$nframe <- nframe
         e$call <- call
         if (inherits(e, "simpleError")) {
-          class(e) <- c("c_error", "error", "condition")
+          class(e) <- c("c_error", "rlib_error", "error", "condition")
         }
         throw(e)
       }
