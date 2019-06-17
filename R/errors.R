@@ -33,10 +33,7 @@
 #
 # ## Roadmap:
 # - better printing of the error
-# - better programmatic trace API (so we can capture it in the subprocess,
-#   copy it back to the main process, and create a nice error object).
-# - print source references in the errors
-# - print source references in the trace
+# - better printinf of the trace
 #
 # ## NEWS:
 # - 2019-06-17: first release
@@ -352,6 +349,7 @@ err <- local({
   print_rlib_error <- function(x, ...) {
     ## TODO: better printing
     NextMethod("print")
+    print_srcref(x$call)
     if (!is.null(x$parent)) {
       cat("-->\n")
       print(x$parent)
@@ -389,14 +387,45 @@ err <- local({
     invisible(x)
   }
 
+  print_srcref <- function(call) {
+    src <- format_srcref(call)
+    if (length(src)) cat(sep = "", "   ", src, "\n")
+  }
+
+  `%||%` <- function(l, r) if (is.null(l)) r else l
+
+  format_srcref <- function(call) {
+    if (is.null(call)) return(NULL)
+    file <- getSrcFilename(call)
+    if (!length(file)) return(NULL)
+    dir <- getSrcDirectory(call)
+    if (length(dir) && nzchar(dir) && nzchar(file)) {
+      srcfile <- attr(getSrcref(call), "srcfile")
+      if (isTRUE(srcfile$isFile)) {
+        file <- file.path(dir, file)
+      } else {
+        pkg <- basename(srcfile$original$filename)
+        file <- file.path(paste0(pkg, "::R"), file)
+      }
+    } else {
+      file <- "??"
+    }
+    line <- getSrcLocation(call) %||% "??"
+    col <- getSrcLocation(call, which = "column") %||% "??"
+    paste0(file, ":", line, ":", col)
+  }
+
   format_call <- function(call) {
     width <- getOption("width")
     str <- format(call)
-    if (length(str) > 1 || nchar(str[1]) > width) {
+    callstr <- if (length(str) > 1 || nchar(str[1]) > width) {
       paste0(substr(str[1], 1, width - 5), " ...")
     } else {
       str[1]
     }
+    src <- format_srcref(call)
+    if (length(src)) callstr <- paste0(callstr, "\n   ", src)
+    callstr
   }
 
   enumerate <- function(x) paste0(seq_along(x), ". ", x)
