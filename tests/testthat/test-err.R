@@ -13,6 +13,16 @@ test_that("new_error", {
   expect_identical(c$message, "foobar")
 })
 
+test_that("throw() needs condition objects", {
+  expect_error(
+    throw("foobar"), "can only throw conditions",
+    class = "rlib_error")
+  expect_error(
+    throw(new_error("foobar"), parent = "nope"),
+    "Parent condition must be a condition object",
+    class = "rlib_error")
+})
+
 test_that("throw() adds the proper call, if requested", {
   f <- function() throw(new_error("ooops"))
   err <- tryCatch(f(), error = function(e) e)

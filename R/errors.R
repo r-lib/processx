@@ -96,6 +96,13 @@ err <- local({
   #'   [catch_rethrow()].
 
   throw <- function(cond, parent = NULL) {
+    if (!inherits(cond, "condition")) {
+      throw(new_error("You can only throw conditions"))
+    }
+    if (!is.null(parent) && !inherits(parent, "condition")) {
+      throw(new_error("Parent condition must be a condition object"))
+    }
+
     if (is.null(cond$call) || isTRUE(cond$call)) cond$call <- sys.call(-1)
 
     # Eventually the nframe numbers will help us print a better trace
