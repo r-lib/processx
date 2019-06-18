@@ -32,7 +32,6 @@
 # ```
 #
 # ## Roadmap:
-# - better printing of the error
 # - better printing of anonymous function in the trace
 #
 # ## NEWS:
@@ -300,6 +299,7 @@ err <- local({
     messages <- list(conditionMessage(cond))
     ignore <- cond$ignore
     classes <- class(cond)
+    pids <- rep(cond$pid %||% Sys.getpid(), length(calls))
 
     if (is.null(cond$parent)) {
       # Nothing to do, no parent
@@ -326,21 +326,23 @@ err <- local({
       topenvs <- c(topenvs, pt$topenvs)
       calls <- c(calls, pt$calls)
       messages <- c(messages, pt$messages)
+      pids <- c(pids, pt$pids)
     }
 
     cond$trace <- new_trace(
-      calls, parents, envs, topenvs, nframes, messages, ignore, classes)
+      calls, parents, envs, topenvs, nframes, messages, ignore, classes,
+      pids)
 
     cond
   }
 
   new_trace <- function (calls, parents, envs, topenvs, nframes, messages,
-                         ignore, classes) {
+                         ignore, classes, pids) {
     indices <- seq_along(calls)
     structure(
       list(calls = calls, parents = parents, envs = envs, topenvs = topenvs,
            indices = indices, nframes = nframes, messages = messages,
-           ignore = ignore, classes = classes),
+           ignore = ignore, classes = classes, pids = pids),
       class = "rlib_trace")
   }
 
@@ -378,22 +380,34 @@ err <- local({
   # -- printing ---------------------------------------------------------
 
   print_rlib_error <- function(x, ...) {
-    ## TODO: better printing
-    NextMethod("print")
+
+    msg <- conditionMessage(x)
+    call <- conditionCall(x)
+    cl <- class(x)[1L]
+    if (!is.null(call)) {
+      cat("<", cl, " in ", format_call(call), ":\n ", msg, ">\n", sep = "")
+    } else {
+      cat("<", cl, ": ", msg, ">\n", sep = "")
+    }
+
     print_srcref(x$call)
+
+    if (!identical(x$pid, Sys.getpid())) cat(" in process", x$pid, "\n")
+
     if (!is.null(x$parent)) {
       cat("-->\n")
       print(x$parent)
     }
+
     invisible(x)
   }
 
   print_rlib_trace <- function(x, ...) {
-    cl <- paste0(" <ERROR TRACE for ",
-                 paste(x$classes, collapse = ", "), ">")
+    cl <- setdiff(x$classes, c("error", "condition"))
+    cl <- paste0(" ERROR TRACE for ", paste(cl, collapse = ", "), "")
     cat(sep = "", "\n", style_trace_title(cl), "\n\n")
     calls <- map2(x$calls, x$topenv, namespace_calls)
-    callstr <- vapply(calls, format_call, character(1))
+    callstr <- vapply(calls, format_call_src, character(1))
     callstr[x$nframes] <-
       paste0(callstr[x$nframes], "\n", style_error(x$messages), "\n")
     callstr <- enumerate(callstr)
@@ -412,7 +426,16 @@ err <- local({
       ign <- c(ign, (last_err_frame+1):length(callstr))
     }
 
-    if (length(ign)) callstr <- callstr[-unique(ign)]
+    ign <- unique(ign)
+    if (length(ign)) callstr <- callstr[-ign]
+
+    # Add markers for subprocesses
+    if (length(unique(x$pids)) >= 2) {
+      pids <- x$pids[-ign]
+      pid_add <- which(!duplicated(pids))
+      pid_str <- style_process(paste0("Process ", pids[pid_add], ":"))
+      callstr[pid_add] <- paste0(" ", pid_str, "\n", callstr[pid_add])
+    }
 
     cat(callstr, sep = "\n")
     invisible(x)
@@ -429,7 +452,7 @@ err <- local({
 
   print_srcref <- function(call) {
     src <- format_srcref(call)
-    if (length(src)) cat(sep = "", "  ", src, "\n")
+    if (length(src)) cat(sep = "", " ", src, "\n")
   }
 
   `%||%` <- function(l, r) if (is.null(l)) r else l
@@ -457,11 +480,15 @@ err <- local({
   format_call <- function(call) {
     width <- getOption("width")
     str <- format(call)
-    callstr <- if (length(str) > 1 || nchar(str[1]) > width) {
+    if (length(str) > 1 || nchar(str[1]) > width) {
       paste0(substr(str[1], 1, width - 5), " ...")
     } else {
       str[1]
     }
+  }
+
+  format_call_src <- function(call) {
+    callstr <- format_call(call)
     src <- format_srcref(call)
     if (length(src)) callstr <- paste0(callstr, "\n    ", src)
     callstr
@@ -489,11 +516,15 @@ err <- local({
   }
 
   style_error <- function(x) {
-    sx <- paste0("\n ERROR: ", x, " ")
+    sx <- paste0("\n x ", x, " ")
     if (has_crayon()) crayon::bold(crayon::red(sx)) else sx
   }
 
   style_trace_title <- function(x) {
+    if (has_crayon()) crayon::bold(x) else x
+  }
+
+  style_process <- function(x) {
     if (has_crayon()) crayon::bold(x) else x
   }
 
