@@ -33,10 +33,12 @@
 #
 # ## Roadmap:
 # - better printing of the error
-# - better printinf of the trace
+# - better printing of the trace
+# - better printing of anonymous function in the trace
+# - add package names to calls in the trace
 #
 # ## NEWS:
-# - 2019-06-17: first release
+# - 2019-06-18: first release
 
 err <- local({
 
