@@ -227,6 +227,7 @@ test_that("rethrowing non rlib errors", {
 })
 
 test_that("errors from subprocess", {
+  skip_if_not_installed("callr", minimum_version = "3.2.0.9001")
   err <- tryCatch(
     callr::r(function() 1 + "a"),
     error = function(e) e)
