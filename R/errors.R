@@ -107,15 +107,12 @@ err <- local({
     # When a child condition is created, the child will use the parent
     # error object to make note of its own nframe. Here we copy that back
     # to the parent.
-    if (is.null(cond$nframe)) cond$nframe <- sys.nframe()
+    if (is.null(cond$`_nframe`)) cond$`_nframe` <- sys.nframe()
     if (!is.null(parent)) {
       cond$parent <- parent
-      cond$call <- cond$parent$childcall
-      cond$parent$childcall <- NULL
-      cond$nframe <- cond$parent$childframe
-      cond$parent$childframe <- NULL
-      cond$ignore <- cond$parent$childignore
-      cond$parent$childignore <- NULL
+      cond$call <- cond$parent$`_childcall`
+      cond$`_nframe` <- cond$parent$`_childframe`
+      cond$`_ignore` <- cond$parent$`_childignore`
     }
 
     signalCondition(cond)
@@ -124,8 +121,8 @@ err <- local({
     # throwing interrupt conditions for example, with the same UI.
     if (! inherits(cond, "error")) return(invisible())
 
-    if (is.null(cond$pid)) cond$pid <- Sys.getpid()
-    if (is.null(cond$timestamp)) cond$timestamp <- Sys.time()
+    if (is.null(cond$`_pid`)) cond$`_pid` <- Sys.getpid()
+    if (is.null(cond$`_timestamp`)) cond$`_timestamp` <- Sys.time()
 
     # If we get here that means that the condition was not caught by
     # an exiting handler. That means that we need to create a trace.
@@ -199,12 +196,12 @@ err <- local({
     for (h in names(handlers)) {
       cl[[h]] <- function(e) {
         # This will be NULL if the error is not throw()-n
-        if (is.null(e$nframe)) e$nframe <- sys.parent()
-        e$childcall <- realcall
-        e$childframe <- realframe
+        if (is.null(e$`_nframe`)) e$`_nframe` <- sys.parent()
+        e$`_childcall` <- realcall
+        e$`_childframe` <- realframe
         # We drop after realframe, until the first withCallingHandlers
         wch <- find_call(sys.calls(), quote(withCallingHandlers))
-        if (!is.na(wch)) e$childignore <- list(c(realframe + 1L, wch))
+        if (!is.na(wch)) e$`_childignore` <- list(c(realframe + 1L, wch))
         handlers[[h]](e)
       }
     }
@@ -235,13 +232,13 @@ err <- local({
       expr,
       error = function(e) {
         # This will be NULL if the error is not throw()-n
-        if (is.null(e$nframe)) e$nframe <- sys.parent()
-        e$childcall <- realcall
-        e$childframe <- realframe
+        if (is.null(e$`_nframe`)) e$`_nframe` <- sys.parent()
+        e$`_childcall` <- realcall
+        e$`_childframe` <- realframe
         # We just ignore the withCallingHandlers call, and the tail
-        e$childignore <- list(
+        e$`_childignore` <- list(
           c(realframe + 1L, realframe + 1L),
-          c(e$nframe + 1L, sys.nframe() + 1L))
+          c(e$`_nframe` + 1L, sys.nframe() + 1L))
         throw(cond, parent = e)
       }
     )
@@ -265,12 +262,12 @@ err <- local({
       # do.call to work around an R CMD check issue
       do.call(".Call", list(.NAME, ...)),
       error = function(e) {
-        e$nframe <- nframe
+        e$`_nframe` <- nframe
         e$call <- call
         if (inherits(e, "simpleError")) {
           class(e) <- c("c_error", "rlib_error", "error", "condition")
         }
-        e$ignore <- list(c(nframe + 1L, sys.nframe() + 1L))
+        e$`_ignore` <- list(c(nframe + 1L, sys.nframe() + 1L))
         throw(e)
       }
     )
@@ -297,11 +294,11 @@ err <- local({
     topenvs <- lapply(
       seq_along(frames),
       function(i) env_label(topenv(environment(sys.function(i)))))
-    nframes <- if (!is.null(cond$nframe)) cond$nframe else sys.parent()
+    nframes <- if (!is.null(cond$`_nframe`)) cond$`_nframe` else sys.parent()
     messages <- list(conditionMessage(cond))
-    ignore <- cond$ignore
+    ignore <- cond$`_ignore`
     classes <- class(cond)
-    pids <- rep(cond$pid %||% Sys.getpid(), length(calls))
+    pids <- rep(cond$`_pid` %||% Sys.getpid(), length(calls))
 
     if (is.null(cond$parent)) {
       # Nothing to do, no parent
@@ -311,9 +308,9 @@ err <- local({
       # the same trace as us.
       parent <- cond
       while (!is.null(parent <- parent$parent)) {
-        nframes <- c(nframes, parent$nframe)
+        nframes <- c(nframes, parent$`_nframe`)
         messages <- c(messages, list(conditionMessage(parent)))
-        ignore <- c(ignore, parent$ignore)
+        ignore <- c(ignore, parent$`_ignore`)
       }
 
     } else {
@@ -394,7 +391,9 @@ err <- local({
 
     print_srcref(x$call)
 
-    if (!identical(x$pid, Sys.getpid())) cat(" in process", x$pid, "\n")
+    if (!identical(x$`_pid`, Sys.getpid())) {
+      cat(" in process", x$`_pid`, "\n")
+    }
 
     if (!is.null(x$parent)) {
       cat("-->\n")
