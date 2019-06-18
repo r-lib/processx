@@ -99,7 +99,9 @@ err <- local({
       throw(new_error("Parent condition must be a condition object"))
     }
 
-    if (is.null(cond$call) || isTRUE(cond$call)) cond$call <- sys.call(-1)
+    if (is.null(cond$call) || isTRUE(cond$call)) {
+      cond$call <- sys.call(-1) %||% sys.call()
+    }
 
     # Eventually the nframe numbers will help us print a better trace
     # When a child condition is created, the child will use the parent
@@ -187,7 +189,7 @@ err <- local({
   #' }
 
   catch_rethrow <- function(expr, ...) {
-    realcall <- sys.call(-1)
+    realcall <- sys.call(-1) %||% sys.call()
     realframe <- sys.nframe()
     parent <- parent.frame()
 
@@ -227,7 +229,7 @@ err <- local({
   #'   [withCallingHandlers()].
 
   rethrow <- function(expr, cond) {
-    realcall <- sys.call(-1)
+    realcall <- sys.call(-1) %||% sys.call()
     realframe <- sys.nframe()
     withCallingHandlers(
       expr,
@@ -480,11 +482,12 @@ err <- local({
   format_call <- function(call) {
     width <- getOption("width")
     str <- format(call)
-    if (length(str) > 1 || nchar(str[1]) > width) {
+    callstr <- if (length(str) > 1 || nchar(str[1]) > width) {
       paste0(substr(str[1], 1, width - 5), " ...")
     } else {
       str[1]
     }
+    style_call(callstr)
   }
 
   format_call_src <- function(call) {
@@ -526,6 +529,14 @@ err <- local({
 
   style_process <- function(x) {
     if (has_crayon()) crayon::bold(x) else x
+  }
+
+  style_call <- function(x) {
+    if (!has_crayon()) return(x)
+    call <- sub("^([^(]+)[(].*$", "\\1", x)
+    rest <- sub("^[^(]+([(].*)$", "\\1", x)
+    if (call == x || rest == x) return(x)
+    paste0(crayon::yellow(call), rest)
   }
 
   structure(
