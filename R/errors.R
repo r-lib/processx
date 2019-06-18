@@ -33,9 +33,7 @@
 #
 # ## Roadmap:
 # - better printing of the error
-# - better printing of the trace
 # - better printing of anonymous function in the trace
-# - add package names to calls in the trace
 #
 # ## NEWS:
 # - 2019-06-18: first release
@@ -124,6 +122,9 @@ err <- local({
     # If this is not an error, then we'll just return here. This allows
     # throwing interrupt conditions for example, with the same UI.
     if (! inherits(cond, "error")) return(invisible())
+
+    if (is.null(cond$pid)) cond$pid <- Sys.getpid()
+    if (is.null(cond$timestamp)) cond$timestamp <- Sys.time()
 
     # If we get here that means that the condition was not caught by
     # an exiting handler. That means that we need to create a trace.
@@ -292,9 +293,13 @@ err <- local({
     parents <- sys.parents()[idx]
     calls <- as.list(sys.calls()[idx])
     envs <- lapply(frames, env_label)
+    topenvs <- lapply(
+      seq_along(frames),
+      function(i) env_label(topenv(environment(sys.function(i)))))
     nframes <- if (!is.null(cond$nframe)) cond$nframe else sys.parent()
     messages <- list(conditionMessage(cond))
     ignore <- cond$ignore
+    classes <- class(cond)
 
     if (is.null(cond$parent)) {
       # Nothing to do, no parent
@@ -318,23 +323,24 @@ err <- local({
       nframes <- c(nframes, pt$nframes + length(calls))
       ignore <- c(ignore, lapply(pt$ignore, function(x) x + length(calls)))
       envs <- c(envs, pt$envs)
+      topenvs <- c(topenvs, pt$topenvs)
       calls <- c(calls, pt$calls)
       messages <- c(messages, pt$messages)
     }
 
     cond$trace <- new_trace(
-      calls, parents, envs, nframes, messages,
-      ignore)
+      calls, parents, envs, topenvs, nframes, messages, ignore, classes)
 
     cond
   }
 
-  new_trace <- function (calls, parents, envs, nframes, messages, ignore) {
+  new_trace <- function (calls, parents, envs, topenvs, nframes, messages,
+                         ignore, classes) {
     indices <- seq_along(calls)
     structure(
-      list(calls = calls, parents = parents, envs = envs,
+      list(calls = calls, parents = parents, envs = envs, topenvs = topenvs,
            indices = indices, nframes = nframes, messages = messages,
-           ignore = ignore),
+           ignore = ignore, classes = classes),
       class = "rlib_trace")
   }
 
@@ -357,7 +363,7 @@ err <- local({
       return("global")
     }
     if (identical(env, baseenv())) {
-      return("package:base")
+      return("namespace:base")
     }
     if (identical(env, emptyenv())) {
       return("empty")
@@ -383,9 +389,13 @@ err <- local({
   }
 
   print_rlib_trace <- function(x, ...) {
-    callstr <- vapply(x$calls, format_call, character(1))
+    cl <- paste0(" <ERROR TRACE for ",
+                 paste(x$classes, collapse = ", "), ">")
+    cat(sep = "", "\n", style_trace_title(cl), "\n\n")
+    calls <- map2(x$calls, x$topenv, namespace_calls)
+    callstr <- vapply(calls, format_call, character(1))
     callstr[x$nframes] <-
-      paste0(callstr[x$nframes], "\n--> ERROR: ", x$messages, "\n")
+      paste0(callstr[x$nframes], "\n", style_error(x$messages), "\n")
     callstr <- enumerate(callstr)
 
     # Ignore what we were told to ignore
@@ -408,9 +418,18 @@ err <- local({
     invisible(x)
   }
 
+  namespace_calls <- function(call, env) {
+    if (length(call) < 1) return(call)
+    if (typeof(call[[1]]) != "symbol") return(call)
+    pkg <- strsplit(env, "^namespace:")[[1]][2]
+    if (is.na(pkg)) return(call)
+    call[[1]] <- substitute(p:::f, list(p = as.symbol(pkg), f = call[[1]]))
+    call
+  }
+
   print_srcref <- function(call) {
     src <- format_srcref(call)
-    if (length(src)) cat(sep = "", "   ", src, "\n")
+    if (length(src)) cat(sep = "", "  ", src, "\n")
   }
 
   `%||%` <- function(l, r) if (is.null(l)) r else l
@@ -425,15 +444,14 @@ err <- local({
       if (isTRUE(srcfile$isFile)) {
         file <- file.path(dir, file)
       } else {
-        pkg <- basename(srcfile$original$filename)
-        file <- file.path(paste0(pkg, "::R"), file)
+        file <- file.path("R", file)
       }
     } else {
       file <- "??"
     }
     line <- getSrcLocation(call) %||% "??"
     col <- getSrcLocation(call, which = "column") %||% "??"
-    paste0(file, ":", line, ":", col)
+    style_srcref(paste0(file, ":", line, ":", col))
   }
 
   format_call <- function(call) {
@@ -445,11 +463,39 @@ err <- local({
       str[1]
     }
     src <- format_srcref(call)
-    if (length(src)) callstr <- paste0(callstr, "\n   ", src)
+    if (length(src)) callstr <- paste0(callstr, "\n    ", src)
     callstr
   }
 
-  enumerate <- function(x) paste0(seq_along(x), ". ", x)
+  enumerate <- function(x) {
+    paste0(style_numbers(paste0(" ", seq_along(x), ". ")), x)
+  }
+
+  map2 <- function (.x, .y, .f, ...) {
+    mapply(.f, .x, .y, MoreArgs = list(...), SIMPLIFY = FALSE,
+           USE.NAMES = FALSE)
+  }
+
+  # -- printing, styles -------------------------------------------------
+
+  has_crayon <- function() "crayon" %in% loadedNamespaces()
+
+  style_numbers <- function(x) {
+    if (has_crayon()) crayon::silver(x) else x
+  }
+
+  style_srcref <- function(x) {
+    if (has_crayon()) crayon::italic(crayon::cyan(x))
+  }
+
+  style_error <- function(x) {
+    sx <- paste0("\n ERROR: ", x, " ")
+    if (has_crayon()) crayon::bold(crayon::red(sx)) else sx
+  }
+
+  style_trace_title <- function(x) {
+    if (has_crayon()) crayon::bold(x) else x
+  }
 
   structure(
     list(
