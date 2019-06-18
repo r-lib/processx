@@ -35,6 +35,4 @@ Suggests:
     parallel,
     testthat,
     withr
-Remotes:
-    r-lib/callr@feature/last-error
 Encoding: UTF-8
