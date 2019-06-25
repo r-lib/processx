@@ -1,6 +1,14 @@
 
 # processx dev
 
+* Processx has now better error messages, in particular, all errors from C
+  code contain the file name and line number, and the system error code
+  and message (where applicable).
+
+* Processx now sets the `.Last.error` variable for every un-caught processx
+  error to the error condition, and also sets `.Last.error.trace` to its
+  stack trace.
+
 * `run()` now prints the last 10 lines of the standard error stream on
   error, if `echo = FALSE`, and it also prints the exit status of the
   process.
