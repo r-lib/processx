@@ -229,7 +229,13 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 
   do_output <- function() {
 
-    newout <- proc$read_output(2000)
+    ok <- FALSE
+    newout <- tryCatch({
+      ret <- proc$read_output(2000)
+      ok <<- TRUE
+      ret
+    }, error = function(e) NULL)
+
     if (length(newout) && nzchar(newout)) {
       if (!is.null(stdout_callback)) stdout_callback(newout, proc)
       resenv$stdout <- paste0(resenv$stdout, newout)
@@ -245,7 +251,12 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
       }
     }
 
-    newerr <- if (proc$has_error_connection()) proc$read_error(2000)
+    newerr <- tryCatch({
+      ret <- proc$read_error(2000)
+      ok <<- TRUE
+      ret
+    }, error = function(e) NULL)
+
     if (length(newerr) && nzchar(newerr)) {
       resenv$stderr <- paste0(resenv$stderr, newerr)
       if (!is.null(stderr_callback)) stderr_callback(newerr, proc)
@@ -260,6 +271,8 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
         lapply(lines, function(x) stderr_line_callback(x, proc))
       }
     }
+
+    ok
   }
 
   spin <- (function() {
@@ -310,7 +323,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
   while (proc$is_incomplete_output() ||
          (proc$has_error_connection() && proc$is_incomplete_error())) {
     proc$poll_io(-1)
-    do_output()
+    if (!do_output()) break
   }
 
   if (spinner) cat("\r \r")
