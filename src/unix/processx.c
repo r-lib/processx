@@ -12,19 +12,6 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-/* Some implementations don't have posix_openpt() */
-
-#if defined(__sun)                      /* Not on Solaris 8 */
-#define NO_POSIX_OPENPT
-#endif
-
-#ifdef NO_POSIX_OPENPT
-static int posix_openpt(int flags) {
-    return open("/dev/ptmx", flags);
-}
-
-#endif
-
 #include "../processx.h"
 
 /* Internals */
