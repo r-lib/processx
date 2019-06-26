@@ -58,7 +58,10 @@ process_initialize <- function(self, private, command, args,
   }
 
   if (pty && os_type() != "unix") {
-    throw(new_error("`pty == TRUE` is only implemented on Unix"))
+    throw(new_error("`pty = TRUE` is only implemented on Unix"))
+  }
+  if (pty && tolower(Sys.info()[["sysname"]]) == "sunos") {
+    throw(new_error("`pty = TRUE` is not (yet) implemented on Solaris"))
   }
   if (pty && !is.null(stdin)) {
     throw(new_error("`stdin` must be `NULL` if `pty == TRUE`"))

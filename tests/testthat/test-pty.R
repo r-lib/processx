@@ -9,6 +9,7 @@ test_that("fails in windows", {
 
 test_that("pty works", {
   skip_other_platforms("unix")
+  skip_on_os("solaris")
 
   p <- process$new("cat", pty = TRUE)
   on.exit(p$kill(), add = TRUE)
@@ -27,6 +28,7 @@ test_that("pty works", {
 
 test_that("pty echo", {
   skip_other_platforms("unix")
+  skip_on_os("solaris")
 
   p <- process$new("cat", pty = TRUE, pty_options = list(echo = TRUE))
   on.exit(p$kill(), add = TRUE)
@@ -51,6 +53,7 @@ test_that("pty echo", {
 
 test_that("read_output_lines() fails for pty", {
   skip_other_platforms("unix")
+  skip_on_os("solaris")
 
   p <- process$new("cat", pty = TRUE)
   p$write_input("foobar\n")

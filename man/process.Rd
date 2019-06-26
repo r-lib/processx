@@ -99,7 +99,8 @@ provided; a file name, use this file as standard input;
 same connection (i.e. pipe or file) as \code{stdout}. \code{"2>&1"} is a
 way to keep standard output and error correctly interleaved.
 \item \code{pty}: Whether to create a pseudo terminal (pty) for the background
-process. This is currently only supported on Unix systems.
+process. This is currently only supported on Unix systems, but
+not supported on Solaris.
 If it is \code{TRUE}, then the \code{stdin}, \code{stdout} and \code{stderr} arguments
 must be \code{NULL}. If a pseudo terminal is created, then processx
 will create pipes for standard input and standard output. There is
