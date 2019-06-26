@@ -28,6 +28,8 @@
 
 * `run()` now passes extra `...` arguments to `process$new()`.
 
+* `run()` now does not error if the process is killed in a callback.
+
 # processx 3.3.1
 
 * Fix a crash on Windows, when a connection that has a pending read
