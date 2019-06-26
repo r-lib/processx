@@ -538,7 +538,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
     } while (err == -1 && errno == EINTR);
 
   } else {
-    R_THROW_SYSTEM_ERROR_CODE(exec_errorno,
+    R_THROW_SYSTEM_ERROR_CODE(-exec_errorno,
                               "Child process failed to start");
   }
 
