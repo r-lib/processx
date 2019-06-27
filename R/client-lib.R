@@ -31,21 +31,23 @@ load_client_lib <- function() {
   env <- new.env(parent = emptyenv())
   env$.path <- tmpsofile
 
-  env$base64_encode <- function(x) rawToChar(.Call(sym_encode, x))
+  mycall <- .Call
+
+  env$base64_encode <- function(x) rawToChar(mycall(sym_encode, x))
   env$base64_decode <- function(x) {
     if (is.character(x)) {
       x <- charToRaw(paste(gsub("\\s+", "", x), collapse = ""))
     }
-    .Call(sym_decode, x)
+    mycall(sym_decode, x)
   }
 
-  env$disable_fd_inheritance <- function() .Call(sym_disinh)
+  env$disable_fd_inheritance <- function() mycall(sym_disinh)
 
   env$write_fd <- function(fd, data) {
     if (is.character(data)) data <- charToRaw(paste0(data, collapse = ""))
     len <- length(data)
     repeat {
-      written <- .Call(sym_write, fd, data)
+      written <- mycall(sym_write, fd, data)
       len <- len - written
       if (len == 0) break
       if (written) data <- data[-(1:written)]
