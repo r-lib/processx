@@ -1,3 +1,4 @@
+# -*- makefile -*-
 
 OBJECTS = init.o poll.o errors.o processx-connection.o		     \
           processx-vector.o create-time.o base64.o                   \
@@ -11,7 +12,7 @@ PKG_CFLAGS = -DSTRICT_R_HEADERS
 PKG_LIBS = -lws2_32
 
 all: tools/px.exe tools/interrupt.exe \
-	supervisor/supervisor.exe $(SHLIB)
+	supervisor/supervisor.exe client$(SHLIB_EXT) $(SHLIB)
 
 tools/px.exe: tools/px.c
 	$(CC) $(CFLAGS) -Wall $< -o $@
@@ -23,7 +24,13 @@ supervisor/supervisor.exe: supervisor/supervisor.c supervisor/utils.c \
 			   supervisor/windows.c
 	$(CC) $(CFLAGS) $^ -o supervisor/supervisor.exe
 
+CLIENT_OBJECTS = base64.o client.o errors.o
+
+client$(SHLIB_EXT): $(CLIENT_OBJECTS)
+	$(SHLIB_LINK) -o client$(SHLIB_EXT) $(CLIENT_OBJECTS)
+
 clean:
-	rm -rf $(SHLIB) $(OBJECTS) \
-	    supervisor/supervisor supervisor/supervisor.dSYM \
-	    supervisor/supervisor.exe tools/px.exe tools/interrupt.exe
+	rm -rf $(SHLIB) $(OBJECTS) $(CLIENT_OBJECTS)			\
+	    supervisor/supervisor supervisor/supervisor.dSYM 		\
+	    supervisor/supervisor.exe tools/px.exe tools/interrupt.exe  \
+	    client$(SHLIB_EXT)
