@@ -2,13 +2,11 @@
 context("errors.R")
 
 test_that("throw() is standalone", {
-  ## baseenv() makes sure that the remotes package env is not used
-  env <- new.env(parent = baseenv())
-  env$throw <- throw
-  stenv <- environment(env$throw)
+  stenv <- environment(throw)
   objs <- ls(stenv, all.names = TRUE)
   funs <- Filter(function(x) is.function(stenv[[x]]), objs)
   funobjs <- mget(funs, stenv)
+  for (f in funobjs) expect_identical(environmentName(topenv(f)), "base")
 
   expect_message(
     mapply(codetools::checkUsage, funobjs, funs,
