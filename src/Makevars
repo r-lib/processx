@@ -1,3 +1,4 @@
+# -*- makefile -*-
 
 OBJECTS = init.o poll.o errors.o processx-connection.o   \
           processx-vector.o create-time.o base64.o       \
@@ -7,7 +8,7 @@ OBJECTS = init.o poll.o errors.o processx-connection.o   \
 
 .PHONY: all clean
 
-all: tools/px supervisor/supervisor $(SHLIB)
+all: tools/px supervisor/supervisor client$(SHLIB_EXT) $(SHLIB)
 
 tools/px: tools/px.c
 	$(CC) $(CFLAGS) -Wall tools/px.c -o tools/px
@@ -16,7 +17,13 @@ supervisor/supervisor: supervisor/supervisor.c supervisor/utils.c
 	$(CC) $(CFLAGS) supervisor/supervisor.c supervisor/utils.c \
 	      -o supervisor/supervisor
 
+CLIENT_OBJECTS = base64.o client.o errors.o
+
+client$(SHLIB_EXT): $(CLIENT_OBJECTS)
+	$(SHLIB_LINK) -o client$(SHLIB_EXT) $(CLIENT_OBJECTS)
+
 clean:
-	rm -rf $(SHLIB) $(OBJECTS)				\
+	rm -rf $(SHLIB) $(OBJECTS) $(CLIENT_OBJECTS)		\
 	    supervisor/supervisor supervisor/supervisor.dSYM 	\
-	    supervisor/supervisor.exe
+	    supervisor/supervisor.exe				\
+	    client$(SHLIB_EXT)
