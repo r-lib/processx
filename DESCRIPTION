@@ -34,5 +34,6 @@ Suggests:
     debugme,
     parallel,
     testthat,
+    tibble,
     withr
 Encoding: UTF-8
