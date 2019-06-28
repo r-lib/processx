@@ -9,6 +9,33 @@
 
 #include <R_ext/Rallocators.h>
 
+/* Pack an R object into shared memory
+ *
+ * `data` must be a list of: LGLSXP, INTSXP, REALSXP, RAWSXP.
+ * Nested lists are not allowed currently. Attributes of the list or the
+ * entries are dropped.
+ *
+ * The packed layout of the data is like this. First there is a global
+ * header:
+ *
+ * - full length of the packed data, in bytes, R_xlen_t
+ * - number of entries in the list , R_xlen_t
+ *
+ * Then comes a map of vectors, for each list entry we have:
+ * - type of object, SEXPTYPE
+ * - length of object, R_xlen_t
+ *
+ * Then come the objects themselves. These are a bit trickier, because we
+ * want to avoid copying the data in the subprocess, via using a custom
+ * allocator. To create R objects in place, we need to leave some space
+ * before the actual vector data, for the SEXP header, and the allocator
+ * as well. This means that for each object we'll have:
+ *
+ * - "empty" space of sizeof(SEXPPREC_ALIGN) + sizeof(R_allocator_t)
+ * - then the object itself
+ *
+ */
+
 SEXP processx__mmap_pack(SEXP filename, SEXP data) {
   const char *c_filename = CHAR(STRING_ELT(filename, 0));
   R_xlen_t i, n = XLENGTH(data);
@@ -69,7 +96,7 @@ SEXP processx__mmap_pack(SEXP filename, SEXP data) {
   if (map == MAP_FAILED) R_THROW_SYSTEM_ERROR("mmap failed");
 
   /* Need to copy the elements in place */
-  /* Full length, thne number of elements */
+  /* Full length, then number of elements */
   memcpy(map, &fullsize, xlensize);
   map += xlensize;
   memcpy(map, &n, xlensize);
@@ -138,9 +165,33 @@ void *processx__alloc(R_allocator_t *allocator, size_t size) {
   return allocator->data;
 }
 
+/* Note: data seems useless here, it is just the allocator, again,
+ * as a void*, from https://github.com/wch/r-source/blob/3a1ec60935e5aef5dff4794561d9e3ff2e30bd14/src/main/memory.c#L2545
+ *     allocator->mem_free(allocator, (void*)allocator);
+ */
+
 void processx__free(R_allocator_t *allocator, void *data) {
   /* TODO: munmap eventually, when all is freed */
 }
+
+/* Unpack data from shared memory.
+ *
+ * This is the inverse of pack().
+ *
+ * To create the R objects in-place, we need to know that when R allocates
+ * memory for a vector, it allocates space for a header as well. The header
+ * is sizeof(SEXPREC_ALIGN) + sizeof(R_allocator_t) bytes long. pack()
+ * leaves this space out when packing the R vector to shared memory.
+ * Our custom allocator just needs to return a pointer to the beginning
+ * of the space where the header will be. Then everything automatically
+ * falls into place.
+ *
+ * R will modify the header of course, but the shared memory has
+ * copy-on-write semantics, so this is not a big deal. It does mean that
+ * for each vector the OS will copy one or two extra memory pages, but
+ * this should be OK, especially for longer vectors. (It is not possible
+ * to make the R vector header non-contiguous with the data, AFAICT.)
+ */
 
 SEXP processx__mmap_unpack(SEXP fd) {
   SEXP ret = R_NilValue;
