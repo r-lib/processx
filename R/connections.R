@@ -279,6 +279,5 @@ conn_unpack_mmap <- function(fd) {
   assert_that(
     is_integerish_scalar(fd))
   fd <- as.integer(fd)
-  size <- as.integer(size)
   .Call(c_processx__mmap_unpack, fd)
 }
