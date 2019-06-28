@@ -2,6 +2,10 @@
 #ifndef R_THROW_ERROR_H
 #define R_THROW_ERROR_H
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #else

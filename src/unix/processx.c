@@ -1,11 +1,8 @@
 
 #ifndef _WIN32
 
-#if ! defined(__sun)
-        /* Prevents ptsname() declaration being visible on Solaris 8 */
-#if ! defined(_XOPEN_SOURCE) || _XOPEN_SOURCE < 600
-#define _XOPEN_SOURCE 600
-#endif
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
 #endif
 
 #include <stdlib.h>

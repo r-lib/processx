@@ -3,6 +3,10 @@
 
 #ifndef _WIN32
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+
 #include <Rdefines.h>
 
 #include "../errors.h"
