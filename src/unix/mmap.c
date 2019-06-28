@@ -29,7 +29,7 @@ SEXP processx__mmap_pack(SEXP filename, SEXP data) {
     SEXP elt = VECTOR_ELT(data, i);
     SEXPTYPE type = TYPEOF(elt);
     R_xlen_t len = XLENGTH(elt);
-    int eltsize;
+    int eltsize = -1;           /* -1 to avoid gcc warning */
     switch (type) {
     case LGLSXP:
       eltsize = lglsize;
@@ -91,7 +91,7 @@ SEXP processx__mmap_pack(SEXP filename, SEXP data) {
     SEXP elt = VECTOR_ELT(data, i);
     SEXPTYPE type = TYPEOF(elt);
     R_xlen_t len = LENGTH(elt);
-    int eltsize;
+    int eltsize = -1;           /* To avoid a C compiler warning */
     void *src;
     switch (type) {
     case LGLSXP:
@@ -153,7 +153,6 @@ SEXP processx__mmap_unpack(SEXP fd) {
   static int realsize = sizeof(REAL(ScalarReal(0))[0]);
   static int sexprecsize = sizeof(SEXPREC_ALIGN);
   static int allocatorsize = sizeof(R_allocator_t);
-  int elementsize = sexpsize + xlensize + allocatorsize + sexprecsize;
   R_xlen_t i, n;
   void *map, *map_orig;
 
@@ -182,7 +181,7 @@ SEXP processx__mmap_unpack(SEXP fd) {
   for (i = 0; i < n; i++) {
     SEXPTYPE type;
     R_xlen_t len;
-    int eltsize;
+    int eltsize = -1;           /* To avoid a compiler warning */
     memcpy(&type, map, sexpsize);
     map += sexpsize;
     memcpy(&len, map, xlensize);
