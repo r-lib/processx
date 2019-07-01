@@ -3,12 +3,50 @@
 #define _GNU_SOURCE 1
 #endif
 
+#ifdef _WIN32
+
+#include <winsock2.h>
+#include "win/processx-stdio.h"
+#include <windows.h>
+#include <io.h>
+
 #include <Rinternals.h>
 #include "errors.h"
 
-#ifdef _WIN32
+int processx__stdio_verify(BYTE* buffer, WORD size) {
+  unsigned int count;
 
-#include <windows.h>
+  /* Check the buffer pointer. */
+  if (buffer == NULL)
+    return 0;
+
+  /* Verify that the buffer is at least big enough to hold the count. */
+  if (size < CHILD_STDIO_SIZE(0))
+    return 0;
+
+  /* Verify if the count is within range. */
+  count = CHILD_STDIO_COUNT(buffer);
+  if (count > 256)
+    return 0;
+
+  /* Verify that the buffer size is big enough to hold info for N FDs. */
+  if (size < CHILD_STDIO_SIZE(count))
+    return 0;
+
+  return 1;
+}
+
+void processx__stdio_noinherit(BYTE* buffer) {
+  int i, count;
+
+  count = CHILD_STDIO_COUNT(buffer);
+  for (i = 0; i < count; i++) {
+    HANDLE handle = CHILD_STDIO_HANDLE(buffer, i);
+    if (handle != INVALID_HANDLE_VALUE) {
+      SetHandleInformation(handle, HANDLE_FLAG_INHERIT, 0);
+    }
+  }
+}
 
 /*
  * Clear the HANDLE_FLAG_INHERIT flag from all HANDLEs that were inherited
@@ -48,7 +86,7 @@ SEXP processx_disable_inheritance() {
 
 SEXP processx_write(SEXP fd, SEXP data) {
   int cfd = INTEGER(fd)[0];
-  HANDLE h = (HANDLE) _get_osfhandle(fd);
+  HANDLE h = (HANDLE) _get_osfhandle(cfd);
   DWORD written;
 
   BOOL ret = WriteFile(h, RAW(data), LENGTH(data), &written, NULL);
@@ -62,6 +100,9 @@ SEXP processx_write(SEXP fd, SEXP data) {
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
+
+#include <Rinternals.h>
+#include "errors.h"
 
 static int processx__cloexec_fcntl(int fd, int set) {
   int flags;

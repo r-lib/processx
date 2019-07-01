@@ -12,7 +12,7 @@ PKG_CFLAGS = -DSTRICT_R_HEADERS
 PKG_LIBS = -lws2_32
 
 all: tools/px.exe tools/interrupt.exe \
-	supervisor/supervisor.exe client$(SHLIB_EXT) $(SHLIB)
+	supervisor/supervisor.exe $(SHLIB) client$(SHLIB_EXT)
 
 tools/px.exe: tools/px.c
 	$(CC) $(CFLAGS) -Wall $< -o $@
@@ -27,7 +27,7 @@ supervisor/supervisor.exe: supervisor/supervisor.c supervisor/utils.c \
 CLIENT_OBJECTS = base64.o client.o errors.o
 
 client$(SHLIB_EXT): $(CLIENT_OBJECTS)
-	$(SHLIB_LINK) -o client$(SHLIB_EXT) $(CLIENT_OBJECTS)
+	$(SHLIB_LINK) -o client$(SHLIB_EXT) $(CLIENT_OBJECTS) $(LIBR)
 
 clean:
 	rm -rf $(SHLIB) $(OBJECTS) $(CLIENT_OBJECTS)			\
