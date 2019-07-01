@@ -29,6 +29,10 @@ load_client_lib <- function(sofile = NULL) {
   sym_decode <- getNativeSymbolInfo("processx_base64_decode", lib)
   sym_disinh <- getNativeSymbolInfo("processx_disable_inheritance", lib)
   sym_write  <- getNativeSymbolInfo("processx_write", lib)
+  sym_setout <- getNativeSymbolInfo("processx_set_stdout", lib)
+  sym_seterr <- getNativeSymbolInfo("processx_set_stderr", lib)
+  sym_setoutf <- getNativeSymbolInfo("processx_set_stdout_to_file", lib)
+  sym_seterrf <- getNativeSymbolInfo("processx_set_stderr_to_file", lib)
 
   env <- new.env(parent = emptyenv())
   env$.path <- tmpsofile
@@ -55,6 +59,22 @@ load_client_lib <- function(sofile = NULL) {
       if (written) data <- data[-(1:written)]
       Sys.sleep(.1)
     }
+  }
+
+  env$set_stdout <- function(fd, drop = TRUE) {
+    mycall(sym_setout, as.integer(fd), as.logical(drop))
+  }
+
+  env$set_stderr <- function(fd, drop = TRUE) {
+    mycall(sym_seterr, as.integer(fd), as.logical(drop))
+  }
+
+  env$set_stdout_file <- function(path) {
+    mycall(sym_setoutf, as.character(path)[1])
+  }
+
+  env$set_stderr_file <- function(path) {
+    mycall(sym_seterrf, as.character(path)[1])
   }
 
   env$.finalize <- function() {

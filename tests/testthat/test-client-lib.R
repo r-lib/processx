@@ -56,3 +56,88 @@ test_that("write_fd", {
 
   expect_identical(readRDS(tmp), obj)
 })
+
+test_that("processx_connection_set_stdout", {
+  stdout_to_file <- function(filename) {
+    lib <- asNamespace("processx")$load_client_lib()
+    lib$set_stdout_file(filename)
+    cat("output\n")
+    message("error")
+    42
+  }
+
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+  opt <- callr::r_process_options(
+    func = stdout_to_file,
+    args = list(filename = tmp))
+  on.exit(p$kill(), add = TRUE)
+  p <- callr::r_process$new(opt)
+
+  p$wait(5000)
+  expect_false(p$kill(close_connections = FALSE))
+  expect_equal(p$get_result(), 42)
+  expect_equal(p$read_all_error_lines(), "error")
+  expect_equal(p$read_all_output_lines(), character())
+  expect_equal(readLines(tmp), "output")
+  p$kill()
+})
+
+test_that("processx_connection_set_stdout", {
+  stderr_to_file <- function(filename) {
+    lib <- asNamespace("processx")$load_client_lib()
+    lib$set_stderr_file(filename)
+    cat("output\n")
+    message("error")
+    42
+  }
+
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+  opt <- callr::r_process_options(
+    func = stderr_to_file,
+    args = list(filename = tmp))
+  on.exit(p$kill(), add = TRUE)
+  p <- callr::r_process$new(opt)
+
+  p$wait(5000)
+  expect_false(p$kill(close_connections = FALSE))
+  expect_equal(p$get_result(), 42)
+  expect_equal(p$read_all_output_lines(), "output")
+  expect_equal(p$read_all_error_lines(), character())
+  expect_equal(readLines(tmp), "error")
+  p$kill()
+})
+
+test_that("setting stdout multiple times", {
+  stdout_to_file <- function(file1, file2) {
+    lib <- asNamespace("processx")$load_client_lib()
+    lib$set_stdout_file(file1)
+    cat("output\n")
+    message("error")
+
+    lib$set_stdout_file(file2)
+    cat("output2\n")
+    message("error2")
+
+    42
+  }
+
+  tmp1 <- tempfile()
+  tmp2 <- tempfile()
+  on.exit(unlink(c(tmp1, tmp2)), add = TRUE)
+  opt <- callr::r_process_options(
+    func = stdout_to_file,
+    args = list(file1 = tmp1, file2 = tmp2))
+  on.exit(p$kill(), add = TRUE)
+  p <- callr::r_process$new(opt)
+
+  p$wait(5000)
+  expect_false(p$kill(close_connections = FALSE))
+  expect_equal(p$get_result(), 42)
+  expect_equal(p$read_all_error_lines(), c("error", "error2"))
+  expect_equal(p$read_all_output_lines(), character())
+  expect_equal(readLines(tmp1), "output")
+  expect_equal(readLines(tmp2), "output2")
+  p$kill()
+})

@@ -151,3 +151,59 @@ SEXP processx_write(SEXP fd, SEXP data) {
 }
 
 #endif
+
+static SEXP processx_set_std(int which, int fd, int drop) {
+  int orig = -1;
+  int ret;
+  const char *what[] = { "stdin", "stdout", "stderr" };
+
+  if (!drop) {
+#ifdef _WIN32
+    orig = _dup(which);
+#else
+    orig = dup(which);
+#endif
+    if (orig == -1) {
+      R_THROW_SYSTEM_ERROR("Cannot reroute %s", what[which]);
+    }
+  } else {
+    close(which);
+  }
+
+#ifdef _WIN32
+  ret = _dup2(fd, which)
+#else
+  ret = dup2(fd, which);
+#endif
+  if (ret == -1) {
+    R_THROW_SYSTEM_ERROR("Cannot reroute %s", what[which]);
+  }
+
+  if (!drop) {
+    return ScalarInteger(orig);
+  } else {
+    return R_NilValue;
+  }
+}
+
+SEXP processx_set_stdout(SEXP fd, SEXP drop) {
+  return processx_set_std(1, INTEGER(fd)[0], LOGICAL(drop)[0]);
+}
+
+SEXP processx_set_stderr(SEXP fd, SEXP drop) {
+  return processx_set_std(2, INTEGER(fd)[0], LOGICAL(drop)[0]);
+}
+
+SEXP processx_set_stdout_to_file(SEXP file) {
+  const char *c_file = CHAR(STRING_ELT(file, 0));
+  int fd = open(c_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  if (fd == -1) R_THROW_SYSTEM_ERROR("Cannot open file `%s`", c_file);
+  return processx_set_std(1, fd, 0);
+}
+
+SEXP processx_set_stderr_to_file(SEXP file) {
+  const char *c_file = CHAR(STRING_ELT(file, 0));
+  int fd = open(c_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  if (fd == -1) R_THROW_SYSTEM_ERROR("Cannot open file `%s`", c_file);
+  return processx_set_std(2, fd, 0);
+}
