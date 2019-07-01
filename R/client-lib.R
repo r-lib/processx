@@ -4,7 +4,7 @@ load_client_lib <- function(sofile = NULL) {
   if (is.null(sofile)) {
     arch <- .Platform$r_arch
     sofile <- system.file(
-      paste0("libs", arch), paste0("client", ext),
+      "libs", arch, paste0("client", ext),
       package = "processx")
 
     # Try this as well, this is for devtools/pkgload

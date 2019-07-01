@@ -297,8 +297,6 @@ SEXP processx__connection_set_std(SEXP con, int which, int drop) {
     os_handle = (HANDLE) _get_osfhandle(saved) ;
     processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_PIPE,
 				 "", &result);
-  } else {
-    close(which);
   }
 
   fd = _open_osfhandle((intptr_t) ccon->handle.handle, 0);
@@ -315,8 +313,6 @@ SEXP processx__connection_set_std(SEXP con, int which, int drop) {
     }
     processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_PIPE,
 				 "", &result);
-  } else {
-    close(which);
   }
   ret = dup2(ccon->handle, which);
   if (ret == -1) {
