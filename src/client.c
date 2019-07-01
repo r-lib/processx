@@ -9,6 +9,7 @@
 #include "win/processx-stdio.h"
 #include <windows.h>
 #include <io.h>
+#include <fcntl.h>
 
 #include <Rinternals.h>
 #include "errors.h"
@@ -171,7 +172,7 @@ static SEXP processx_set_std(int which, int fd, int drop) {
   }
 
 #ifdef _WIN32
-  ret = _dup2(fd, which)
+  ret = _dup2(fd, which);
 #else
   ret = dup2(fd, which);
 #endif
@@ -196,14 +197,22 @@ SEXP processx_set_stderr(SEXP fd, SEXP drop) {
 
 SEXP processx_set_stdout_to_file(SEXP file) {
   const char *c_file = CHAR(STRING_ELT(file, 0));
+#ifdef _WIN32
+  int fd = open(c_file, _O_WRONLY | _O_CREAT | _O_TRUNC, 0644);
+#else
   int fd = open(c_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+#endif
   if (fd == -1) R_THROW_SYSTEM_ERROR("Cannot open file `%s`", c_file);
   return processx_set_std(1, fd, 0);
 }
 
 SEXP processx_set_stderr_to_file(SEXP file) {
   const char *c_file = CHAR(STRING_ELT(file, 0));
+#ifdef _WIN32
+  int fd = open(c_file, _O_WRONLY | _O_CREAT | _O_TRUNC, 0644);
+#else
   int fd = open(c_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+#endif
   if (fd == -1) R_THROW_SYSTEM_ERROR("Cannot open file `%s`", c_file);
   return processx_set_std(2, fd, 0);
 }
