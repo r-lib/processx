@@ -3,7 +3,7 @@ context("client-lib")
 
 test_that("client lib is standalone", {
   lib <- load_client_lib()
-  on.exit(try(unload_client_lib(lib)), add = TRUE)
+  on.exit(try(lib$.finalize()), add = TRUE)
 
   objs <- ls(lib, all.names = TRUE)
   funs <- Filter(function(x) is.function(lib[[x]]), objs)
@@ -18,7 +18,7 @@ test_that("client lib is standalone", {
 
 test_that("base64", {
   lib <- load_client_lib()
-  on.exit(try(unload_client_lib(lib)), add = TRUE)
+  on.exit(try(lib$.finalize()), add = TRUE)
 
   expect_equal(lib$base64_encode(charToRaw("foobar")), "Zm9vYmFy")
   expect_equal(lib$base64_encode(charToRaw(" ")), "IA==")
@@ -41,7 +41,7 @@ test_that("disable_inheritance", {
 
 test_that("write_fd", {
   lib <- load_client_lib()
-  on.exit(try(unload_client_lib(lib)), add = TRUE)
+  on.exit(try(lib$.finalize()), add = TRUE)
 
   tmp <- tempfile(fileext = ".rds")
   on.exit(unlink(tmp), add = TRUE)

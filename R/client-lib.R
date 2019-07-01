@@ -1,20 +1,22 @@
 
-load_client_lib <- function() {
-  arch <- .Platform$r_arch
+load_client_lib <- function(sofile = NULL) {
   ext <- .Platform$dynlib.ext
-  sofile <- system.file(
-    paste0("libs", arch), paste0("client", ext),
-    package = "processx")
-
-  # Try this as well, this is for devtools/pkgload
-  if (sofile == "") {
+  if (is.null(sofile)) {
+    arch <- .Platform$r_arch
     sofile <- system.file(
-      "src", paste0("client", ext),
+      paste0("libs", arch), paste0("client", ext),
       package = "processx")
-  }
 
-  # stop() here and not throw(), because this function should be standalone
-  if (sofile == "") stop("Cannot find client file")
+    # Try this as well, this is for devtools/pkgload
+    if (sofile == "") {
+      sofile <- system.file(
+        "src", paste0("client", ext),
+        package = "processx")
+    }
+
+    # stop() here and not throw(), because this function should be standalone
+    if (sofile == "") stop("Cannot find client file")
+  }
 
   tmpsofile <- tempfile(fileext = ext)
   file.copy(sofile, tmpsofile)
@@ -55,19 +57,22 @@ load_client_lib <- function() {
     }
   }
 
-  unload_client_lib <- unload_client_lib
+  env$.finalize <- function() {
+    dyn.unload(env$.path)
+    rm(list = ls(env, all.names = TRUE), envir = env)
+  }
 
   penv <- environment()
   parent.env(penv) <- baseenv()
 
-  reg.finalizer(env, function(e) unload_client_lib(e), onexit = TRUE)
+  reg.finalizer(
+    env,
+    function(e) if (".finalize" %in% names(e)) e$.finalize(),
+    onexit = TRUE)
 
   ## Clear the cleanup method
   on.exit(NULL)
   env
 }
 
-unload_client_lib <- function(lib) {
-  if (!is.null(lib$.path)) dyn.unload(lib$.path)
-  rm(list = ls(lib, all.names = TRUE), envir = lib)
-}
+environment(load_client_lib) <- baseenv()
