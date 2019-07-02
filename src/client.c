@@ -11,6 +11,7 @@
 #include <io.h>
 #include <fcntl.h>
 
+#include <R_ext/Rdynload.h>
 #include <Rinternals.h>
 #include "errors.h"
 
@@ -102,6 +103,7 @@ SEXP processx_write(SEXP fd, SEXP data) {
 #include <errno.h>
 #include <unistd.h>
 
+#include <R_ext/Rdynload.h>
 #include <Rinternals.h>
 #include "errors.h"
 
