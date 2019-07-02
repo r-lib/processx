@@ -1,5 +1,5 @@
 
-# processx dev
+# processx 3.4.0
 
 * Processx has now better error messages, in particular, all errors from C
   code contain the file name and line number, and the system error code
