@@ -216,3 +216,24 @@ SEXP processx_set_stderr_to_file(SEXP file) {
   if (fd == -1) R_THROW_SYSTEM_ERROR("Cannot open file `%s`", c_file);
   return processx_set_std(2, fd, 0);
 }
+
+SEXP processx_base64_encode(SEXP array);
+SEXP processx_base64_decode(SEXP array);
+
+static const R_CallMethodDef callMethods[]  = {
+  { "processx_base64_encode", (DL_FUNC) &processx_base64_encode, 1 },
+  { "processx_base64_decode", (DL_FUNC) &processx_base64_decode, 1 },
+  { "processx_disable_inheritance", (DL_FUNC) &processx_disable_inheritance, 0 },
+  { "processx_write", (DL_FUNC) &processx_write, 2 },
+  { "processx_set_stdout", (DL_FUNC) &processx_set_stdout, 2 },
+  { "processx_set_stderr", (DL_FUNC) &processx_set_stderr, 2 },
+  { "processx_set_stdout_to_file", (DL_FUNC) &processx_set_stdout_to_file, 1 },
+  { "processx_set_stderr_to_file", (DL_FUNC) &processx_set_stderr_to_file, 1 },
+  { NULL, NULL, 0 }
+};
+
+void R_init_client(DllInfo *dll) {
+  R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
+  R_useDynamicSymbols(dll, FALSE);
+  R_forceSymbols(dll, TRUE);
+}
