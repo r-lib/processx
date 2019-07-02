@@ -4,8 +4,8 @@
 /src/*.o
 /src/unix/*.o
 /src/win/*.o
-/src/processx.so
-/src/processx.dll
+/src/*.so
+/src/*.dll
 /src/tools/*.exe
 /src/tools/px
 /src/tools/px.dSYM/

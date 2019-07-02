@@ -7,6 +7,9 @@
 ^_pkgdown\.yml$
 ^appveyor.yml$
 ^src/processx\.so$
+^src/processx\.dll$
+^src/client\.so$
+^src/client\.dll$
 ^src/.*\.o$
 ^src/tools/px$
 ^src/tools/px.exe$

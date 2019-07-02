@@ -298,6 +298,7 @@ SEXP processx__connection_set_std(SEXP con, int which, int drop) {
     processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_PIPE,
 				 "", &result);
   }
+
   fd = _open_osfhandle((intptr_t) ccon->handle.handle, 0);
   ret = _dup2(fd, which);
   if (ret) R_THROW_SYSTEM_ERROR("Cannot reroute stdout/stderr");
