@@ -10,6 +10,9 @@
     <loc>http://processx.r-lib.org/reference/curl_fds.html</loc>
   </url>
   <url>
+    <loc>http://processx.r-lib.org/reference/default_pty_options.html</loc>
+  </url>
+  <url>
     <loc>http://processx.r-lib.org/reference/poll.html</loc>
   </url>
   <url>

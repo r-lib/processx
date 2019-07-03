@@ -9,17 +9,17 @@
 <title>Run external command, and wait until finishes — run • processx</title>
 
 <!-- jquery -->
-<script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
-<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.7.1/clipboard.min.js" integrity="sha384-cV+rhyOuRHc9Ub/91rihWcGmMmCXDeksTtCihMupQHSsi8GIIRDG0ThDc3HGQFJ3" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
 
 <!-- sticky kit -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sticky-kit/1.1.3/sticky-kit.min.js" integrity="sha256-c4Rlo1ZozqTPE2RLuvbusY3+SU1pQaJC0TjuhygMipw=" crossorigin="anonymous"></script>
@@ -40,7 +40,8 @@ extra features, see below." />
 
 
 <!-- mathjax -->
-<script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script>
 
 <!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
@@ -64,7 +65,7 @@ extra features, see below." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.3.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.0</span>
       </span>
     </div>
 
@@ -110,19 +111,19 @@ extra features, see below." />
 
     <div class="ref-description">
     
-    <p><code>run</code> provides an interface similar to <code><a href='http://www.rdocumentation.org/packages/base/topics/system'>base::system()</a></code> and
-<code><a href='http://www.rdocumentation.org/packages/base/topics/system2'>base::system2()</a></code>, but based on the <a href='process.html'>process</a> class. This allows some
+    <p><code>run</code> provides an interface similar to <code><a href='https://www.rdocumentation.org/packages/base/topics/system'>base::system()</a></code> and
+<code><a href='https://www.rdocumentation.org/packages/base/topics/system2'>base::system2()</a></code>, but based on the <a href='process.html'>process</a> class. This allows some
 extra features, see below.</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>run</span>(<span class='kw'>command</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>args</span> <span class='kw'>=</span> <span class='fu'>character</span>(), <span class='kw'>error_on_status</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
+    <pre class="usage"><span class='fu'>run</span>(<span class='kw'>command</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>args</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/character'>character</a></span>(), <span class='kw'>error_on_status</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>wd</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>echo_cmd</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>echo</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>spinner</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>timeout</span> <span class='kw'>=</span> <span class='fl'>Inf</span>, <span class='kw'>stdout_line_callback</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>stdout_callback</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>stderr_line_callback</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>stderr_callback</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>stderr_to_stdout</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>env</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>windows_verbatim_args</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>windows_hide_window</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>, <span class='kw'>cleanup_tree</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
+  <span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>, <span class='kw'>cleanup_tree</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -141,7 +142,7 @@ extra features, see below.</p>
 with a non-zero status, or it is interrupted. The error clases are
 <code>system_command_status_error</code> and <code>system_command_timeout_error</code>,
 respectively, and both errors have class <code>system_command_error</code> as
-well.</p></td>
+well. See also "Error conditions" below.</p></td>
     </tr>
     <tr>
       <th>wd</th>
@@ -230,6 +231,11 @@ both streams in UTF-8 currently.</p></td>
       <td><p>Whether to clean up the child process tree after
 the process has finished.</p></td>
     </tr>
+    <tr>
+      <th>...</th>
+      <td><p>Extra arguments are passed to <code>process$new()</code>, see
+<a href='process.html'>process</a>.</p></td>
+    </tr>
     </table>
     
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
@@ -265,23 +271,47 @@ object. You can manipulate this object, for example you can call
 <code>$kill()</code> on it to terminate it, as a response to a message on the
 standard output or error.</p>
     
+    <h2 class="hasAnchor" id="error-conditions"><a class="anchor" href="#error-conditions"></a>Error conditions</h2>
+
+    
+    <p><code>run()</code> throws error condition objects if the process is interrupted,
+timeouts or fails (if <code>error_on_status</code> is <code>TRUE</code>):</p><ul>
+<li><p>On interrupt, a condition with classes <code>system_command_interrupt</code>,
+<code>interrupt</code>, <code>condition</code> is signalled. This can be caught with
+<code><a href='https://www.rdocumentation.org/packages/base/topics/conditions'>tryCatch(..., interrupt = ...)</a></code>.</p></li>
+<li><p>On timeout, a condition with classes <code>system_command_timeout_error</code>,
+<code>system_command_error</code>, <code>error</code>, <code>condition</code> is thrown.</p></li>
+<li><p>On error (if <code>error_on_status</code> is <code>TRUE</code>), an error with classes
+<code>system_command_status_error</code>, <code>system_command_error</code>, <code>error</code>,
+<code>condition</code> is thrown.</p></li>
+</ul>
+    <p>All of these conditions have the fields:</p><ul>
+<li><p><code>message</code>: the error message,</p></li>
+<li><p><code>stderr</code>: the standard error of the process, or the standard output
+of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
+<li><p><code>call</code>: the captured call to <code>run()</code>.</p></li>
+<li><p><code>echo</code>: the value of the <code>echo</code> argument.</p></li>
+<li><p><code>stderr_to_stdout</code>: the value of the <code>stderr_to_stdout</code> argument.</p></li>
+<li><p><code>status</code>: the exit status for <code>system_command_status_error</code> errors.</p></li>
+</ul>
+    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>## Different examples for Unix and Windows
 </div><span class='co'># NOT RUN {</span>
 <span class='kw'>if</span> (<span class='no'>.Platform</span>$<span class='no'>OS.type</span> <span class='kw'>==</span> <span class='st'>"unix"</span>) {
   <span class='fu'>run</span>(<span class='st'>"ls"</span>)
-  <span class='fu'>system.time</span>(<span class='fu'>run</span>(<span class='st'>"sleep"</span>, <span class='st'>"10"</span>, <span class='kw'>timeout</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/system.time'>system.time</a></span>(<span class='fu'>run</span>(<span class='st'>"sleep"</span>, <span class='st'>"10"</span>, <span class='kw'>timeout</span> <span class='kw'>=</span> <span class='fl'>1</span>,
     <span class='kw'>error_on_status</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>))
-  <span class='fu'>system.time</span>(
+  <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/system.time'>system.time</a></span>(
     <span class='fu'>run</span>(
-      <span class='st'>"sh"</span>, <span class='fu'>c</span>(<span class='st'>"-c"</span>, <span class='st'>"for i in 1 2 3 4 5; do echo $i; sleep 1; done"</span>),
+      <span class='st'>"sh"</span>, <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"-c"</span>, <span class='st'>"for i in 1 2 3 4 5; do echo $i; sleep 1; done"</span>),
       <span class='kw'>timeout</span> <span class='kw'>=</span> <span class='fl'>2</span>, <span class='kw'>error_on_status</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>
     )
   )
 } <span class='kw'>else</span> {
-  <span class='fu'>run</span>(<span class='st'>"ping"</span>, <span class='fu'>c</span>(<span class='st'>"-n"</span>, <span class='st'>"1"</span>, <span class='st'>"127.0.0.1"</span>))
-  <span class='fu'>run</span>(<span class='st'>"ping"</span>, <span class='fu'>c</span>(<span class='st'>"-n"</span>, <span class='st'>"6"</span>, <span class='st'>"127.0.0.1"</span>), <span class='kw'>timeout</span> <span class='kw'>=</span> <span class='fl'>1</span>,
+  <span class='fu'>run</span>(<span class='st'>"ping"</span>, <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"-n"</span>, <span class='st'>"1"</span>, <span class='st'>"127.0.0.1"</span>))
+  <span class='fu'>run</span>(<span class='st'>"ping"</span>, <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/c'>c</a></span>(<span class='st'>"-n"</span>, <span class='st'>"6"</span>, <span class='st'>"127.0.0.1"</span>), <span class='kw'>timeout</span> <span class='kw'>=</span> <span class='fl'>1</span>,
     <span class='kw'>error_on_status</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)
 }
 <span class='co'># }</span></pre>
@@ -296,6 +326,8 @@ standard output or error.</p>
       <li><a href="#details">Details</a></li>
 
       <li><a href="#callbacks">Callbacks</a></li>
+
+      <li><a href="#error-conditions">Error conditions</a></li>
       
       <li><a href="#examples">Examples</a></li>
     </ul>
@@ -305,13 +337,12 @@ standard output or error.</p>
 
       <footer>
       <div class="copyright">
-  <p>Developed by <a href='https://github.com/gaborcsardi'>Gábor Csárdi</a>, <a href='https://github.com/wch'>Winston Chang</a>, <a href='https://www.rstudio.com'><img src='https://tidyverse.org/rstudio-logo.svg' alt='RStudio' height='24' /></a>, Mango Solutions.</p>
+  <p>Developed by <a href='https://github.com/gaborcsardi'>Gábor Csárdi</a>, <a href='https://github.com/wch'>Winston Chang</a>, <a href='https://www.rstudio.com'><img src='https://www.tidyverse.org/rstudio-logo.svg' alt='RStudio' height='24' /></a>, Mango Solutions.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="http://pkgdown.r-lib.org/">pkgdown</a>.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.3.0.</p>
 </div>
-
       </footer>
    </div>
 
