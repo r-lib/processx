@@ -232,7 +232,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
     ok <- FALSE
     newout <- tryCatch({
       ret <- proc$read_output(2000)
-      ok <<- TRUE
+      ok <- TRUE
       ret
     }, error = function(e) NULL)
 
@@ -253,7 +253,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 
     newerr <- tryCatch({
       ret <- proc$read_error(2000)
-      ok <<- TRUE
+      ok <- TRUE
       ret
     }, error = function(e) NULL)
 
