@@ -19,3 +19,5 @@
 ^processx\.Rproj$
 ^pkgdown$
 ^LICENSE\.md$
+^\.Rprofile$
+^r-packages$
