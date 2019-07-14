@@ -2,6 +2,7 @@
 
 OBJECTS = init.o poll.o errors.o processx-connection.o		     \
           processx-vector.o create-time.o base64.o                   \
+	  serialization.o                                            \
           win/processx.o win/stdio.o win/named_pipe.o                \
 	  win/utils.o win/thread.o
 

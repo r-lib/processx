@@ -2,6 +2,7 @@
 
 OBJECTS = init.o poll.o errors.o processx-connection.o   \
           processx-vector.o create-time.o base64.o       \
+	  serialization.o                                \
 	  unix/childlist.o unix/connection.o             \
           unix/processx.o unix/sigchld.o unix/utils.o    \
 	  unix/named_pipe.o
