@@ -1,6 +1,8 @@
 
 # development version
 
+* Now `run()` does not create an `ok` variable in the global environment.
+
 # processx 3.4.0
 
 * Processx has now better error messages, in particular, all errors from C
