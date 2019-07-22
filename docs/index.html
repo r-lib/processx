@@ -36,7 +36,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">processx</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.1</span>
       </span>
     </div>
 
@@ -245,7 +245,8 @@
 #&gt;  [7] "NEWS.md"            "R"                  "README.Rmd"        
 #&gt; [10] "README.md"          "_pkgdown.yml"       "appveyor.yml"      
 #&gt; [13] "docs"               "inst"               "man"               
-#&gt; [16] "processx.Rproj"     "src"                "tests"</code></pre>
+#&gt; [16] "processx.Rproj"     "r-packages"         "src"               
+#&gt; [19] "tests"</code></pre>
 </div>
 <div id="spinner" class="section level4">
 <h4 class="hasAnchor">
@@ -318,8 +319,8 @@
 <a class="sourceLine" id="cb32-2" data-line-number="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rm">rm</a></span>(p)</a>
 <a class="sourceLine" id="cb32-3" data-line-number="3"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/gc">gc</a></span>()</a></code></pre></div>
 <pre><code>#&gt;           used (Mb) gc trigger (Mb) limit (Mb) max used (Mb)
-#&gt; Ncells  678072 36.3    1315030 70.3         NA  1234521 66.0
-#&gt; Vcells 1262364  9.7    8388608 64.0      16384  2689004 20.6</code></pre>
+#&gt; Ncells  650670 34.8    1355304 72.4         NA  1001645 53.5
+#&gt; Vcells 1203281  9.2    8388608 64.0      16384  2436826 18.6</code></pre>
 <p>Here, the direct call to the garbage collector kills the <code>sleep</code> process as well. See the <code>cleanup</code> option if you want to avoid this behavior.</p>
 </div>
 <div id="standard-output-and-error" class="section level4">
@@ -423,10 +424,10 @@
 <a class="sourceLine" id="cb57-2" data-line-number="2">p<span class="op">$</span><span class="kw">is_alive</span>()</a></code></pre></div>
 <pre><code>#&gt; [1] TRUE</code></pre>
 <div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Sys.time">Sys.time</a></span>()</a></code></pre></div>
-<pre><code>#&gt; [1] "2019-07-03 10:37:18 BST"</code></pre>
+<pre><code>#&gt; [1] "2019-07-22 15:22:21 BST"</code></pre>
 <div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb61-1" data-line-number="1">p<span class="op">$</span><span class="kw">wait</span>()</a>
 <a class="sourceLine" id="cb61-2" data-line-number="2"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Sys.time">Sys.time</a></span>()</a></code></pre></div>
-<pre><code>#&gt; [1] "2019-07-03 10:37:20 BST"</code></pre>
+<pre><code>#&gt; [1] "2019-07-22 15:22:23 BST"</code></pre>
 <p>It is safe to call <code>wait()</code> multiple times:</p>
 <div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb63-1" data-line-number="1">p<span class="op">$</span><span class="kw">wait</span>() <span class="co"># already finished!</span></a></code></pre></div>
 </div>
