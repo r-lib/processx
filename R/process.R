@@ -652,23 +652,26 @@ process <- R6::R6Class(
 
 process_wait <- function(self, private, timeout) {
   "!DEBUG process_wait `private$get_short_name()`"
-  rethrow_call(c_processx_wait, private$status, as.integer(timeout))
+  rethrow_call(c_processx_wait, private$status, as.integer(timeout),
+               private$get_short_name())
   invisible(self)
 }
 
 process_is_alive <- function(self, private) {
   "!DEBUG process_is_alive `private$get_short_name()`"
-  rethrow_call(c_processx_is_alive, private$status)
+  rethrow_call(c_processx_is_alive, private$status, private$get_short_name())
 }
 
 process_get_exit_status <- function(self, private) {
   "!DEBUG process_get_exit_status `private$get_short_name()`"
-  rethrow_call(c_processx_get_exit_status, private$status)
+  rethrow_call(c_processx_get_exit_status, private$status,
+               private$get_short_name())
 }
 
 process_signal <- function(self, private, signal) {
   "!DEBUG process_signal `private$get_short_name()` `signal`"
-  rethrow_call(c_processx_signal, private$status, as.integer(signal))
+  rethrow_call(c_processx_signal, private$status, as.integer(signal),
+               private$get_short_name())
 }
 
 process_interrupt <- function(self, private) {
@@ -678,13 +681,15 @@ process_interrupt <- function(self, private) {
     st <- run(get_tool("interrupt"), c(pid, "c"), error_on_status = FALSE)
     if (st$status == 0) TRUE else FALSE
   } else {
-    rethrow_call(c_processx_interrupt, private$status)
+    rethrow_call(c_processx_interrupt, private$status,
+                 private$get_short_name())
   }
 }
 
 process_kill <- function(self, private, grace, close_connections) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `self$get_pid()`"
-  ret <- rethrow_call(c_processx_kill, private$status, as.numeric(grace))
+  ret <- rethrow_call(c_processx_kill, private$status, as.numeric(grace),
+                      private$get_short_name())
   if (close_connections) private$close_connections()
   ret
 }

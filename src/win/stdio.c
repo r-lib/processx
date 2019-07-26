@@ -95,14 +95,15 @@ static void processx__unique_pipe_name(char* ptr, char* name, size_t size) {
   PutRNGstate();
 }
 
-int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_ptr) {
+int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr,
+                          HANDLE* child_pipe_ptr, const char *cname) {
 
   char pipe_name[40];
   HANDLE hOutputRead = INVALID_HANDLE_VALUE;
   HANDLE hOutputWrite = INVALID_HANDLE_VALUE;
   SECURITY_ATTRIBUTES sa;
   DWORD err;
-  char *errmessage = "";
+  char *errmessage = "error for process '%s'";
 
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
@@ -128,7 +129,7 @@ int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_
 
     err = GetLastError();
     if (err != ERROR_PIPE_BUSY && err != ERROR_ACCESS_DENIED) {
-      errmessage = "creating read pipe";
+      errmessage = "creating read pipe for '%s'";
       goto error;
     }
   }
@@ -144,7 +145,7 @@ int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_
 
   if (hOutputWrite == INVALID_HANDLE_VALUE) {
     err = GetLastError();
-    errmessage = "creating write pipe";
+    errmessage = "creating write pipe for '%s'";
     goto error;
   }
 
@@ -156,18 +157,19 @@ int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_
  error:
   if (hOutputRead != INVALID_HANDLE_VALUE) CloseHandle(hOutputRead);
   if (hOutputWrite != INVALID_HANDLE_VALUE) CloseHandle(hOutputWrite);
-  R_THROW_SYSTEM_ERROR_CODE(err, errmessage);
+  R_THROW_SYSTEM_ERROR_CODE(err, errmessage, cname);
   return 0;			/* never reached */
 }
 
-int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_ptr) {
+int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr,
+                                HANDLE* child_pipe_ptr, const char *cname) {
 
   char pipe_name[40];
   HANDLE hOutputRead = INVALID_HANDLE_VALUE;
   HANDLE hOutputWrite = INVALID_HANDLE_VALUE;
   SECURITY_ATTRIBUTES sa;
   DWORD err;
-  char *errmessage = "";
+  char *errmessage = "error for '%s'";
 
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
@@ -193,7 +195,7 @@ int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child
 
     err = GetLastError();
     if (err != ERROR_PIPE_BUSY && err != ERROR_ACCESS_DENIED) {
-      errmessage = "creating read pipe";
+      errmessage = "creating read pipe for '%s'";
       goto error;
     }
   }
@@ -209,7 +211,7 @@ int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child
 
   if (hOutputWrite == INVALID_HANDLE_VALUE) {
     err = GetLastError();
-    errmessage = "creating write pipe";
+    errmessage = "creating write pipe for '%s'";
     goto error;
   }
 
@@ -221,7 +223,7 @@ int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child
  error:
   if (hOutputRead != INVALID_HANDLE_VALUE) CloseHandle(hOutputRead);
   if (hOutputWrite != INVALID_HANDLE_VALUE) CloseHandle(hOutputWrite);
-  R_THROW_SYSTEM_ERROR_CODE(err, errmessage);
+  R_THROW_SYSTEM_ERROR_CODE(err, errmessage, cname);
   return 0;			/* never reached */
 }
 
@@ -278,16 +280,19 @@ int processx__stdio_create(processx_handle_t *handle,
 			   const char *std_in, const char *std_out,
 			   const char *std_err,
 			   BYTE** buffer_ptr, SEXP private,
-			   const char *encoding) {
+			   const char *encoding,
+                           const char *cname) {
   BYTE* buffer;
   int i;
   int err;
 
-  if (count > 255) R_THROW_ERROR("Too many processx connections to inherit");
+  if (count > 255) {
+    R_THROW_ERROR("Too many processx connections to inherit, '%s'", cname);
+  }
 
   /* Allocate the child stdio buffer */
   buffer = malloc(CHILD_STDIO_SIZE(count));
-  if (!buffer) { R_THROW_ERROR("Out of memory"); }
+  if (!buffer) { R_THROW_ERROR("Out of memory for process"); }
 
   /* Prepopulate the buffer with INVALID_HANDLE_VALUE handles, so we can
      clean up on failure*/
@@ -347,10 +352,10 @@ int processx__stdio_create(processx_handle_t *handle,
 	(i == 1 ? "stdout_pipe" : "stderr_pipe");
       if (i == 0) {
 	err = processx__create_input_pipe(handle, &parent_handle,
-					  &CHILD_STDIO_HANDLE(buffer, i));
+					  &CHILD_STDIO_HANDLE(buffer, i), cname);
       } else {
 	err = processx__create_pipe(handle, &parent_handle,
-				    &CHILD_STDIO_HANDLE(buffer, i));
+				    &CHILD_STDIO_HANDLE(buffer, i), cname);
       }
       if (err) goto error;
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FPIPE;
