@@ -95,7 +95,7 @@ test_that("kill_tree with children", {
     args = list(px = get_tool("px"), tmp = tmp)
   )
 
-  deadline <- Sys.time() + 2
+  deadline <- Sys.time() + 5
   while (!file.exists(tmp) && Sys.time() < deadline) Sys.sleep(0.05)
   expect_true(Sys.time() < deadline)
 
