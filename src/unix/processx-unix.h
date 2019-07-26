@@ -71,7 +71,7 @@ void processx__create_control_write(processx_handle_t *handle,
 int processx__interruptible_poll(struct pollfd fds[],
 				 nfds_t nfds, int timeout);
 
-void processx__make_socketpair(int pipe[2]);
+void processx__make_socketpair(int pipe[2], const char *name);
 
 double processx__create_time(long pid);
 

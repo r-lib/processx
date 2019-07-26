@@ -99,7 +99,7 @@ int processx__utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr) {
     /* cchWideChar =    */ ws_len);
 
   if (r != ws_len) {
-    R_THROW_ERROR("processx error interpreting UTF8 command or arguments");
+    R_THROW_ERROR("processx error interpreting UTF8 command or arguments: '%s'", s);
   }
 
   *ws_ptr = ws;
@@ -319,10 +319,10 @@ int env_strncmp(const wchar_t* a, int na, const wchar_t* b) {
   B = alloca((nb+1) * sizeof(wchar_t));
 
   r = LCMapStringW(LOCALE_INVARIANT, LCMAP_UPPERCASE, a, na, A, na);
-  if (!r) R_THROW_SYSTEM_ERROR("make environment");
+  if (!r) R_THROW_SYSTEM_ERROR("make environment for process");
   A[na] = L'\0';
   r = LCMapStringW(LOCALE_INVARIANT, LCMAP_UPPERCASE, b, nb, B, nb);
-  if (!r) R_THROW_SYSTEM_ERROR("make environment");
+  if (!r) R_THROW_SYSTEM_ERROR("make environment for process");
   B[nb] = L'\0';
 
   while (1) {
@@ -386,7 +386,8 @@ static int processx__add_tree_id_env(const char *ctree_id, WCHAR **dst_ptr) {
   return 0;
 }
 
-static int processx__make_program_env(SEXP env_block, const char *tree_id, WCHAR** dst_ptr) {
+static int processx__make_program_env(SEXP env_block, const char *tree_id,
+                                      WCHAR** dst_ptr, const char *cname) {
   WCHAR* dst;
   WCHAR* ptr;
   size_t env_len = 0;
@@ -511,7 +512,8 @@ static int processx__make_program_env(SEXP env_block, const char *tree_id, WCHAR
                                            ptr,
                                            (int) (env_len - (ptr - dst)));
         if (var_size != len-1) { /* race condition? */
-          R_THROW_SYSTEM_ERROR("GetEnvironmentVariableW");
+          R_THROW_SYSTEM_ERROR("GetEnvironmentVariableW for process '%s'",
+                               cname);
         }
       }
       i++;
@@ -846,7 +848,7 @@ SEXP processx__make_handle(SEXP private, int cleanup) {
   SEXP result;
 
   handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
-  if (!handle) { R_THROW_ERROR("Out of memory"); }
+  if (!handle) { R_THROW_ERROR("Out of memory when creating subprocess"); }
   memset(handle, 0, sizeof(processx_handle_t));
 
   result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
@@ -869,6 +871,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
                    SEXP windows_hide, SEXP private, SEXP cleanup,
                    SEXP wd, SEXP encoding, SEXP tree_id) {
 
+  const char *ccommand = CHAR(STRING_ELT(command, 0));
   const char *cstd_in = isNull(std_in) ? 0 : CHAR(STRING_ELT(std_in, 0));
   const char *cstd_out = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
   const char *cstd_err = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
@@ -898,26 +901,29 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 
   err = processx__utf8_to_utf16_alloc(CHAR(STRING_ELT(command, 0)),
 				      &application);
-  if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "utf8 -> utf16 conversion"); }
+  if (err) {
+    R_THROW_SYSTEM_ERROR_CODE(err, "utf8 -> utf16 conversion '%s'",
+                              ccommand);
+  }
 
   err = processx__make_program_args(
       args,
       options.windows_verbatim_args,
       &arguments);
-  if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "making program args"); }
+  if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "making program args '%s'", ccommand); }
 
   if (isNull(env)) {
     err = processx__add_tree_id_env(ctree_id, &cenv);
   } else {
-    err = processx__make_program_env(env, ctree_id, &cenv);
+    err = processx__make_program_env(env, ctree_id, &cenv, ccommand);
   }
-  if (err) R_THROW_SYSTEM_ERROR_CODE(err, "making environment");
+  if (err) R_THROW_SYSTEM_ERROR_CODE(err, "making environment '%s'", ccommand);
 
   if (ccwd) {
     /* Explicit cwd */
     err = processx__utf8_to_utf16_alloc(ccwd, &cwd);
     if (err) {
-      R_THROW_SYSTEM_ERROR("convert current directory encoding");
+      R_THROW_SYSTEM_ERROR("convert current directory encoding '%s'", ccommand);
     }
 
   } else {
@@ -926,14 +932,14 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 
     cwd_len = GetCurrentDirectoryW(0, NULL);
     if (!cwd_len) {
-      R_THROW_SYSTEM_ERROR("get current directory length");
+      R_THROW_SYSTEM_ERROR("get current directory length '%s'", ccommand);
     }
 
     cwd = (WCHAR*) R_alloc(cwd_len, sizeof(WCHAR));
 
     r = GetCurrentDirectoryW(cwd_len, cwd);
     if (r == 0 || r >= cwd_len) {
-      R_THROW_SYSTEM_ERROR("get current directory");
+      R_THROW_SYSTEM_ERROR("get current directory '%s'", ccommand);
     }
   }
 
@@ -943,14 +949,14 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 
     path_len = GetEnvironmentVariableW(L"PATH", NULL, 0);
     if (!path_len) {
-      R_THROW_SYSTEM_ERROR("get env var length");
+      R_THROW_SYSTEM_ERROR("get env var length '%s'", ccommand);
     }
 
     path = (WCHAR*) R_alloc(path_len, sizeof(WCHAR));
 
     r = GetEnvironmentVariableW(L"PATH", path, path_len);
     if (r == 0 || r >= path_len) {
-      R_THROW_SYSTEM_ERROR("get env var");
+      R_THROW_SYSTEM_ERROR("get PATH env var for '%s'", ccommand);
     }
   }
 
@@ -966,15 +972,15 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   err = processx__stdio_create(handle, extra_connections, num_connections,
 			       cstd_in, cstd_out, cstd_err,
 			       &handle->child_stdio_buffer, private,
-			       cencoding);
-  if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "setup stdio"); }
+			       cencoding, ccommand);
+  if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "setup stdio for '%s'", ccommand); }
 
   application_path = processx__search_path(application, cwd, path);
   if (!application_path) {
     R_ClearExternalPtr(result);
     processx__stdio_destroy(handle->child_stdio_buffer);
     free(handle);
-    R_THROW_ERROR("Command not found");
+    R_THROW_ERROR("Command '%s' not found", ccommand);
   }
 
   startup.cb = sizeof(startup);
@@ -1022,7 +1028,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
     /* lpStartupInfo =        */ &startup,
     /* lpProcessInformation = */ &info);
 
-  if (!err) { R_THROW_SYSTEM_ERROR("create process"); }
+  if (!err) { R_THROW_SYSTEM_ERROR("create process '%s'", ccommand); }
 
   handle->hProcess = info.hProcess;
   handle->dwProcessId = info.dwProcessId;
@@ -1050,13 +1056,16 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
        */
       DWORD err = GetLastError();
       if (err != ERROR_ACCESS_DENIED) {
-	R_THROW_SYSTEM_ERROR_CODE(err, "Assign to job object");
+	R_THROW_SYSTEM_ERROR_CODE(err, "Assign to job object '%s'",
+                                  ccommand);
       }
     }
   }
 
   dwerr = ResumeThread(info.hThread);
-  if (dwerr == (DWORD) -1) R_THROW_SYSTEM_ERROR("resume thread");
+  if (dwerr == (DWORD) -1) {
+    R_THROW_SYSTEM_ERROR("resume thread for '%s'", ccommand);
+  }
   CloseHandle(info.hThread);
 
   processx__stdio_destroy(handle->child_stdio_buffer);
@@ -1072,8 +1081,9 @@ void processx__collect_exit_status(SEXP status, DWORD exitcode) {
   handle->collected = 1;
 }
 
-SEXP processx_wait(SEXP status, SEXP timeout) {
+SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
   int ctimeout = INTEGER(timeout)[0], timeleft = ctimeout;
+  const char *cname = isNull(name) ? "???" : CHAR(STRING_ELT(name, 0));
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   DWORD err, err2, exitcode;
 
@@ -1094,22 +1104,25 @@ SEXP processx_wait(SEXP status, SEXP timeout) {
   }
 
   if (err2 == WAIT_FAILED) {
-    R_THROW_SYSTEM_ERROR("wait on process");
+    R_THROW_SYSTEM_ERROR("failed to wait on process '%s'", cname);
   } else if (err2 == WAIT_TIMEOUT) {
     return ScalarLogical(FALSE);
   }
 
   /* Collect  */
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
-  if (!err) { R_THROW_SYSTEM_ERROR("get exit code after wait"); }
+  if (!err) {
+    R_THROW_SYSTEM_ERROR("cannot get exit code after wait for '%s'", cname);
+  }
 
   processx__collect_exit_status(status, exitcode);
 
   return ScalarLogical(TRUE);
 }
 
-SEXP processx_is_alive(SEXP status) {
+SEXP processx_is_alive(SEXP status, SEXP name) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
+  const char *cname = isNull(name) ? "???" : CHAR(STRING_ELT(name, 0));
   DWORD err, exitcode;
 
   /* This might happen if it was finalized at the end of the session,
@@ -1121,7 +1134,8 @@ SEXP processx_is_alive(SEXP status) {
   /* Otherwise try to get exit code */
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
   if (!err) {
-    R_THROW_SYSTEM_ERROR("get exit code to check if alive");
+    R_THROW_SYSTEM_ERROR("failed to get exit code to check if ",
+                         "'%s' is alive", cname);
   }
 
   if (exitcode == STILL_ACTIVE) {
@@ -1132,8 +1146,9 @@ SEXP processx_is_alive(SEXP status) {
   }
 }
 
-SEXP processx_get_exit_status(SEXP status) {
+SEXP processx_get_exit_status(SEXP status, SEXP name) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
+  const char *cname = isNull(name) ? "???" : CHAR(STRING_ELT(name, 0));
   DWORD err, exitcode;
 
   /* This might happen if it was finalized at the end of the session,
@@ -1144,7 +1159,7 @@ SEXP processx_get_exit_status(SEXP status) {
 
   /* Otherwise try to get exit code */
   err = GetExitCodeProcess(handle->hProcess, &exitcode);
-  if (!err) {R_THROW_SYSTEM_ERROR("get exit status"); }
+  if (!err) {R_THROW_SYSTEM_ERROR("get exit status failed for '%s'", cname); }
 
   if (exitcode == STILL_ACTIVE) {
     return R_NilValue;
@@ -1154,8 +1169,9 @@ SEXP processx_get_exit_status(SEXP status) {
   }
 }
 
-SEXP processx_signal(SEXP status, SEXP signal) {
+SEXP processx_signal(SEXP status, SEXP signal, SEXP name) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
+  const char *cname = isNull(name) ? "???" : CHAR(STRING_ELT(name, 0));
   DWORD err, exitcode = STILL_ACTIVE;
 
   if (!handle) return ScalarLogical(0);
@@ -1171,7 +1187,7 @@ SEXP processx_signal(SEXP status, SEXP signal) {
        we are terminating it... */
     err = GetExitCodeProcess(handle->hProcess, &exitcode);
     if (!err) {
-      R_THROW_SYSTEM_ERROR("get exit code after signal");
+      R_THROW_SYSTEM_ERROR("get exit code after signal for '%s'", cname);
     }
 
     if (exitcode == STILL_ACTIVE) {
@@ -1188,7 +1204,7 @@ SEXP processx_signal(SEXP status, SEXP signal) {
     /* Health check: is the process still alive? */
     err = GetExitCodeProcess(handle->hProcess, &exitcode);
     if (!err) {
-      R_THROW_SYSTEM_ERROR("get exit code for signal 0");
+      R_THROW_SYSTEM_ERROR("get exit code for signal 0 for '%s'", cname);
     }
 
     if (exitcode == STILL_ACTIVE) {
@@ -1199,18 +1215,18 @@ SEXP processx_signal(SEXP status, SEXP signal) {
   }
 
   default:
-    R_THROW_ERROR("Unsupported signal on this platform");
+    R_THROW_ERROR("Unsupported signal on this platform for '%s'", cname);
     return R_NilValue;
   }
 }
 
-SEXP processx_interrupt(SEXP status) {
+SEXP processx_interrupt(SEXP status, SEXP name) {
   R_THROW_ERROR("Internal processx error, `processx_interrupt()` should not be called");
   return R_NilValue;
 }
 
-SEXP processx_kill(SEXP status, SEXP grace) {
-  return processx_signal(status, ScalarInteger(9));
+SEXP processx_kill(SEXP status, SEXP grace, SEXP name) {
+  return processx_signal(status, ScalarInteger(9), name);
 }
 
 SEXP processx_get_pid(SEXP status) {
@@ -1229,7 +1245,7 @@ SEXP processx__process_exists(SEXP pid) {
   if (proc == NULL) {
     DWORD err = GetLastError();
     if (err == ERROR_INVALID_PARAMETER) return ScalarLogical(0);
-    R_THROW_SYSTEM_ERROR_CODE(err, "open process to check if it exists");
+    R_THROW_SYSTEM_ERROR_CODE(err, "open process '%d' to check if it exists", cpid);
     return R_NilValue;
   } else {
     /* Maybe just finished, and in that case we still have a valid handle.
@@ -1238,7 +1254,7 @@ SEXP processx__process_exists(SEXP pid) {
     DWORD err = GetExitCodeProcess(proc, &exitcode);
     CloseHandle(proc);
     if (!err) {
-      R_THROW_SYSTEM_ERROR("get exit code to check if it exists");
+      R_THROW_SYSTEM_ERROR("get exit code to check if process '%d' exists", cpid);
     }
     return ScalarLogical(exitcode == STILL_ACTIVE);
   }

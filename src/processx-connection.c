@@ -125,7 +125,7 @@ SEXP processx_connection_create_file(SEXP filename, SEXP read, SEXP write) {
     /* dwFlagsAndAttributes = */ FILE_ATTRIBUTE_NORMAL,
     /* hTemplateFile = */ NULL);
   if (os_handle == INVALID_HANDLE_VALUE) {
-    R_THROW_SYSTEM_ERROR("Cannot open file");
+    R_THROW_SYSTEM_ERROR("Cannot open file `%s`", c_filename);
   }
 
 #else
@@ -253,11 +253,11 @@ SEXP processx_connection_create_pipepair(SEXP encoding, SEXP nonblocking) {
 
 #ifdef _WIN32
   HANDLE h1, h2;
-  processx__create_pipe(0, &h1, &h2);
+  processx__create_pipe(0, &h1, &h2, "???");
 
 #else
   int pipe[2], h1, h2;
-  processx__make_socketpair(pipe);
+  processx__make_socketpair(pipe, NULL);
   processx__nonblock_fcntl(pipe[0], c_nonblocking[0]);
   processx__nonblock_fcntl(pipe[1], c_nonblocking[1]);
   h1 = pipe[0];
@@ -412,7 +412,7 @@ processx_connection_t *processx_c_connection_create(
   SEXP result, class;
 
   con = malloc(sizeof(processx_connection_t));
-  if (!con) R_THROW_ERROR("out of memory");
+  if (!con) R_THROW_ERROR("cannot create connection, out of memory");
 
   con->type = type;
   con->is_closed_ = 0;
@@ -434,7 +434,7 @@ processx_connection_t *processx_c_connection_create(
     con->encoding = strdup(encoding);
     if (!con->encoding) {
       free(con);
-      R_THROW_ERROR("out of memory");
+      R_THROW_ERROR("cannot create connection, out of memory");
       return 0;			/* never reached */
     }
   }
@@ -539,8 +539,12 @@ ssize_t processx_c_connection_read_line(processx_connection_t *ccon,
   int eof = 0;
   ssize_t newline;
 
-  if (!linep) R_THROW_ERROR("linep cannot be a null pointer");
-  if (!linecapp) R_THROW_ERROR("linecapp cannot be a null pointer");
+  if (!linep) {
+    R_THROW_ERROR("cannot read line, linep cannot be a null pointer");
+  }
+  if (!linecapp) {
+    R_THROW_ERROR("cannot read line, linecapp cannot be a null pointer");
+  }
 
   if (ccon->is_eof_) return -1;
 
@@ -568,7 +572,7 @@ ssize_t processx_c_connection_read_line(processx_connection_t *ccon,
     *linecapp = newline + 1;
   } else if (*linecapp < newline + 1) {
     char *tmp = realloc(*linep, newline + 1);
-    if (!tmp) R_THROW_ERROR("out of memory");
+    if (!tmp) R_THROW_ERROR("cannot read line, out of memory");
     *linep = tmp;
     *linecapp = newline + 1;
   }
@@ -602,7 +606,7 @@ ssize_t processx_c_connection_write_bytes(
     /* nNumberOfBytesToWrite =  */ nbytes,
     /* lpNumberOfBytesWritten = */ &written,
     /* lpOverlapped =           */ NULL);
-  if (!ret) R_THROW_SYSTEM_ERROR("Cannot write connection ");
+  if (!ret) R_THROW_SYSTEM_ERROR("Cannot write connection");
   return (ssize_t) written;
 #else
   ssize_t ret = write(ccon->handle, buffer, nbytes);

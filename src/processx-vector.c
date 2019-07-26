@@ -11,7 +11,9 @@ void processx_vector_init(processx_vector_t *v, size_t size, size_t alloc_size) 
   if (alloc_size < size) alloc_size = size;
   if (alloc_size == 0) alloc_size = 1;
   v->stor_begin = (pid_t*) R_alloc(alloc_size, sizeof(pid_t));
-  if (v->stor_begin == 0) R_THROW_ERROR("out of memory");
+  if (v->stor_begin == 0) {
+    R_THROW_ERROR("cannot allocate processx vector, out of memory");
+  }
   v->stor_end = v->stor_begin + alloc_size;
   v->end      = v->stor_begin + size;
 }
