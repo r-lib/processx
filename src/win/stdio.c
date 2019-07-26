@@ -352,7 +352,7 @@ int processx__stdio_create(processx_handle_t *handle,
 	(i == 1 ? "stdout_pipe" : "stderr_pipe");
       if (i == 0) {
 	err = processx__create_input_pipe(handle, &parent_handle,
-					  &CHILD_STDIO_HANDLE(buffer, i));
+					  &CHILD_STDIO_HANDLE(buffer, i), cname);
       } else {
 	err = processx__create_pipe(handle, &parent_handle,
 				    &CHILD_STDIO_HANDLE(buffer, i), cname);

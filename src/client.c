@@ -92,7 +92,7 @@ SEXP processx_write(SEXP fd, SEXP data) {
   DWORD written;
 
   BOOL ret = WriteFile(h, RAW(data), LENGTH(data), &written, NULL);
-   mr3if (!ret) R_THROW_SYSTEM_ERROR("Cannot write to fd");
+  if (!ret) R_THROW_SYSTEM_ERROR("Cannot write to fd");
 
   return ScalarInteger(written);
 }

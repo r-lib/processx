@@ -31,7 +31,8 @@ void processx__stdio_destroy(BYTE* buffer);
 
 int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_ptr,
                           const char *cname);
-int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_ptr);
+int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_ptr,
+				const char *cname);
 
 void processx__handle_destroy(processx_handle_t *handle);
 
