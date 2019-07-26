@@ -1,6 +1,10 @@
 
 # development version
 
+* Further improved error messages. Errors from C code now include the
+  name of the C function, and errors that belong to a process include the
+  system command (#197).
+
 # processx 3.4.1
 
 * Now `run()` does not create an `ok` variable in the global environment.
