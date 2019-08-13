@@ -30,6 +30,7 @@ p$wait(timeout = -1)
 p$get_pid()
 p$get_exit_status()
 p$get_start_time()
+p$get_finish_time()
 
 p$read_output(n = -1)
 p$read_error(n = -1)
@@ -231,6 +232,10 @@ fork clusters, e.g. through the \code{parallel::mcparallel()} function.
 
 \code{$get_start_time()} returns the time when the process was
 started.
+
+\code{$get_finish_time()} returns the time when the process finished.
+It returns \code{NULL} if the process hasn't finished yet. It returns \code{NA}
+if a system error happened while querying the finish time.
 
 \code{$is_supervised()} returns whether the process is being tracked by
 supervisor process.

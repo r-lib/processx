@@ -507,6 +507,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   /* Query creation time ASAP. We'll use (pid, create_time) as an ID,
      to avoid race conditions when sending signals */
   handle->create_time = processx__create_time(pid);
+  handle->finish_time = -1;
 
   handle->ptyfd = -1;
   if (cpty) handle->ptyfd = pty_master_fd;
@@ -986,6 +987,23 @@ SEXP processx_get_pid(SEXP status) {
   if (!handle) return ScalarInteger(NA_INTEGER);
 
   return ScalarInteger(handle->pid);
+}
+
+SEXP processx_get_finish_time(SEXP status) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
+
+  /* This might happen if it was finalized at the end of the session,
+     even though there are some references to the R object. */
+  if (!handle) return ScalarReal(NA_REAL);
+
+  /* Process is probably still running, at least the SIGCHGLD handler
+     is not processed yet. */
+  if (handle->finish_time < 0) return R_NilValue;
+
+  /* If the current time query failed, then it returned zero. */
+  if (handle->finish_time == 0.0) return ScalarReal(NA_REAL);
+
+  return ScalarReal(handle->finish_time);
 }
 
 /* We send a 0 signal to check if the process is alive. Note that a process

@@ -49,6 +49,9 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
       /* If waitpid errored with ECHILD, then the exit status is set to NA */
       if (handle) processx__collect_exit_status(status, wp, wstat);
 
+      /* Record finish time. */
+      if (handle) handle->finish_time = processx__current_time();
+
       /* Defer freeing the memory, because malloc/free are typically not
 	 reentrant, and if we free in the SIGCHLD handler, that can cause
 	 crashes. The test case in test-run.R (see comments there)

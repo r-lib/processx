@@ -56,11 +56,13 @@ SEXP processx_interrupt(SEXP status, SEXP name);
 SEXP processx_kill(SEXP status, SEXP grace, SEXP name);
 SEXP processx_get_pid(SEXP status);
 SEXP processx_create_time(SEXP r_pid);
+SEXP processx_get_finish_time(SEXP status);
 
 SEXP processx_poll(SEXP statuses, SEXP conn, SEXP ms);
 
 SEXP processx__process_exists(SEXP pid);
 SEXP processx__proc_start_time(SEXP status);
+double processx__current_time();
 SEXP processx__unload_cleanup();
 
 SEXP processx_is_named_pipe_open(SEXP pipe_ext);

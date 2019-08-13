@@ -31,6 +31,7 @@ NULL
 #' p$get_pid()
 #' p$get_exit_status()
 #' p$get_start_time()
+#' p$get_finish_time()
 #'
 #' p$read_output(n = -1)
 #' p$read_error(n = -1)
@@ -226,6 +227,10 @@ NULL
 #'
 #' `$get_start_time()` returns the time when the process was
 #' started.
+#'
+#' `$get_finish_time()` returns the time when the process finished.
+#' It returns `NULL` if the process hasn't finished yet. It returns `NA`
+#' if a system error happened while querying the finish time.
 #'
 #' `$is_supervised()` returns whether the process is being tracked by
 #' supervisor process.
@@ -484,6 +489,9 @@ process <- R6::R6Class(
     get_start_time = function()
       process_get_start_time(self, private),
 
+    get_finish_time = function()
+      process_get_finish_time(self, private),
+
     is_supervised = function()
       process_is_supervised(self, private),
 
@@ -615,6 +623,7 @@ process <- R6::R6Class(
     cleanfiles = NULL,    # which temp stdout/stderr file(s) to clean up
     wd = NULL,            # working directory (or NULL for current)
     starttime = NULL,     # timestamp of start
+    finishtime = NULL,    # timestamp of start
     echo_cmd = NULL,      # whether to echo the command
     windows_verbatim_args = NULL,
     windows_hide_window = NULL,
@@ -708,6 +717,12 @@ process_kill_tree <- function(self, private, grace, close_connections) {
 
 process_get_start_time <- function(self, private) {
   format_unix_time(private$starttime)
+}
+
+process_get_finish_time <- function(self, private) {
+  t <- private$finishtime %||%
+    .Call(c_processx_get_finish_time, private$status)
+  if (is.null(t)) NULL else format_unix_time(t)
 }
 
 process_get_pid <- function(self, private) {
