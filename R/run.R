@@ -277,10 +277,11 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 
   spin <- (function() {
     state <- 1L
-    phases <- c("-", "\\", "|", "-")
+    phases <- c("-", "\\", "|", "/")
     function() {
       cat("\r", phases[state], "\r", sep = "")
-      state <<- (state + 1) %% length(phases) + 1L
+      state <<- (state)%%length(phases) + 1L
+      flush.console()
     }
   })()
 
