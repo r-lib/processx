@@ -18,7 +18,7 @@ run(command = NULL, args = character(), error_on_status = TRUE,
 \item{args}{Character vector, arguments to the command.}
 
 \item{error_on_status}{Whether to throw an error if the command returns
-with a non-zero status, or it is interrupted. The error clases are
+with a non-zero status, or it is interrupted. The error classes are
 \code{system_command_status_error} and \code{system_command_timeout_error},
 respectively, and both errors have class \code{system_command_error} as
 well. See also "Error conditions" below.}

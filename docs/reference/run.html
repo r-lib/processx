@@ -74,7 +74,7 @@ extra features, see below." />
         <li>
   <a href="../index.html">
     <span class="fa fa-home fa-lg"></span>
-     
+
   </a>
 </li>
 <li>
@@ -84,21 +84,21 @@ extra features, see below." />
   <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
-      
+
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/r-lib/processx">
     <span class="fa fa-github fa-lg"></span>
-     
+
   </a>
 </li>
       </ul>
-      
+
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
 </div><!--/.navbar -->
 
-      
+
       </header>
 
 <div class="row">
@@ -110,11 +110,11 @@ extra features, see below." />
     </div>
 
     <div class="ref-description">
-    
+
     <p><code>run</code> provides an interface similar to <code><a href='https://www.rdocumentation.org/packages/base/topics/system'>base::system()</a></code> and
 <code><a href='https://www.rdocumentation.org/packages/base/topics/system2'>base::system2()</a></code>, but based on the <a href='process.html'>process</a> class. This allows some
 extra features, see below.</p>
-    
+
     </div>
 
     <pre class="usage"><span class='fu'>run</span>(<span class='kw'>command</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>args</span> <span class='kw'>=</span> <span class='fu'><a href='https://www.rdocumentation.org/packages/base/topics/character'>character</a></span>(), <span class='kw'>error_on_status</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
@@ -124,7 +124,7 @@ extra features, see below.</p>
   <span class='kw'>stderr_to_stdout</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>env</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>windows_verbatim_args</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>windows_hide_window</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>, <span class='kw'>cleanup_tree</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='no'>...</span>)</pre>
-    
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -139,7 +139,7 @@ extra features, see below.</p>
     <tr>
       <th>error_on_status</th>
       <td><p>Whether to throw an error if the command returns
-with a non-zero status, or it is interrupted. The error clases are
+with a non-zero status, or it is interrupted. The error classes are
 <code>system_command_status_error</code> and <code>system_command_timeout_error</code>,
 respectively, and both errors have class <code>system_command_error</code> as
 well. See also "Error conditions" below.</p></td>
@@ -237,7 +237,7 @@ the process has finished.</p></td>
 <a href='process.html'>process</a>.</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p>A list with components:</p><ul>
@@ -248,7 +248,7 @@ process was killed and had no exit status.</p></li>
 <li><p>timeout Whether the process was killed because of a timeout.</p></li>
 </ul>
 
-    
+
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p><code>run</code> supports</p><ul>
@@ -260,20 +260,20 @@ standard output and/or error. A chunk may contain multiple lines, and
 can be as short as a single character.</p></li>
 <li><p>Cleaning up the subprocess, or the whole process tree, before exiting.</p></li>
 </ul>
-    
+
     <h2 class="hasAnchor" id="callbacks"><a class="anchor" href="#callbacks"></a>Callbacks</h2>
 
-    
+
     <p>Some notes about the callback functions. The first argument of a
 callback function is a character scalar (length 1 character), a single
 output or error line. The second argument is always the <a href='process.html'>process</a>
 object. You can manipulate this object, for example you can call
 <code>$kill()</code> on it to terminate it, as a response to a message on the
 standard output or error.</p>
-    
+
     <h2 class="hasAnchor" id="error-conditions"><a class="anchor" href="#error-conditions"></a>Error conditions</h2>
 
-    
+
     <p><code>run()</code> throws error condition objects if the process is interrupted,
 timeouts or fails (if <code>error_on_status</code> is <code>TRUE</code>):</p><ul>
 <li><p>On interrupt, a condition with classes <code>system_command_interrupt</code>,
@@ -294,7 +294,7 @@ of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
 <li><p><code>stderr_to_stdout</code>: the value of the <code>stderr_to_stdout</code> argument.</p></li>
 <li><p><code>status</code>: the exit status for <code>system_command_status_error</code> errors.</p></li>
 </ul>
-    
+
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'>## Different examples for Unix and Windows
@@ -320,7 +320,7 @@ of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
+
       <li><a href="#value">Value</a></li>
 
       <li><a href="#details">Details</a></li>
@@ -328,7 +328,7 @@ of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
       <li><a href="#callbacks">Callbacks</a></li>
 
       <li><a href="#error-conditions">Error conditions</a></li>
-      
+
       <li><a href="#examples">Examples</a></li>
     </ul>
 
@@ -346,7 +346,7 @@ of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
       </footer>
    </div>
 
-  
+
 
   </body>
 </html>
