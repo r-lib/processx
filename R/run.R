@@ -47,7 +47,7 @@
 #' @param command Character scalar, the command to run.
 #' @param args Character vector, arguments to the command.
 #' @param error_on_status Whether to throw an error if the command returns
-#'   with a non-zero status, or it is interrupted. The error clases are
+#'   with a non-zero status, or it is interrupted. The error classes are
 #'   `system_command_status_error` and `system_command_timeout_error`,
 #'   respectively, and both errors have class `system_command_error` as
 #'   well. See also "Error conditions" below.
