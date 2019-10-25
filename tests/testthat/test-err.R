@@ -305,3 +305,13 @@ test_that("error trace from throw() in subprocess", {
   expect_match(cond$trace$messages[[1]], "subprocess failed: .*processx\\.c")
   expect_match(cond$trace$messages[[2]], "@.*processx\\.c")
 })
+
+test_that("trace is not overwritten", {
+  skip_on_cran()
+  withr::local_options(list(rlib_error_always_trace = TRUE))
+  err <- new_error("foobar")
+  err$trace <- "not really"
+
+  err2 <- tryCatch(throw(err), error = function(e) e)
+  expect_identical(err2$trace, "not really")
+})
