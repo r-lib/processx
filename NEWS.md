@@ -4,6 +4,9 @@
 * Fix spinner not being displayed in `run()` and improve the spinner
   flow sequence (#223).
 
+* Error messages are now fully printed after an error. In non-interactive
+  sessions, the stack trace is printed as well.
+
 * Further improved error messages. Errors from C code now include the
   name of the C function, and errors that belong to a process include the
   system command (#197).
