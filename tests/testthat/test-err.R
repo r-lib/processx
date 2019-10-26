@@ -315,3 +315,57 @@ test_that("trace is not overwritten", {
   err2 <- tryCatch(throw(err), error = function(e) e)
   expect_identical(err2$trace, "not really")
 })
+
+test_that("error is printed on error", {
+  skip_on_cran()
+
+  sf <- tempfile(fileext = ".R")
+  op <- sub("\\.R$", ".rds", sf)
+  so <- paste0(sf, "out")
+  se <- paste0(sf, "err")
+  on.exit(unlink(c(sf, op, so, se), recursive = TRUE), add = TRUE)
+
+  expr <- substitute({
+    options(rlib_interactive = TRUE)
+    processx::run(basename(tempfile()))
+  })
+
+  cat(deparse(expr), file = sf, sep = "\n")
+
+  callr::rscript(
+    sf,
+    stdout = so,
+    stderr = se,
+    fail_on_status = FALSE,
+    show = FALSE
+  )
+
+  expect_true(any(grepl("No such file or directory", readLines(se))))
+  expect_false(any(grepl("Stack trace", readLines(se))))
+})
+
+test_that("trace is printed on error in non-interactive sessions", {
+
+  sf <- tempfile(fileext = ".R")
+  op <- sub("\\.R$", ".rds", sf)
+  so <- paste0(sf, "out")
+  se <- paste0(sf, "err")
+  on.exit(unlink(c(sf, op, so, se), recursive = TRUE), add = TRUE)
+
+  expr <- substitute({
+    processx::run(basename(tempfile()))
+  })
+
+  cat(deparse(expr), file = sf, sep = "\n")
+
+  callr::rscript(
+    sf,
+    stdout = so,
+    stderr = se,
+    fail_on_status = FALSE,
+    show = FALSE
+  )
+
+  expect_true(any(grepl("No such file or directory", readLines(se))))
+  expect_true(any(grepl("Stack trace", readLines(se))))
+})

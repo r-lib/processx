@@ -9,6 +9,8 @@
       requireNamespace("debugme", quietly = TRUE)) {
     debugme::debugme()
   }
+
+  err$onload_hook()
 }
 
 .onUnload <- function(libpath) {
