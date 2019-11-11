@@ -382,15 +382,28 @@ new_process_timeout_error <- function(result, call, echo, stderr_to_stdout,
 #' @export
 
 conditionMessage.system_command_error <- function(c) {
-  std <- if (c$stderr_to_stdout) "stdout + stderr" else "stderr"
   exit <- if (!is.na(c$status)) paste0(", exit status: ", c$status)
-  res <- if (c$echo) {
-    paste0(c$message, exit, ", see stdout + stderr above")
-  } else {
-    paste0(c$message, exit, last_stderr_lines(c$stderr, std))
-  }
   NextMethod("conditionMessage")
-  res
+  paste0(c$message, exit)
+}
+
+#' @export
+
+format.system_command_error <- function(x, ...) {
+  msg <- conditionMessage(x)
+  if (x$echo) {
+    paste0(msg, ", stdout & stderr were printed")
+  } else {
+    std <- if (x$stderr_to_stdout) "stdout + stderr" else "stderr"
+    out <- last_stderr_lines(x$stderr, std)
+    c(paste0(msg, out[1]), out[-1])
+  }
+}
+
+#' @export
+
+print.system_command_error <- function(x, ...) {
+  cat(format(x, ...), sep = "\n")
 }
 
 last_stderr_lines <- function(text, std) {
@@ -399,11 +412,11 @@ last_stderr_lines <- function(text, std) {
 
   if (interactive()) {
     pref <- paste0(
-      ", ", std, if (length(lines) > 10) " (last 10 lines)", ":\n\n")
-    out <- paste0("E> ", utils::tail(lines, 10), "\n", collapse = "")
-    paste0(pref, out)
+      ", ", std, if (length(lines) > 10) " (last 10 lines)", ":")
+    out <- paste0("E> ", utils::tail(lines, 10))
+    c(pref, "", out)
   } else {
-    out <- paste0("E> ", lines, "\n", collapse = "")
-    paste0(", ", std, ":\n\n", out)
+    out <- paste0("E> ", lines)
+    c(paste0(", ", std, ":"), "", out)
   }
 }

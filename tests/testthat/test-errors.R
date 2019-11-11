@@ -7,7 +7,7 @@ test_that("run() prints stderr if echo = FALSE", {
     run(px, c("outln", "nopppp", "errln", "bad", "errln", "foobar",
               "return", "2")),
     error = function(e) e)
-  expect_match(conditionMessage(err), "foobar")
+  expect_true(any(grepl("foobar", format(err))))
   expect_false(any(grepl("nopppp", conditionMessage(err))))
 })
 
@@ -27,8 +27,8 @@ test_that("run() handles stderr_to_stdout = TRUE properly", {
     run(px, c("outln", "nopppp", "errln", "bad", "errln", "foobar",
               "return", "2"), stderr_to_stdout = TRUE),
     error = function(e) e)
-  expect_match(conditionMessage(err), "foobar")
-  expect_match(conditionMessage(err), "nopppp")
+  expect_true(any(grepl("foobar", format(err))))
+  expect_true(any(grepl("nopppp", format(err))))
 })
 
 test_that("run() only prints the last 10 lines of stderr", {
@@ -37,9 +37,9 @@ test_that("run() only prints the last 10 lines of stderr", {
   err <- tryCatch(
     run(px, c(args, "return", "2")),
     error = function(e) e)
-  expect_false(any(grepl("foobar1--", conditionMessage(err))))
-  expect_match(conditionMessage(err), "foobar2--")
-  expect_match(conditionMessage(err), "foobar11--")
+  expect_false(any(grepl("foobar1--", format(err))))
+  expect_true(any(grepl("foobar2--", format(err))))
+  expect_true(any(grepl("foobar11--", format(err))))
 })
 
 test_that("prints full stderr in non-interactive mode", {
