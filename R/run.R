@@ -399,6 +399,5 @@ last_stderr_lines <- function(text, std) {
   pref <- paste0(
     ", ", std, if (length(lines) > 10) " (last 10 lines)", ":\n")
   out <- paste("E>", utils::tail(lines, 10), collapse = "\n")
-  if (has_package("crayon")) out <- crayon::red(out)
   paste0(pref, out)
 }
