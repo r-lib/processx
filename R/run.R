@@ -281,7 +281,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
     function() {
       cat("\r", phases[state], "\r", sep = "")
       state <<- state %% length(phases) + 1L
-      flush.console()
+      utils::flush.console()
     }
   })()
 
