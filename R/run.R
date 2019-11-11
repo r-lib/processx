@@ -381,7 +381,7 @@ new_process_timeout_error <- function(result, call, echo, stderr_to_stdout,
 
 #' @export
 
-conditionMessage.system_command_status_error <- function(c) {
+conditionMessage.system_command_error <- function(c) {
   std <- if (c$stderr_to_stdout) "stdout + stderr" else "stderr"
   exit <- if (!is.na(c$status)) paste0(", exit status: ", c$status)
   res <- if (c$echo) {
