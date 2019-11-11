@@ -41,3 +41,19 @@ test_that("run() only prints the last 10 lines of stderr", {
   expect_match(conditionMessage(err), "foobar2--")
   expect_match(conditionMessage(err), "foobar11--")
 })
+
+test_that("prints full stderr in non-interactive mode", {
+  script <- tempfile(fileext = ".R")
+  on.exit(unlink(script, recursive = TRUE), add = TRUE)
+
+  code <- quote({
+    px <- asNamespace("processx")$get_tool("px")
+    args <- rbind("errln", paste0("foobar", 1:20, "--"))
+    processx::run(px, c(args, "return", "2"))
+  })
+  cat(deparse(code), file = script, sep = "\n")
+
+  out <- callr::rscript(script, fail_on_status = FALSE, show = FALSE)
+  expect_match(out$stderr, "foobar1--")
+  expect_match(out$stderr, "foobar20--")
+})

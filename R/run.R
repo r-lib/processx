@@ -396,8 +396,14 @@ conditionMessage.system_command_error <- function(c) {
 last_stderr_lines <- function(text, std) {
   if (!nzchar(text)) return(paste0(", ", std, " empty"))
   lines <- strsplit(text, "\r?\n")[[1]]
-  pref <- paste0(
-    ", ", std, if (length(lines) > 10) " (last 10 lines)", ":\n")
-  out <- paste("E>", utils::tail(lines, 10), collapse = "\n")
-  paste0(pref, out)
+
+  if (interactive()) {
+    pref <- paste0(
+      ", ", std, if (length(lines) > 10) " (last 10 lines)", ":\n\n")
+    out <- paste0("E> ", utils::tail(lines, 10), "\n", collapse = "")
+    paste0(pref, out)
+  } else {
+    out <- paste0("E> ", lines, "\n", collapse = "")
+    paste0(", ", std, ":\n\n", out)
+  }
 }
