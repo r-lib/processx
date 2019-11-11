@@ -34,12 +34,15 @@ test_that("run() handles stderr_to_stdout = TRUE properly", {
 test_that("run() only prints the last 10 lines of stderr", {
   px <- get_tool("px")
   args <- rbind("errln", paste0("foobar", 1:11, "--"))
-  err <- tryCatch(
-    run(px, c(args, "return", "2")),
-    error = function(e) e)
-  expect_false(any(grepl("foobar1--", format(err))))
-  expect_true(any(grepl("foobar2--", format(err))))
-  expect_true(any(grepl("foobar11--", format(err))))
+  withr::with_options(
+    list(rlib_interactive = TRUE),
+    ferr <- format(tryCatch(
+      run(px, c(args, "return", "2")),
+      error = function(e) e))
+  )
+  expect_false(any(grepl("foobar1--", ferr)))
+  expect_true(any(grepl("foobar2--", ferr)))
+  expect_true(any(grepl("foobar11--", ferr)))
 })
 
 test_that("prints full stderr in non-interactive mode", {

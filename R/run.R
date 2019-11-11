@@ -410,7 +410,7 @@ last_stderr_lines <- function(text, std) {
   if (!nzchar(text)) return(paste0(", ", std, " empty"))
   lines <- strsplit(text, "\r?\n")[[1]]
 
-  if (interactive()) {
+  if (is_interactive()) {
     pref <- paste0(
       ", ", std, if (length(lines) > 10) " (last 10 lines)", ":")
     out <- paste0("E> ", utils::tail(lines, 10))
