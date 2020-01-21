@@ -5,12 +5,14 @@
 
 > Execute and Control System Processes
 
+<!-- badges: start -->
 [![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://tidyverse.org/lifecycle/#maturing)
 [![Linux Build Status](https://travis-ci.org/r-lib/processx.svg?branch=master)](https://travis-ci.org/r-lib/processx)
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/15sfg3l9mm4aseyf/branch/master?svg=true)](https://ci.appveyor.com/project/gaborcsardi/processx)
 [![](https://www.r-pkg.org/badges/version/processx)](https://www.r-pkg.org/pkg/processx)
 [![CRAN RStudio mirror downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
 [![Coverage Status](https://img.shields.io/codecov/c/github/r-lib/processx/master.svg)](https://codecov.io/github/r-lib/processx?branch=master)
+<!-- badges: end -->
 
 Tools to run system processes in the background,
 read their standard output and error and kill them.
@@ -39,6 +41,7 @@ facilities, with a timeout.
          * [Waiting on a process](#waiting-on-a-process)
          * [Exit statuses](#exit-statuses)
          * [Errors](#errors-1)
+   * [Related tools](#related-tools)
    * [Code of Conduct](#code-of-conduct)
    * [License](#license)
 
@@ -94,7 +97,7 @@ px
 ```
 
 ```
-#> [1] "/Users/gaborcsardi/r_pkgs/processx/bin/px"
+#> [1] "/home/maelle/R/x86_64-pc-linux-gnu-library/3.6/processx/bin/px"
 ```
 
 ### Running an external process
@@ -138,6 +141,7 @@ result <- run(px, "--help", echo = TRUE)
 #>   err    <string>            -- print string to stderr
 #>   outln  <string>            -- print string to stdout, add newline
 #>   errln  <string>            -- print string to stderr, add newline
+#>   errflush                   -- flush stderr stream
 #>   cat    <filename>          -- print file to stdout
 #>   return <exitcode>          -- return with exitcode
 #>   write <fd> <string>        -- write to file descriptor
@@ -245,12 +249,12 @@ out2
 ```
 
 ```
-#>  [1] "CODE_OF_CONDUCT.md" "DESCRIPTION"        "LICENSE"           
-#>  [4] "Makefile"           "NAMESPACE"          "NEWS.md"           
-#>  [7] "R"                  "README.Rmd"         "README.markdown"   
-#> [10] "_pkgdown.yml"       "appveyor.yml"       "docs"              
-#> [13] "inst"               "man"                "processx.Rproj"    
-#> [16] "src"                "tests"
+#>  [1] "appveyor.yml"       "CODE_OF_CONDUCT.md" "DESCRIPTION"       
+#>  [4] "docs"               "inst"               "LICENSE"           
+#>  [7] "LICENSE.md"         "Makefile"           "man"               
+#> [10] "NAMESPACE"          "NEWS.md"            "_pkgdown.yml"      
+#> [13] "processx.Rproj"     "R"                  "README.md"         
+#> [16] "README.Rmd"         "src"                "tests"
 ```
 
 #### Spinner
@@ -388,9 +392,9 @@ gc()
 ```
 
 ```
-#>          used (Mb) gc trigger (Mb) limit (Mb) max used (Mb)
-#> Ncells 428443 22.9     908452 48.6         NA   631340 33.8
-#> Vcells 867615  6.7    8388608 64.0      16384  1769037 13.5
+#>          used (Mb) gc trigger (Mb) max used (Mb)
+#> Ncells 452729 24.2     966305 51.7   654411 35.0
+#> Vcells 903791  6.9    8388608 64.0  1815199 13.9
 ```
 
 Here, the direct call to the garbage collector kills the `sleep` process
@@ -466,7 +470,7 @@ of a process. It will return if any of the following events happen:
 
 * data is available on the standard output of the process (assuming there is
   a connection to the standard output).
-* data is available on the standard error of the proces (assuming the is
+* data is available on the standard error of the process (assuming the is
   a connection to the standard error).
 * The process has finished and the standard output and/or error connections
   were closed on the other end.
@@ -609,7 +613,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2018-07-24 19:57:33 BST"
+#> [1] "2020-01-21 15:44:06 CET"
 ```
 
 ```r
@@ -618,7 +622,7 @@ Sys.time()
 ```
 
 ```
-#> [1] "2018-07-24 19:57:35 BST"
+#> [1] "2020-01-21 15:44:08 CET"
 ```
 
 It is safe to call `wait()` multiple times:
@@ -666,7 +670,7 @@ p <- process$new("nonexistant-command-for-sure")
 ```
 
 ```
-#> Error in process_initialize(self, private, command, args, stdin, stdout, : processx error: 'No such file or directory' at unix/processx.c:423
+#> Error in rethrow_call(c_processx_exec, command, c(command, args), stdin, : cannot start processx process (system error 2, No such file or directory) @unix/processx.c:573
 ```
 
 
@@ -679,6 +683,12 @@ p2$get_exit_status()
 ```
 #> [1] 5
 ```
+
+## Related tools
+
+* The [`ps` package](http://ps.r-lib.org/) can query, list, manipulate all system processes, and processx uses it internally.
+
+* The [`callr` package](https://callr.r-lib.org/) uses processx to start another R process, and run R code in it.
 
 ## Code of Conduct
 
