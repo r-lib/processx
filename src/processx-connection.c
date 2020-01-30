@@ -609,7 +609,17 @@ ssize_t processx_c_connection_write_bytes(
   if (!ret) R_THROW_SYSTEM_ERROR("Cannot write connection");
   return (ssize_t) written;
 #else
+  /* Need to ignore SIGPIPE here, otherwise R might crash */
+  struct sigaction old_handler, new_handler;
+  memset(&new_handler, 0, sizeof(new_handler));
+  sigemptyset(&new_handler.sa_mask);
+  new_handler.sa_handler = SIG_IGN;
+  sigaction(SIGPIPE, &new_handler, &old_handler );
+
   ssize_t ret = write(ccon->handle, buffer, nbytes);
+
+  sigaction(SIGPIPE, &old_handler, NULL );
+
   if (ret == -1) {
     if (errno == EAGAIN || errno == EWOULDBLOCK) {
       return 0;

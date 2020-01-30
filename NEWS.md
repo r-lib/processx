@@ -11,6 +11,9 @@
   name of the C function, and errors that belong to a process include the
   system command (#197).
 
+* Fix a SIGPIPE crash when trying to write to the subprocess that has
+  exited already.
+
 # processx 3.4.1
 
 * Now `run()` does not create an `ok` variable in the global environment.
