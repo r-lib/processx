@@ -12,14 +12,12 @@ knitr::opts_chunk$set(
 
 > Execute and Control System Processes
 
-<!-- badges: start -->
 [![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://tidyverse.org/lifecycle/#maturing)
 [![Linux Build Status](https://travis-ci.org/r-lib/processx.svg?branch=master)](https://travis-ci.org/r-lib/processx)
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/15sfg3l9mm4aseyf/branch/master?svg=true)](https://ci.appveyor.com/project/gaborcsardi/processx)
 [![](https://www.r-pkg.org/badges/version/processx)](https://www.r-pkg.org/pkg/processx)
 [![CRAN RStudio mirror downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
 [![Coverage Status](https://img.shields.io/codecov/c/github/r-lib/processx/master.svg)](https://codecov.io/github/r-lib/processx?branch=master)
-<!-- badges: end -->
 
 Tools to run system processes in the background,
 read their standard output and error and kill them.
@@ -419,9 +417,14 @@ p2$get_exit_status()
 
 ## Related tools
 
-* The [`ps` package](http://ps.r-lib.org/) can query, list, manipulate all system processes, and processx uses it internally.
-
-* The [`callr` package](https://callr.r-lib.org/) uses processx to start another R process, and run R code in it.
++* The [`ps` package](http://ps.r-lib.org/) can query, list, manipulate
++  all system processes (not just subprocesses), and processx uses it
++  internally for some of its functionality. You can also convert a
++  `processx::process` object to a `ps::ps_handle` with the `as_ps_handle()`
++  method.
++
++* The [`callr` package](https://callr.r-lib.org/) uses processx to start
++  another R process, and run R code in it, in the foreground or background.
 
 ## Code of Conduct
 
