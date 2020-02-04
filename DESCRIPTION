@@ -19,7 +19,7 @@ License: MIT + file LICENSE
 LazyData: true
 URL: https://processx.r-lib.org, https://github.com/r-lib/processx#readme
 BugReports: https://github.com/r-lib/processx/issues
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 Roxygen: list(markdown = TRUE)
 Imports:
     ps (>= 1.2.0),

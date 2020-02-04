@@ -4,13 +4,27 @@
 \alias{run}
 \title{Run external command, and wait until finishes}
 \usage{
-run(command = NULL, args = character(), error_on_status = TRUE,
-  wd = NULL, echo_cmd = FALSE, echo = FALSE, spinner = FALSE,
-  timeout = Inf, stdout_line_callback = NULL, stdout_callback = NULL,
-  stderr_line_callback = NULL, stderr_callback = NULL,
-  stderr_to_stdout = FALSE, env = NULL,
-  windows_verbatim_args = FALSE, windows_hide_window = FALSE,
-  encoding = "", cleanup_tree = FALSE, ...)
+run(
+  command = NULL,
+  args = character(),
+  error_on_status = TRUE,
+  wd = NULL,
+  echo_cmd = FALSE,
+  echo = FALSE,
+  spinner = FALSE,
+  timeout = Inf,
+  stdout_line_callback = NULL,
+  stdout_callback = NULL,
+  stderr_line_callback = NULL,
+  stderr_callback = NULL,
+  stderr_to_stdout = FALSE,
+  env = NULL,
+  windows_verbatim_args = FALSE,
+  windows_hide_window = FALSE,
+  encoding = "",
+  cleanup_tree = FALSE,
+  ...
+)
 }
 \arguments{
 \item{command}{Character scalar, the command to run.}
@@ -117,7 +131,7 @@ Some notes about the callback functions. The first argument of a
 callback function is a character scalar (length 1 character), a single
 output or error line. The second argument is always the \link{process}
 object. You can manipulate this object, for example you can call
-\code{$kill()} on it to terminate it, as a response to a message on the
+\verb{$kill()} on it to terminate it, as a response to a message on the
 standard output or error.
 }
 

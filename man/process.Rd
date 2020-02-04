@@ -49,7 +49,7 @@ p$read_all_output()
 p$read_all_error()
 p$read_all_output_lines()
 p$read_all_error_lines()
-p$write_input(str, sep = "\n")
+p$write_input(str, sep = "\\n")
 p$get_input_file()
 p$get_output_file()
 p$get_error_file()
@@ -108,9 +108,9 @@ no separate pipe for standard error, because there is no way to
 distinguish between stdout and stderr on a pty. Note that the
 standard output connection of the pty is \emph{blocking}, so we always
 poll the standard output connection before reading from it using
-the \code{$read_output()} method. Also, because \code{$read_output_lines()}
+the \verb{$read_output()} method. Also, because \verb{$read_output_lines()}
 could still block if no complete line is available, this function
-always fails if the process has a pty. Use \code{$read_output()} to
+always fails if the process has a pty. Use \verb{$read_output()} to
 read from ptys.
 \item \code{pty_options}: Unix pseudo terminal options, a named list. see
 \code{\link[=default_pty_options]{default_pty_options()}} for details and defaults.
@@ -167,38 +167,38 @@ used. Note that \code{processx} always reencodes the output of the
 If you want to read them without any conversion, on all platforms,
 specify \code{"UTF-8"} as encoding.
 \item \code{post_process}: An optional function to run when the process has
-finished. Currently it only runs if \code{$get_result()} is called.
+finished. Currently it only runs if \verb{$get_result()} is called.
 It is only run once.
 }
 }
 
 \section{Details}{
 
-\code{$new()} starts a new process in the background, and then returns
+\verb{$new()} starts a new process in the background, and then returns
 immediately.
 
-\code{$is_alive()} checks if the process is alive. Returns a logical
+\verb{$is_alive()} checks if the process is alive. Returns a logical
 scalar.
 
-\code{$signal()} sends a signal to the process. On Windows only the
+\verb{$signal()} sends a signal to the process. On Windows only the
 \code{SIGINT}, \code{SIGTERM} and \code{SIGKILL} signals are interpreted,
 and the special 0 signal, The first three all kill the process. The 0
 signal return \code{TRUE} if the process is alive, and \code{FALSE}
 otherwise. On Unix all signals are supported that the OS supports, and
 the 0 signal as well.
 
-\code{$interrupt()} sends an interrupt to the process. On Unix this is a
+\verb{$interrupt()} sends an interrupt to the process. On Unix this is a
 \code{SIGINT} signal, and it is usually equivalent to pressing CTRL+C at the
 terminal prompt. On Windows, it is a CTRL+BREAK keypress. Applications
 may catch these events. By default they will quit.
 
-\code{$kill()} kills the process. It also kills all of its child
+\verb{$kill()} kills the process. It also kills all of its child
 processes, except if they have created a new process group (on Unix),
 or job object (on Windows). It returns \code{TRUE} if the process
 was killed, and \code{FALSE} if it was no killed (because it was
 already finished/dead when \code{processx} tried to kill it).
 
-\code{$kill_tree()} performs process tree cleanup, it kills the process
+\verb{$kill_tree()} performs process tree cleanup, it kills the process
 (if still alive), together with any child (or grandchild, etc.)
 processes. It uses the \emph{ps} package, so that needs to be installed,
 and \emph{ps} needs to support the current platform as well. Process tree
@@ -206,22 +206,22 @@ cleanup works by marking the process with an environment variable,
 which is inherited in all child processes. This allows finding
 descendents, even if they are orphaned, i.e. they are not connected
 to the root of the tree cleanup in the process tree any more.
-\code{$kill_tree()} returns a named integer vector of the process ids that
+\verb{$kill_tree()} returns a named integer vector of the process ids that
 were killed, the names are the names of the processes (e.g. \code{"sleep"},
 \code{"notepad.exe"}, \code{"Rterm.exe"}, etc.).
 
-\code{$wait()} waits until the process finishes, or a timeout happens.
+\verb{$wait()} waits until the process finishes, or a timeout happens.
 Note that if the process never finishes, and the timeout is infinite
 (the default), then R will never regain control. It returns
-the process itself, invisibly. In some rare cases, \code{$wait()} might take
+the process itself, invisibly. In some rare cases, \verb{$wait()} might take
 a bit longer than specified to time out. This happens on Unix, when
 another package overwrites the processx SIGCHLD signal handler, after the
 processx process has started. One such package is parallel, if used
 with fork clusters, e.g. through \code{parallel::mcparallel()}.
 
-\code{$get_pid()} returns the process id of the process.
+\verb{$get_pid()} returns the process id of the process.
 
-\code{$get_exit_status} returns the exit code of the process if it has
+\verb{$get_exit_status} returns the exit code of the process if it has
 finished and \code{NULL} otherwise. On Unix, in some rare cases, the exit
 status might be \code{NA}. This happens if another package (or R itself)
 overwrites the processx SIGCHLD handler, after the processx process
@@ -229,129 +229,129 @@ has started. In these cases processx cannot determine the real exit
 status of the process. One such package is parallel, if used with
 fork clusters, e.g. through the \code{parallel::mcparallel()} function.
 
-\code{$get_start_time()} returns the time when the process was
+\verb{$get_start_time()} returns the time when the process was
 started.
 
-\code{$is_supervised()} returns whether the process is being tracked by
+\verb{$is_supervised()} returns whether the process is being tracked by
 supervisor process.
 
-\code{$supervise()} if passed \code{TRUE}, tells the supervisor to start
+\verb{$supervise()} if passed \code{TRUE}, tells the supervisor to start
 tracking the process. If \code{FALSE}, tells the supervisor to stop
 tracking the process. Note that even if the supervisor is disabled for a
 process, if it was started with \code{cleanup = TRUE}, the process will
 still be killed when the object is garbage collected.
 
-\code{$read_output()} reads from the standard output connection of the
+\verb{$read_output()} reads from the standard output connection of the
 process. If the standard output connection was not requested, then
 then it returns an error. It uses a non-blocking text connection. This
 will work only if \code{stdout="|"} was used. Otherwise, it will throw an
 error.
 
-\code{$read_error()} is similar to \code{$read_output}, but it reads
+\verb{$read_error()} is similar to \verb{$read_output}, but it reads
 from the standard error stream.
 
-\code{$read_output_lines()} reads lines from standard output connection
+\verb{$read_output_lines()} reads lines from standard output connection
 of the process. If the standard output connection was not requested, then
 then it returns an error. It uses a non-blocking text connection. This
 will work only if \code{stdout="|"} was used. Otherwise, it will throw an
 error.
 
-\code{$read_error_lines()} is similar to \code{$read_output_lines}, but
+\verb{$read_error_lines()} is similar to \verb{$read_output_lines}, but
 it reads from the standard error stream.
 
-\code{$has_input_connection()} return \code{TRUE} if there is a connection
+\verb{$has_input_connection()} return \code{TRUE} if there is a connection
 object for standard input; in other words, if \code{stdout="|"}. It returns
 \code{FALSE} otherwise.
 
-\code{$has_output_connection()} returns \code{TRUE} if there is a connection
+\verb{$has_output_connection()} returns \code{TRUE} if there is a connection
 object for standard output; in other words, if \code{stdout="|"}. It returns
 \code{FALSE} otherwise.
 
-\code{$has_error_connection()} returns \code{TRUE} if there is a connection
+\verb{$has_error_connection()} returns \code{TRUE} if there is a connection
 object for standard error; in other words, if \code{stderr="|"}. It returns
 \code{FALSE} otherwise.
 
-\code{$has_poll_connection()} return \code{TRUE} if there is a poll connection,
+\verb{$has_poll_connection()} return \code{TRUE} if there is a poll connection,
 \code{FALSE} otherwise.
 
-\code{$get_input_connection()} returns a connection object, to the
+\verb{$get_input_connection()} returns a connection object, to the
 standard input stream of the process.
 
-\code{$get_output_connection()} returns a connection object, to the
+\verb{$get_output_connection()} returns a connection object, to the
 standard output stream of the process.
 
-\code{$get_error_conneciton()} returns a connection object, to the
+\verb{$get_error_conneciton()} returns a connection object, to the
 standard error stream of the process.
 
-\code{$get_poll_connetion()} returns the poll connection, if the process has
+\verb{$get_poll_connetion()} returns the poll connection, if the process has
 one.
 
-\code{$is_incomplete_output()} return \code{FALSE} if the other end of
+\verb{$is_incomplete_output()} return \code{FALSE} if the other end of
 the standard output connection was closed (most probably because the
 process exited). It return \code{TRUE} otherwise.
 
-\code{$is_incomplete_error()} return \code{FALSE} if the other end of
+\verb{$is_incomplete_error()} return \code{FALSE} if the other end of
 the standard error connection was closed (most probably because the
 process exited). It return \code{TRUE} otherwise.
 
-\code{$read_all_output()} waits for all standard output from the process.
+\verb{$read_all_output()} waits for all standard output from the process.
 It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several \code{readLines()} calls.
 It returns a character scalar. This will return content only if
 \code{stdout="|"} was used. Otherwise, it will throw an error.
 
-\code{$read_all_error()} waits for all standard error from the process.
+\verb{$read_all_error()} waits for all standard error from the process.
 It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several \code{readLines()} calls.
 It returns a character scalar. This will return content only if
 \code{stderr="|"} was used. Otherwise, it will throw an error.
 
-\code{$read_all_output_lines()} waits for all standard output lines
+\verb{$read_all_output_lines()} waits for all standard output lines
 from a process. It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several \code{readLines()} calls.
 It returns a character vector. This will return content only if
 \code{stdout="|"} was used. Otherwise, it will throw an error.
 
-\code{$read_all_error_lines()} waits for all standard error lines from
+\verb{$read_all_error_lines()} waits for all standard error lines from
 a process. It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several \code{readLines()} calls.
 It returns a character vector. This will return content only if
 \code{stderr="|"} was used. Otherwise, it will throw an error.
 
-\code{$write_input()} writes the character vector (separated by \code{sep}) to
+\verb{$write_input()} writes the character vector (separated by \code{sep}) to
 the standard input of the process. It will be converted to the specified
 encoding. This operation is non-blocking, and it will return, even if
 the write fails (because the write buffer is full), or if it suceeds
 partially (i.e. not the full string is written). It returns with a raw
 vector, that contains the bytes that were not written. You can supply
-this raw vector to \code{$write_input()} again, until it is fully written,
+this raw vector to \verb{$write_input()} again, until it is fully written,
 and then the return value will be \code{raw(0)} (invisibly).
 
-\code{$get_input_file()} if the \code{stdin} argument was a filename,
+\verb{$get_input_file()} if the \code{stdin} argument was a filename,
 this returns the absolute path to the file. If \code{stdin} was \code{"|"} or
 \code{NULL}, this simply returns that value.
 
-\code{$get_output_file()} if the \code{stdout} argument was a filename,
+\verb{$get_output_file()} if the \code{stdout} argument was a filename,
 this returns the absolute path to the file. If \code{stdout} was \code{"|"} or
 \code{NULL}, this simply returns that value.
 
-\code{$get_error_file()} if the \code{stderr} argument was a filename,
+\verb{$get_error_file()} if the \code{stderr} argument was a filename,
 this returns the absolute path to the file. If \code{stderr} was \code{"|"} or
 \code{NULL}, this simply returns that value.
 
-\code{$poll_io()} polls the process's connections for I/O. See more in
+\verb{$poll_io()} polls the process's connections for I/O. See more in
 the \emph{Polling} section, and see also the \code{\link[=poll]{poll()}} function
 to poll on multiple processes.
 
-\code{$get_result()} returns the result of the post processesing function.
+\verb{$get_result()} returns the result of the post processesing function.
 It can only be called once the process has finished. If the process has
 no post-processing function, then \code{NULL} is returned.
 
-\code{$as_ps_handle()} returns a \link[ps:ps_handle]{ps::ps_handle} object, corresponding to
+\verb{$as_ps_handle()} returns a \link[ps:ps_handle]{ps::ps_handle} object, corresponding to
 the process. The following methods use the ps package on a \code{ps_handle}
 object, created automatically:
 \itemize{
@@ -397,18 +397,18 @@ also set to \code{TRUE}).
 The cleanup happens when the references of the processes object are
 garbage collected. To clean up earlier, you can call the \code{kill()} or
 \code{kill_tree()} method of the process(es), from an \code{on.exit()} expression,
-or an error handler:\preformatted{process_manager <- function() {
-  on.exit({
+or an error handler:\if{html}{\out{<div class="r">}}\preformatted{process_manager <- function() \{
+  on.exit(\{
     try(p1$kill(), silent = TRUE)
     try(p2$kill(), silent = TRUE)
-  }, add = TRUE)
+  \}, add = TRUE)
   p1 <- process$new("sleep", "3")
   p2 <- process$new("sleep", "10")
   p1$wait()
   p2$wait()
-}
+\}
 process_manager()
-}
+}\if{html}{\out{</div>}}
 
 If you interrupt \code{process_manager()} or an error happens then both \code{p1}
 and \code{p2} are cleaned up immediately. Their connections will also be

@@ -48,8 +48,7 @@ processx_conn_is_incomplete(con)
 
 conn_write(con, str, sep = "\\n", encoding = "")
 
-\method{conn_write}{processx_connection}(con, str, sep = "\\n",
-  encoding = "")
+\method{conn_write}{processx_connection}(con, str, sep = "\\n", encoding = "")
 
 processx_conn_write(con, str, sep = "\\n", encoding = "")
 
