@@ -5,12 +5,14 @@
 
 > Execute and Control System Processes
 
+<!-- badges: start -->
 [![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://tidyverse.org/lifecycle/#maturing)
 [![Linux Build Status](https://travis-ci.org/r-lib/processx.svg?branch=master)](https://travis-ci.org/r-lib/processx)
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/15sfg3l9mm4aseyf/branch/master?svg=true)](https://ci.appveyor.com/project/gaborcsardi/processx)
 [![](https://www.r-pkg.org/badges/version/processx)](https://www.r-pkg.org/pkg/processx)
 [![CRAN RStudio mirror downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
 [![Coverage Status](https://img.shields.io/codecov/c/github/r-lib/processx/master.svg)](https://codecov.io/github/r-lib/processx?branch=master)
+<!-- badges: end -->
 
 Tools to run system processes in the background,
 read their standard output and error and kill them.
@@ -139,6 +141,7 @@ result <- run(px, "--help", echo = TRUE)
 #>   err    <string>            -- print string to stderr
 #>   outln  <string>            -- print string to stdout, add newline
 #>   errln  <string>            -- print string to stderr, add newline
+#>   errflush                   -- flush stderr stream
 #>   cat    <filename>          -- print file to stdout
 #>   return <exitcode>          -- return with exitcode
 #>   write <fd> <string>        -- write to file descriptor
@@ -247,11 +250,12 @@ out2
 
 ```
 #>  [1] "CODE_OF_CONDUCT.md" "DESCRIPTION"        "LICENSE"           
-#>  [4] "Makefile"           "NAMESPACE"          "NEWS.md"           
-#>  [7] "R"                  "README.Rmd"         "README.markdown"   
-#> [10] "_pkgdown.yml"       "appveyor.yml"       "docs"              
-#> [13] "inst"               "man"                "processx.Rproj"    
-#> [16] "src"                "tests"
+#>  [4] "LICENSE.md"         "Makefile"           "NAMESPACE"         
+#>  [7] "NEWS.md"            "R"                  "README.Rmd"        
+#> [10] "README.md"          "_pkgdown.yml"       "appveyor.yml"      
+#> [13] "docs"               "inst"               "man"               
+#> [16] "processx.Rproj"     "r-packages"         "src"               
+#> [19] "tests"
 ```
 
 #### Spinner
@@ -467,7 +471,7 @@ of a process. It will return if any of the following events happen:
 
 * data is available on the standard output of the process (assuming there is
   a connection to the standard output).
-* data is available on the standard error of the proces (assuming the is
+* data is available on the standard error of the process (assuming the is
   a connection to the standard error).
 * The process has finished and the standard output and/or error connections
   were closed on the other end.
@@ -667,7 +671,7 @@ p <- process$new("nonexistant-command-for-sure")
 ```
 
 ```
-#> Error in process_initialize(self, private, command, args, stdin, stdout, : processx error: 'No such file or directory' at unix/processx.c:423
+#> Error in rethrow_call(c_processx_exec, command, c(command, args), stdin, : cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:584 (processx_exec)
 ```
 
 
