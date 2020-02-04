@@ -13,6 +13,13 @@ matrix:
     - r: 3.5
     - r: release
       env: R_CODECOV=true
+      before_cache: Rscript -e 'remotes::install_github("r-lib/pkgdown@fix/examples-dontshow")'
+      deploy:
+        provider: script
+        script: Rscript -e 'pkgdown::deploy_site_github()'
+        skip_cleanup: true
+        on:
+          condition: $TRAVIS_BRANCH == "master" || -n $TRAVIS_TAG
     - r: devel
     - os: osx
       osx_image: xcode9.3 #High Sierra

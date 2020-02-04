@@ -6,6 +6,11 @@ authors:
   "Winston Chang":
     href: https://github.com/wch
 
+destination: docs
+
+development:
+  mode: auto
+
 reference:
 - title: Foreground processes
   contents:
