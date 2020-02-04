@@ -39,6 +39,7 @@ facilities, with a timeout.
          * [Waiting on a process](#waiting-on-a-process)
          * [Exit statuses](#exit-statuses)
          * [Errors](#errors-1)
+   * [Related tools](#related-tools)
    * [Code of Conduct](#code-of-conduct)
    * [License](#license)
 
@@ -679,6 +680,17 @@ p2$get_exit_status()
 ```
 #> [1] 5
 ```
+
+## Related tools
+
++* The [`ps` package](http://ps.r-lib.org/) can query, list, manipulate
++  all system processes (not just subprocesses), and processx uses it
++  internally for some of its functionality. You can also convert a
++  `processx::process` object to a `ps::ps_handle` with the `as_ps_handle()`
++  method.
++
++* The [`callr` package](https://callr.r-lib.org/) uses processx to start
++  another R process, and run R code in it, in the foreground or background.
 
 ## Code of Conduct
 
