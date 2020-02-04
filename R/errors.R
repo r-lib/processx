@@ -72,6 +72,12 @@
 # * Provide print_this() and print_parents() to make it easier to define
 #   custom print methods.
 # * Fix annotating our throw() methods with the incorrect `base::`.
+#
+# ### 1.2.1 -- 2020-01-30
+#
+# * Update wording of error printout to be less intimidating, avoid jargon
+# * Use default printing in interactive mode, so RStudio can detect the
+#   error and highlight it.
 
 err <- local({
 
@@ -193,9 +199,44 @@ err <- local({
       th(cond)
 
     } else {
-      # We print the error message and possibly the stack ourselves,
-      # because the printing in stop() might truncate it.
-      print_on_error(cond)
+
+      if (is_interactive()) {
+        # In interactive mode, we print the error message through
+        # conditionMessage() and also add a note about .Last.error.trace.
+        # R will potentially truncate the error message, so we make sure
+        # that the note is shown. Ideally we would print the error
+        # ourselves, but then RStudio would not highlight it.
+        max_msg_len <- as.integer(getOption("warning.length"))
+        if (is.na(max_msg_len)) max_msg_len <- 1000
+        msg <- conditionMessage(cond)
+        adv <- style_advice(
+          "\nType .Last.error.trace to see where the error occured"
+        )
+        dots <- "\033[0m\n[...]"
+        if (bytes(msg) + bytes(adv) + bytes(dots) + 5L> max_msg_len) {
+          msg <- paste0(
+            substr(msg, 1, max_msg_len - bytes(dots) - bytes(adv) - 5L),
+            dots
+          )
+        }
+        cond$message <- paste0(msg, adv)
+
+      } else {
+        # In non-interactive mode, we print the error + the traceback
+        # manually, to make sure that it won't be truncated by R's error
+        # message length limit.
+        cat("\n", file = stderr())
+        cat(style_error(gettext("Error: ")), file = stderr())
+        out <- capture_output(print(cond))
+        cat(out, file = stderr(), sep = "\n")
+        out <- capture_output(print(cond$trace))
+        cat(out, file = stderr(), sep = "\n")
+
+        # Turn off the regular error printing to avoid printing
+        # the error twice.
+        opts <- options(show.error.messages = FALSE)
+        on.exit(options(opts), add = TRUE)
+      }
 
       # Dropping the classes and adding "duplicate_condition" is a workaround
       # for the case when we have non-exiting handlers on throw()-n
@@ -206,10 +247,6 @@ err <- local({
       # recognize the duplicates from the "duplicate_condition" extra class.
       class(cond) <- c("duplicate_condition", "condition")
 
-      # And then we turn of the regular error printing to avoid printing
-      # the error twice.
-      opts <- options(show.error.messages = FALSE)
-      on.exit(options(opts), add = TRUE)
       stop(cond)
     }
   }
@@ -510,22 +547,6 @@ err <- local({
     invisible(x)
   }
 
-  print_on_error <- function(cond) {
-    cat("\n", file = stderr())
-    cat(style_error(gettext("Error: ")), file = stderr())
-    out <- capture_output(print(cond))
-    cat(out, file = stderr(), sep = "\n")
-    if (is_interactive()) {
-      cat(
-        style_advice("\nSee `.Last.error.trace` for a stack trace.\n"),
-        file = stderr()
-      )
-    } else {
-      out <- capture_output(print(cond$trace))
-      cat(out, file = stderr(), sep = "\n")
-    }
-  }
-
   capture_output <- function(expr) {
     if (has_crayon()) {
       opts <- options(crayon.enabled = crayon::has_color())
@@ -629,6 +650,10 @@ err <- local({
            USE.NAMES = FALSE)
   }
 
+  bytes <- function(x) {
+    nchar(x, type = "bytes")
+  }
+
   # -- printing, styles -------------------------------------------------
 
   has_crayon <- function() "crayon" %in% loadedNamespaces()
@@ -638,7 +663,7 @@ err <- local({
   }
 
   style_advice <- function(x) {
-    if (has_crayon()) crayon::reset(x) else x
+    if (has_crayon()) crayon::silver(x) else x
   }
 
   style_srcref <- function(x) {
