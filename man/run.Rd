@@ -164,22 +164,21 @@ of the process if \code{stderr_to_stdout} was \code{TRUE}.
 }
 
 \examples{
-## Different examples for Unix and Windows
-\dontrun{
-if (.Platform$OS.type == "unix") {
-  run("ls")
-  system.time(run("sleep", "10", timeout = 1,
-    error_on_status = FALSE))
-  system.time(
-    run(
-      "sh", c("-c", "for i in 1 2 3 4 5; do echo $i; sleep 1; done"),
-      timeout = 2, error_on_status = FALSE
-    )
+\dontshow{if (.Platform$OS.type == "unix") (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# This works on Unix systems
+run("ls")
+system.time(run("sleep", "10", timeout = 1, error_on_status = FALSE))
+system.time(
+  run(
+    "sh", c("-c", "for i in 1 2 3 4 5; do echo $i; sleep 1; done"),
+    timeout = 2, error_on_status = FALSE
   )
-} else {
-  run("ping", c("-n", "1", "127.0.0.1"))
-  run("ping", c("-n", "6", "127.0.0.1"), timeout = 1,
+)
+\dontshow{\}) # examplesIf}
+\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# This works on Windows systems, if the ping command is available
+run("ping", c("-n", "1", "127.0.0.1"))
+run("ping", c("-n", "6", "127.0.0.1"), timeout = 1,
     error_on_status = FALSE)
-}
-}
+\dontshow{\}) # examplesIf}
 }

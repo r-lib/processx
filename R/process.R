@@ -406,20 +406,17 @@ NULL
 #' closed. The same happens at a regular exit.
 #'
 #' @name process
-#' @examples
-#' # CRAN does not like long-running examples
-#' \dontrun{
+#' @examplesIf identical(Sys.getenv("IN_PKGDOWN"), "true")
 #' p <- process$new("sleep", "2")
 #' p$is_alive()
 #' p
 #' p$kill()
 #' p$is_alive()
 #'
-#' p <- process$new("sleep", "2")
+#' p <- process$new("sleep", "1")
 #' p$is_alive()
-#' Sys.sleep(3)
+#' Sys.sleep(2)
 #' p$is_alive()
-#' }
 #'
 NULL
 

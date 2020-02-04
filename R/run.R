@@ -103,25 +103,22 @@
 #'   * timeout Whether the process was killed because of a timeout.
 #'
 #' @export
-#' @examples
-#' ## Different examples for Unix and Windows
-#' \dontrun{
-#' if (.Platform$OS.type == "unix") {
-#'   run("ls")
-#'   system.time(run("sleep", "10", timeout = 1,
-#'     error_on_status = FALSE))
-#'   system.time(
-#'     run(
-#'       "sh", c("-c", "for i in 1 2 3 4 5; do echo $i; sleep 1; done"),
-#'       timeout = 2, error_on_status = FALSE
-#'     )
+#' @examplesIf .Platform$OS.type == "unix"
+#' # This works on Unix systems
+#' run("ls")
+#' system.time(run("sleep", "10", timeout = 1, error_on_status = FALSE))
+#' system.time(
+#'   run(
+#'     "sh", c("-c", "for i in 1 2 3 4 5; do echo $i; sleep 1; done"),
+#'     timeout = 2, error_on_status = FALSE
 #'   )
-#' } else {
-#'   run("ping", c("-n", "1", "127.0.0.1"))
-#'   run("ping", c("-n", "6", "127.0.0.1"), timeout = 1,
+#' )
+#'
+#' @examplesIf FALSE
+#' # This works on Windows systems, if the ping command is available
+#' run("ping", c("-n", "1", "127.0.0.1"))
+#' run("ping", c("-n", "6", "127.0.0.1"), timeout = 1,
 #'     error_on_status = FALSE)
-#' }
-#' }
 
 run <- function(
   command = NULL, args = character(), error_on_status = TRUE, wd = NULL,

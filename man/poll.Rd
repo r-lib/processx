@@ -47,8 +47,8 @@ connection was.
 }
 
 \examples{
-## Different commands to run for windows and unix
-\dontrun{
+\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# Different commands to run for windows and unix
 cmd1 <- switch(
   .Platform$OS.type,
   "unix" = c("sh", "-c", "sleep 1; ls"),
@@ -78,5 +78,5 @@ poll(list(p1 = p1, p2 = p2), -1)
 ## Close p2's connection as well, no nothing to poll
 close(p2$get_error_connection())
 poll(list(p1 = p1, p2 = p2), 0)
-}
+\dontshow{\}) # examplesIf}
 }

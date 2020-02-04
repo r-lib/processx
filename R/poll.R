@@ -33,9 +33,8 @@
 #'   see the `poll_connection` argument of the `process` initializer.
 #'
 #' @export
-#' @examples
-#' ## Different commands to run for windows and unix
-#' \dontrun{
+#' @examplesIf FALSE
+#' # Different commands to run for windows and unix
 #' cmd1 <- switch(
 #'   .Platform$OS.type,
 #'   "unix" = c("sh", "-c", "sleep 1; ls"),
@@ -65,7 +64,6 @@
 #' ## Close p2's connection as well, no nothing to poll
 #' close(p2$get_error_connection())
 #' poll(list(p1 = p1, p2 = p2), 0)
-#' }
 
 poll <- function(processes, ms) {
   pollables <- processes
