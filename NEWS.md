@@ -14,6 +14,9 @@
 * Fix a SIGPIPE crash when trying to write to the subprocess that has
   exited already.
 
+* processx now to works better with fork clusters from the parallel
+  package. See TODO for details (#236).
+
 # processx 3.4.1
 
 * Now `run()` does not create an `ok` variable in the global environment.
