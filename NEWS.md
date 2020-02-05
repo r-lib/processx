@@ -1,5 +1,5 @@
 
-# development version
+# processx (development version)
 
 * Fix spinner not being displayed in `run()` and improve the spinner
   flow sequence (#223).
