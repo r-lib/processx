@@ -40,6 +40,7 @@ facilities, with a timeout.
          * [Polling multiple processes](#polling-multiple-processes)
          * [Waiting on a process](#waiting-on-a-process)
          * [Exit statuses](#exit-statuses)
+         * [Mixing processx and the parallel base R package](#mixing-processx-and-the-parallel-base-r-package)
          * [Errors](#errors-1)
    * [Related tools](#related-tools)
    * [Code of Conduct](#code-of-conduct)
@@ -657,6 +658,20 @@ p$get_exit_status()
 ```
 #> [1] 0
 ```
+
+#### Mixing processx and the parallel base R package
+
+In general, mixing processx (via callr or not) and parallel works fine.
+If you use parallel's 'fork' clusters, e.g. via `parallel::mcparallel()`,
+then you might see two issues. One is that processx will not be able to
+determine the exit status of some processx processes. This is because the
+status is read out by parallel, and processx will set it to `NA`. The other
+one is that parallel might complain that it could not clean up some
+subprocesses. This is not an error, and it is harmless, but it does
+hold up R for about 10 seconds, before parallel gives up. To work around
+this, you can set the `PROCESSX_NOTIFY_OLD_SIGCHLD` environment variable
+to a non-empty value, before you load processx. This behavior might be
+the default in the future.
 
 #### Errors
 
