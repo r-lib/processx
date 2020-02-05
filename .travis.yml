@@ -3,7 +3,7 @@ cache: packages
 sudo: false
 fortran: false
 latex: false
-pandoc: false
+pandoc: true
 
 matrix:
   include:
