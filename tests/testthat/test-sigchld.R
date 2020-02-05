@@ -107,8 +107,9 @@ test_that("signal", {
     list(signal = signal, status = status)
   })
 
-  # TRUE means that that signal was delivered
-  expect_true(res$result$signal)
+  # TRUE means that that signal was delivered, but it is different on
+  # various Unix flavours. Some will deliver a SIGINT to a zombie, some
+  # will not, so we don't test for this.
   expect_true(res$result$status %in% c(0L, NA_integer_))
 })
 
