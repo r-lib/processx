@@ -2,115 +2,179 @@
 context("SIGCHLD handler interference")
 
 test_that("is_alive()", {
-
-  skip_extra_tests()
   skip_other_platforms("unix")
   skip_on_cran()
 
-  library(parallel)
+  opts <- callr::r_session_options(
+    env = c(PROCESSX_NOTIFY_OLD_SIGCHLD = "true")
+  )
+  rs <- callr::r_session$new(opts)
+  on.exit(rs$close(), add = TRUE)
 
-  px <- process$new("sleep", "0.1")
-  on.exit(try(px$kill(), silent = TRUE), add = TRUE)
+  res <- rs$run_with_output(function() {
+    library(parallel)
+    library(processx)
 
-  p <- mcparallel(Sys.sleep(0.2))
-  q <- mcparallel(Sys.sleep(0.2))
-  res <- mccollect(list(p, q))
-  expect_false(px$is_alive())
-  expect_true(px$get_exit_status() %in% c(0L, NA_integer_))
+    px <- process$new("sleep", "0.5")
+    on.exit(try(px$kill(), silent = TRUE), add = TRUE)
+
+    p <- mcparallel(Sys.sleep(1))
+    q <- mcparallel(Sys.sleep(1))
+    res <- mccollect(list(p, q))
+
+    list(alive = px$is_alive(), status = px$get_exit_status())
+  })
+
+  expect_false(res$result$alive)
+  expect_true(res$result$status %in% c(0L, NA_integer_))
 })
 
 test_that("finalizer", {
-
-  skip_extra_tests()
   skip_other_platforms("unix")
   skip_on_cran()
 
-  library(parallel)
+  opts <- callr::r_session_options(
+    env = c(PROCESSX_NOTIFY_OLD_SIGCHLD = "true")
+  )
+  rs <- callr::r_session$new(opts)
+  on.exit(rs$close(), add = TRUE)
 
-  px <- process$new("sleep", "0.1")
-  on.exit(try(px$kill(), silent = TRUE), add = TRUE)
+  res <- rs$run_with_output(function() {
+    library(parallel)
+    library(processx)
 
-  p <- mcparallel(Sys.sleep(0.2))
-  q <- mcparallel(Sys.sleep(0.2))
-  res <- mccollect(list(p, q))
-  expect_error({ rm(px); gc() }, NA)
+    px <- process$new("sleep", "0.5")
+    on.exit(try(px$kill(), silent = TRUE), add = TRUE)
+
+    p <- mcparallel(Sys.sleep(1))
+    q <- mcparallel(Sys.sleep(1))
+    res <- mccollect(list(p, q))
+    tryCatch({ rm(px); gc(); "OK" }, error = function(x) x)
+  })
+
+  expect_identical(res$result, "OK")
 })
 
 test_that("get_exit_status", {
-
-  skip_extra_tests()
   skip_other_platforms("unix")
   skip_on_cran()
 
-  library(parallel)
+  opts <- callr::r_session_options(
+    env = c(PROCESSX_NOTIFY_OLD_SIGCHLD = "true")
+  )
+  rs <- callr::r_session$new(opts)
+  on.exit(rs$close(), add = TRUE)
 
-  px <- process$new("sleep", "0.1")
-  on.exit(try(px$kill(), silent = TRUE), add = TRUE)
+  res <- rs$run_with_output(function() {
+    library(parallel)
+    library(processx)
 
-  p <- mcparallel(Sys.sleep(0.2))
-  q <- mcparallel(Sys.sleep(0.2))
-  res <- mccollect(list(p, q))
-  expect_true(px$get_exit_status() %in% c(0L, NA_integer_))
+    px <- process$new("sleep", "0.5")
+    on.exit(try(px$kill(), silent = TRUE), add = TRUE)
+
+    p <- mcparallel(Sys.sleep(1))
+    q <- mcparallel(Sys.sleep(1))
+    res <- mccollect(list(p, q))
+    px$get_exit_status()
+  })
+
+  expect_true(res$result %in% c(0L, NA_integer_))
 })
 
 test_that("signal", {
-
-  skip_extra_tests()
   skip_other_platforms("unix")
   skip_on_cran()
 
-  library(parallel)
+  opts <- callr::r_session_options(
+    env = c(PROCESSX_NOTIFY_OLD_SIGCHLD = "true")
+  )
+  rs <- callr::r_session$new(opts)
+  on.exit(rs$close(), add = TRUE)
 
-  px <- process$new("sleep", "0.1")
-  on.exit(try(px$kill(), silent = TRUE), add = TRUE)
+  res <- rs$run_with_output(function() {
+    library(parallel)
+    library(processx)
 
-  p <- mcparallel(Sys.sleep(0.2))
-  q <- mcparallel(Sys.sleep(0.2))
-  res <- mccollect(list(p, q))
-  expect_false(px$signal(2))            # SIGINT
-  expect_true(px$get_exit_status() %in% c(0L, NA_integer_))
+    px <- process$new("sleep", "0.5")
+    on.exit(try(px$kill(), silent = TRUE), add = TRUE)
+
+    p <- mcparallel(Sys.sleep(1))
+    q <- mcparallel(Sys.sleep(1))
+    res <- mccollect(list(p, q))
+
+    signal <- px$signal(2)              # SIGINT
+    status <- px$get_exit_status()
+    list(signal = signal, status = status)
+  })
+
+  # TRUE means that that signal was delivered
+  expect_true(res$result$signal)
+  expect_true(res$result$status %in% c(0L, NA_integer_))
 })
 
-test_that("kill", {
 
-  skip_extra_tests()
+test_that("kill", {
   skip_other_platforms("unix")
   skip_on_cran()
 
-  library(parallel)
+  opts <- callr::r_session_options(
+    env = c(PROCESSX_NOTIFY_OLD_SIGCHLD = "true")
+  )
+  rs <- callr::r_session$new(opts)
+  on.exit(rs$close(), add = TRUE)
 
-  px <- process$new("sleep", "0.1")
-  on.exit(try(px$kill(), silent = TRUE), add = TRUE)
+  res <- rs$run_with_output(function() {
+    library(parallel)
+    library(processx)
 
-  p <- mcparallel(Sys.sleep(0.2))
-  q <- mcparallel(Sys.sleep(0.2))
-  res <- mccollect(list(p, q))
-  expect_false(px$kill())
-  expect_true(px$get_exit_status() %in% c(0L, NA_integer_))
+    px <- process$new("sleep", "0.5")
+    on.exit(try(px$kill(), silent = TRUE), add = TRUE)
+
+    p <- mcparallel(Sys.sleep(1))
+    q <- mcparallel(Sys.sleep(1))
+    res <- mccollect(list(p, q))
+    kill <- px$kill()
+    status <- px$get_exit_status()
+    list(kill = kill, status = status)
+  })
+
+  # FALSE means that that signal was not delivered
+  expect_false(res$result$kill)
+  expect_true(res$result$status %in% c(0L, NA_integer_))
 })
 
 test_that("SIGCHLD handler", {
-
-  skip_extra_tests()
   skip_other_platforms("unix")
   skip_on_cran()
 
-  library(parallel)
+  opts <- callr::r_session_options(
+    env = c(PROCESSX_NOTIFY_OLD_SIGCHLD = "true")
+  )
+  rs <- callr::r_session$new(opts)
+  on.exit(rs$close(), add = TRUE)
 
-  px <- process$new("sleep", "0.1")
-  on.exit(try(px$kill(), silent = TRUE), add = TRUE)
+  res <- rs$run_with_output(function() {
+    library(parallel)
+    library(processx)
 
-  p <- mcparallel(Sys.sleep(0.2))
-  q <- mcparallel(Sys.sleep(0.2))
-  res <- mccollect(list(p, q))
+    px <- process$new("sleep", "0.5")
+    on.exit(try(px$kill(), silent = TRUE), add = TRUE)
 
-  expect_error({
-    px2 <- process$new("true")
-    on.exit(try(px2$kill(), silent = TRUE), add = TRUE)
-    px2$wait(1)
-  }, NA)
+    p <- mcparallel(Sys.sleep(1))
+    q <- mcparallel(Sys.sleep(1))
+    res <- mccollect(list(p, q))
 
-  expect_true(px$get_exit_status() %in% c(0L, NA_integer_))
+    out <- tryCatch({
+      px2 <- process$new("true")
+      px2$wait(1)
+      "OK"
+    }, error = function(e) e)
+
+    list(out = out, status = px$get_exit_status())
+  })
+
+  expect_identical(res$result$out, "OK")
+  expect_true(res$result$status %in% c(0L, NA_integer_))
 })
 
 test_that("Notify old signal handler", {
