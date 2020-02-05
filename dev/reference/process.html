@@ -495,32 +495,11 @@ and <code>p2</code> are cleaned up immediately. Their connections will also be
 closed. The same happens at a regular exit.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fu'><a href='https://rdrr.io/r/base/identical.html'>identical</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/Sys.getenv.html'>Sys.getenv</a></span>(<span class='st'>"IN_PKGDOWN"</span>), <span class='st'>"true"</span>)) (<span class='kw'>if</span> (<span class='fu'><a href='https://rdrr.io/r/base/numeric_version.html'>getRversion</a></span>() <span class='kw'>&gt;=</span> <span class='st'>"3.4"</span>) <span class='no'>withAutoprint</span> <span class='kw'>else</span> <span class='no'>force</span>)({ <span class='co'># examplesIf</span>
-<span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='no'>process</span>$<span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"2"</span>)
-<span class='no'>p</span>$<span class='fu'>is_alive</span>()
-<span class='no'>p</span>
-<span class='no'>p</span>$<span class='fu'>kill</span>()
-<span class='no'>p</span>$<span class='fu'>is_alive</span>()
-
+    <pre class="examples"><div class='input'><span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='no'>process</span>$<span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"2"</span>)
+<span class='no'>p</span>$<span class='fu'>is_alive</span>()</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='no'>p</span></div><div class='output co'>#&gt; PROCESS 'sleep', running, pid 18386.</div><div class='input'><span class='no'>p</span>$<span class='fu'>kill</span>()</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='no'>p</span>$<span class='fu'>is_alive</span>()</div><div class='output co'>#&gt; [1] FALSE</div><div class='input'>
 <span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='no'>process</span>$<span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"1"</span>)
-<span class='no'>p</span>$<span class='fu'>is_alive</span>()
-<span class='fu'><a href='https://rdrr.io/r/base/Sys.sleep.html'>Sys.sleep</a></span>(<span class='fl'>2</span>)
-<span class='no'>p</span>$<span class='fu'>is_alive</span>()
-}) <span class='co'># examplesIf</span></div><div class='output co'>#&gt; &gt; p &lt;- process$new("sleep", "2")
-#&gt; &gt; p$is_alive()
-#&gt; [1] TRUE
-#&gt; &gt; p
-#&gt; PROCESS 'sleep', running, pid 72960.
-#&gt; &gt; p$kill()
-#&gt; [1] TRUE
-#&gt; &gt; p$is_alive()
-#&gt; [1] FALSE
-#&gt; &gt; p &lt;- process$new("sleep", "1")
-#&gt; &gt; p$is_alive()
-#&gt; [1] TRUE
-#&gt; &gt; Sys.sleep(2)
-#&gt; &gt; p$is_alive()
-#&gt; [1] FALSE</div></pre>
+<span class='no'>p</span>$<span class='fu'>is_alive</span>()</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Sys.sleep.html'>Sys.sleep</a></span>(<span class='fl'>2</span>)
+<span class='no'>p</span>$<span class='fu'>is_alive</span>()</div><div class='output co'>#&gt; [1] FALSE</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
