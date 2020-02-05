@@ -1,8 +1,8 @@
 
 # processx (development version)
 
-* Fix spinner not being displayed in `run()` and improve the spinner
-  flow sequence (#223).
+* `run()` now does a better job with displaying the spinner on terminals
+  that buffer the output (#223).
 
 * Error messages are now fully printed after an error. In non-interactive
   sessions, the stack trace is printed as well.
@@ -11,11 +11,12 @@
   name of the C function, and errors that belong to a process include the
   system command (#197).
 
-* Fix a SIGPIPE crash when trying to write to the subprocess that has
-  exited already.
+* processx does not crash now if the process receives a SIGPIPE signal when
+  trying to write to a pipe, of which the other end has already exited.
 
 * processx now to works better with fork clusters from the parallel
-  package. See TODO for details (#236).
+  package. See 'Mixing processx and the parallel base R package' in the
+  README file (#236).
 
 # processx 3.4.1
 
