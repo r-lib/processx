@@ -340,8 +340,12 @@ test_that("error is printed on error", {
     show = FALSE
   )
 
-  expect_true(any(grepl("No such file or directory", readLines(se))))
-  expect_false(any(grepl("Stack trace", readLines(se))))
+  selines <- readLines(se)
+  expect_true(
+    any(grepl("No such file or directory", selines)) ||
+    any(grepl("Command .* not found", selines))
+  )
+  expect_false(any(grepl("Stack trace", selines)))
 })
 
 test_that("trace is printed on error in non-interactive sessions", {
@@ -366,6 +370,10 @@ test_that("trace is printed on error in non-interactive sessions", {
     show = FALSE
   )
 
-  expect_true(any(grepl("No such file or directory", readLines(se))))
-  expect_true(any(grepl("Stack trace", readLines(se))))
+  selines <- readLines(se)
+  expect_true(
+    any(grepl("No such file or directory", selines)) ||
+      any(grepl("Command .* not found", selines))
+  )
+  expect_true(any(grepl("Stack trace", selines)))
 })
