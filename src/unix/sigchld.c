@@ -3,6 +3,9 @@
 
 extern processx__child_list_t *child_list;
 
+static struct sigaction old_sig_handler = {{ 0 }};
+int processx__notify_old_sigchld_handler = 0;
+
 void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
   if (sig != SIGCHLD) return;
 
@@ -67,23 +70,38 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
       ptr = next;
     }
   }
-}
 
-/* TODO: use oldact */
+  if (processx__notify_old_sigchld_handler) {
+    if (old_sig_handler.sa_handler != SIG_DFL &&
+        old_sig_handler.sa_handler != SIG_IGN &&
+        old_sig_handler.sa_handler != NULL) {
+      if (old_sig_handler.sa_flags | SA_SIGINFO) {
+        old_sig_handler.sa_sigaction(sig, info, NULL);
+      } else {
+        old_sig_handler.sa_handler(sig);
+      }
+    }
+  }
+}
 
 void processx__setup_sigchld() {
   struct sigaction action;
+  struct sigaction old;
   memset(&action, 0, sizeof(action));
   action.sa_sigaction = processx__sigchld_callback;
   action.sa_flags = SA_SIGINFO | SA_RESTART | SA_NOCLDSTOP;
-  sigaction(SIGCHLD, &action, /* oldact= */ NULL);
+  sigaction(SIGCHLD, &action, &old);
+  if (old.sa_sigaction != processx__sigchld_callback) {
+    memcpy(&old_sig_handler, &old, sizeof(old));
+  }
 }
 
 void processx__remove_sigchld() {
   struct sigaction action;
   memset(&action, 0, sizeof(action));
   action.sa_handler = SIG_DFL;
-  sigaction(SIGCHLD, &action, /* oldact= */ NULL);
+  sigaction(SIGCHLD, &action, &old_sig_handler);
+  memset(&old_sig_handler, 0, sizeof(old_sig_handler));
 }
 
 void processx__block_sigchld() {

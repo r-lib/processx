@@ -57,6 +57,8 @@ extern processx__child_list_t *child_list;
 extern processx__child_list_t child_free_list_head;
 extern processx__child_list_t *child_free_list;
 
+extern int processx__notify_old_sigchld_handler;
+
 /* We are trying to make sure that the variables in the library are
    properly set to their initial values after a library (re)load.
    This function is called from `R_init_processx`. */
@@ -71,6 +73,10 @@ void R_init_processx_unix() {
   child_free_list_head.weak_status = R_NilValue;
   child_free_list_head.next = 0;
   child_free_list = &child_free_list_head;
+
+  if (getenv("PROCESSX_NOTIFY_OLD_SIGCHLD")) {
+    processx__notify_old_sigchld_handler = 1;
+  }
 }
 
 int processx__pty_master_open(char *slave_name, size_t sn_len) {
