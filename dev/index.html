@@ -113,6 +113,7 @@
 <li><a href="#polling-multiple-processes">Polling multiple processes</a></li>
 <li><a href="#waiting-on-a-process">Waiting on a process</a></li>
 <li><a href="#exit-statuses">Exit statuses</a></li>
+<li><a href="#mixing-processx-and-the-parallel-base-r-package">Mixing processx and the parallel base R package</a></li>
 <li><a href="#errors-1">Errors</a></li>
 </ul>
 </li>
@@ -442,6 +443,11 @@
 <div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb66-1" data-line-number="1">p<span class="op">$</span><span class="kw">wait</span>()</a>
 <a class="sourceLine" id="cb66-2" data-line-number="2">p<span class="op">$</span><span class="kw">get_exit_status</span>()</a></code></pre></div>
 <pre><code>#&gt; [1] 0</code></pre>
+</div>
+<div id="mixing-processx-and-the-parallel-base-r-package" class="section level4">
+<h4 class="hasAnchor">
+<a href="#mixing-processx-and-the-parallel-base-r-package" class="anchor"></a>Mixing processx and the parallel base R package</h4>
+<p>In general, mixing processx (via callr or not) and parallel works fine. If you use parallel’s ‘fork’ clusters, e.g. via <code><a href="https://rdrr.io/r/parallel/mcparallel.html">parallel::mcparallel()</a></code>, then you might see two issues. One is that processx will not be able to determine the exit status of some processx processes. This is because the status is read out by parallel, and processx will set it to <code>NA</code>. The other one is that parallel might complain that it could not clean up some subprocesses. This is not an error, and it is harmless, but it does hold up R for about 10 seconds, before parallel gives up. To work around this, you can set the <code>PROCESSX_NOTIFY_OLD_SIGCHLD</code> environment variable to a non-empty value, before you load processx. This behavior might be the default in the future.</p>
 </div>
 <div id="errors-1" class="section level4">
 <h4 class="hasAnchor">
