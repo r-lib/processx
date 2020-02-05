@@ -363,6 +363,25 @@ err <- local({
     )
   }
 
+  package_env <- topenv()
+
+  rethrow_call_with_cleanup <- function(.NAME, ...) {
+    call <- sys.call()
+    nframe <- sys.nframe()
+    withCallingHandlers(
+      package_env$call_with_cleanup(.NAME, ...),
+      error = function(e) {
+        e$`_nframe` <- nframe
+        e$call <- call
+        if (inherits(e, "simpleError")) {
+          class(e) <- c("c_error", "rlib_error", "error", "condition")
+        }
+        e$`_ignore` <- list(c(nframe + 1L, sys.nframe() + 1L))
+        throw(e)
+      }
+    )
+  }
+
   # -- create traceback -------------------------------------------------
 
   #' Create a traceback
@@ -723,3 +742,4 @@ new_error <- err$new_error
 throw     <- err$throw
 rethrow   <- err$rethrow
 rethrow_call <- err$rethrow_call
+rethrow_call_with_cleanup <- err$.internal$rethrow_call_with_cleanup
