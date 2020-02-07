@@ -120,6 +120,7 @@
 <li><p>Further improved error messages. Errors from C code now include the name of the C function, and errors that belong to a process include the system command (<a href='https://github.com/r-lib/processx/issues/197'>#197</a>).</p></li>
 <li><p>processx does not crash now if the process receives a SIGPIPE signal when trying to write to a pipe, of which the other end has already exited.</p></li>
 <li><p>processx now to works better with fork clusters from the parallel package. See ‘Mixing processx and the parallel base R package’ in the README file (<a href='https://github.com/r-lib/processx/issues/236'>#236</a>).</p></li>
+<li><p>processx now does no block SIGCHLD by default in the subprocess, blocking potentially causes zombie sub-subprocesses (<a href='https://github.com/r-lib/processx/issues/240'>#240</a>).</p></li>
 </ul>
 </div>
     <div id="processx-3-4-1" class="section level1">
