@@ -18,6 +18,9 @@
   package. See 'Mixing processx and the parallel base R package' in the
   README file (#236).
 
+* processx now does no block SIGCHLD by default in the subprocess,
+  blocking potentially causes zombie sub-subprocesses (#240).
+
 # processx 3.4.1
 
 * Now `run()` does not create an `ok` variable in the global environment.
