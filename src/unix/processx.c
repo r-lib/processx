@@ -502,6 +502,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   if (pid == 0) {
     /* LCOV_EXCL_START */
     if (cpty) close(pty_master_fd);
+    processx__unblock_sigchld();
     processx__child_init(handle, pipes, num_connections, ccommand, cargs,
 			 signal_pipe[1], cstdin, cstdout, cstderr,
                          pty_name, cenv, &options, ctree_id);
