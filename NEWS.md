@@ -1,5 +1,5 @@
 
-# processx (development version)
+# processx 3.4.2
 
 * `run()` now does a better job with displaying the spinner on terminals
   that buffer the output (#223).
