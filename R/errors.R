@@ -78,6 +78,8 @@
 # * Update wording of error printout to be less intimidating, avoid jargon
 # * Use default printing in interactive mode, so RStudio can detect the
 #   error and highlight it.
+# * Add the rethrow_call_with_cleanup function, to work with embedded
+#   cleancall.
 
 err <- local({
 
@@ -364,6 +366,18 @@ err <- local({
   }
 
   package_env <- topenv()
+
+  #' Version of rethrow_call that supports cleancall
+  #'
+  #' This function is the same as [rethrow_call()], except that it
+  #' uses cleancall's [.Call()] wrapper, to enable resource cleanup.
+  #' See https://github.com/r-lib/cleancall#readme for more about
+  #' resource cleanup.
+  #'
+  #' @noRd
+  #' @param .NAME Compiled function to call, see [.Call()].
+  #' @param ... Function arguments, see [.Call()].
+  #' @return Result of the call.
 
   rethrow_call_with_cleanup <- function(.NAME, ...) {
     call <- sys.call()
