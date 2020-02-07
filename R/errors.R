@@ -78,6 +78,8 @@
 # * Update wording of error printout to be less intimidating, avoid jargon
 # * Use default printing in interactive mode, so RStudio can detect the
 #   error and highlight it.
+# * Add the rethrow_call_with_cleanup function, to work with embedded
+#   cleancall.
 
 err <- local({
 
@@ -351,6 +353,37 @@ err <- local({
     withCallingHandlers(
       # do.call to work around an R CMD check issue
       do.call(".Call", list(.NAME, ...)),
+      error = function(e) {
+        e$`_nframe` <- nframe
+        e$call <- call
+        if (inherits(e, "simpleError")) {
+          class(e) <- c("c_error", "rlib_error", "error", "condition")
+        }
+        e$`_ignore` <- list(c(nframe + 1L, sys.nframe() + 1L))
+        throw(e)
+      }
+    )
+  }
+
+  package_env <- topenv()
+
+  #' Version of rethrow_call that supports cleancall
+  #'
+  #' This function is the same as [rethrow_call()], except that it
+  #' uses cleancall's [.Call()] wrapper, to enable resource cleanup.
+  #' See https://github.com/r-lib/cleancall#readme for more about
+  #' resource cleanup.
+  #'
+  #' @noRd
+  #' @param .NAME Compiled function to call, see [.Call()].
+  #' @param ... Function arguments, see [.Call()].
+  #' @return Result of the call.
+
+  rethrow_call_with_cleanup <- function(.NAME, ...) {
+    call <- sys.call()
+    nframe <- sys.nframe()
+    withCallingHandlers(
+      package_env$call_with_cleanup(.NAME, ...),
       error = function(e) {
         e$`_nframe` <- nframe
         e$call <- call
@@ -723,3 +756,4 @@ new_error <- err$new_error
 throw     <- err$throw
 rethrow   <- err$rethrow
 rethrow_call <- err$rethrow_call
+rethrow_call_with_cleanup <- err$.internal$rethrow_call_with_cleanup

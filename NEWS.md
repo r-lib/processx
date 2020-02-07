@@ -21,6 +21,9 @@
 * processx now does no block SIGCHLD by default in the subprocess,
   blocking potentially causes zombie sub-subprocesses (#240).
 
+* The `process$wait()` method now does not leak file descriptors on
+  Unix when interrupted (#141).
+
 # processx 3.4.1
 
 * Now `run()` does not create an `ok` variable in the global environment.

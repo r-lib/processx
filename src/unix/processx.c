@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include "../processx.h"
+#include "../cleancall.h"
 
 /* Internals */
 
@@ -617,6 +618,14 @@ void processx__collect_exit_status(SEXP status, int retval, int wstat) {
   handle->collected = 1;
 }
 
+static void processx__wait_cleanup(void *ptr) {
+  int *fds = (int*) ptr;
+  if (!fds) return;
+  if (fds[0] >= 0) close(fds[0]);
+  if (fds[1] >= 0) close(fds[1]);
+  free(fds);
+}
+
 /* In general we need to worry about three asynchronous processes here:
  * 1. The main code, i.e. the code in this function.
  * 2. The finalizer, that can be triggered by any R function.
@@ -650,6 +659,11 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
   int ret = 0;
   pid_t pid;
 
+  int *fds = malloc(sizeof(int) * 2);
+  if (!fds) R_THROW_SYSTEM_ERROR("Allocating memory when waiting");
+  fds[0] = fds[1] = -1;
+  r_call_on_exit(processx__wait_cleanup, fds);
+
   processx__block_sigchld();
 
   if (!handle) {
@@ -674,6 +688,8 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
     processx__unblock_sigchld();
     R_THROW_SYSTEM_ERROR("processx error when waiting for '%s'", cname);
   }
+  fds[0] = handle->waitpipe[0];
+  fds[1] = handle->waitpipe[1];
   processx__nonblock_fcntl(handle->waitpipe[0], 1);
   processx__nonblock_fcntl(handle->waitpipe[1], 1);
 
@@ -683,6 +699,8 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
   fd.revents = 0;
 
   processx__unblock_sigchld();
+
+
 
   while (ctimeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
     do {
@@ -720,8 +738,7 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
   }
 
  cleanup:
-  if (handle->waitpipe[0] >= 0) close(handle->waitpipe[0]);
-  if (handle->waitpipe[1] >= 0) close(handle->waitpipe[1]);
+  /* pipe is closed in the on_exit handler */
   handle->waitpipe[0] = -1;
   handle->waitpipe[1] = -1;
 
