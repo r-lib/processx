@@ -8,11 +8,13 @@
 
 <title>External process — process • processx</title>
 
+
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
@@ -32,14 +34,15 @@
 
 
 
-<meta property="og:title" content="External process — process" />
 
+<meta property="og:title" content="External process — process" />
 <meta property="og:description" content="Managing external processes from R is not trivial, and this
 class aims to help with this deficiency. It is essentially a small
 wrapper around the system base R function, to return the process
 id of the started process, and set its standard output and error
 streams. The process id is then used to manage the process." />
 <meta name="twitter:card" content="summary" />
+
 
 
 
@@ -70,7 +73,7 @@ streams. The process id is then used to manage the process." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.2</span>
       </span>
     </div>
 
@@ -89,7 +92,6 @@ streams. The process id is then used to manage the process." />
   <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/r-lib/processx">
@@ -116,16 +118,15 @@ streams. The process id is then used to manage the process." />
     </div>
 
     <div class="ref-description">
-    
     <p>Managing external processes from R is not trivial, and this
 class aims to help with this deficiency. It is essentially a small
 wrapper around the <code>system</code> base R function, to return the process
 id of the started process, and set its standard output and error
 streams. The process id is then used to manage the process.</p>
-    
     </div>
 
-        
+
+
     <h2 class="hasAnchor" id="usage"><a class="anchor" href="#usage"></a>Usage</h2>
 
     
@@ -192,7 +193,6 @@ format(p)
 print(p)
 </pre>
 
-    
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
 
     
@@ -291,7 +291,6 @@ finished. Currently it only runs if <code>$get_result()</code> is called.
 It is only run once.</p></li>
 </ul>
 
-    
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     
@@ -458,7 +457,6 @@ data.</p></li>
 process, usually for printing.</p>
 <p><code><a href='https://rdrr.io/r/base/print.html'>print(p)</a></code> or <code>p$print()</code> shows some information about the
 process on the screen, whether it is running and it's process id, etc.</p>
-    
     <h2 class="hasAnchor" id="polling"><a class="anchor" href="#polling"></a>Polling</h2>
 
     
@@ -470,7 +468,6 @@ in either of them, or they are closed (e.g. because the process exits)
 <p>In addition to polling a single process, the <code><a href='poll.html'>poll()</a></code> function
 can poll the output of several processes, and returns as soon as any
 of them has generated output (or exited).</p>
-    
     <h2 class="hasAnchor" id="cleaning-up-background-processes"><a class="anchor" href="#cleaning-up-background-processes"></a>Cleaning up background processes</h2>
 
     
@@ -481,7 +478,7 @@ also set to <code>TRUE</code>).</p>
 <p>The cleanup happens when the references of the processes object are
 garbage collected. To clean up earlier, you can call the <code>kill()</code> or
 <code>kill_tree()</code> method of the process(es), from an <code><a href='https://rdrr.io/r/base/on.exit.html'>on.exit()</a></code> expression,
-or an error handler:</p><pre>process_manager &lt;- function() {
+or an error handler:<div class="r"></p><pre>process_manager &lt;- function() {
   on.exit({
     try(p1$kill(), silent = TRUE)
     try(p2$kill(), silent = TRUE)
@@ -492,42 +489,26 @@ or an error handler:</p><pre>process_manager &lt;- function() {
   p2$wait()
 }
 process_manager()
-</pre>
-
+</pre><p></div></p>
 <p>If you interrupt <code>process_manager()</code> or an error happens then both <code>p1</code>
 and <code>p2</code> are cleaned up immediately. Their connections will also be
 closed. The same happens at a regular exit.</p>
-    
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='co'># CRAN does not like long-running examples</span>
-<span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='no'>process</span>$<span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"2"</span>)
-<span class='no'>p</span>$<span class='fu'>is_alive</span>()
-<span class='no'>p</span>
-<span class='no'>p</span>$<span class='fu'>kill</span>()
-<span class='no'>p</span>$<span class='fu'>is_alive</span>()
-
-<span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='no'>process</span>$<span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"2"</span>)
-<span class='no'>p</span>$<span class='fu'>is_alive</span>()
-<span class='fu'><a href='https://rdrr.io/r/base/Sys.sleep.html'>Sys.sleep</a></span>(<span class='fl'>3</span>)
-<span class='no'>p</span>$<span class='fu'>is_alive</span>()
-}</div></pre>
+    <pre class="examples"><div class='input'><span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='no'>process</span>$<span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"2"</span>)
+<span class='no'>p</span>$<span class='fu'>is_alive</span>()</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='no'>p</span></div><div class='output co'>#&gt; PROCESS 'sleep', running, pid 18781.</div><div class='input'><span class='no'>p</span>$<span class='fu'>kill</span>()</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='no'>p</span>$<span class='fu'>is_alive</span>()</div><div class='output co'>#&gt; [1] FALSE</div><div class='input'>
+<span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='no'>process</span>$<span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"1"</span>)
+<span class='no'>p</span>$<span class='fu'>is_alive</span>()</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Sys.sleep.html'>Sys.sleep</a></span>(<span class='fl'>2</span>)
+<span class='no'>p</span>$<span class='fu'>is_alive</span>()</div><div class='output co'>#&gt; [1] FALSE</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
-      
       <li><a href="#usage">Usage</a></li>
-
       <li><a href="#arguments">Arguments</a></li>
-
       <li><a href="#details">Details</a></li>
-
       <li><a href="#polling">Polling</a></li>
-
       <li><a href="#cleaning-up-background-processes">Cleaning up background processes</a></li>
-      
       <li><a href="#examples">Examples</a></li>
     </ul>
 

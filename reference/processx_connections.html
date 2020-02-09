@@ -8,11 +8,13 @@
 
 <title>Processx connections — conn_create_fd • processx</title>
 
+
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
@@ -32,12 +34,13 @@
 
 
 
-<meta property="og:title" content="Processx connections — conn_create_fd" />
 
+<meta property="og:title" content="Processx connections — conn_create_fd" />
 <meta property="og:description" content="These functions are currently experimental and will change
 in the future. Note that processx connections are  not
 compatible with R's built-in connection system." />
 <meta name="twitter:card" content="summary" />
+
 
 
 
@@ -68,7 +71,7 @@ compatible with R's built-in connection system." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.2</span>
       </span>
     </div>
 
@@ -87,7 +90,6 @@ compatible with R's built-in connection system." />
   <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/r-lib/processx">
@@ -114,11 +116,9 @@ compatible with R's built-in connection system." />
     </div>
 
     <div class="ref-description">
-    
     <p>These functions are currently experimental and will change
 in the future. Note that processx connections are  <em>not</em>
 compatible with R's built-in connection system.</p>
-    
     </div>
 
     <pre class="usage"><span class='fu'>conn_create_fd</span>(<span class='no'>fd</span>, <span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>, <span class='kw'>close</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
@@ -149,8 +149,7 @@ compatible with R's built-in connection system.</p>
 <span class='fu'>conn_write</span>(<span class='no'>con</span>, <span class='no'>str</span>, <span class='kw'>sep</span> <span class='kw'>=</span> <span class='st'>"\n"</span>, <span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>)
 
 <span class='co'># S3 method for processx_connection</span>
-<span class='fu'>conn_write</span>(<span class='no'>con</span>, <span class='no'>str</span>, <span class='kw'>sep</span> <span class='kw'>=</span> <span class='st'>"\n"</span>,
-  <span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>)
+<span class='fu'>conn_write</span>(<span class='no'>con</span>, <span class='no'>str</span>, <span class='kw'>sep</span> <span class='kw'>=</span> <span class='st'>"\n"</span>, <span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>)
 
 <span class='fu'>processx_conn_write</span>(<span class='no'>con</span>, <span class='no'>str</span>, <span class='kw'>sep</span> <span class='kw'>=</span> <span class='st'>"\n"</span>, <span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>)
 
@@ -168,7 +167,7 @@ compatible with R's built-in connection system.</p>
 <span class='fu'><a href='https://rdrr.io/r/base/connections.html'>close</a></span>(<span class='no'>con</span>, <span class='no'>...</span>)
 
 <span class='fu'>processx_conn_close</span>(<span class='no'>con</span>, <span class='no'>...</span>)</pre>
-    
+
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
@@ -233,7 +232,7 @@ open and return a connection to it.</p></td>
 generic, currently ignored by processx.</p></td>
     </tr>
     </table>
-    
+
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
     <p><code>conn_create_fd()</code> creates a connection from a file descriptor.</p>
@@ -261,16 +260,14 @@ process to avoid inheriting the inherited handles even further.
 The function is best effort to close the handles, it might still leave
 some handles open. It should work for <code>stdin</code>, <code>stdout</code> and <code>stderr</code>,
 at least.</p>
-    
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
-      
       <li><a href="#details">Details</a></li>
-          </ul>
+    </ul>
 
   </div>
 </div>

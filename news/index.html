@@ -8,11 +8,13 @@
 
 <title>Changelog • processx</title>
 
+
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
 
 <!-- Font Awesome icons -->
@@ -32,7 +34,9 @@
 
 
 
+
 <meta property="og:title" content="Changelog" />
+
 
 
 
@@ -63,7 +67,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.2</span>
       </span>
     </div>
 
@@ -82,7 +86,6 @@
   <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
-      
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/r-lib/processx">
@@ -107,17 +110,31 @@
       <small>Source: <a href='https://github.com/r-lib/processx/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
-    <div id="processx-341" class="section level1">
+    <div id="processx-3-4-2" class="section level1">
 <h1 class="page-header">
-<a href="#processx-341" class="anchor"></a>processx 3.4.1<small> 2019-07-18 </small>
+<a href="#processx-3-4-2" class="anchor"></a>processx 3.4.2<small> 2020-02-09 </small>
+</h1>
+<ul>
+<li><p><code><a href="../reference/run.html">run()</a></code> now does a better job with displaying the spinner on terminals that buffer the output (<a href='https://github.com/r-lib/processx/issues/223'>#223</a>).</p></li>
+<li><p>Error messages are now fully printed after an error. In non-interactive sessions, the stack trace is printed as well.</p></li>
+<li><p>Further improved error messages. Errors from C code now include the name of the C function, and errors that belong to a process include the system command (<a href='https://github.com/r-lib/processx/issues/197'>#197</a>).</p></li>
+<li><p>processx does not crash now if the process receives a SIGPIPE signal when trying to write to a pipe, of which the other end has already exited.</p></li>
+<li><p>processx now to works better with fork clusters from the parallel package. See ‘Mixing processx and the parallel base R package’ in the README file (<a href='https://github.com/r-lib/processx/issues/236'>#236</a>).</p></li>
+<li><p>processx now does no block SIGCHLD by default in the subprocess, blocking potentially causes zombie sub-subprocesses (<a href='https://github.com/r-lib/processx/issues/240'>#240</a>).</p></li>
+<li><p>The <code>process$wait()</code> method now does not leak file descriptors on Unix when interrupted (<a href='https://github.com/r-lib/processx/issues/141'>#141</a>).</p></li>
+</ul>
+</div>
+    <div id="processx-3-4-1" class="section level1">
+<h1 class="page-header">
+<a href="#processx-3-4-1" class="anchor"></a>processx 3.4.1<small> 2019-07-18 </small>
 </h1>
 <ul>
 <li>Now <code><a href="../reference/run.html">run()</a></code> does not create an <code>ok</code> variable in the global environment.</li>
 </ul>
 </div>
-    <div id="processx-340" class="section level1">
+    <div id="processx-3-4-0" class="section level1">
 <h1 class="page-header">
-<a href="#processx-340" class="anchor"></a>processx 3.4.0<small> 2019-07-03 </small>
+<a href="#processx-3-4-0" class="anchor"></a>processx 3.4.0<small> 2019-07-03 </small>
 </h1>
 <ul>
 <li><p>Processx has now better error messages, in particular, all errors from C code contain the file name and line number, and the system error code and message (where applicable).</p></li>
@@ -131,17 +148,17 @@
 <li><p><code><a href="../reference/run.html">run()</a></code> now does not error if the process is killed in a callback.</p></li>
 </ul>
 </div>
-    <div id="processx-331" class="section level1">
+    <div id="processx-3-3-1" class="section level1">
 <h1 class="page-header">
-<a href="#processx-331" class="anchor"></a>processx 3.3.1<small> 2019-05-08 </small>
+<a href="#processx-3-3-1" class="anchor"></a>processx 3.3.1<small> 2019-05-08 </small>
 </h1>
 <ul>
 <li>Fix a crash on Windows, when a connection that has a pending read internally is finalized.</li>
 </ul>
 </div>
-    <div id="processx-330" class="section level1">
+    <div id="processx-3-3-0" class="section level1">
 <h1 class="page-header">
-<a href="#processx-330" class="anchor"></a>processx 3.3.0<small> 2019-03-10 </small>
+<a href="#processx-3-3-0" class="anchor"></a>processx 3.3.0<small> 2019-03-10 </small>
 </h1>
 <ul>
 <li><p><code>process</code> can now redirect the standard error to the standard output, via specifying <code>stderr = "2&gt;&amp;1"</code>. This works both with files and pipes.</p></li>
@@ -150,17 +167,17 @@
 <li><p><code><a href="../reference/run.html">run()</a></code> now always kills the process (and its process tree if <code>cleanup_tree</code> is <code>TRUE</code>) before exiting. This also closes all pipe connections (<a href='https://github.com/r-lib/processx/issues/149'>#149</a>).</p></li>
 </ul>
 </div>
-    <div id="processx-321" class="section level1">
+    <div id="processx-3-2-1" class="section level1">
 <h1 class="page-header">
-<a href="#processx-321" class="anchor"></a>processx 3.2.1<small> 2018-12-05 </small>
+<a href="#processx-3-2-1" class="anchor"></a>processx 3.2.1<small> 2018-12-05 </small>
 </h1>
 <ul>
 <li>processx does not depend on assertthat now, and the crayon package is now an optional dependency.</li>
 </ul>
 </div>
-    <div id="processx-320" class="section level1">
+    <div id="processx-3-2-0" class="section level1">
 <h1 class="page-header">
-<a href="#processx-320" class="anchor"></a>processx 3.2.0<small> 2018-08-16 </small>
+<a href="#processx-3-2-0" class="anchor"></a>processx 3.2.0<small> 2018-08-16 </small>
 </h1>
 <ul>
 <li><p>New <code>process$kill_tree()</code> method, and new <code>cleanup_tree</code> arguments in <code><a href="../reference/run.html">run()</a></code> and <code>process$new()</code>, to clean up the process tree rooted at a processx process. (<a href='https://github.com/r-lib/processx/issues/139'>#139</a>, <a href='https://github.com/r-lib/processx/issues/143'>#143</a>).</p></li>
@@ -178,9 +195,9 @@
 <li><p>When <code><a href="../reference/run.html">run()</a></code> is interrupted, no error message is printed, just like for interruption of R code in general. The thrown condition now also has the <code>interrupt</code> class (<a href='https://github.com/r-lib/processx/issues/148'>#148</a>).</p></li>
 </ul>
 </div>
-    <div id="processx-310" class="section level1">
+    <div id="processx-3-1-0" class="section level1">
 <h1 class="page-header">
-<a href="#processx-310" class="anchor"></a>processx 3.1.0<small> 2018-05-15 </small>
+<a href="#processx-3-1-0" class="anchor"></a>processx 3.1.0<small> 2018-05-15 </small>
 </h1>
 <ul>
 <li><p>Fix interference with the parallel package, and other packages that redefine the <code>SIGCHLD</code> signal handler on Unix. If the processx signal handler is overwritten, we might miss the exit status of some processes (they are set to <code>NA</code>).</p></li>
@@ -191,9 +208,9 @@
 <li><p>Fix a race condition on Windows, when creating named pipes for stdout or stderr. The client sometimes didn’t wait for the server, and processx failed with ERROR_PIPE_BUSY (231, All pipe instances are busy).</p></li>
 </ul>
 </div>
-    <div id="processx-303" class="section level1">
+    <div id="processx-3-0-3" class="section level1">
 <h1 class="page-header">
-<a href="#processx-303" class="anchor"></a>processx 3.0.3<small> 2018-05-07 </small>
+<a href="#processx-3-0-3" class="anchor"></a>processx 3.0.3<small> 2018-05-07 </small>
 </h1>
 <ul>
 <li><p>Fix a crash on windows when trying to run a non-existing command (<a href='https://github.com/r-lib/processx/issues/90'>#90</a>)</p></li>
@@ -214,15 +231,15 @@
 <li><p>Fixes when running under job control that does not allow breaking away from the job, on Windows.</p></li>
 </ul>
 </div>
-    <div id="processx-2001" class="section level1">
+    <div id="processx-2-0-0-1" class="section level1">
 <h1 class="page-header">
-<a href="#processx-2001" class="anchor"></a>processx 2.0.0.1<small> 2017-07-30 </small>
+<a href="#processx-2-0-0-1" class="anchor"></a>processx 2.0.0.1<small> 2017-07-30 </small>
 </h1>
 <p>This is an unofficial release, created by CRAN, to fix compilation on Solaris.</p>
 </div>
-    <div id="processx-200" class="section level1">
+    <div id="processx-2-0-0" class="section level1">
 <h1 class="page-header">
-<a href="#processx-200" class="anchor"></a>processx 2.0.0<small> 2017-05-30 </small>
+<a href="#processx-2-0-0" class="anchor"></a>processx 2.0.0<small> 2017-05-30 </small>
 </h1>
 <p>First public release.</p>
 </div>
@@ -232,16 +249,17 @@
     <div id="tocnav">
       <h2>Contents</h2>
       <ul class="nav nav-pills nav-stacked">
-        <li><a href="#processx-341">3.4.1</a></li>
-        <li><a href="#processx-340">3.4.0</a></li>
-        <li><a href="#processx-331">3.3.1</a></li>
-        <li><a href="#processx-330">3.3.0</a></li>
-        <li><a href="#processx-321">3.2.1</a></li>
-        <li><a href="#processx-320">3.2.0</a></li>
-        <li><a href="#processx-310">3.1.0</a></li>
-        <li><a href="#processx-303">3.0.3</a></li>
-        <li><a href="#processx-2001">2.0.0.1</a></li>
-        <li><a href="#processx-200">2.0.0</a></li>
+        <li><a href="#processx-3-4-2">3.4.2</a></li>
+        <li><a href="#processx-3-4-1">3.4.1</a></li>
+        <li><a href="#processx-3-4-0">3.4.0</a></li>
+        <li><a href="#processx-3-3-1">3.3.1</a></li>
+        <li><a href="#processx-3-3-0">3.3.0</a></li>
+        <li><a href="#processx-3-2-1">3.2.1</a></li>
+        <li><a href="#processx-3-2-0">3.2.0</a></li>
+        <li><a href="#processx-3-1-0">3.1.0</a></li>
+        <li><a href="#processx-3-0-3">3.0.3</a></li>
+        <li><a href="#processx-2-0-0-1">2.0.0.1</a></li>
+        <li><a href="#processx-2-0-0">2.0.0</a></li>
       </ul>
     </div>
   </div>
