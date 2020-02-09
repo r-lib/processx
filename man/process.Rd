@@ -10,372 +10,6 @@ wrapper around the \code{system} base R function, to return the process
 id of the started process, and set its standard output and error
 streams. The process id is then used to manage the process.
 }
-\section{Usage}{
-\preformatted{p <- process$new(command = NULL, args,
-                 stdin = NULL, stdout = NULL, stderr = NULL,
-                 pty = FALSE, pty_options = list(),
-                 connections = list(), poll_connection = NULL,
-                 env = NULL, cleanup = TRUE, cleanup_tree = FALSE,
-                 wd = NULL, echo_cmd = FALSE, supervise = FALSE,
-                 windows_verbatim_args = FALSE,
-                 windows_hide_window = FALSE,
-                 encoding = "", post_process = NULL)
-
-p$is_alive()
-p$signal(signal)
-p$interrupt()
-p$kill(grace = 0.1, close_connections = TRUE)
-p$kill_tree(grace = 0.1, close_connections = TRUE)
-p$wait(timeout = -1)
-p$get_pid()
-p$get_exit_status()
-p$get_start_time()
-
-p$read_output(n = -1)
-p$read_error(n = -1)
-p$read_output_lines(n = -1)
-p$read_error_lines(n = -1)
-p$has_input_connection()
-p$has_output_connection()
-p$has_error_connection()
-p$has_poll_connection()
-p$get_input_connection()
-p$get_output_connection()
-p$get_error_connection()
-p$get_poll_connection()
-p$is_incomplete_output()
-p$is_incomplete_error()
-p$read_all_output()
-p$read_all_error()
-p$read_all_output_lines()
-p$read_all_error_lines()
-p$write_input(str, sep = "\\n")
-p$get_input_file()
-p$get_output_file()
-p$get_error_file()
-
-p$poll_io(timeout)
-
-p$get_result()
-
-p$as_ps_handle()
-p$get_name()
-p$get_exe()
-p$get_cmdline()
-p$get_status()
-p$get_username()
-p$get_wd()
-p$get_cpu_times()
-p$get_memory_info()
-p$suspend()
-p$resume()
-
-format(p)
-print(p)
-}
-}
-
-\section{Arguments}{
-
-\itemize{
-\item \code{p}: \code{process} object.
-\item \code{command}: Character scalar, the command to run.
-Note that this argument is not passed to a shell, so no
-tilde-expansion or variable substitution is performed on it.
-It should not be quoted with \code{\link[base:shQuote]{base::shQuote()}}. See
-\code{\link[base:normalizePath]{base::normalizePath()}} for tilde-expansion.
-\item \code{args}: Character vector, arguments to the command. They will be
-used as is, without a shell. They don't need to be escaped.
-\item \code{stdin}: What to do with the standard input. Possible values:
-\code{NULL}: set to the \emph{null device}, i.e. no standard input is
-provided; a file name, use this file as standard input;
-\code{"|"}: create a (writeable) connection for stdin.
-\item \code{stdout}: What to do with the standard output. Possible values:
-\code{NULL}: discard it; a string, redirect it to this file;
-\code{"|"}: create a connection for it.
-\item \code{stderr}: What to do with the standard error. Possible values:
-\code{NULL}: discard it; a string, redirect it to this file;
-\code{"|"}: create a connection for it; \code{"2>&1"}: redirect it to the
-same connection (i.e. pipe or file) as \code{stdout}. \code{"2>&1"} is a
-way to keep standard output and error correctly interleaved.
-\item \code{pty}: Whether to create a pseudo terminal (pty) for the background
-process. This is currently only supported on Unix systems, but
-not supported on Solaris.
-If it is \code{TRUE}, then the \code{stdin}, \code{stdout} and \code{stderr} arguments
-must be \code{NULL}. If a pseudo terminal is created, then processx
-will create pipes for standard input and standard output. There is
-no separate pipe for standard error, because there is no way to
-distinguish between stdout and stderr on a pty. Note that the
-standard output connection of the pty is \emph{blocking}, so we always
-poll the standard output connection before reading from it using
-the \verb{$read_output()} method. Also, because \verb{$read_output_lines()}
-could still block if no complete line is available, this function
-always fails if the process has a pty. Use \verb{$read_output()} to
-read from ptys.
-\item \code{pty_options}: Unix pseudo terminal options, a named list. see
-\code{\link[=default_pty_options]{default_pty_options()}} for details and defaults.
-\item \code{connections}: A list of connections to pass to the child process.
-This is an experimental feature currently.
-\item \code{poll_connection}: Whether to create an extra connection to the process
-that allows polling, even if the standard input and standard output
-are not pipes. If this is \code{NULL} (the default), then this connection
-will be only created if standard output and standard error are not
-pipes, and \code{connections} is an empty list. If the poll connection is
-created, you can query it via \code{p$get_poll_connection()} and it is
-also included in the response to \code{p$poll_io()} and \code{\link[=poll]{poll()}}. The
-numeric file descriptor of the poll connection comes right after
-\code{stderr} (2), and the connections listed in \code{connections}.
-\item \code{env}: Environment variables of the child process. If \code{NULL}, the
-parent's environment is inherited. On Windows, many programs cannot
-function correctly if some environment variables are not set, so we
-always set \code{HOMEDRIVE}, \code{HOMEPATH}, \code{LOGONSERVER}, \code{PATH},
-\code{SYSTEMDRIVE}, \code{SYSTEMROOT}, \code{TEMP}, \code{USERDOMAIN}, \code{USERNAME},
-\code{USERPROFILE} and \code{WINDIR}.
-\item \code{cleanup}: Whether to kill the process when the \code{process} object is
-garbage collected.
-\item \code{cleanup_tree}: Whether to kill the process and its child process tree
-when the \code{process} object is garbage collected.
-\item \code{wd}: working directory of the process. It must exist. If \code{NULL}, then
-the current working directory is used.
-\item \code{echo_cmd}: Whether to print the command to the screen before
-running it.
-\item \code{supervise}: Whether to register the process with a supervisor.
-If \code{TRUE}, the supervisor will ensure that the process is
-killed when the R process exits.
-\item \code{windows_verbatim_args}: Whether to omit quoting the arguments
-on Windows. It is ignored on other platforms.
-\item \code{windows_hide_window}: Whether to hide the application's window
-on Windows. It is ignored on other platforms.
-\item \code{signal}: An integer scalar, the id of the signal to send to
-the process. See \code{\link[tools:pskill]{tools::pskill()}} for the list of signals.
-\item \code{grace}: Currently not used.
-\item \code{close_connections}: Whether to close standard input, standard output,
-standard error connections and the poll connection, after killing
-the process.
-\item \code{timeout}: Timeout in milliseconds, for the wait or the I/O
-polling.
-\item \code{n}: Number of characters or lines to read.
-\item \code{str}: Character or raw vector to write to the standard input of the
-process. If a character vector with a marked encoding, it will be
-converted to \code{encoding}.
-\item \code{sep}: Separator to add between \code{str} elements if it is a character
-vector. It is ignored if \code{str} is a raw vector.
-\item \code{encoding}: The encoding to assume for \code{stdin}, \code{stdout} and
-\code{stderr}. By default the encoding of the current locale is
-used. Note that \code{processx} always reencodes the output of the
-\code{stdout} and \code{stderr}  streams in UTF-8 currently.
-If you want to read them without any conversion, on all platforms,
-specify \code{"UTF-8"} as encoding.
-\item \code{post_process}: An optional function to run when the process has
-finished. Currently it only runs if \verb{$get_result()} is called.
-It is only run once.
-}
-}
-
-\section{Details}{
-
-\verb{$new()} starts a new process in the background, and then returns
-immediately.
-
-\verb{$is_alive()} checks if the process is alive. Returns a logical
-scalar.
-
-\verb{$signal()} sends a signal to the process. On Windows only the
-\code{SIGINT}, \code{SIGTERM} and \code{SIGKILL} signals are interpreted,
-and the special 0 signal, The first three all kill the process. The 0
-signal return \code{TRUE} if the process is alive, and \code{FALSE}
-otherwise. On Unix all signals are supported that the OS supports, and
-the 0 signal as well.
-
-\verb{$interrupt()} sends an interrupt to the process. On Unix this is a
-\code{SIGINT} signal, and it is usually equivalent to pressing CTRL+C at the
-terminal prompt. On Windows, it is a CTRL+BREAK keypress. Applications
-may catch these events. By default they will quit.
-
-\verb{$kill()} kills the process. It also kills all of its child
-processes, except if they have created a new process group (on Unix),
-or job object (on Windows). It returns \code{TRUE} if the process
-was killed, and \code{FALSE} if it was no killed (because it was
-already finished/dead when \code{processx} tried to kill it).
-
-\verb{$kill_tree()} performs process tree cleanup, it kills the process
-(if still alive), together with any child (or grandchild, etc.)
-processes. It uses the \emph{ps} package, so that needs to be installed,
-and \emph{ps} needs to support the current platform as well. Process tree
-cleanup works by marking the process with an environment variable,
-which is inherited in all child processes. This allows finding
-descendents, even if they are orphaned, i.e. they are not connected
-to the root of the tree cleanup in the process tree any more.
-\verb{$kill_tree()} returns a named integer vector of the process ids that
-were killed, the names are the names of the processes (e.g. \code{"sleep"},
-\code{"notepad.exe"}, \code{"Rterm.exe"}, etc.).
-
-\verb{$wait()} waits until the process finishes, or a timeout happens.
-Note that if the process never finishes, and the timeout is infinite
-(the default), then R will never regain control. It returns
-the process itself, invisibly. In some rare cases, \verb{$wait()} might take
-a bit longer than specified to time out. This happens on Unix, when
-another package overwrites the processx SIGCHLD signal handler, after the
-processx process has started. One such package is parallel, if used
-with fork clusters, e.g. through \code{parallel::mcparallel()}.
-
-\verb{$get_pid()} returns the process id of the process.
-
-\verb{$get_exit_status} returns the exit code of the process if it has
-finished and \code{NULL} otherwise. On Unix, in some rare cases, the exit
-status might be \code{NA}. This happens if another package (or R itself)
-overwrites the processx SIGCHLD handler, after the processx process
-has started. In these cases processx cannot determine the real exit
-status of the process. One such package is parallel, if used with
-fork clusters, e.g. through the \code{parallel::mcparallel()} function.
-
-\verb{$get_start_time()} returns the time when the process was
-started.
-
-\verb{$is_supervised()} returns whether the process is being tracked by
-supervisor process.
-
-\verb{$supervise()} if passed \code{TRUE}, tells the supervisor to start
-tracking the process. If \code{FALSE}, tells the supervisor to stop
-tracking the process. Note that even if the supervisor is disabled for a
-process, if it was started with \code{cleanup = TRUE}, the process will
-still be killed when the object is garbage collected.
-
-\verb{$read_output()} reads from the standard output connection of the
-process. If the standard output connection was not requested, then
-then it returns an error. It uses a non-blocking text connection. This
-will work only if \code{stdout="|"} was used. Otherwise, it will throw an
-error.
-
-\verb{$read_error()} is similar to \verb{$read_output}, but it reads
-from the standard error stream.
-
-\verb{$read_output_lines()} reads lines from standard output connection
-of the process. If the standard output connection was not requested, then
-then it returns an error. It uses a non-blocking text connection. This
-will work only if \code{stdout="|"} was used. Otherwise, it will throw an
-error.
-
-\verb{$read_error_lines()} is similar to \verb{$read_output_lines}, but
-it reads from the standard error stream.
-
-\verb{$has_input_connection()} return \code{TRUE} if there is a connection
-object for standard input; in other words, if \code{stdout="|"}. It returns
-\code{FALSE} otherwise.
-
-\verb{$has_output_connection()} returns \code{TRUE} if there is a connection
-object for standard output; in other words, if \code{stdout="|"}. It returns
-\code{FALSE} otherwise.
-
-\verb{$has_error_connection()} returns \code{TRUE} if there is a connection
-object for standard error; in other words, if \code{stderr="|"}. It returns
-\code{FALSE} otherwise.
-
-\verb{$has_poll_connection()} return \code{TRUE} if there is a poll connection,
-\code{FALSE} otherwise.
-
-\verb{$get_input_connection()} returns a connection object, to the
-standard input stream of the process.
-
-\verb{$get_output_connection()} returns a connection object, to the
-standard output stream of the process.
-
-\verb{$get_error_conneciton()} returns a connection object, to the
-standard error stream of the process.
-
-\verb{$get_poll_connetion()} returns the poll connection, if the process has
-one.
-
-\verb{$is_incomplete_output()} return \code{FALSE} if the other end of
-the standard output connection was closed (most probably because the
-process exited). It return \code{TRUE} otherwise.
-
-\verb{$is_incomplete_error()} return \code{FALSE} if the other end of
-the standard error connection was closed (most probably because the
-process exited). It return \code{TRUE} otherwise.
-
-\verb{$read_all_output()} waits for all standard output from the process.
-It does not return until the process has finished.
-Note that this process involves waiting for the process to finish,
-polling for I/O and potentically several \code{readLines()} calls.
-It returns a character scalar. This will return content only if
-\code{stdout="|"} was used. Otherwise, it will throw an error.
-
-\verb{$read_all_error()} waits for all standard error from the process.
-It does not return until the process has finished.
-Note that this process involves waiting for the process to finish,
-polling for I/O and potentically several \code{readLines()} calls.
-It returns a character scalar. This will return content only if
-\code{stderr="|"} was used. Otherwise, it will throw an error.
-
-\verb{$read_all_output_lines()} waits for all standard output lines
-from a process. It does not return until the process has finished.
-Note that this process involves waiting for the process to finish,
-polling for I/O and potentically several \code{readLines()} calls.
-It returns a character vector. This will return content only if
-\code{stdout="|"} was used. Otherwise, it will throw an error.
-
-\verb{$read_all_error_lines()} waits for all standard error lines from
-a process. It does not return until the process has finished.
-Note that this process involves waiting for the process to finish,
-polling for I/O and potentically several \code{readLines()} calls.
-It returns a character vector. This will return content only if
-\code{stderr="|"} was used. Otherwise, it will throw an error.
-
-\verb{$write_input()} writes the character vector (separated by \code{sep}) to
-the standard input of the process. It will be converted to the specified
-encoding. This operation is non-blocking, and it will return, even if
-the write fails (because the write buffer is full), or if it suceeds
-partially (i.e. not the full string is written). It returns with a raw
-vector, that contains the bytes that were not written. You can supply
-this raw vector to \verb{$write_input()} again, until it is fully written,
-and then the return value will be \code{raw(0)} (invisibly).
-
-\verb{$get_input_file()} if the \code{stdin} argument was a filename,
-this returns the absolute path to the file. If \code{stdin} was \code{"|"} or
-\code{NULL}, this simply returns that value.
-
-\verb{$get_output_file()} if the \code{stdout} argument was a filename,
-this returns the absolute path to the file. If \code{stdout} was \code{"|"} or
-\code{NULL}, this simply returns that value.
-
-\verb{$get_error_file()} if the \code{stderr} argument was a filename,
-this returns the absolute path to the file. If \code{stderr} was \code{"|"} or
-\code{NULL}, this simply returns that value.
-
-\verb{$poll_io()} polls the process's connections for I/O. See more in
-the \emph{Polling} section, and see also the \code{\link[=poll]{poll()}} function
-to poll on multiple processes.
-
-\verb{$get_result()} returns the result of the post processesing function.
-It can only be called once the process has finished. If the process has
-no post-processing function, then \code{NULL} is returned.
-
-\verb{$as_ps_handle()} returns a \link[ps:ps_handle]{ps::ps_handle} object, corresponding to
-the process. The following methods use the ps package on a \code{ps_handle}
-object, created automatically:
-\itemize{
-\item \code{p$get_name()} calls \code{\link[ps:ps_name]{ps::ps_name()}} to get the process name.
-\item \code{p$get_exe()} calls \code{\link[ps:ps_exe]{ps::ps_exe()}} to get the path of the executable.
-\item \code{p$get_cmdline()} calls \code{\link[ps:ps_cmdline]{ps::ps_cmdline()}} to get the command line.
-\item \code{p$get_status()} calls \code{\link[ps:ps_status]{ps::ps_status()}} to get the process status.
-\item \code{p$get_username()} calls \code{\link[ps:ps_username]{ps::ps_username()}} to get the username.
-\item \code{p$get_wd()} calls \code{\link[ps:ps_cwd]{ps::ps_cwd()}} to get the current working
-directory.
-\item \code{p$get_cpu_times()} calls \code{\link[ps:ps_cpu_times]{ps::ps_cpu_times()}} to get CPU usage data.
-\item \code{p$get_memory_info()} calls \code{\link[ps:ps_memory_info]{ps::ps_memory_info()}} to get memory usage
-data.
-\item \code{p$suspend()} calls \code{\link[ps:ps_suspend]{ps::ps_suspend()}} to suspend the process.
-\item \code{p$resume()} calls \code{\link[ps:ps_resume]{ps::ps_resume()}} to resume a suspended process.
-}
-
-\code{format(p)} or \code{p$format()} creates a string representation of the
-process, usually for printing.
-
-\code{print(p)} or \code{p$print()} shows some information about the
-process on the screen, whether it is running and it's process id, etc.
-}
-
 \section{Polling}{
 
 The \code{poll_io()} function polls the standard output and standard
@@ -428,4 +62,859 @@ p$is_alive()
 Sys.sleep(2)
 p$is_alive()
 \dontshow{\}) # examplesIf}
+}
+\section{Methods}{
+\subsection{Public methods}{
+\itemize{
+\item \href{#method-new}{\code{process$new()}}
+\item \href{#method-finalize}{\code{process$finalize()}}
+\item \href{#method-kill}{\code{process$kill()}}
+\item \href{#method-kill_tree}{\code{process$kill_tree()}}
+\item \href{#method-signal}{\code{process$signal()}}
+\item \href{#method-interrupt}{\code{process$interrupt()}}
+\item \href{#method-get_pid}{\code{process$get_pid()}}
+\item \href{#method-is_alive}{\code{process$is_alive()}}
+\item \href{#method-wait}{\code{process$wait()}}
+\item \href{#method-get_exit_status}{\code{process$get_exit_status()}}
+\item \href{#method-format}{\code{process$format()}}
+\item \href{#method-print}{\code{process$print()}}
+\item \href{#method-get_start_time}{\code{process$get_start_time()}}
+\item \href{#method-is_supervised}{\code{process$is_supervised()}}
+\item \href{#method-supervise}{\code{process$supervise()}}
+\item \href{#method-read_output}{\code{process$read_output()}}
+\item \href{#method-read_error}{\code{process$read_error()}}
+\item \href{#method-read_output_lines}{\code{process$read_output_lines()}}
+\item \href{#method-read_error_lines}{\code{process$read_error_lines()}}
+\item \href{#method-is_incomplete_output}{\code{process$is_incomplete_output()}}
+\item \href{#method-is_incomplete_error}{\code{process$is_incomplete_error()}}
+\item \href{#method-has_input_connection}{\code{process$has_input_connection()}}
+\item \href{#method-has_output_connection}{\code{process$has_output_connection()}}
+\item \href{#method-has_error_connection}{\code{process$has_error_connection()}}
+\item \href{#method-has_poll_connection}{\code{process$has_poll_connection()}}
+\item \href{#method-get_input_connection}{\code{process$get_input_connection()}}
+\item \href{#method-get_output_connection}{\code{process$get_output_connection()}}
+\item \href{#method-get_error_connection}{\code{process$get_error_connection()}}
+\item \href{#method-read_all_output}{\code{process$read_all_output()}}
+\item \href{#method-read_all_error}{\code{process$read_all_error()}}
+\item \href{#method-read_all_output_lines}{\code{process$read_all_output_lines()}}
+\item \href{#method-read_all_error_lines}{\code{process$read_all_error_lines()}}
+\item \href{#method-write_input}{\code{process$write_input()}}
+\item \href{#method-get_input_file}{\code{process$get_input_file()}}
+\item \href{#method-get_output_file}{\code{process$get_output_file()}}
+\item \href{#method-get_error_file}{\code{process$get_error_file()}}
+\item \href{#method-poll_io}{\code{process$poll_io()}}
+\item \href{#method-get_poll_connection}{\code{process$get_poll_connection()}}
+\item \href{#method-get_result}{\code{process$get_result()}}
+\item \href{#method-as_ps_handle}{\code{process$as_ps_handle()}}
+\item \href{#method-get_name}{\code{process$get_name()}}
+\item \href{#method-get_exe}{\code{process$get_exe()}}
+\item \href{#method-get_cmdline}{\code{process$get_cmdline()}}
+\item \href{#method-get_status}{\code{process$get_status()}}
+\item \href{#method-get_username}{\code{process$get_username()}}
+\item \href{#method-get_wd}{\code{process$get_wd()}}
+\item \href{#method-get_cpu_times}{\code{process$get_cpu_times()}}
+\item \href{#method-get_memory_info}{\code{process$get_memory_info()}}
+\item \href{#method-suspend}{\code{process$suspend()}}
+\item \href{#method-resume}{\code{process$resume()}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-new"></a>}}
+\subsection{Method \code{new()}}{
+Start a new process in the background, and then return immediately.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$new(
+  command = NULL,
+  args = character(),
+  stdin = NULL,
+  stdout = NULL,
+  stderr = NULL,
+  pty = FALSE,
+  pty_options = list(),
+  connections = list(),
+  poll_connection = NULL,
+  env = NULL,
+  cleanup = TRUE,
+  cleanup_tree = FALSE,
+  wd = NULL,
+  echo_cmd = FALSE,
+  supervise = FALSE,
+  windows_verbatim_args = FALSE,
+  windows_hide_window = FALSE,
+  encoding = "",
+  post_process = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{command}}{Character scalar, the command to run.
+Note that this argument is not passed to a shell, so no
+tilde-expansion or variable substitution is performed on it.
+It should not be quoted with \code{\link[base:shQuote]{base::shQuote()}}. See
+\code{\link[base:normalizePath]{base::normalizePath()}} for tilde-expansion.}
+
+\item{\code{args}}{Character vector, arguments to the command. They will be
+passed to the process as is, without a shell transforming them,
+They don't need to be escaped.}
+
+\item{\code{stdin}}{What to do with the standard input. Possible values:
+\itemize{
+\item \code{NULL}: set to the \emph{null device}, i.e. no standard input is
+provided;
+\item a file name, use this file as standard input;
+\item \code{"|"}: create a (writeable) connection for stdin.
+}}
+
+\item{\code{stdout}}{What to do with the standard output. Possible values:
+\itemize{
+\item \code{NULL}: discard it;
+\item a string, redirect it to this file;
+\item \code{"|"}: create a connection for it.
+}}
+
+\item{\code{stderr}}{What to do with the standard error. Possible values:
+\itemize{
+\item \code{NULL}: discard it;
+\item a string, redirect it to this file;
+\item \code{"|"}: create a connection for it;
+\item \code{"2>&1"}: redirect it to the same connection (i.e. pipe or file)
+as \code{stdout}. \code{"2>&1"} is a way to keep standard output and error
+correctly interleaved.
+}}
+
+\item{\code{pty}}{Whether to create a pseudo terminal (pty) for the
+background process. This is currently only supported on Unix
+systems, but not supported on Solaris.
+If it is \code{TRUE}, then the \code{stdin}, \code{stdout} and \code{stderr} arguments
+must be \code{NULL}. If a pseudo terminal is created, then processx
+will create pipes for standard input and standard output. There is
+no separate pipe for standard error, because there is no way to
+distinguish between stdout and stderr on a pty. Note that the
+standard output connection of the pty is \emph{blocking}, so we always
+poll the standard output connection before reading from it using
+the \verb{$read_output()} method. Also, because \verb{$read_output_lines()}
+could still block if no complete line is available, this function
+always fails if the process has a pty. Use \verb{$read_output()} to
+read from ptys.}
+
+\item{\code{pty_options}}{Unix pseudo terminal options, a named list. see
+\code{\link[=default_pty_options]{default_pty_options()}} for details and defaults.}
+
+\item{\code{connections}}{A list of processx connections to pass to the
+child process. This is an experimental feature currently.}
+
+\item{\code{poll_connection}}{Whether to create an extra connection to the
+process that allows polling, even if the standard input and
+standard output are not pipes. If this is \code{NULL} (the default),
+then this connection will be only created if standard output and
+standard error are not pipes, and \code{connections} is an empty list.
+If the poll connection is created, you can query it via
+\code{p$get_poll_connection()} and it is also included in the response
+to \code{p$poll_io()} and \code{\link[=poll]{poll()}}. The numeric file descriptor of the
+poll connection comes right after \code{stderr} (2), and the
+connections listed in \code{connections}.}
+
+\item{\code{env}}{Environment variables of the child process. If \code{NULL},
+the parent's environment is inherited. On Windows, many programs
+cannot function correctly if some environment variables are not
+set, so we always set \code{HOMEDRIVE}, \code{HOMEPATH}, \code{LOGONSERVER},
+\code{PATH}, \code{SYSTEMDRIVE}, \code{SYSTEMROOT}, \code{TEMP}, \code{USERDOMAIN},
+\code{USERNAME}, \code{USERPROFILE} and \code{WINDIR}.}
+
+\item{\code{cleanup}}{Whether to kill the process when the \code{process}
+object is garbage collected.}
+
+\item{\code{cleanup_tree}}{Whether to kill the process and its child
+process tree when the \code{process} object is garbage collected.}
+
+\item{\code{wd}}{Working directory of the process. It must exist.
+If \code{NULL}, then the current working directory is used.}
+
+\item{\code{echo_cmd}}{Whether to print the command to the screen before
+running it.}
+
+\item{\code{supervise}}{Whether to register the process with a supervisor.
+If \code{TRUE}, the supervisor will ensure that the process is
+killed when the R process exits.}
+
+\item{\code{windows_verbatim_args}}{Whether to omit quoting the arguments
+on Windows. It is ignored on other platforms.}
+
+\item{\code{windows_hide_window}}{Whether to hide the application's window
+on Windows. It is ignored on other platforms.}
+
+\item{\code{encoding}}{The encoding to assume for \code{stdin}, \code{stdout} and
+\code{stderr}. By default the encoding of the current locale is
+used. Note that \code{processx} always reencodes the output of the
+\code{stdout} and \code{stderr} streams in UTF-8 currently.
+If you want to read them without any conversion, on all platforms,
+specify \code{"UTF-8"} as encoding.}
+
+\item{\code{post_process}}{An optional function to run when the process has
+finished. Currently it only runs if \verb{$get_result()} is called.
+It is only run once.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+R6 object representing the process.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-finalize"></a>}}
+\subsection{Method \code{finalize()}}{
+Cleanup method that is called when the \code{process} object is garbage
+collected. If requested so in the process constructor, then it
+eliminates all processes in the process's subprocess tree.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$finalize()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-kill"></a>}}
+\subsection{Method \code{kill()}}{
+Terminate the process. It also terminate all of its child
+processes, except if they have created a new process group (on Unix),
+or job object (on Windows). It returns \code{TRUE} if the process
+was terminated, and \code{FALSE} if it was not (because it was
+already finished/dead when \code{processx} tried to terminate it).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$kill(grace = 0.1, close_connections = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{grace}}{Currently not used.}
+
+\item{\code{close_connections}}{Whether to close standard input, standard
+output, standard error connections and the poll connection, after
+killing the process.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-kill_tree"></a>}}
+\subsection{Method \code{kill_tree()}}{
+Process tree cleanup. It terminates the process
+(if still alive), together with any child (or grandchild, etc.)
+processes. It uses the \emph{ps} package, so that needs to be installed,
+and \emph{ps} needs to support the current platform as well. Process tree
+cleanup works by marking the process with an environment variable,
+which is inherited in all child processes. This allows finding
+descendents, even if they are orphaned, i.e. they are not connected
+to the root of the tree cleanup in the process tree any more.
+\verb{$kill_tree()} returns a named integer vector of the process ids that
+were killed, the names are the names of the processes (e.g. \code{"sleep"},
+\code{"notepad.exe"}, \code{"Rterm.exe"}, etc.).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$kill_tree(grace = 0.1, close_connections = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{grace}}{Currently not used.}
+
+\item{\code{close_connections}}{Whether to close standard input, standard
+output, standard error connections and the poll connection, after
+killing the process.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-signal"></a>}}
+\subsection{Method \code{signal()}}{
+Send a signal to the process. On Windows only the
+\code{SIGINT}, \code{SIGTERM} and \code{SIGKILL} signals are interpreted,
+and the special 0 signal. The first three all kill the process. The 0
+signal returns \code{TRUE} if the process is alive, and \code{FALSE}
+otherwise. On Unix all signals are supported that the OS supports,
+and the 0 signal as well.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$signal(signal)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{signal}}{An integer scalar, the id of the signal to send to
+the process. See \code{\link[tools:pskill]{tools::pskill()}} for the list of signals.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-interrupt"></a>}}
+\subsection{Method \code{interrupt()}}{
+Send an interrupt to the process. On Unix this is a
+\code{SIGINT} signal, and it is usually equivalent to pressing CTRL+C at
+the terminal prompt. On Windows, it is a CTRL+BREAK keypress.
+Applications may catch these events. By default they will quit.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$interrupt()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_pid"></a>}}
+\subsection{Method \code{get_pid()}}{
+Query the process id.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_pid()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+Integer scalar, the process id of the process.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-is_alive"></a>}}
+\subsection{Method \code{is_alive()}}{
+Check if the process is alive.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$is_alive()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+Logical scalar.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-wait"></a>}}
+\subsection{Method \code{wait()}}{
+Wait until the process finishes, or a timeout happens.
+Note that if the process never finishes, and the timeout is infinite
+(the default), then R will never regain control. In some rare cases,
+\verb{$wait()} might take a bit longer than specified to time out. This
+happens on Unix, when another package overwrites the processx
+\code{SIGCHLD} signal handler, after the processx process has started.
+One such package is parallel, if used with fork clusters, e.g.
+through \code{parallel::mcparallel()}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$wait(timeout = -1)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{timeout}}{Timeout in milliseconds, for the wait or the I/O
+polling.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+It returns the process itself, invisibly.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_exit_status"></a>}}
+\subsection{Method \code{get_exit_status()}}{
+\verb{$get_exit_status} returns the exit code of the process if it has
+finished and \code{NULL} otherwise. On Unix, in some rare cases, the exit
+status might be \code{NA}. This happens if another package (or R itself)
+overwrites the processx \code{SIGCHLD} handler, after the processx process
+has started. In these cases processx cannot determine the real exit
+status of the process. One such package is parallel, if used with
+fork clusters, e.g. through the \code{parallel::mcparallel()} function.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_exit_status()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-format"></a>}}
+\subsection{Method \code{format()}}{
+\code{format(p)} or \code{p$format()} creates a string representation of the
+process, usually for printing.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$format()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-print"></a>}}
+\subsection{Method \code{print()}}{
+\code{print(p)} or \code{p$print()} shows some information about the
+process on the screen, whether it is running and it's process id, etc.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$print()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_start_time"></a>}}
+\subsection{Method \code{get_start_time()}}{
+\verb{$get_start_time()} returns the time when the process was
+started.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_start_time()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-is_supervised"></a>}}
+\subsection{Method \code{is_supervised()}}{
+\verb{$is_supervised()} returns whether the process is being tracked by
+supervisor process.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$is_supervised()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-supervise"></a>}}
+\subsection{Method \code{supervise()}}{
+\verb{$supervise()} if passed \code{TRUE}, tells the supervisor to start
+tracking the process. If \code{FALSE}, tells the supervisor to stop
+tracking the process. Note that even if the supervisor is disabled
+for a process, if it was started with \code{cleanup = TRUE}, the process
+will still be killed when the object is garbage collected.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$supervise(status)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{status}}{Whether to turn on of off the supervisor for this
+process.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-read_output"></a>}}
+\subsection{Method \code{read_output()}}{
+\verb{$read_output()} reads from the standard output connection of the
+process. If the standard output connection was not requested, then
+then it returns an error. It uses a non-blocking text connection. This
+will work only if \code{stdout="|"} was used. Otherwise, it will throw an
+error.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$read_output(n = -1)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{Number of characters or lines to read.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-read_error"></a>}}
+\subsection{Method \code{read_error()}}{
+\verb{$read_error()} is similar to \verb{$read_output}, but it reads
+from the standard error stream.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$read_error(n = -1)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{Number of characters or lines to read.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-read_output_lines"></a>}}
+\subsection{Method \code{read_output_lines()}}{
+\verb{$read_output_lines()} reads lines from standard output connection
+of the process. If the standard output connection was not requested,
+then it returns an error. It uses a non-blocking text connection.
+This will work only if \code{stdout="|"} was used. Otherwise, it will
+throw an error.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$read_output_lines(n = -1)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{Number of characters or lines to read.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-read_error_lines"></a>}}
+\subsection{Method \code{read_error_lines()}}{
+\verb{$read_error_lines()} is similar to \verb{$read_output_lines}, but
+it reads from the standard error stream.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$read_error_lines(n = -1)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{Number of characters or lines to read.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-is_incomplete_output"></a>}}
+\subsection{Method \code{is_incomplete_output()}}{
+\verb{$is_incomplete_output()} return \code{FALSE} if the other end of
+the standard output connection was closed (most probably because the
+process exited). It return \code{TRUE} otherwise.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$is_incomplete_output()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-is_incomplete_error"></a>}}
+\subsection{Method \code{is_incomplete_error()}}{
+\verb{$is_incomplete_error()} return \code{FALSE} if the other end of
+the standard error connection was closed (most probably because the
+process exited). It return \code{TRUE} otherwise.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$is_incomplete_error()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-has_input_connection"></a>}}
+\subsection{Method \code{has_input_connection()}}{
+\verb{$has_input_connection()} return \code{TRUE} if there is a connection
+object for standard input; in other words, if \code{stdout="|"}. It returns
+\code{FALSE} otherwise.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$has_input_connection()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-has_output_connection"></a>}}
+\subsection{Method \code{has_output_connection()}}{
+\verb{$has_output_connection()} returns \code{TRUE} if there is a connection
+object for standard output; in other words, if \code{stdout="|"}. It returns
+\code{FALSE} otherwise.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$has_output_connection()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-has_error_connection"></a>}}
+\subsection{Method \code{has_error_connection()}}{
+\verb{$has_error_connection()} returns \code{TRUE} if there is a connection
+object for standard error; in other words, if \code{stderr="|"}. It returns
+\code{FALSE} otherwise.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$has_error_connection()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-has_poll_connection"></a>}}
+\subsection{Method \code{has_poll_connection()}}{
+\verb{$has_poll_connection()} return \code{TRUE} if there is a poll connection,
+\code{FALSE} otherwise.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$has_poll_connection()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_input_connection"></a>}}
+\subsection{Method \code{get_input_connection()}}{
+\verb{$get_input_connection()} returns a connection object, to the
+standard input stream of the process.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_input_connection()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_output_connection"></a>}}
+\subsection{Method \code{get_output_connection()}}{
+\verb{$get_output_connection()} returns a connection object, to the
+standard output stream of the process.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_output_connection()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_error_connection"></a>}}
+\subsection{Method \code{get_error_connection()}}{
+\verb{$get_error_conneciton()} returns a connection object, to the
+standard error stream of the process.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_error_connection()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-read_all_output"></a>}}
+\subsection{Method \code{read_all_output()}}{
+\verb{$read_all_output()} waits for all standard output from the process.
+It does not return until the process has finished.
+Note that this process involves waiting for the process to finish,
+polling for I/O and potentically several \code{readLines()} calls.
+It returns a character scalar. This will return content only if
+\code{stdout="|"} was used. Otherwise, it will throw an error.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$read_all_output()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-read_all_error"></a>}}
+\subsection{Method \code{read_all_error()}}{
+\verb{$read_all_error()} waits for all standard error from the process.
+It does not return until the process has finished.
+Note that this process involves waiting for the process to finish,
+polling for I/O and potentically several \code{readLines()} calls.
+It returns a character scalar. This will return content only if
+\code{stderr="|"} was used. Otherwise, it will throw an error.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$read_all_error()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-read_all_output_lines"></a>}}
+\subsection{Method \code{read_all_output_lines()}}{
+\verb{$read_all_output_lines()} waits for all standard output lines
+from a process. It does not return until the process has finished.
+Note that this process involves waiting for the process to finish,
+polling for I/O and potentically several \code{readLines()} calls.
+It returns a character vector. This will return content only if
+\code{stdout="|"} was used. Otherwise, it will throw an error.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$read_all_output_lines()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-read_all_error_lines"></a>}}
+\subsection{Method \code{read_all_error_lines()}}{
+\verb{$read_all_error_lines()} waits for all standard error lines from
+a process. It does not return until the process has finished.
+Note that this process involves waiting for the process to finish,
+polling for I/O and potentically several \code{readLines()} calls.
+It returns a character vector. This will return content only if
+\code{stderr="|"} was used. Otherwise, it will throw an error.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$read_all_error_lines()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-write_input"></a>}}
+\subsection{Method \code{write_input()}}{
+\verb{$write_input()} writes the character vector (separated by \code{sep}) to
+the standard input of the process. It will be converted to the specified
+encoding. This operation is non-blocking, and it will return, even if
+the write fails (because the write buffer is full), or if it suceeds
+partially (i.e. not the full string is written). It returns with a raw
+vector, that contains the bytes that were not written. You can supply
+this raw vector to \verb{$write_input()} again, until it is fully written,
+and then the return value will be \code{raw(0)} (invisibly).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$write_input(str, sep = "\\n")}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{str}}{Character or raw vector to write to the standard input
+of the process. If a character vector with a marked encoding,
+it will be converted to \code{encoding}.}
+
+\item{\code{sep}}{Separator to add between \code{str} elements if it is a
+character vector. It is ignored if \code{str} is a raw vector.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Leftover text (as a raw vector), that was not written.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_input_file"></a>}}
+\subsection{Method \code{get_input_file()}}{
+\verb{$get_input_file()} if the \code{stdin} argument was a filename,
+this returns the absolute path to the file. If \code{stdin} was \code{"|"} or
+\code{NULL}, this simply returns that value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_input_file()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_output_file"></a>}}
+\subsection{Method \code{get_output_file()}}{
+\verb{$get_output_file()} if the \code{stdout} argument was a filename,
+this returns the absolute path to the file. If \code{stdout} was \code{"|"} or
+\code{NULL}, this simply returns that value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_output_file()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_error_file"></a>}}
+\subsection{Method \code{get_error_file()}}{
+\verb{$get_error_file()} if the \code{stderr} argument was a filename,
+this returns the absolute path to the file. If \code{stderr} was \code{"|"} or
+\code{NULL}, this simply returns that value.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_error_file()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-poll_io"></a>}}
+\subsection{Method \code{poll_io()}}{
+\verb{$poll_io()} polls the process's connections for I/O. See more in
+the \emph{Polling} section, and see also the \code{\link[=poll]{poll()}} function
+to poll on multiple processes.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$poll_io(timeout)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{timeout}}{Timeout in milliseconds, for the wait or the I/O
+polling.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_poll_connection"></a>}}
+\subsection{Method \code{get_poll_connection()}}{
+\verb{$get_poll_connetion()} returns the poll connection, if the process has
+one.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_poll_connection()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_result"></a>}}
+\subsection{Method \code{get_result()}}{
+\verb{$get_result()} returns the result of the post processesing function.
+It can only be called once the process has finished. If the process has
+no post-processing function, then \code{NULL} is returned.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_result()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-as_ps_handle"></a>}}
+\subsection{Method \code{as_ps_handle()}}{
+\verb{$as_ps_handle()} returns a \link[ps:ps_handle]{ps::ps_handle} object, corresponding to
+the process.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$as_ps_handle()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_name"></a>}}
+\subsection{Method \code{get_name()}}{
+Calls \code{\link[ps:ps_name]{ps::ps_name()}} to get the process name.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_name()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_exe"></a>}}
+\subsection{Method \code{get_exe()}}{
+Calls \code{\link[ps:ps_exe]{ps::ps_exe()}} to get the path of the executable.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_exe()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_cmdline"></a>}}
+\subsection{Method \code{get_cmdline()}}{
+Calls \code{\link[ps:ps_cmdline]{ps::ps_cmdline()}} to get the command line.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_cmdline()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_status"></a>}}
+\subsection{Method \code{get_status()}}{
+Calls \code{\link[ps:ps_status]{ps::ps_status()}} to get the process status.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_status()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_username"></a>}}
+\subsection{Method \code{get_username()}}{
+calls \code{\link[ps:ps_username]{ps::ps_username()}} to get the username.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_username()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_wd"></a>}}
+\subsection{Method \code{get_wd()}}{
+Calls \code{\link[ps:ps_cwd]{ps::ps_cwd()}} to get the current working directory.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_wd()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_cpu_times"></a>}}
+\subsection{Method \code{get_cpu_times()}}{
+Calls \code{\link[ps:ps_cpu_times]{ps::ps_cpu_times()}} to get CPU usage data.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_cpu_times()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_memory_info"></a>}}
+\subsection{Method \code{get_memory_info()}}{
+Calls \code{\link[ps:ps_memory_info]{ps::ps_memory_info()}} to get memory data.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_memory_info()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-suspend"></a>}}
+\subsection{Method \code{suspend()}}{
+Calls \code{\link[ps:ps_suspend]{ps::ps_suspend()}} to suspend the process.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$suspend()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-resume"></a>}}
+\subsection{Method \code{resume()}}{
+Calls \code{\link[ps:ps_resume]{ps::ps_resume()}} to resume a suspended process.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$resume()}\if{html}{\out{</div>}}
+}
+
+}
 }
