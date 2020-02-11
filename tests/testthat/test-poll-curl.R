@@ -2,10 +2,12 @@
 context("poll-curl")
 
 ## To resolve....
-httpbin()
+online <- curl::has_internet()
+if (online) httpbin()
 
 test_that("curl fds", {
   skip_on_cran()
+  if (!online) skip("Offline")
 
   resp <- list()
   errm <- character()
@@ -55,6 +57,7 @@ test_that("curl fds", {
 
 test_that("curl fds before others", {
   skip_on_cran()
+  if (!online) skip("Offline")
 
   pool <- curl::new_pool()
   url <- httpbin("/delay/1")
@@ -86,6 +89,7 @@ test_that("curl fds before others", {
 
 test_that("process fd before curl fd", {
   skip_on_cran()
+  if (!online) skip("Offline")
 
   pool <- curl::new_pool()
   url <- httpbin("/delay/1")
