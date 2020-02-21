@@ -292,7 +292,7 @@ SEXP processx__connection_set_std(SEXP con, int which, int drop) {
     int saved = _dup(which);
     processx_file_handle_t os_handle;
     if (saved == -1) {
-      R_THROW_SYSTEM_ERROR("Cannot save stdout/stderr for rerouting");
+      R_THROW_POSIX_ERROR("Cannot save stdout/stderr for rerouting");
     }
     os_handle = (HANDLE) _get_osfhandle(saved) ;
     processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_PIPE,
@@ -301,7 +301,7 @@ SEXP processx__connection_set_std(SEXP con, int which, int drop) {
 
   fd = _open_osfhandle((intptr_t) ccon->handle.handle, 0);
   ret = _dup2(fd, which);
-  if (ret) R_THROW_SYSTEM_ERROR("Cannot reroute stdout/stderr");
+  if (ret) R_THROW_POSIX_ERROR("Cannot reroute stdout/stderr");
 
 #else
   const char *what[] = { "stdin", "stdout", "stderr" };
