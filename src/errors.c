@@ -11,6 +11,7 @@ static char errorbuf[ERRORBUF_SIZE];
 SEXP r_throw_error(const char *func, const char *filename, int line,
                    const char *msg, ...) {
   va_list args;
+  errorbuf[0] = '\0';
   va_start(args, msg);
   vsnprintf(errorbuf, ERRORBUF_SIZE, msg, args);
   va_end (args);
