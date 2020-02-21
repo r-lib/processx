@@ -31,6 +31,16 @@ SEXP r_throw_system_error(const char *func, const char *filename, int line,
                           DWORD errorcode, const char *sysmsg,
                           const char *msg, ...);
 
+SEXP r_throw_posix_error(const char *func, const char *filename, int line,
+                         int errorcode, const char *sysmsg,
+                         const char *msg, ...);
+
+#define R_THROW_POSIX_ERROR(...)                                        \
+  r_throw_posix_error(__func__, __FILE__, __LINE__, errno, NULL, __VA_ARGS__)
+#define R_THROW_POSIX_ERROR_CODE(errorcode, ...)           \
+  r_throw_posix_error(__func__, __FILE__, __LINE__, errorcode, NULL, __VA_ARGS__)
+
+
 #else
 
 #define R_THROW_SYSTEM_ERROR(...) \
