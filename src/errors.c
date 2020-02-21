@@ -27,11 +27,12 @@ SEXP r_throw_system_error(const char *func, const char *filename, int line,
   va_list args;
   LPVOID lpMsgBuf;
   char *realsysmsg = sysmsg ? (char*) sysmsg : NULL;
+  char *failmsg = "Formatting the system message failed :(";
 
   if (errorcode == -1) errorcode = GetLastError();
 
   if (!realsysmsg) {
-    FormatMessage(
+    DWORD ret = FormatMessage(
       FORMAT_MESSAGE_ALLOCATE_BUFFER |
       FORMAT_MESSAGE_FROM_SYSTEM |
       FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -41,11 +42,16 @@ SEXP r_throw_system_error(const char *func, const char *filename, int line,
       (LPTSTR) &lpMsgBuf,
       0, NULL);
 
-    realsysmsg = R_alloc(1, strlen(lpMsgBuf) + 1);
-    strcpy(realsysmsg, lpMsgBuf);
-    LocalFree(lpMsgBuf);
+    if (ret == 0) {
+      realsysmsg = failmsg;
+    } else {
+      realsysmsg = R_alloc(1, strlen(lpMsgBuf) + 1);
+      strcpy(realsysmsg, lpMsgBuf);
+      LocalFree(lpMsgBuf);
+    }
   }
 
+  errorbuf[0] = '\0';
   va_start(args, msg);
   vsnprintf(errorbuf, ERRORBUF_SIZE, msg, args);
   va_end(args);
@@ -66,6 +72,7 @@ SEXP r_throw_system_error(
                           const char *msg, ...) {
   va_list args;
   if (!sysmsg) sysmsg = strerror(errorcode);
+  errorbuf[0] = '\0';
   va_start(args, msg);
   vsnprintf(errorbuf, ERRORBUF_SIZE, msg, args);
   va_end(args);
