@@ -3,9 +3,7 @@
 
 #include <Rinternals.h>
 
-#ifndef _WIN32
 #include <string.h>
-#endif
 
 #define ERRORBUF_SIZE 4096
 static char errorbuf[ERRORBUF_SIZE];
@@ -56,9 +54,14 @@ SEXP r_throw_system_error(const char *func, const char *filename, int line,
   return R_NilValue;
 }
 
-#else
+#endif
 
-SEXP r_throw_system_error(const char *func, const char *filename, int line,
+#ifdef _WIN32
+SEXP r_throw_posix_error(
+#else
+SEXP r_throw_system_error(
+#endif
+                          const char *func, const char *filename, int line,
                           int errorcode, const char *sysmsg,
                           const char *msg, ...) {
   va_list args;
@@ -70,5 +73,3 @@ SEXP r_throw_system_error(const char *func, const char *filename, int line,
         filename, line, func);
   return R_NilValue;
 }
-
-#endif
