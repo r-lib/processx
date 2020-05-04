@@ -23,7 +23,7 @@ test_script:
   - travis-tool.sh run_tests
 
 on_success:
-  - Rscript -e "options(covr.gcov = 'C:/Rtools/mingw_64/bin/gcov.exe');covr::codecov()"
+  - Rscript -e "covr::codecov()"
 
 on_failure:
   - travis-tool.sh dump_logs
