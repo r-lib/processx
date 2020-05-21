@@ -12,7 +12,7 @@
  }
  DL_FUNC R_ExternalPtrAddrFn(SEXP s) {
    fn_ptr ptr;
-   ptr.p = EXTPTR_PTR(s);
+   ptr.p = R_ExternalPtrAddr(s);
    return ptr.fn;
  }
 #endif
@@ -101,8 +101,8 @@ static void call_exits(void* data) {
     top = CDR(top);
 
     void (*fn)(void*) = (void (*)(void*)) R_ExternalPtrAddrFn(CAR(cb));
-    void *data = (void*) EXTPTR_PTR(CDR(cb));
-    int early_handler = LOGICAL(EXTPTR_TAG(CDR(cb)))[0];
+    void *data = (void*) R_ExternalPtrAddr(CDR(cb));
+    int early_handler = LOGICAL(R_ExternalPtrTag(CDR(cb)))[0];
 
     // Check for empty pointer in preallocated callbacks
     if (fn) {
@@ -123,6 +123,8 @@ SEXP r_with_cleanup_context(SEXP (*fn)(void* data), void* data) {
   // leaving the global variable in a bad state if alloc fails
   SEXP new = PROTECT(Rf_cons(R_NilValue, R_NilValue));
   push_callback(new);
+
+  if (!callbacks) callbacks = R_NilValue;
 
   SEXP old = callbacks;
   callbacks = new;
@@ -149,7 +151,7 @@ static void call_save_handler(void (*fn)(void *data), void* data,
   // Update pointers
   cleancall_SetExternalPtrAddrFn(CAR(cb), (DL_FUNC) fn);
   R_SetExternalPtrAddr(CDR(cb), data);
-  LOGICAL(EXTPTR_TAG(CDR(cb)))[0] = early;
+  LOGICAL(R_ExternalPtrTag(CDR(cb)))[0] = early;
 
   // Preallocate the next callback in case the allocator jumps
   push_callback(callbacks);
