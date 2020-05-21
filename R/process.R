@@ -98,10 +98,14 @@ process <- R6::R6Class(
     #'   * `NULL`: discard it;
     #'   * a string, redirect it to this file;
     #'   * `"|"`: create a connection for it.
+    #'   * `"|rstudio"`: put the job output on the RStudio job pane.
+    #'     This is the default if `rstudio_job = TRUE` is specified.
     #' @param stderr What to do with the standard error. Possible values:
     #'   * `NULL`: discard it;
     #'   * a string, redirect it to this file;
     #'   * `"|"`: create a connection for it;
+    #'   * `"|rstudio"`: put the job output on the RStudio job pane.
+    #'     This is the default if `rstudio_job = TRUE` is specified.
     #'   * `"2>&1"`: redirect it to the same connection (i.e. pipe or file)
     #'     as `stdout`. `"2>&1"` is a way to keep standard output and error
     #'     correctly interleaved.
@@ -163,19 +167,28 @@ process <- R6::R6Class(
     #' @param post_process An optional function to run when the process has
     #'   finished. Currently it only runs if `$get_result()` is called.
     #'   It is only run once.
+    #' @param rstudio_job Whether this is an RStudio job. This only works
+    #'   in RStudio.
+    #' @param rstudio_job_options Options for RStudio jobs. A named list.
+    #'   The defaults are:
+    #'   * `name`: job name, defaults to the command without arguments.
+    #'   * `progress`: whether to show a progress bar (`FALSE` by default).
 
     initialize = function(command = NULL, args = character(),
-      stdin = NULL, stdout = NULL, stderr = NULL, pty = FALSE,
+      stdin = NULL, stdout = if (rstudio_job) "|rstudio",
+      stderr = if (rstudio_job) "|rstudio", pty = FALSE,
       pty_options = list(), connections = list(), poll_connection = NULL,
       env = NULL, cleanup = TRUE, cleanup_tree = FALSE, wd = NULL,
       echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
-      windows_hide_window = FALSE, encoding = "",  post_process = NULL)
+      windows_hide_window = FALSE, encoding = "",  post_process = NULL,
+      rstudio_job = FALSE, rstudio_job_options = list())
 
       process_initialize(self, private, command, args, stdin,
                          stdout, stderr, pty, pty_options, connections,
                          poll_connection, env, cleanup, cleanup_tree, wd,
                          echo_cmd, supervise, windows_verbatim_args,
-                         windows_hide_window, encoding, post_process),
+                         windows_hide_window, encoding, post_process,
+                         rstudio_job, rstudio_job_options),
 
     #' @description
     #' Cleanup method that is called when the `process` object is garbage
@@ -185,6 +198,8 @@ process <- R6::R6Class(
     finalize = function() {
       if (!is.null(private$tree_id) && private$cleanup_tree &&
           ps::ps_is_supported()) self$kill_tree()
+      if (!is.null(private$rstudio_fifo)) unlink(private$rstudio_fifo)
+      if (!is.null(private$rstudio_script)) unlink(private$rstudio_script)
     },
 
     #' @description
@@ -594,7 +609,15 @@ process <- R6::R6Class(
     #' Calls [ps::ps_resume()] to resume a suspended process.
 
     resume = function()
-      ps_method(ps::ps_resume, self)
+      ps_method(ps::ps_resume, self),
+
+    #' @description
+    #' Get RStudio job id, for RStudio jobs. Otherwise it returns `NULL`.
+    #' @return String scalar, the job id. Use this with the RStudio
+    #'   job API functions from the rstudioapi package.
+
+    get_rstudio_job_id = function()
+      private$rstudio_job_id
   ),
 
   private = list(
@@ -617,6 +640,9 @@ process <- R6::R6Class(
     echo_cmd = NULL,      # whether to echo the command
     windows_verbatim_args = NULL,
     windows_hide_window = NULL,
+    rstudio_job_id = NULL,
+    rstudio_fifo = NULL,
+    rstudio_script = NULL,
 
     status = NULL,        # C file handle
 

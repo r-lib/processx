@@ -33,6 +33,7 @@ Suggests:
     curl,
     debugme,
     parallel,
+    rstudioapi,
     testthat,
     withr
 Encoding: UTF-8

@@ -3,6 +3,8 @@
 
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 char *processx__tmp_string(SEXP str, int i) {
   const char *ptr = CHAR(STRING_ELT(str, i));
@@ -96,6 +98,16 @@ SEXP processx__echo_off() {
 
   if (tcsetattr(STDOUT_FILENO, TCSAFLUSH, &tp) == -1) {
     R_THROW_ERROR("Cannot turn terminal echo off");
+  }
+
+  return R_NilValue;
+}
+
+SEXP processx_make_fifo(SEXP path) {
+  const char *cpath = CHAR(STRING_ELT(path, 0));
+  int ret = mkfifo(cpath, 0600);
+  if (ret == -1) {
+    R_THROW_SYSTEM_ERROR("Cannot create FIFO at '%s'.", cpath);
   }
 
   return R_NilValue;

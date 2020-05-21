@@ -69,6 +69,7 @@ SEXP processx_create_named_pipe(SEXP name, SEXP mode);
 SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text);
 
 SEXP processx_disable_crash_dialog();
+SEXP processx_make_fifo(SEXP path);
 
 SEXP processx_base64_encode(SEXP array);
 SEXP processx_base64_decode(SEXP array);

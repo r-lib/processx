@@ -253,7 +253,7 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
 	if (fd == 0) {
 	  use_fd = open(out_files[fd], O_RDONLY);
 	} else {
-	  use_fd = open(out_files[fd], O_CREAT | O_TRUNC| O_RDWR, 0644);
+	  use_fd = open(out_files[fd], O_CREAT | O_TRUNC| O_WRONLY, 0644);
 	}
       } else {
 	/* NULL, so stdin/out/err is ignored, using /dev/null */

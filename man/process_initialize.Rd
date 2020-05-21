@@ -25,7 +25,9 @@ process_initialize(
   windows_verbatim_args,
   windows_hide_window,
   encoding,
-  post_process
+  post_process,
+  rstudio_job,
+  rstudio_job_options
 )
 }
 \arguments{
@@ -64,6 +66,10 @@ process_initialize(
 \item{encoding}{Assumed stdout and stderr encoding.}
 
 \item{post_process}{Post processing function.}
+
+\item{rstudio_job}{Whether this is an RStudio job.}
+
+\item{rstudio_job_options}{Options for RStudio jobs.}
 }
 \description{
 Start a process

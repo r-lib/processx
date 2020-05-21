@@ -116,6 +116,7 @@ p$is_alive()
 \item \href{#method-get_memory_info}{\code{process$get_memory_info()}}
 \item \href{#method-suspend}{\code{process$suspend()}}
 \item \href{#method-resume}{\code{process$resume()}}
+\item \href{#method-get_rstudio_job_id}{\code{process$get_rstudio_job_id()}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -128,8 +129,8 @@ Start a new process in the background, and then return immediately.
   command = NULL,
   args = character(),
   stdin = NULL,
-  stdout = NULL,
-  stderr = NULL,
+  stdout = if (rstudio_job) "|rstudio",
+  stderr = if (rstudio_job) "|rstudio",
   pty = FALSE,
   pty_options = list(),
   connections = list(),
@@ -143,7 +144,9 @@ Start a new process in the background, and then return immediately.
   windows_verbatim_args = FALSE,
   windows_hide_window = FALSE,
   encoding = "",
-  post_process = NULL
+  post_process = NULL,
+  rstudio_job = FALSE,
+  rstudio_job_options = list()
 )}\if{html}{\out{</div>}}
 }
 
@@ -173,6 +176,8 @@ provided;
 \item \code{NULL}: discard it;
 \item a string, redirect it to this file;
 \item \code{"|"}: create a connection for it.
+\item \code{"|rstudio"}: put the job output on the RStudio job pane.
+This is the default if \code{rstudio_job = TRUE} is specified.
 }}
 
 \item{\code{stderr}}{What to do with the standard error. Possible values:
@@ -180,6 +185,8 @@ provided;
 \item \code{NULL}: discard it;
 \item a string, redirect it to this file;
 \item \code{"|"}: create a connection for it;
+\item \code{"|rstudio"}: put the job output on the RStudio job pane.
+This is the default if \code{rstudio_job = TRUE} is specified.
 \item \code{"2>&1"}: redirect it to the same connection (i.e. pipe or file)
 as \code{stdout}. \code{"2>&1"} is a way to keep standard output and error
 correctly interleaved.
@@ -256,6 +263,16 @@ specify \code{"UTF-8"} as encoding.}
 \item{\code{post_process}}{An optional function to run when the process has
 finished. Currently it only runs if \verb{$get_result()} is called.
 It is only run once.}
+
+\item{\code{rstudio_job}}{Whether this is an RStudio job. This only works
+in RStudio.}
+
+\item{\code{rstudio_job_options}}{Options for RStudio jobs. A named list.
+The defaults are:
+\itemize{
+\item \code{name}: job name, defaults to the command without arguments.
+\item \code{progress}: whether to show a progress bar (\code{FALSE} by default).
+}}
 }
 \if{html}{\out{</div>}}
 }
@@ -966,5 +983,19 @@ Calls \code{\link[ps:ps_resume]{ps::ps_resume()}} to resume a suspended process.
 \if{html}{\out{<div class="r">}}\preformatted{process$resume()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_rstudio_job_id"></a>}}
+\if{latex}{\out{\hypertarget{method-get_rstudio_job_id}{}}}
+\subsection{Method \code{get_rstudio_job_id()}}{
+Get RStudio job id, for RStudio jobs. Otherwise it returns \code{NULL}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_rstudio_job_id()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+String scalar, the job id. Use this with the RStudio
+job API functions from the rstudioapi package.
+}
 }
 }

@@ -19,6 +19,8 @@
 #' @param supervise Should the process be supervised?
 #' @param encoding Assumed stdout and stderr encoding.
 #' @param post_process Post processing function.
+#' @param rstudio_job Whether this is an RStudio job.
+#' @param rstudio_job_options Options for RStudio jobs.
 #'
 #' @keywords internal
 
@@ -27,7 +29,8 @@ process_initialize <- function(self, private, command, args,
                                connections, poll_connection, env, cleanup,
                                cleanup_tree, wd, echo_cmd, supervise,
                                windows_verbatim_args, windows_hide_window,
-                               encoding, post_process) {
+                               encoding, post_process, rstudio_job,
+                               rstudio_job_options) {
 
   "!DEBUG process_initialize `command`"
 
@@ -49,7 +52,9 @@ process_initialize <- function(self, private, command, args,
     is_flag(windows_verbatim_args),
     is_flag(windows_hide_window),
     is_string(encoding),
-    is.function(post_process) || is.null(post_process))
+    is.function(post_process) || is.null(post_process),
+    is_flag(rstudio_job),
+    is.list(rstudio_job_options))
 
   if (cleanup_tree && !cleanup) {
     warning("`cleanup_tree` overrides `cleanup`, and process will be ",
@@ -57,6 +62,40 @@ process_initialize <- function(self, private, command, args,
     cleanup <- TRUE
   }
 
+  # Checks for rstudio_job
+  if (rstudio_job) {
+    has_rs <- tryCatch(
+      rstudioapi::isAvailable("1.2.1261"),
+      error = function(err) FALSE
+    )
+    if (!has_rs) {
+      throw(new_error(
+        "processx needs RStudio 1.2.1261 and the rstudioapi package to ",
+        "create RStudio jobs."))
+    }
+    if (stdout == "|rstudio") {
+      private$rstudio_fifo <- make_temp_fifo()
+      stdout <- private$rstudio_fifo
+    }
+    if (stderr == "|rstudio") {
+      private$rstudio_fifo <- private$rstudio_fifo %||% make_temp_fifo()
+      stderr <- private$rstudio_fifo
+    }
+    # TODO: what if there is no output?
+    private$rstudio_script <- make_rstudio_script(
+      private$rstudio_fifo,
+      paste0(rstudio_job_options$name %||% basename(command), " progress"),
+      rstudio_job_options$progress %||% FALSE
+    )
+    private$rstudio_job_id <- rstudioapi::jobRunScript(
+      private$rstudio_script,
+      name = rstudio_job_options$name %||% basename(command)
+      )
+    rstudioapi::jobSetState(private$rstudio_job_id, "idle")
+    env <- c(env, c("RSTUDIO_API_JOB_ID" = private$rstudio_job_id))
+  }
+
+  # Checks for pty
   if (pty && os_type() != "unix") {
     throw(new_error("`pty = TRUE` is only implemented on Unix"))
   }
@@ -161,6 +200,10 @@ process_initialize <- function(self, private, command, args,
   if (supervise) {
     supervisor_watch_pid(self$get_pid())
     private$supervised <- TRUE
+  }
+
+  if (! is.null(private$rstudio_job_id)) {
+    rstudioapi::jobSetState(private$rstudio_job_id, "idle")
   }
 
   invisible(self)

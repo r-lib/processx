@@ -58,7 +58,8 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_base64_decode", (DL_FUNC) &processx_base64_decode, 1 },
   { "processx__echo_on", (DL_FUNC) &processx__echo_on, 0 },
   { "processx__echo_off", (DL_FUNC) &processx__echo_off, 0 },
-
+  { "processx_make_fifo", (DL_FUNC) &processx_make_fifo, 1 },
+  
   { NULL, NULL, 0 }
 };
 
