@@ -94,7 +94,11 @@
 #' @param cleanup_tree Whether to clean up the child process tree after
 #'   the process has finished.
 #' @param ... Extra arguments are passed to `process$new()`, see
-#'   [process].
+#'   [process]. Note that you cannot pass `stout` or `stderr` here,
+#'   because they are used internally by `run()`. You can use the
+#'   `stdout_callback`, `stderr_callback`, etc. arguments to manage
+#'   the standard output and error, or the [process] class directly
+#'   if you need more flexibility.
 #' @return A list with components:
 #'   * status The exit status of the process. If this is `NA`, then the
 #'     process was killed and had no exit status.

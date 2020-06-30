@@ -95,7 +95,11 @@ both streams in UTF-8 currently.}
 the process has finished.}
 
 \item{...}{Extra arguments are passed to \code{process$new()}, see
-\link{process}.}
+\link{process}. Note that you cannot pass \code{stout} or \code{stderr} here,
+because they are used internally by \code{run()}. You can use the
+\code{stdout_callback}, \code{stderr_callback}, etc. arguments to manage
+the standard output and error, or the \link{process} class directly
+if you need more flexibility.}
 }
 \value{
 A list with components:
