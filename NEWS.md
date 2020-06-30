@@ -1,6 +1,9 @@
 
 # processx (development version)
 
+* The supervisor (activated with `supervise = TRUE`) does not crash
+  on the Windows Subsystem on Linux (WSL) now (#222).
+
 # processx 3.4.2
 
 * `run()` now does a better job with displaying the spinner on terminals
