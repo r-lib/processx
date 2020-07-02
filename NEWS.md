@@ -7,6 +7,10 @@
 * Fix ABI compatibility for pre and post R 4.0.1 versions. Now CRAN
   builds (with R 4.0.2 and later 4.0.x) work well on R 4.0.0.
 
+* Now processx can run commands on UNC paths specified with
+  forward slashes: `//hostname/...` UNC paths with the usual
+  back-slashes were always fine (#249).
+
 # processx 3.4.2
 
 * `run()` now does a better job with displaying the spinner on terminals
