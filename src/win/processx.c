@@ -976,6 +976,17 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "setup stdio for '%s'", ccommand); }
 
   application_path = processx__search_path(application, cwd, path);
+
+  /* If a UNC Path, then we try to flip the forward slashes, if any.
+   * It is apparently enough to flip the first two slashes, the rest
+   * are not important. */
+  if (! application_path && wcslen(path) >= 2 &&
+    application[0] == L'/' && application[1] == L'/') {
+    application[0] = L'\\';
+    application[1] = L'\\';
+    application_path = processx__search_path(application, cwd, path);
+  }
+
   if (!application_path) {
     R_ClearExternalPtr(result);
     processx__stdio_destroy(handle->child_stdio_buffer);
