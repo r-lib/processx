@@ -80,7 +80,7 @@ void R_init_processx_unix() {
   }
 }
 
-int processx__pty_master_open(char *slave_name, size_t sn_len) {
+int processx__pty_master_open(char *sub_name, size_t sn_len) {
   int master_fd, saved_errno;
   char *p;
 
@@ -110,7 +110,7 @@ int processx__pty_master_open(char *slave_name, size_t sn_len) {
   }
 
   if (strlen(p) < sn_len) {
-    strncpy(slave_name, p, sn_len);
+    strncpy(sub_name, p, sn_len);
   } else {
     close(master_fd);
     errno = EOVERFLOW;
@@ -148,14 +148,14 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
     /* Do not mess with stdin/stdout/stderr, all handled by the pty */
     min_fd = 3;
 
-    int slave_fd = open(pty_name, O_RDWR);
-    if (slave_fd == -1) {
+    int sub_fd = open(pty_name, O_RDWR);
+    if (sub_fd == -1) {
       processx__write_int(error_fd, -errno);
       raise(SIGKILL);
     }
 
 #ifdef TIOCSCTTY
-    if (ioctl(slave_fd, TIOCSCTTY, 0) == -1) {
+    if (ioctl(sub_fd, TIOCSCTTY, 0) == -1) {
       processx__write_int(error_fd, -errno);
       raise(SIGKILL);
     }
@@ -163,7 +163,7 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
 
     struct termios tp;
 
-    if (tcgetattr(slave_fd, &tp) == -1) {
+    if (tcgetattr(sub_fd, &tp) == -1) {
       processx__write_int(error_fd, -errno);
       raise(SIGKILL);
     }
@@ -174,28 +174,28 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
       tp.c_lflag &= ~ECHO;
     }
 
-    if (tcsetattr(slave_fd, TCSAFLUSH, &tp) == -1) {
+    if (tcsetattr(sub_fd, TCSAFLUSH, &tp) == -1) {
       processx__write_int(error_fd, -errno);
       raise(SIGKILL);
     }
 
     /* TODO: set other terminal attributes and size */
 
-    /* Duplicate pty slave to be child's stdin, stdout, and stderr */
-    if (dup2(slave_fd, STDIN_FILENO) != STDIN_FILENO) {
+    /* Duplicate pty sub to be child's stdin, stdout, and stderr */
+    if (dup2(sub_fd, STDIN_FILENO) != STDIN_FILENO) {
       processx__write_int(error_fd, -errno);
       raise(SIGKILL);
     }
-    if (dup2(slave_fd, STDOUT_FILENO) != STDOUT_FILENO) {
+    if (dup2(sub_fd, STDOUT_FILENO) != STDOUT_FILENO) {
       processx__write_int(error_fd, -errno);
       raise(SIGKILL);
     }
-    if (dup2(slave_fd, STDERR_FILENO) != STDERR_FILENO) {
+    if (dup2(sub_fd, STDERR_FILENO) != STDERR_FILENO) {
       processx__write_int(error_fd, -errno);
       raise(SIGKILL);
     }
 
-    if (slave_fd > STDERR_FILENO) close(slave_fd);
+    if (sub_fd > STDERR_FILENO) close(sub_fd);
   }
 
   /* We want to prevent use_fd < fd, because we will dup2() use_fd into
