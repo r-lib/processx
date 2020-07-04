@@ -11,6 +11,10 @@
   forward slashes: `//hostname/...` UNC paths with the usual
   back-slashes were always fine (#249).
 
+* The `$as_ps_handle()` method works now better; previously it
+  sometimes created an invalid `ps::ps_handle` object, if the system
+  clock has changed (#258).
+
 # processx 3.4.2
 
 * `run()` now does a better job with displaying the spinner on terminals

@@ -159,26 +159,15 @@ void *processx__memmem(const void *haystack, size_t n1,
   return NULL;
 }
 
+static double processx__linux_boot_time = 0.0;
+
 double processx__boot_time() {
-  char *buf;
-  int ret;
-  const char *btime_str = "\nbtime ";
-  size_t btime_size = 7;
-  char *btime_pos;
-  unsigned long btime;
+  return processx__linux_boot_time;
+}
 
-  ret = processx__read_file("/proc/stat", &buf, /* buffer= */ 2048);
-  if (ret < 0)  return 0.0;
-
-  *(buf + ret - 1) = '\0';
-
-  btime_pos = processx__memmem(buf, ret, btime_str, btime_size);
-  if (! btime_pos) return 0.0;
-
-  ret = sscanf(btime_pos + btime_size, "%lu", &btime);
-  if (ret != 1) return 0.0;
-
-  return (double) btime;
+SEXP processx__set_boot_time(SEXP bt) {
+  processx__linux_boot_time = REAL(bt)[0];
+  return R_NilValue;
 }
 
 static double processx__linux_clock_period = 0.0;

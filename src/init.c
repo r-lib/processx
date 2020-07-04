@@ -11,6 +11,7 @@ SEXP processx__unload_cleanup();
 SEXP run_testthat_tests();
 SEXP processx__echo_on();
 SEXP processx__echo_off();
+SEXP processx__set_boot_time(SEXP);
 
 static const R_CallMethodDef callMethods[]  = {
   CLEANCALL_METHOD_RECORD,
@@ -31,6 +32,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_create_named_pipe",  (DL_FUNC) &processx_create_named_pipe,  2 },
   { "processx_write_named_pipe",   (DL_FUNC) &processx_write_named_pipe,   2 },
   { "processx__proc_start_time",   (DL_FUNC) &processx__proc_start_time,   1 },
+  { "processx__set_boot_time",     (DL_FUNC) &processx__set_boot_time,     1 },
 
   { "processx_connection_create",     (DL_FUNC) &processx_connection_create,     2 },
   { "processx_connection_read_chars", (DL_FUNC) &processx_connection_read_chars, 2 },
