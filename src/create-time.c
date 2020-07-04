@@ -159,15 +159,8 @@ void *processx__memmem(const void *haystack, size_t n1,
   return NULL;
 }
 
-static double processx__linux_boot_time = 0.0;
-
 double processx__boot_time() {
   return processx__linux_boot_time;
-}
-
-SEXP processx__set_boot_time(SEXP bt) {
-  processx__linux_boot_time = REAL(bt)[0];
-  return R_NilValue;
 }
 
 static double processx__linux_clock_period = 0.0;
@@ -194,6 +187,16 @@ double processx__create_time(long pid) {
 }
 
 #endif
+
+/* This is defined on all OSes, but only really needed (and used)
+ * on Linux. */
+
+static double processx__linux_boot_time = 0.0;
+
+SEXP processx__set_boot_time(SEXP bt) {
+  processx__linux_boot_time = REAL(bt)[0];
+  return R_NilValue;
+}
 
 #ifdef __APPLE__
 
