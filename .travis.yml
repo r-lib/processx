@@ -23,8 +23,6 @@ matrix:
     - r: devel
     - os: osx
       osx_image: xcode9.3 #High Sierra
-    - os: osx
-      osx_image: xcode8.3 #Sierra
 
 before_script:
   - ulimit -c unlimited -S       # enable core dumps
