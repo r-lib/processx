@@ -164,7 +164,11 @@ int main(int argc, const char **argv) {
         fprintf(stderr, "Missing argument(s) for 'writefile'\n");
         return 5;
       }
+#ifdef WIN32
       int fd = open(argv[++idx], _O_WRONLY | _O_CREAT | _O_BINARY);
+#else
+      int fd = open(argv[++idx], O_WRONLY | O_CREAT);
+#endif
       if (fd == -1) return 11;
       if (write_to_fd(fd, argv[++idx])) { close(fd); return 12; }
       close(fd);
