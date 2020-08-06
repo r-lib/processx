@@ -82,3 +82,28 @@ interrupt_me <- function(expr, after = 1) {
 expect_error <- function(..., class = "error") {
   testthat::expect_error(..., class = class)
 }
+
+local_temp_dir <- function(pattern = "file", tmpdir = tempdir(),
+                           fileext = "", envir = parent.frame()) {
+  path <- tempfile(pattern = pattern, tmpdir = tmpdir, fileext = fileext)
+  dir.create(path)
+  setwd(path)
+  do.call(
+    withr::defer,
+    list(
+      bquote(unlink(.(path), recursive = TRUE)),
+      envir = envir
+    )
+  )
+  invisible(path)
+}
+
+has_locale <- function(l) {
+  has <- TRUE
+  tryCatch(
+    withr::with_locale(c(LC_CTYPE = l), "foobar"),
+    warning = function(w) has <<- FALSE,
+    error = function(e) has <<- FALSE
+  )
+  has
+}

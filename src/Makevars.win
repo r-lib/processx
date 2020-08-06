@@ -11,11 +11,14 @@ PKG_CFLAGS = -DSTRICT_R_HEADERS
 
 PKG_LIBS = -lws2_32
 
-all: tools/px.exe tools/interrupt.exe \
+all: tools/px.exe tools/pxu.exe tools/interrupt.exe \
 	supervisor/supervisor.exe $(SHLIB) client$(SHLIB_EXT)
 
 tools/px.exe: tools/px.c
 	$(CC) $(CFLAGS) -Wall $< -o $@
+
+tools/pxu.exe: tools/pxu.c
+	$(CC) $(CFLAGS) -Wall -municode $< -o $@
 
 tools/interrupt.exe: tools/interrupt.c
 	$(CC) $(CFLAGS) -Wall $< -o $@
