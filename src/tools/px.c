@@ -167,7 +167,7 @@ int main(int argc, const char **argv) {
 #ifdef WIN32
       int fd = open(argv[++idx], _O_WRONLY | _O_CREAT | _O_BINARY);
 #else
-      int fd = open(argv[++idx], O_WRONLY | O_CREAT);
+      int fd = open(argv[++idx], O_WRONLY | O_CREAT, 0644);
 #endif
       if (fd == -1) return 11;
       if (write_to_fd(fd, argv[++idx])) { close(fd); return 12; }
