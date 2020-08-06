@@ -39,6 +39,7 @@ test_that("UTF-8 directory name", {
 })
 
 test_that("UTF-8 argument", {
+  skip_other_platforms("windows")
   local_temp_dir()
   unc <- "\u00fa\u00e1\u00f6\u0151\u00e9\u0414\u041e\u0411\u0420\u041e"
   out <- run(get_tool("pxu"), c("writefile", "of", unc))
