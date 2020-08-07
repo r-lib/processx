@@ -35,6 +35,8 @@ void usage() {
 	  "print file to stdout\n");
   fprintf(stderr, "  return <exitcode>          -- "
 	  "return with exitcode\n");
+  fprintf(stderr, "  writefile <path> <string>  -- "
+     "write to file\n");
   fprintf(stderr, "  write <fd> <string>        -- "
 	  "write to file descriptor\n");
   fprintf(stderr, "  echo <fd1> <fd2> <nbytes>  -- "
@@ -157,22 +159,36 @@ int main(int argc, const char **argv) {
       }
       return num;
 
+    } else if (!strcmp("writefile", cmd)) {
+      if (idx + 2 >= argc) {
+        fprintf(stderr, "Missing argument(s) for 'writefile'\n");
+        return 5;
+      }
+#ifdef WIN32
+      int fd = open(argv[++idx], _O_WRONLY | _O_CREAT | _O_BINARY);
+#else
+      int fd = open(argv[++idx], O_WRONLY | O_CREAT, 0644);
+#endif
+      if (fd == -1) return 11;
+      if (write_to_fd(fd, argv[++idx])) { close(fd); return 12; }
+      close(fd);
+
     } else if (!strcmp("write", cmd)) {
       if (idx + 2 >= argc) {
 	fprintf(stderr, "Missing argument(s) for 'write'\n");
-	return 5;
+	return 6;
       }
       ret = sscanf(argv[++idx], "%d", &fd);
       if (ret != 1) {
 	fprintf(stderr, "Invalid fd for write: '%s'\n", argv[idx]);
-	return 6;
+	return 7;
       }
       if (write_to_fd(fd, argv[++idx])) return 7;
 
     } else if (!strcmp("echo", cmd)) {
       if (idx + 3 >= argc) {
 	fprintf(stderr, "Missing argument(s) for 'read'\n");
-	return 7;
+	return 8;
       }
       ret = sscanf(argv[++idx], "%d", &fd);
       ret = ret + sscanf(argv[++idx], "%d", &fd2);
@@ -180,9 +196,9 @@ int main(int argc, const char **argv) {
       if (ret != 3) {
 	fprintf(stderr, "Invalid fd1, fd2 or nbytes for read: '%s', '%s', '%s'\n",
 		argv[idx-2],  argv[idx-1], argv[idx]);
-	return 8;
+	return 9;
       }
-      if (echo_from_fd(fd, fd2, nbytes)) return 9;
+      if (echo_from_fd(fd, fd2, nbytes)) return 10;
 
     } else if (!strcmp("getenv", cmd)) {
       printf("%s\n", getenv(argv[++idx]));

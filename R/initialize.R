@@ -81,6 +81,9 @@ process_initialize <- function(self, private, command, args,
   }
   pty_options <- pty_options[names(def)]
 
+  command <- enc2utf8(command)
+  args <- enc2utf8(args)
+
   private$command <- command
   private$args <- args
   private$cleanup <- cleanup
