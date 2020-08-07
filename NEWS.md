@@ -1,6 +1,9 @@
 
 # development version
 
+* processx now works correctly for non-ASCII commands and arguments passed
+  in the native encoding, on Windows (#261, #262, #263, #264).
+
 # processx 3.4.3
 
 * The supervisor (activated with `supervise = TRUE`) does not crash
