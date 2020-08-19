@@ -19,16 +19,16 @@ test_that("inherit by default", {
 
 test_that("specify custom env", {
 
-  v <- basename(tempfile())
+  v <- c(basename(tempfile()), basename(tempfile()))
   if (os_type() == "unix") {
-    cmd <- c("bash", "-c", paste0("echo $", v))
+    cmd <- c("bash", "-c", paste0("echo ", paste0("$", v, collapse = " ")))
   } else {
-    cmd <- c("cmd",  "/c", paste0("echo %", v, "%"))
+    cmd <- c("cmd",  "/c", paste0("echo ", paste0("%", v, "%", collapse = " ")))
   }
 
   skip_if_no_tool(cmd[1])
 
-  out <- run(cmd[1], cmd[-1], env = structure("bar", names = v))
-  expect_true(out$stdout %in% paste0("bar", c("\n", "\r\n")))
+  out <- run(cmd[1], cmd[-1], env = structure(c("bar", "baz"), names = v))
+  expect_true(out$stdout %in% paste0("bar baz", c("\n", "\r\n")))
   gc()
 })

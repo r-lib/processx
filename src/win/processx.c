@@ -403,7 +403,7 @@ static int processx__make_program_env(SEXP env_block, const char *tree_id,
 
   /* first pass: determine size in UTF-16 */
   for (j = 0; j < num; j++) {
-    const char *env = CHAR(STRING_ELT(env_block, 0));
+    const char *env = CHAR(STRING_ELT(env_block, j));
     if (strchr(env, '=')) {
       len = MultiByteToWideChar(CP_UTF8,
                                 0,
@@ -432,7 +432,7 @@ static int processx__make_program_env(SEXP env_block, const char *tree_id,
   ptr = dst_copy;
   ptr_copy = env_copy;
   for (j = 0; j < num; j++) {
-    const char *env = CHAR(STRING_ELT(env_block, 0));
+    const char *env = CHAR(STRING_ELT(env_block, j));
     if (strchr(env, '=')) {
       len = MultiByteToWideChar(CP_UTF8,
                                 0,

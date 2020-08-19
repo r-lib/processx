@@ -3,6 +3,8 @@
 
 * processx now works correctly for non-ASCII commands and arguments passed
   in the native encoding, on Windows (#261, #262, #263, #264).
+  
+* Providing multiple environment variables now works on windows (#267).
 
 # processx 3.4.3
 
