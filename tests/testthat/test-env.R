@@ -21,9 +21,9 @@ test_that("specify custom env", {
 
   v <- c(basename(tempfile()), basename(tempfile()))
   if (os_type() == "unix") {
-    cmd <- c("bash", "-c", paste0("echo $", paste(v, collapse = " $")))
+    cmd <- c("bash", "-c", paste0("echo ", paste0("$", v, collapse = " ")))
   } else {
-    cmd <- c("cmd",  "/c", paste0("echo %", paste(v, collapse = "% %"), "%"))
+    cmd <- c("cmd",  "/c", paste0("echo ", paste0("%", v, "%", collapse = " ")))
   }
 
   skip_if_no_tool(cmd[1])
