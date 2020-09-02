@@ -207,7 +207,9 @@ SEXP processx_set_stdout_to_file(SEXP file) {
   if (fd == -1) {
     R_THROW_SYSTEM_ERROR("Cannot open new stdout file `%s`", c_file);
   }
-  return processx_set_std(1, fd, 0);
+  SEXP ret = processx_set_std(1, fd, 0);
+  close(fd);
+  return ret;
 }
 
 SEXP processx_set_stderr_to_file(SEXP file) {
@@ -220,7 +222,9 @@ SEXP processx_set_stderr_to_file(SEXP file) {
   if (fd == -1) {
     R_THROW_SYSTEM_ERROR("Cannot open new stderr file `%s`", c_file);
   }
-  return processx_set_std(2, fd, 0);
+  SEXP ret = processx_set_std(2, fd, 0);
+  close(fd);
+  return ret;
 }
 
 SEXP processx_base64_encode(SEXP array);
