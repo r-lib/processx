@@ -10,23 +10,27 @@
 
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.1/css/all.min.css" integrity="sha256-PbSmjxuVAzJ6FPvNYsrXygfGhNJYyZ2GktDbkMBqQZg=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.1/css/v4-shims.min.css" integrity="sha256-A6jcAdwFD48VMjlI3GDxUd+eCQa7/KWy6G9oe/ovaPA=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -41,7 +45,6 @@ class aims to help with this deficiency. It is essentially a small
 wrapper around the system base R function, to return the process
 id of the started process, and set its standard output and error
 streams. The process id is then used to manage the process." />
-<meta name="twitter:card" content="summary" />
 
 
 <meta name="robots" content="noindex">
@@ -59,7 +62,7 @@ streams. The process id is then used to manage the process." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -73,7 +76,7 @@ streams. The process id is then used to manage the process." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">3.4.2.9000</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">3.4.3.9000</span>
       </span>
     </div>
 
@@ -94,7 +97,7 @@ streams. The process id is then used to manage the process." />
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <li>
-  <a href="https://github.com/r-lib/processx">
+  <a href="https://github.com/r-lib/processx/">
     <span class="fab fa fab fa-github fa-lg"></span>
      
   </a>
@@ -148,17 +151,17 @@ also set to <code>TRUE</code>).</p>
 <p>The cleanup happens when the references of the processes object are
 garbage collected. To clean up earlier, you can call the <code>kill()</code> or
 <code>kill_tree()</code> method of the process(es), from an <code><a href='https://rdrr.io/r/base/on.exit.html'>on.exit()</a></code> expression,
-or an error handler:<div class="r"></p><pre>process_manager &lt;- function() {
-  on.exit({
-    try(p1$kill(), silent = TRUE)
-    try(p2$kill(), silent = TRUE)
-  }, add = TRUE)
-  p1 &lt;- process$new("sleep", "3")
-  p2 &lt;- process$new("sleep", "10")
-  p1$wait()
-  p2$wait()
+or an error handler:<div class="r"></p><pre><span class='kw'>process_manager</span> <span class='op'>&lt;-</span> <span class='fu'>function</span>() {
+  <span class='fu'><a href='https://rdrr.io/r/base/on.exit.html'>on.exit</a></span>({
+    <span class='fu'><a href='https://rdrr.io/r/base/try.html'>try</a></span>(<span class='kw'>p1</span><span class='op'>$</span><span class='fu'>kill</span>(), silent = <span class='fl'>TRUE</span>)
+    <span class='fu'><a href='https://rdrr.io/r/base/try.html'>try</a></span>(<span class='kw'>p2</span><span class='op'>$</span><span class='fu'>kill</span>(), silent = <span class='fl'>TRUE</span>)
+  }, add = <span class='fl'>TRUE</span>)
+  <span class='kw'>p1</span> <span class='op'>&lt;-</span> <span class='kw'>process</span><span class='op'>$</span><span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"3"</span>)
+  <span class='kw'>p2</span> <span class='op'>&lt;-</span> <span class='kw'>process</span><span class='op'>$</span><span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"10"</span>)
+  <span class='kw'>p1</span><span class='op'>$</span><span class='fu'>wait</span>()
+  <span class='kw'>p2</span><span class='op'>$</span><span class='fu'>wait</span>()
 }
-process_manager()
+<span class='fu'>process_manager</span>()
 </pre><p></div></p>
 <p>If you interrupt <code>process_manager()</code> or an error happens then both <code>p1</code>
 and <code>p2</code> are cleaned up immediately. Their connections will also be
@@ -166,7 +169,7 @@ closed. The same happens at a regular exit.</p>
     <h2 class="hasAnchor" id="methods"><a class="anchor" href="#methods"></a>Methods</h2>
 
     
-<h3>Public methods</h3>
+<h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Public methods</h3>
 
 <ul>
 <li><p><a href='#method-new'><code>process$new()</code></a></p></li>
@@ -221,32 +224,32 @@ closed. The same happens at a regular exit.</p>
 <li><p><a href='#method-resume'><code>process$resume()</code></a></p></li>
 </ul>
 <p><hr>
-<a id="method-new"></a></p><h3>Method <code>new()</code></h3>
-<p>Start a new process in the background, and then return immediately.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$new(
-  command = NULL,
-  args = character(),
-  stdin = NULL,
-  stdout = NULL,
-  stderr = NULL,
-  pty = FALSE,
-  pty_options = list(),
-  connections = list(),
-  poll_connection = NULL,
-  env = NULL,
-  cleanup = TRUE,
-  cleanup_tree = FALSE,
-  wd = NULL,
-  echo_cmd = FALSE,
-  supervise = FALSE,
-  windows_verbatim_args = FALSE,
-  windows_hide_window = FALSE,
-  encoding = "",
-  post_process = NULL
+<a id="method-new"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>new()</code></h3>
+<p>Start a new process in the background, and then return immediately.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>new</span>(
+  command = <span class='kw'>NULL</span>,
+  args = <span class='fu'><a href='https://rdrr.io/r/base/character.html'>character</a></span>(),
+  stdin = <span class='kw'>NULL</span>,
+  stdout = <span class='kw'>NULL</span>,
+  stderr = <span class='kw'>NULL</span>,
+  pty = <span class='fl'>FALSE</span>,
+  pty_options = <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(),
+  connections = <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(),
+  poll_connection = <span class='kw'>NULL</span>,
+  env = <span class='kw'>NULL</span>,
+  cleanup = <span class='fl'>TRUE</span>,
+  cleanup_tree = <span class='fl'>FALSE</span>,
+  wd = <span class='kw'>NULL</span>,
+  echo_cmd = <span class='fl'>FALSE</span>,
+  supervise = <span class='fl'>FALSE</span>,
+  windows_verbatim_args = <span class='fl'>FALSE</span>,
+  windows_hide_window = <span class='fl'>FALSE</span>,
+  encoding = <span class='st'>""</span>,
+  post_process = <span class='kw'>NULL</span>
 )</pre><p></div></p>
 
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
 <dt><code>command</code></dt><dd><p>Character scalar, the command to run.
 Note that this argument is not passed to a shell, so no
 tilde-expansion or variable substitution is performed on it.
@@ -262,21 +265,21 @@ They don't need to be escaped.</p></dd>
 <li><p><code>NULL</code>: set to the <em>null device</em>, i.e. no standard input is
 provided;</p></li>
 <li><p>a file name, use this file as standard input;</p></li>
-<li><p><code><a href='https://rdrr.io/r/base/Logic.html'>"|"</a></code>: create a (writeable) connection for stdin.</p></li>
+<li><p><code>"|"</code>: create a (writeable) connection for stdin.</p></li>
 </ul></p></dd>
 
 <dt><code>stdout</code></dt><dd><p>What to do with the standard output. Possible values:
 <ul>
 <li><p><code>NULL</code>: discard it;</p></li>
 <li><p>a string, redirect it to this file;</p></li>
-<li><p><code><a href='https://rdrr.io/r/base/Logic.html'>"|"</a></code>: create a connection for it.</p></li>
+<li><p><code>"|"</code>: create a connection for it.</p></li>
 </ul></p></dd>
 
 <dt><code>stderr</code></dt><dd><p>What to do with the standard error. Possible values:
 <ul>
 <li><p><code>NULL</code>: discard it;</p></li>
 <li><p>a string, redirect it to this file;</p></li>
-<li><p><code><a href='https://rdrr.io/r/base/Logic.html'>"|"</a></code>: create a connection for it;</p></li>
+<li><p><code>"|"</code>: create a connection for it;</p></li>
 <li><p><code>"2&gt;&amp;1"</code>: redirect it to the same connection (i.e. pipe or file)
 as <code>stdout</code>. <code>"2&gt;&amp;1"</code> is a way to keep standard output and error
 correctly interleaved.</p></li>
@@ -355,26 +358,26 @@ finished. Currently it only runs if <code>$get_result()</code> is called.
 It is only run once.</p></dd>
 
 </dl><p></div></p>
-<h3>Returns</h3>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
 <p>R6 object representing the process.</p>
 <p><hr>
-<a id="method-finalize"></a></p><h3>Method <code>finalize()</code></h3>
+<a id="method-finalize"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>finalize()</code></h3>
 <p>Cleanup method that is called when the <code>process</code> object is garbage
 collected. If requested so in the process constructor, then it
-eliminates all processes in the process's subprocess tree.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$finalize()</pre><p></div></p>
+eliminates all processes in the process's subprocess tree.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>finalize</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-kill"></a></p><h3>Method <code>kill()</code></h3>
+<a id="method-kill"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>kill()</code></h3>
 <p>Terminate the process. It also terminate all of its child
 processes, except if they have created a new process group (on Unix),
 or job object (on Windows). It returns <code>TRUE</code> if the process
 was terminated, and <code>FALSE</code> if it was not (because it was
-already finished/dead when <code>processx</code> tried to terminate it).</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$kill(grace = 0.1, close_connections = TRUE)</pre><p></div></p>
+already finished/dead when <code>processx</code> tried to terminate it).</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>kill</span>(grace = <span class='fl'>0.1</span>, close_connections = <span class='fl'>TRUE</span>)</pre><p></div></p>
 
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
 <dt><code>grace</code></dt><dd><p>Currently not used.</p></dd>
 
 <dt><code>close_connections</code></dt><dd><p>Whether to close standard input, standard
@@ -383,7 +386,7 @@ killing the process.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
-<a id="method-kill_tree"></a></p><h3>Method <code>kill_tree()</code></h3>
+<a id="method-kill_tree"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>kill_tree()</code></h3>
 <p>Process tree cleanup. It terminates the process
 (if still alive), together with any child (or grandchild, etc.)
 processes. It uses the <em>ps</em> package, so that needs to be installed,
@@ -394,11 +397,11 @@ descendents, even if they are orphaned, i.e. they are not connected
 to the root of the tree cleanup in the process tree any more.
 <code>$kill_tree()</code> returns a named integer vector of the process ids that
 were killed, the names are the names of the processes (e.g. <code>"sleep"</code>,
-<code>"notepad.exe"</code>, <code>"Rterm.exe"</code>, etc.).</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$kill_tree(grace = 0.1, close_connections = TRUE)</pre><p></div></p>
+<code>"notepad.exe"</code>, <code>"Rterm.exe"</code>, etc.).</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>kill_tree</span>(grace = <span class='fl'>0.1</span>, close_connections = <span class='fl'>TRUE</span>)</pre><p></div></p>
 
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
 <dt><code>grace</code></dt><dd><p>Currently not used.</p></dd>
 
 <dt><code>close_connections</code></dt><dd><p>Whether to close standard input, standard
@@ -407,45 +410,45 @@ killing the process.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
-<a id="method-signal"></a></p><h3>Method <code>signal()</code></h3>
+<a id="method-signal"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>signal()</code></h3>
 <p>Send a signal to the process. On Windows only the
 <code>SIGINT</code>, <code>SIGTERM</code> and <code>SIGKILL</code> signals are interpreted,
 and the special 0 signal. The first three all kill the process. The 0
 signal returns <code>TRUE</code> if the process is alive, and <code>FALSE</code>
 otherwise. On Unix all signals are supported that the OS supports,
-and the 0 signal as well.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$signal(signal)</pre><p></div></p>
+and the 0 signal as well.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>signal</span>(<span class='kw'>signal</span>)</pre><p></div></p>
 
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
 <dt><code>signal</code></dt><dd><p>An integer scalar, the id of the signal to send to
 the process. See <code><a href='https://rdrr.io/r/tools/pskill.html'>tools::pskill()</a></code> for the list of signals.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
-<a id="method-interrupt"></a></p><h3>Method <code>interrupt()</code></h3>
+<a id="method-interrupt"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>interrupt()</code></h3>
 <p>Send an interrupt to the process. On Unix this is a
 <code>SIGINT</code> signal, and it is usually equivalent to pressing CTRL+C at
 the terminal prompt. On Windows, it is a CTRL+BREAK keypress.
-Applications may catch these events. By default they will quit.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$interrupt()</pre><p></div></p>
+Applications may catch these events. By default they will quit.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>interrupt</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_pid"></a></p><h3>Method <code>get_pid()</code></h3>
-<p>Query the process id.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_pid()</pre><p></div></p>
+<a id="method-get_pid"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_pid()</code></h3>
+<p>Query the process id.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_pid</span>()</pre><p></div></p>
 
-<h3>Returns</h3>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
 <p>Integer scalar, the process id of the process.</p>
 <p><hr>
-<a id="method-is_alive"></a></p><h3>Method <code>is_alive()</code></h3>
-<p>Check if the process is alive.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$is_alive()</pre><p></div></p>
+<a id="method-is_alive"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>is_alive()</code></h3>
+<p>Check if the process is alive.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>is_alive</span>()</pre><p></div></p>
 
-<h3>Returns</h3>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
 <p>Logical scalar.</p>
 <p><hr>
-<a id="method-wait"></a></p><h3>Method <code>wait()</code></h3>
+<a id="method-wait"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>wait()</code></h3>
 <p>Wait until the process finishes, or a timeout happens.
 Note that if the process never finishes, and the timeout is infinite
 (the default), then R will never regain control. In some rare cases,
@@ -453,218 +456,218 @@ Note that if the process never finishes, and the timeout is infinite
 happens on Unix, when another package overwrites the processx
 <code>SIGCHLD</code> signal handler, after the processx process has started.
 One such package is parallel, if used with fork clusters, e.g.
-through <code><a href='https://rdrr.io/r/parallel/mcparallel.html'>parallel::mcparallel()</a></code>.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$wait(timeout = -1)</pre><p></div></p>
+through <code><a href='https://rdrr.io/r/parallel/mcparallel.html'>parallel::mcparallel()</a></code>.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>wait</span>(timeout = <span class='op'>-</span><span class='fl'>1</span>)</pre><p></div></p>
 
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
 <dt><code>timeout</code></dt><dd><p>Timeout in milliseconds, for the wait or the I/O
 polling.</p></dd>
 
 </dl><p></div></p>
-<h3>Returns</h3>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
 <p>It returns the process itself, invisibly.</p>
 <p><hr>
-<a id="method-get_exit_status"></a></p><h3>Method <code>get_exit_status()</code></h3>
+<a id="method-get_exit_status"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_exit_status()</code></h3>
 <p><code>$get_exit_status</code> returns the exit code of the process if it has
 finished and <code>NULL</code> otherwise. On Unix, in some rare cases, the exit
 status might be <code>NA</code>. This happens if another package (or R itself)
 overwrites the processx <code>SIGCHLD</code> handler, after the processx process
 has started. In these cases processx cannot determine the real exit
 status of the process. One such package is parallel, if used with
-fork clusters, e.g. through the <code><a href='https://rdrr.io/r/parallel/mcparallel.html'>parallel::mcparallel()</a></code> function.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_exit_status()</pre><p></div></p>
+fork clusters, e.g. through the <code><a href='https://rdrr.io/r/parallel/mcparallel.html'>parallel::mcparallel()</a></code> function.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_exit_status</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-format"></a></p><h3>Method <code><a href='https://rdrr.io/r/base/format.html'>format()</a></code></h3>
+<a id="method-format"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code><a href='https://rdrr.io/r/base/format.html'>format()</a></code></h3>
 <p><code><a href='https://rdrr.io/r/base/format.html'>format(p)</a></code> or <code>p$format()</code> creates a string representation of the
-process, usually for printing.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$format()</pre><p></div></p>
+process, usually for printing.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'><a href='https://rdrr.io/r/base/format.html'>format</a></span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-print"></a></p><h3>Method <code><a href='https://rdrr.io/r/base/print.html'>print()</a></code></h3>
+<a id="method-print"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code><a href='https://rdrr.io/r/base/print.html'>print()</a></code></h3>
 <p><code><a href='https://rdrr.io/r/base/print.html'>print(p)</a></code> or <code>p$print()</code> shows some information about the
-process on the screen, whether it is running and it's process id, etc.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$print()</pre><p></div></p>
+process on the screen, whether it is running and it's process id, etc.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'><a href='https://rdrr.io/r/base/print.html'>print</a></span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_start_time"></a></p><h3>Method <code>get_start_time()</code></h3>
+<a id="method-get_start_time"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_start_time()</code></h3>
 <p><code>$get_start_time()</code> returns the time when the process was
-started.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_start_time()</pre><p></div></p>
+started.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_start_time</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-is_supervised"></a></p><h3>Method <code>is_supervised()</code></h3>
+<a id="method-is_supervised"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>is_supervised()</code></h3>
 <p><code>$is_supervised()</code> returns whether the process is being tracked by
-supervisor process.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$is_supervised()</pre><p></div></p>
+supervisor process.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>is_supervised</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-supervise"></a></p><h3>Method <code>supervise()</code></h3>
+<a id="method-supervise"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>supervise()</code></h3>
 <p><code>$supervise()</code> if passed <code>TRUE</code>, tells the supervisor to start
 tracking the process. If <code>FALSE</code>, tells the supervisor to stop
 tracking the process. Note that even if the supervisor is disabled
 for a process, if it was started with <code>cleanup = TRUE</code>, the process
-will still be killed when the object is garbage collected.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$supervise(status)</pre><p></div></p>
+will still be killed when the object is garbage collected.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>supervise</span>(<span class='kw'>status</span>)</pre><p></div></p>
 
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
 <dt><code>status</code></dt><dd><p>Whether to turn on of off the supervisor for this
 process.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
-<a id="method-read_output"></a></p><h3>Method <code>read_output()</code></h3>
+<a id="method-read_output"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>read_output()</code></h3>
 <p><code>$read_output()</code> reads from the standard output connection of the
 process. If the standard output connection was not requested, then
 then it returns an error. It uses a non-blocking text connection. This
 will work only if <code>stdout="|"</code> was used. Otherwise, it will throw an
-error.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$read_output(n = -1)</pre><p></div></p>
+error.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>read_output</span>(n = <span class='op'>-</span><span class='fl'>1</span>)</pre><p></div></p>
 
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
 <dt><code>n</code></dt><dd><p>Number of characters or lines to read.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
-<a id="method-read_error"></a></p><h3>Method <code>read_error()</code></h3>
+<a id="method-read_error"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>read_error()</code></h3>
 <p><code>$read_error()</code> is similar to <code>$read_output</code>, but it reads
-from the standard error stream.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$read_error(n = -1)</pre><p></div></p>
+from the standard error stream.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>read_error</span>(n = <span class='op'>-</span><span class='fl'>1</span>)</pre><p></div></p>
 
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
 <dt><code>n</code></dt><dd><p>Number of characters or lines to read.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
-<a id="method-read_output_lines"></a></p><h3>Method <code>read_output_lines()</code></h3>
+<a id="method-read_output_lines"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>read_output_lines()</code></h3>
 <p><code>$read_output_lines()</code> reads lines from standard output connection
 of the process. If the standard output connection was not requested,
 then it returns an error. It uses a non-blocking text connection.
 This will work only if <code>stdout="|"</code> was used. Otherwise, it will
-throw an error.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$read_output_lines(n = -1)</pre><p></div></p>
+throw an error.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>read_output_lines</span>(n = <span class='op'>-</span><span class='fl'>1</span>)</pre><p></div></p>
 
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
 <dt><code>n</code></dt><dd><p>Number of characters or lines to read.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
-<a id="method-read_error_lines"></a></p><h3>Method <code>read_error_lines()</code></h3>
+<a id="method-read_error_lines"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>read_error_lines()</code></h3>
 <p><code>$read_error_lines()</code> is similar to <code>$read_output_lines</code>, but
-it reads from the standard error stream.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$read_error_lines(n = -1)</pre><p></div></p>
+it reads from the standard error stream.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>read_error_lines</span>(n = <span class='op'>-</span><span class='fl'>1</span>)</pre><p></div></p>
 
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
 <dt><code>n</code></dt><dd><p>Number of characters or lines to read.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
-<a id="method-is_incomplete_output"></a></p><h3>Method <code>is_incomplete_output()</code></h3>
+<a id="method-is_incomplete_output"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>is_incomplete_output()</code></h3>
 <p><code>$is_incomplete_output()</code> return <code>FALSE</code> if the other end of
 the standard output connection was closed (most probably because the
-process exited). It return <code>TRUE</code> otherwise.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$is_incomplete_output()</pre><p></div></p>
+process exited). It return <code>TRUE</code> otherwise.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>is_incomplete_output</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-is_incomplete_error"></a></p><h3>Method <code>is_incomplete_error()</code></h3>
+<a id="method-is_incomplete_error"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>is_incomplete_error()</code></h3>
 <p><code>$is_incomplete_error()</code> return <code>FALSE</code> if the other end of
 the standard error connection was closed (most probably because the
-process exited). It return <code>TRUE</code> otherwise.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$is_incomplete_error()</pre><p></div></p>
+process exited). It return <code>TRUE</code> otherwise.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>is_incomplete_error</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-has_input_connection"></a></p><h3>Method <code>has_input_connection()</code></h3>
+<a id="method-has_input_connection"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>has_input_connection()</code></h3>
 <p><code>$has_input_connection()</code> return <code>TRUE</code> if there is a connection
 object for standard input; in other words, if <code>stdout="|"</code>. It returns
-<code>FALSE</code> otherwise.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$has_input_connection()</pre><p></div></p>
+<code>FALSE</code> otherwise.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>has_input_connection</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-has_output_connection"></a></p><h3>Method <code>has_output_connection()</code></h3>
+<a id="method-has_output_connection"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>has_output_connection()</code></h3>
 <p><code>$has_output_connection()</code> returns <code>TRUE</code> if there is a connection
 object for standard output; in other words, if <code>stdout="|"</code>. It returns
-<code>FALSE</code> otherwise.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$has_output_connection()</pre><p></div></p>
+<code>FALSE</code> otherwise.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>has_output_connection</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-has_error_connection"></a></p><h3>Method <code>has_error_connection()</code></h3>
+<a id="method-has_error_connection"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>has_error_connection()</code></h3>
 <p><code>$has_error_connection()</code> returns <code>TRUE</code> if there is a connection
 object for standard error; in other words, if <code>stderr="|"</code>. It returns
-<code>FALSE</code> otherwise.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$has_error_connection()</pre><p></div></p>
+<code>FALSE</code> otherwise.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>has_error_connection</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-has_poll_connection"></a></p><h3>Method <code>has_poll_connection()</code></h3>
+<a id="method-has_poll_connection"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>has_poll_connection()</code></h3>
 <p><code>$has_poll_connection()</code> return <code>TRUE</code> if there is a poll connection,
-<code>FALSE</code> otherwise.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$has_poll_connection()</pre><p></div></p>
+<code>FALSE</code> otherwise.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>has_poll_connection</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_input_connection"></a></p><h3>Method <code>get_input_connection()</code></h3>
+<a id="method-get_input_connection"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_input_connection()</code></h3>
 <p><code>$get_input_connection()</code> returns a connection object, to the
-standard input stream of the process.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_input_connection()</pre><p></div></p>
+standard input stream of the process.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_input_connection</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_output_connection"></a></p><h3>Method <code>get_output_connection()</code></h3>
+<a id="method-get_output_connection"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_output_connection()</code></h3>
 <p><code>$get_output_connection()</code> returns a connection object, to the
-standard output stream of the process.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_output_connection()</pre><p></div></p>
+standard output stream of the process.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_output_connection</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_error_connection"></a></p><h3>Method <code>get_error_connection()</code></h3>
+<a id="method-get_error_connection"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_error_connection()</code></h3>
 <p><code>$get_error_conneciton()</code> returns a connection object, to the
-standard error stream of the process.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_error_connection()</pre><p></div></p>
+standard error stream of the process.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_error_connection</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-read_all_output"></a></p><h3>Method <code>read_all_output()</code></h3>
+<a id="method-read_all_output"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>read_all_output()</code></h3>
 <p><code>$read_all_output()</code> waits for all standard output from the process.
 It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several <code><a href='https://rdrr.io/r/base/readLines.html'>readLines()</a></code> calls.
 It returns a character scalar. This will return content only if
-<code>stdout="|"</code> was used. Otherwise, it will throw an error.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$read_all_output()</pre><p></div></p>
+<code>stdout="|"</code> was used. Otherwise, it will throw an error.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>read_all_output</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-read_all_error"></a></p><h3>Method <code>read_all_error()</code></h3>
+<a id="method-read_all_error"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>read_all_error()</code></h3>
 <p><code>$read_all_error()</code> waits for all standard error from the process.
 It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several <code><a href='https://rdrr.io/r/base/readLines.html'>readLines()</a></code> calls.
 It returns a character scalar. This will return content only if
-<code>stderr="|"</code> was used. Otherwise, it will throw an error.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$read_all_error()</pre><p></div></p>
+<code>stderr="|"</code> was used. Otherwise, it will throw an error.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>read_all_error</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-read_all_output_lines"></a></p><h3>Method <code>read_all_output_lines()</code></h3>
+<a id="method-read_all_output_lines"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>read_all_output_lines()</code></h3>
 <p><code>$read_all_output_lines()</code> waits for all standard output lines
 from a process. It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several <code><a href='https://rdrr.io/r/base/readLines.html'>readLines()</a></code> calls.
 It returns a character vector. This will return content only if
-<code>stdout="|"</code> was used. Otherwise, it will throw an error.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$read_all_output_lines()</pre><p></div></p>
+<code>stdout="|"</code> was used. Otherwise, it will throw an error.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>read_all_output_lines</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-read_all_error_lines"></a></p><h3>Method <code>read_all_error_lines()</code></h3>
+<a id="method-read_all_error_lines"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>read_all_error_lines()</code></h3>
 <p><code>$read_all_error_lines()</code> waits for all standard error lines from
 a process. It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
 polling for I/O and potentically several <code><a href='https://rdrr.io/r/base/readLines.html'>readLines()</a></code> calls.
 It returns a character vector. This will return content only if
-<code>stderr="|"</code> was used. Otherwise, it will throw an error.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$read_all_error_lines()</pre><p></div></p>
+<code>stderr="|"</code> was used. Otherwise, it will throw an error.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>read_all_error_lines</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-write_input"></a></p><h3>Method <code>write_input()</code></h3>
+<a id="method-write_input"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>write_input()</code></h3>
 <p><code>$write_input()</code> writes the character vector (separated by <code>sep</code>) to
 the standard input of the process. It will be converted to the specified
 encoding. This operation is non-blocking, and it will return, even if
@@ -672,11 +675,11 @@ the write fails (because the write buffer is full), or if it suceeds
 partially (i.e. not the full string is written). It returns with a raw
 vector, that contains the bytes that were not written. You can supply
 this raw vector to <code>$write_input()</code> again, until it is fully written,
-and then the return value will be <code><a href='https://rdrr.io/r/base/raw.html'>raw(0)</a></code> (invisibly).</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$write_input(str, sep = "\n")</pre><p></div></p>
+and then the return value will be <code><a href='https://rdrr.io/r/base/raw.html'>raw(0)</a></code> (invisibly).</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>write_input</span>(<span class='kw'>str</span>, sep = <span class='st'>"\n"</span>)</pre><p></div></p>
 
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
 <dt><code>str</code></dt><dd><p>Character or raw vector to write to the standard input
 of the process. If a character vector with a marked encoding,
 it will be converted to <code>encoding</code>.</p></dd>
@@ -685,130 +688,131 @@ it will be converted to <code>encoding</code>.</p></dd>
 character vector. It is ignored if <code>str</code> is a raw vector.</p></dd>
 
 </dl><p></div></p>
-<h3>Returns</h3>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
 <p>Leftover text (as a raw vector), that was not written.</p>
 <p><hr>
-<a id="method-get_input_file"></a></p><h3>Method <code>get_input_file()</code></h3>
+<a id="method-get_input_file"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_input_file()</code></h3>
 <p><code>$get_input_file()</code> if the <code>stdin</code> argument was a filename,
-this returns the absolute path to the file. If <code>stdin</code> was <code><a href='https://rdrr.io/r/base/Logic.html'>"|"</a></code> or
-<code>NULL</code>, this simply returns that value.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_input_file()</pre><p></div></p>
+this returns the absolute path to the file. If <code>stdin</code> was <code>"|"</code> or
+<code>NULL</code>, this simply returns that value.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_input_file</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_output_file"></a></p><h3>Method <code>get_output_file()</code></h3>
+<a id="method-get_output_file"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_output_file()</code></h3>
 <p><code>$get_output_file()</code> if the <code>stdout</code> argument was a filename,
-this returns the absolute path to the file. If <code>stdout</code> was <code><a href='https://rdrr.io/r/base/Logic.html'>"|"</a></code> or
-<code>NULL</code>, this simply returns that value.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_output_file()</pre><p></div></p>
+this returns the absolute path to the file. If <code>stdout</code> was <code>"|"</code> or
+<code>NULL</code>, this simply returns that value.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_output_file</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_error_file"></a></p><h3>Method <code>get_error_file()</code></h3>
+<a id="method-get_error_file"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_error_file()</code></h3>
 <p><code>$get_error_file()</code> if the <code>stderr</code> argument was a filename,
-this returns the absolute path to the file. If <code>stderr</code> was <code><a href='https://rdrr.io/r/base/Logic.html'>"|"</a></code> or
-<code>NULL</code>, this simply returns that value.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_error_file()</pre><p></div></p>
+this returns the absolute path to the file. If <code>stderr</code> was <code>"|"</code> or
+<code>NULL</code>, this simply returns that value.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_error_file</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-poll_io"></a></p><h3>Method <code>poll_io()</code></h3>
+<a id="method-poll_io"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>poll_io()</code></h3>
 <p><code>$poll_io()</code> polls the process's connections for I/O. See more in
 the <em>Polling</em> section, and see also the <code><a href='poll.html'>poll()</a></code> function
-to poll on multiple processes.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$poll_io(timeout)</pre><p></div></p>
+to poll on multiple processes.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>poll_io</span>(<span class='kw'>timeout</span>)</pre><p></div></p>
 
-<h3>Arguments</h3>
-<p><div class="arguments"></p><dl class='dl-horizontal'>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
 <dt><code>timeout</code></dt><dd><p>Timeout in milliseconds, for the wait or the I/O
 polling.</p></dd>
 
 </dl><p></div></p>
 <p><hr>
-<a id="method-get_poll_connection"></a></p><h3>Method <code>get_poll_connection()</code></h3>
+<a id="method-get_poll_connection"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_poll_connection()</code></h3>
 <p><code>$get_poll_connetion()</code> returns the poll connection, if the process has
-one.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_poll_connection()</pre><p></div></p>
+one.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_poll_connection</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_result"></a></p><h3>Method <code>get_result()</code></h3>
+<a id="method-get_result"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_result()</code></h3>
 <p><code>$get_result()</code> returns the result of the post processesing function.
 It can only be called once the process has finished. If the process has
-no post-processing function, then <code>NULL</code> is returned.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_result()</pre><p></div></p>
+no post-processing function, then <code>NULL</code> is returned.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_result</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-as_ps_handle"></a></p><h3>Method <code>as_ps_handle()</code></h3>
+<a id="method-as_ps_handle"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>as_ps_handle()</code></h3>
 <p><code>$as_ps_handle()</code> returns a <a href='https://rdrr.io/pkg/ps/man/ps_handle.html'>ps::ps_handle</a> object, corresponding to
-the process.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$as_ps_handle()</pre><p></div></p>
+the process.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>as_ps_handle</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_name"></a></p><h3>Method <code>get_name()</code></h3>
-<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_name.html'>ps::ps_name()</a></code> to get the process name.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_name()</pre><p></div></p>
+<a id="method-get_name"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_name()</code></h3>
+<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_name.html'>ps::ps_name()</a></code> to get the process name.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_name</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_exe"></a></p><h3>Method <code>get_exe()</code></h3>
-<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_exe.html'>ps::ps_exe()</a></code> to get the path of the executable.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_exe()</pre><p></div></p>
+<a id="method-get_exe"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_exe()</code></h3>
+<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_exe.html'>ps::ps_exe()</a></code> to get the path of the executable.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_exe</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_cmdline"></a></p><h3>Method <code>get_cmdline()</code></h3>
-<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_cmdline.html'>ps::ps_cmdline()</a></code> to get the command line.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_cmdline()</pre><p></div></p>
+<a id="method-get_cmdline"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_cmdline()</code></h3>
+<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_cmdline.html'>ps::ps_cmdline()</a></code> to get the command line.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_cmdline</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_status"></a></p><h3>Method <code>get_status()</code></h3>
-<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_status.html'>ps::ps_status()</a></code> to get the process status.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_status()</pre><p></div></p>
+<a id="method-get_status"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_status()</code></h3>
+<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_status.html'>ps::ps_status()</a></code> to get the process status.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_status</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_username"></a></p><h3>Method <code>get_username()</code></h3>
-<p>calls <code><a href='https://rdrr.io/pkg/ps/man/ps_username.html'>ps::ps_username()</a></code> to get the username.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_username()</pre><p></div></p>
+<a id="method-get_username"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_username()</code></h3>
+<p>calls <code><a href='https://rdrr.io/pkg/ps/man/ps_username.html'>ps::ps_username()</a></code> to get the username.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_username</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_wd"></a></p><h3>Method <code>get_wd()</code></h3>
-<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_cwd.html'>ps::ps_cwd()</a></code> to get the current working directory.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_wd()</pre><p></div></p>
+<a id="method-get_wd"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_wd()</code></h3>
+<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_cwd.html'>ps::ps_cwd()</a></code> to get the current working directory.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_wd</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_cpu_times"></a></p><h3>Method <code>get_cpu_times()</code></h3>
-<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_cpu_times.html'>ps::ps_cpu_times()</a></code> to get CPU usage data.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_cpu_times()</pre><p></div></p>
+<a id="method-get_cpu_times"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_cpu_times()</code></h3>
+<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_cpu_times.html'>ps::ps_cpu_times()</a></code> to get CPU usage data.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_cpu_times</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-get_memory_info"></a></p><h3>Method <code>get_memory_info()</code></h3>
-<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_memory_info.html'>ps::ps_memory_info()</a></code> to get memory data.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$get_memory_info()</pre><p></div></p>
+<a id="method-get_memory_info"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>get_memory_info()</code></h3>
+<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_memory_info.html'>ps::ps_memory_info()</a></code> to get memory data.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>get_memory_info</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-suspend"></a></p><h3>Method <code>suspend()</code></h3>
-<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_suspend.html'>ps::ps_suspend()</a></code> to suspend the process.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$suspend()</pre><p></div></p>
+<a id="method-suspend"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>suspend()</code></h3>
+<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_suspend.html'>ps::ps_suspend()</a></code> to suspend the process.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>suspend</span>()</pre><p></div></p>
 
 <p><hr>
-<a id="method-resume"></a></p><h3>Method <code>resume()</code></h3>
-<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_resume.html'>ps::ps_resume()</a></code> to resume a suspended process.</p><h3>Usage</h3>
-<p><div class="r"></p><pre>process$resume()</pre><p></div></p>
+<a id="method-resume"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>resume()</code></h3>
+<p>Calls <code><a href='https://rdrr.io/pkg/ps/man/ps_resume.html'>ps::ps_resume()</a></code> to resume a suspended process.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='kw'>process</span><span class='op'>$</span><span class='fu'>resume</span>()</pre><p></div></p>
 
 
 
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='no'>process</span>$<span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"2"</span>)
-<span class='no'>p</span>$<span class='fu'>is_alive</span>()</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='no'>p</span></div><div class='output co'>#&gt; PROCESS 'sleep', running, pid 18914.</div><div class='input'><span class='no'>p</span>$<span class='fu'>kill</span>()</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='no'>p</span>$<span class='fu'>is_alive</span>()</div><div class='output co'>#&gt; [1] FALSE</div><div class='input'>
-<span class='no'>p</span> <span class='kw'>&lt;-</span> <span class='no'>process</span>$<span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"1"</span>)
-<span class='no'>p</span>$<span class='fu'>is_alive</span>()</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Sys.sleep.html'>Sys.sleep</a></span>(<span class='fl'>2</span>)
-<span class='no'>p</span>$<span class='fu'>is_alive</span>()</div><div class='output co'>#&gt; [1] FALSE</div></pre>
+    <pre class="examples"><div class='input'><span class='kw'>p</span> <span class='op'>&lt;-</span> <span class='kw'>process</span><span class='op'>$</span><span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"2"</span>)
+<span class='kw'>p</span><span class='op'>$</span><span class='fu'>is_alive</span>()
+</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='kw'>p</span>
+</div><div class='output co'>#&gt; PROCESS 'sleep', running, pid 11893.</div><div class='input'><span class='kw'>p</span><span class='op'>$</span><span class='fu'>kill</span>()
+</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='kw'>p</span><span class='op'>$</span><span class='fu'>is_alive</span>()
+</div><div class='output co'>#&gt; [1] FALSE</div><div class='input'>
+<span class='kw'>p</span> <span class='op'>&lt;-</span> <span class='kw'>process</span><span class='op'>$</span><span class='fu'>new</span>(<span class='st'>"sleep"</span>, <span class='st'>"1"</span>)
+<span class='kw'>p</span><span class='op'>$</span><span class='fu'>is_alive</span>()
+</div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/Sys.sleep.html'>Sys.sleep</a></span>(<span class='fl'>2</span>)
+<span class='kw'>p</span><span class='op'>$</span><span class='fu'>is_alive</span>()
+</div><div class='output co'>#&gt; [1] FALSE</div></pre>
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#polling">Polling</a></li>
-      <li><a href="#cleaning-up-background-processes">Cleaning up background processes</a></li>
-      <li><a href="#methods">Methods</a></li>
-      <li><a href="#examples">Examples</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -819,7 +823,7 @@ the process.</p><h3>Usage</h3>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.9000.</p>
 </div>
 
       </footer>

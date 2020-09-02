@@ -10,23 +10,27 @@
 
 
 <!-- jquery -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
+
+<!-- bootstrap-toc -->
+<link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script>
 
 <!-- Font Awesome icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.1/css/all.min.css" integrity="sha256-PbSmjxuVAzJ6FPvNYsrXygfGhNJYyZ2GktDbkMBqQZg=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.1/css/v4-shims.min.css" integrity="sha256-A6jcAdwFD48VMjlI3GDxUd+eCQa7/KWy6G9oe/ovaPA=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous" />
 
 <!-- clipboard.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script>
 
 <!-- headroom.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script>
 
 <!-- pkgdown -->
 <link href="../pkgdown.css" rel="stylesheet">
@@ -39,7 +43,6 @@
 <meta property="og:description" content="These functions are currently experimental and will change
 in the future. Note that processx connections are  not
 compatible with R's built-in connection system." />
-<meta name="twitter:card" content="summary" />
 
 
 <meta name="robots" content="noindex">
@@ -57,7 +60,7 @@ compatible with R's built-in connection system." />
 
   </head>
 
-  <body>
+  <body data-spy="scroll" data-target="#toc">
     <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -71,7 +74,7 @@ compatible with R's built-in connection system." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">3.4.2.9000</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">3.4.3.9000</span>
       </span>
     </div>
 
@@ -92,7 +95,7 @@ compatible with R's built-in connection system." />
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <li>
-  <a href="https://github.com/r-lib/processx">
+  <a href="https://github.com/r-lib/processx/">
     <span class="fab fa fab fa-github fa-lg"></span>
      
   </a>
@@ -121,52 +124,52 @@ in the future. Note that processx connections are  <em>not</em>
 compatible with R's built-in connection system.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>conn_create_fd</span>(<span class='no'>fd</span>, <span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>, <span class='kw'>close</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+    <pre class="usage"><span class='fu'>conn_create_fd</span>(<span class='kw'>fd</span>, encoding = <span class='st'>""</span>, close = <span class='fl'>TRUE</span>)
 
-<span class='fu'>conn_create_pipepair</span>(<span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>, <span class='kw'>nonblocking</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>TRUE</span>, <span class='fl'>FALSE</span>))
+<span class='fu'>conn_create_pipepair</span>(encoding = <span class='st'>""</span>, nonblocking = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>TRUE</span>, <span class='fl'>FALSE</span>))
 
-<span class='fu'>conn_read_chars</span>(<span class='no'>con</span>, <span class='kw'>n</span> <span class='kw'>=</span> -<span class='fl'>1</span>)
-
-<span class='co'># S3 method for processx_connection</span>
-<span class='fu'>conn_read_chars</span>(<span class='no'>con</span>, <span class='kw'>n</span> <span class='kw'>=</span> -<span class='fl'>1</span>)
-
-<span class='fu'>processx_conn_read_chars</span>(<span class='no'>con</span>, <span class='kw'>n</span> <span class='kw'>=</span> -<span class='fl'>1</span>)
-
-<span class='fu'>conn_read_lines</span>(<span class='no'>con</span>, <span class='kw'>n</span> <span class='kw'>=</span> -<span class='fl'>1</span>)
+<span class='fu'>conn_read_chars</span>(<span class='kw'>con</span>, n = <span class='op'>-</span><span class='fl'>1</span>)
 
 <span class='co'># S3 method for processx_connection</span>
-<span class='fu'>conn_read_lines</span>(<span class='no'>con</span>, <span class='kw'>n</span> <span class='kw'>=</span> -<span class='fl'>1</span>)
+<span class='fu'>conn_read_chars</span>(<span class='kw'>con</span>, n = <span class='op'>-</span><span class='fl'>1</span>)
 
-<span class='fu'>processx_conn_read_lines</span>(<span class='no'>con</span>, <span class='kw'>n</span> <span class='kw'>=</span> -<span class='fl'>1</span>)
+<span class='fu'>processx_conn_read_chars</span>(<span class='kw'>con</span>, n = <span class='op'>-</span><span class='fl'>1</span>)
 
-<span class='fu'>conn_is_incomplete</span>(<span class='no'>con</span>)
-
-<span class='co'># S3 method for processx_connection</span>
-<span class='fu'>conn_is_incomplete</span>(<span class='no'>con</span>)
-
-<span class='fu'>processx_conn_is_incomplete</span>(<span class='no'>con</span>)
-
-<span class='fu'>conn_write</span>(<span class='no'>con</span>, <span class='no'>str</span>, <span class='kw'>sep</span> <span class='kw'>=</span> <span class='st'>"\n"</span>, <span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>)
+<span class='fu'>conn_read_lines</span>(<span class='kw'>con</span>, n = <span class='op'>-</span><span class='fl'>1</span>)
 
 <span class='co'># S3 method for processx_connection</span>
-<span class='fu'>conn_write</span>(<span class='no'>con</span>, <span class='no'>str</span>, <span class='kw'>sep</span> <span class='kw'>=</span> <span class='st'>"\n"</span>, <span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>)
+<span class='fu'>conn_read_lines</span>(<span class='kw'>con</span>, n = <span class='op'>-</span><span class='fl'>1</span>)
 
-<span class='fu'>processx_conn_write</span>(<span class='no'>con</span>, <span class='no'>str</span>, <span class='kw'>sep</span> <span class='kw'>=</span> <span class='st'>"\n"</span>, <span class='kw'>encoding</span> <span class='kw'>=</span> <span class='st'>""</span>)
+<span class='fu'>processx_conn_read_lines</span>(<span class='kw'>con</span>, n = <span class='op'>-</span><span class='fl'>1</span>)
 
-<span class='fu'>conn_create_file</span>(<span class='no'>filename</span>, <span class='kw'>read</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>write</span> <span class='kw'>=</span> <span class='kw'>NULL</span>)
+<span class='fu'>conn_is_incomplete</span>(<span class='kw'>con</span>)
 
-<span class='fu'>conn_set_stdout</span>(<span class='no'>con</span>, <span class='kw'>drop</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='co'># S3 method for processx_connection</span>
+<span class='fu'>conn_is_incomplete</span>(<span class='kw'>con</span>)
 
-<span class='fu'>conn_set_stderr</span>(<span class='no'>con</span>, <span class='kw'>drop</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>)
+<span class='fu'>processx_conn_is_incomplete</span>(<span class='kw'>con</span>)
 
-<span class='fu'>conn_get_fileno</span>(<span class='no'>con</span>)
+<span class='fu'>conn_write</span>(<span class='kw'>con</span>, <span class='kw'>str</span>, sep = <span class='st'>"\n"</span>, encoding = <span class='st'>""</span>)
+
+<span class='co'># S3 method for processx_connection</span>
+<span class='fu'>conn_write</span>(<span class='kw'>con</span>, <span class='kw'>str</span>, sep = <span class='st'>"\n"</span>, encoding = <span class='st'>""</span>)
+
+<span class='fu'>processx_conn_write</span>(<span class='kw'>con</span>, <span class='kw'>str</span>, sep = <span class='st'>"\n"</span>, encoding = <span class='st'>""</span>)
+
+<span class='fu'>conn_create_file</span>(<span class='kw'>filename</span>, read = <span class='kw'>NULL</span>, write = <span class='kw'>NULL</span>)
+
+<span class='fu'>conn_set_stdout</span>(<span class='kw'>con</span>, drop = <span class='fl'>TRUE</span>)
+
+<span class='fu'>conn_set_stderr</span>(<span class='kw'>con</span>, drop = <span class='fl'>TRUE</span>)
+
+<span class='fu'>conn_get_fileno</span>(<span class='kw'>con</span>)
 
 <span class='fu'>conn_disable_inheritance</span>()
 
 <span class='co'># S3 method for processx_connection</span>
-<span class='fu'><a href='https://rdrr.io/r/base/connections.html'>close</a></span>(<span class='no'>con</span>, <span class='no'>...</span>)
+<span class='fu'><a href='https://rdrr.io/r/base/connections.html'>close</a></span>(<span class='kw'>con</span>, <span class='kw'>...</span>)
 
-<span class='fu'>processx_conn_close</span>(<span class='no'>con</span>, <span class='no'>...</span>)</pre>
+<span class='fu'>processx_conn_close</span>(<span class='kw'>con</span>, <span class='kw'>...</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -262,13 +265,10 @@ some handles open. It should work for <code>stdin</code>, <code>stdout</code> an
 at least.</p>
 
   </div>
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
-    <h2>Contents</h2>
-    <ul class="nav nav-pills nav-stacked">
-      <li><a href="#arguments">Arguments</a></li>
-      <li><a href="#details">Details</a></li>
-    </ul>
-
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
+    <nav id="toc" data-toggle="toc" class="sticky-top">
+      <h2 data-toc-skip>Contents</h2>
+    </nav>
   </div>
 </div>
 
@@ -279,7 +279,7 @@ at least.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.9000.</p>
 </div>
 
       </footer>
