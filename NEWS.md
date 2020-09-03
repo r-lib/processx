@@ -1,5 +1,5 @@
 
-# development version
+# processx 3.4.4
 
 * processx now works correctly for non-ASCII commands and arguments passed
   in the native encoding, on Windows (#261, #262, #263, #264).
