@@ -702,7 +702,7 @@ p2$get_exit_status()
 
 ## Related tools
 
-* The [`ps` package](http://ps.r-lib.org/) can query, list, manipulate
+* The [`ps` package](https://ps.r-lib.org/) can query, list, manipulate
   all system processes (not just subprocesses), and processx uses it
   internally for some of its functionality. You can also convert a
   `processx::process` object to a `ps::ps_handle` with the `as_ps_handle()`
