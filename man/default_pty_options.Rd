@@ -13,6 +13,8 @@ Options and default values:
 \itemize{
 \item \code{echo} whether to keep the echo on the terminal. \code{FALSE} turns echo
 off.
+\item \code{rows} the (initial) terminal size, number of rows.
+\item \code{cols} the (initial) terminal size, number of columns.
 }
 }
 \description{

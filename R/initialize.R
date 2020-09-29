@@ -79,6 +79,8 @@ process_initialize <- function(self, private, command, args,
     throw(new_error("Uknown pty option(s): ",
                     paste(paste0("`", bad, "`"), collapse = ", ")))
   }
+  pty_options$rows <- as.integer(pty_options$rows)
+  pty_options$cols <- as.integer(pty_options$cols)
   pty_options <- pty_options[names(def)]
 
   command <- enc2utf8(command)

@@ -763,9 +763,15 @@ process_close_connections <- function(self, private) {
 #' Options and default values:
 #' * `echo` whether to keep the echo on the terminal. `FALSE` turns echo
 #'   off.
+#' * `rows` the (initial) terminal size, number of rows.
+#' * `cols` the (initial) terminal size, number of columns.
 #'
 #' @export
 
 default_pty_options <- function() {
-  list(echo = FALSE)
+  list(
+    echo = FALSE,
+    rows = 25L,
+    cols = 80L
+  )
 }

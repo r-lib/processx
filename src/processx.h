@@ -107,6 +107,8 @@ typedef struct {
   int windows_hide;
   const char *wd;
   int pty_echo;
+  int pty_rows;
+  int pty_cols;
 } processx_options_t;
 
 #ifdef __cplusplus

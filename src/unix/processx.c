@@ -161,6 +161,16 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
     }
 #endif
 
+#ifdef TIOCSWINSZ
+    struct winsize w;
+    w.ws_row = options->pty_rows;
+    w.ws_col = options->pty_cols;
+    if (ioctl(sub_fd, TIOCSWINSZ, &w) == -1) {
+      processx__write_int(error_fd, -errno);
+      raise(SIGKILL);
+    }
+#endif
+
     struct termios tp;
 
     if (tcgetattr(sub_fd, &tp) == -1) {
@@ -469,6 +479,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
       R_THROW_SYSTEM_ERROR("Cannot open pty when running '%s'", ccommand);
     }
     options.pty_echo = LOGICAL(VECTOR_ELT(pty_options, 0))[0];
+    options.pty_rows = INTEGER(VECTOR_ELT(pty_options, 1))[0];
+    options.pty_cols = INTEGER(VECTOR_ELT(pty_options, 2))[0];
 
   } else {
     /* Create pipes, if requested. */
