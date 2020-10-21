@@ -43,7 +43,7 @@ void processx__create_connections(processx_handle_t *handle, SEXP private,
 #endif
 #endif
 
-#if defined(__APPLE__) && !TARGET_OS_IPHONE
+#if defined(__APPLE__)
 # include <crt_externs.h>
 # define environ (*_NSGetEnviron())
 #else
