@@ -7,7 +7,7 @@
 
 <!-- badges: start -->
 [![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://www.tidyverse.org/lifecycle/#maturing)
-[![R build status](https://github.com/r-lib/processx/workflows/check-pak/badge.svg)](https://github.com/r-lib/processx/actions)
+[![R build status](https://github.com/r-lib/processx/workflows/R-CMD-check/badge.svg)](https://github.com/r-lib/processx/actions)
 [![](https://www.r-pkg.org/badges/version/processx)](https://www.r-pkg.org/pkg/processx)
 [![CRAN RStudio mirror downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
 [![Coverage Status](https://img.shields.io/codecov/c/github/r-lib/processx/master.svg)](https://codecov.io/github/r-lib/processx?branch=master)
