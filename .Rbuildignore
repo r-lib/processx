@@ -21,3 +21,4 @@
 ^LICENSE\.md$
 ^\.Rprofile$
 ^r-packages$
+^\.github$

@@ -1,0 +1,33 @@
+on:
+  push:
+    branches: master
+
+name: pkgdown
+
+jobs:
+  pkgdown:
+    runs-on: macOS-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: r-lib/actions/setup-r@master
+
+      - uses: r-lib/actions/setup-pandoc@master
+
+      - name: Install system dependencies
+        run: brew install harfbuzz fribidi
+
+      - name: Install pak
+        run: |
+          install.packages("pak", repos = "https://r-lib.github.io/p/pak/dev/")
+        shell: Rscript {0}
+
+      - name: Install package and dependencies
+        run: |
+          pak::local_install(upgrade = TRUE)
+          pak::local_install_dev_deps()
+        shell: Rscript {0}
+
+      - name: Deploy package
+        run: pkgdown::deploy_to_branch(new_process = FALSE)
+        shell: Rscript {0}
