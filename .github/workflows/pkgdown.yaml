@@ -26,6 +26,7 @@ jobs:
         run: |
           pak::local_install(upgrade = TRUE)
           pak::local_install_dev_deps()
+          pak::pkg_install("pkgdown")
         shell: Rscript {0}
 
       - name: Deploy package
