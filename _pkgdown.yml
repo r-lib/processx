@@ -15,6 +15,7 @@ reference:
 - title: Foreground processes
   contents:
   - run
+  - default_pty_options
 
 - title: Background processes
   contents:
@@ -23,3 +24,15 @@ reference:
 - title: Polling
   contents:
   - poll
+  - curl_fds
+
+- title: Connections
+  contents:
+  - starts_with("conn_")
+  - starts_with("processx_conn_*")
+
+- title: Utility functions
+  contents:
+  - base64_decode
+  - base64_encode
+  
