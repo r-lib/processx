@@ -74,7 +74,7 @@ compatible with R's built-in connection system." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">3.4.4.9000</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">3.4.4.9001</span>
       </span>
     </div>
 
@@ -124,52 +124,52 @@ in the future. Note that processx connections are  <em>not</em>
 compatible with R's built-in connection system.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>conn_create_fd</span>(<span class='kw'>fd</span>, encoding = <span class='st'>""</span>, close = <span class='fl'>TRUE</span>)
+    <pre class="usage"><span class='fu'>conn_create_fd</span><span class='op'>(</span><span class='va'>fd</span>, encoding <span class='op'>=</span> <span class='st'>""</span>, close <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
 
-<span class='fu'>conn_create_pipepair</span>(encoding = <span class='st'>""</span>, nonblocking = <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>TRUE</span>, <span class='fl'>FALSE</span>))
+<span class='fu'>conn_create_pipepair</span><span class='op'>(</span>encoding <span class='op'>=</span> <span class='st'>""</span>, nonblocking <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='cn'>TRUE</span>, <span class='cn'>FALSE</span><span class='op'>)</span><span class='op'>)</span>
 
-<span class='fu'>conn_read_chars</span>(<span class='kw'>con</span>, n = <span class='op'>-</span><span class='fl'>1</span>)
-
-<span class='co'># S3 method for processx_connection</span>
-<span class='fu'>conn_read_chars</span>(<span class='kw'>con</span>, n = <span class='op'>-</span><span class='fl'>1</span>)
-
-<span class='fu'>processx_conn_read_chars</span>(<span class='kw'>con</span>, n = <span class='op'>-</span><span class='fl'>1</span>)
-
-<span class='fu'>conn_read_lines</span>(<span class='kw'>con</span>, n = <span class='op'>-</span><span class='fl'>1</span>)
+<span class='fu'>conn_read_chars</span><span class='op'>(</span><span class='va'>con</span>, n <span class='op'>=</span> <span class='op'>-</span><span class='fl'>1</span><span class='op'>)</span>
 
 <span class='co'># S3 method for processx_connection</span>
-<span class='fu'>conn_read_lines</span>(<span class='kw'>con</span>, n = <span class='op'>-</span><span class='fl'>1</span>)
+<span class='fu'>conn_read_chars</span><span class='op'>(</span><span class='va'>con</span>, n <span class='op'>=</span> <span class='op'>-</span><span class='fl'>1</span><span class='op'>)</span>
 
-<span class='fu'>processx_conn_read_lines</span>(<span class='kw'>con</span>, n = <span class='op'>-</span><span class='fl'>1</span>)
+<span class='fu'>processx_conn_read_chars</span><span class='op'>(</span><span class='va'>con</span>, n <span class='op'>=</span> <span class='op'>-</span><span class='fl'>1</span><span class='op'>)</span>
 
-<span class='fu'>conn_is_incomplete</span>(<span class='kw'>con</span>)
-
-<span class='co'># S3 method for processx_connection</span>
-<span class='fu'>conn_is_incomplete</span>(<span class='kw'>con</span>)
-
-<span class='fu'>processx_conn_is_incomplete</span>(<span class='kw'>con</span>)
-
-<span class='fu'>conn_write</span>(<span class='kw'>con</span>, <span class='kw'>str</span>, sep = <span class='st'>"\n"</span>, encoding = <span class='st'>""</span>)
+<span class='fu'>conn_read_lines</span><span class='op'>(</span><span class='va'>con</span>, n <span class='op'>=</span> <span class='op'>-</span><span class='fl'>1</span><span class='op'>)</span>
 
 <span class='co'># S3 method for processx_connection</span>
-<span class='fu'>conn_write</span>(<span class='kw'>con</span>, <span class='kw'>str</span>, sep = <span class='st'>"\n"</span>, encoding = <span class='st'>""</span>)
+<span class='fu'>conn_read_lines</span><span class='op'>(</span><span class='va'>con</span>, n <span class='op'>=</span> <span class='op'>-</span><span class='fl'>1</span><span class='op'>)</span>
 
-<span class='fu'>processx_conn_write</span>(<span class='kw'>con</span>, <span class='kw'>str</span>, sep = <span class='st'>"\n"</span>, encoding = <span class='st'>""</span>)
+<span class='fu'>processx_conn_read_lines</span><span class='op'>(</span><span class='va'>con</span>, n <span class='op'>=</span> <span class='op'>-</span><span class='fl'>1</span><span class='op'>)</span>
 
-<span class='fu'>conn_create_file</span>(<span class='kw'>filename</span>, read = <span class='kw'>NULL</span>, write = <span class='kw'>NULL</span>)
-
-<span class='fu'>conn_set_stdout</span>(<span class='kw'>con</span>, drop = <span class='fl'>TRUE</span>)
-
-<span class='fu'>conn_set_stderr</span>(<span class='kw'>con</span>, drop = <span class='fl'>TRUE</span>)
-
-<span class='fu'>conn_get_fileno</span>(<span class='kw'>con</span>)
-
-<span class='fu'>conn_disable_inheritance</span>()
+<span class='fu'>conn_is_incomplete</span><span class='op'>(</span><span class='va'>con</span><span class='op'>)</span>
 
 <span class='co'># S3 method for processx_connection</span>
-<span class='fu'><a href='https://rdrr.io/r/base/connections.html'>close</a></span>(<span class='kw'>con</span>, <span class='kw'>...</span>)
+<span class='fu'>conn_is_incomplete</span><span class='op'>(</span><span class='va'>con</span><span class='op'>)</span>
 
-<span class='fu'>processx_conn_close</span>(<span class='kw'>con</span>, <span class='kw'>...</span>)</pre>
+<span class='fu'>processx_conn_is_incomplete</span><span class='op'>(</span><span class='va'>con</span><span class='op'>)</span>
+
+<span class='fu'>conn_write</span><span class='op'>(</span><span class='va'>con</span>, <span class='va'>str</span>, sep <span class='op'>=</span> <span class='st'>"\n"</span>, encoding <span class='op'>=</span> <span class='st'>""</span><span class='op'>)</span>
+
+<span class='co'># S3 method for processx_connection</span>
+<span class='fu'>conn_write</span><span class='op'>(</span><span class='va'>con</span>, <span class='va'>str</span>, sep <span class='op'>=</span> <span class='st'>"\n"</span>, encoding <span class='op'>=</span> <span class='st'>""</span><span class='op'>)</span>
+
+<span class='fu'>processx_conn_write</span><span class='op'>(</span><span class='va'>con</span>, <span class='va'>str</span>, sep <span class='op'>=</span> <span class='st'>"\n"</span>, encoding <span class='op'>=</span> <span class='st'>""</span><span class='op'>)</span>
+
+<span class='fu'>conn_create_file</span><span class='op'>(</span><span class='va'>filename</span>, read <span class='op'>=</span> <span class='cn'>NULL</span>, write <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span>
+
+<span class='fu'>conn_set_stdout</span><span class='op'>(</span><span class='va'>con</span>, drop <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+
+<span class='fu'>conn_set_stderr</span><span class='op'>(</span><span class='va'>con</span>, drop <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span>
+
+<span class='fu'>conn_get_fileno</span><span class='op'>(</span><span class='va'>con</span><span class='op'>)</span>
+
+<span class='fu'>conn_disable_inheritance</span><span class='op'>(</span><span class='op'>)</span>
+
+<span class='co'># S3 method for processx_connection</span>
+<span class='fu'><a href='https://rdrr.io/r/base/connections.html'>close</a></span><span class='op'>(</span><span class='va'>con</span>, <span class='va'>...</span><span class='op'>)</span>
+
+<span class='fu'>processx_conn_close</span><span class='op'>(</span><span class='va'>con</span>, <span class='va'>...</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -279,7 +279,7 @@ at least.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>
