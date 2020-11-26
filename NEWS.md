@@ -4,6 +4,9 @@
 * New options in `pty_options` to set the initial size of the pseudo
   terminal.
 
+* Reading the standard output or error now does not crash occasionally
+  when a `\n` character is at the beginning of the input buffer (#281).
+
 # processx 3.4.4
 
 * processx now works correctly for non-ASCII commands and arguments passed
