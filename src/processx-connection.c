@@ -179,7 +179,7 @@ SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
   result = PROTECT(allocVector(STRSXP, lines_read + eof));
   for (l = 0, newline = -1; l < lines_read; l++) {
     eol = processx__find_newline(ccon, newline + 1);
-    slashr = ccon->utf8[eol - 1] == '\r';
+    slashr = eol > 0 && ccon->utf8[eol - 1] == '\r';
     SET_STRING_ELT(
       result, l,
       mkCharLenCE(ccon->utf8 + newline + 1,
