@@ -1,5 +1,6 @@
 
 test_that("UTF-8 executable name", {
+  skip_on_cran()
   local_temp_dir()
   name <- "./\u00fa\u00e1\u00f6\u0151\u00e9.exe"
   px <- get_tool("px")
@@ -14,6 +15,7 @@ test_that("UTF-8 executable name", {
 })
 
 test_that("UTF-8 directory name", {
+  skip_on_cran()
   local_temp_dir()
   name <- "./\u00fa\u00e1\u00f6\u0151\u00e9.exe"
   # Older dir.create does not handle UTF-8 correctly
