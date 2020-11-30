@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.4</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.5</span>
       </span>
     </div>
 
@@ -114,18 +114,27 @@
       <small>Source: <a href='https://github.com/r-lib/processx/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
-    <div id="processx-3-4-4" class="section level1">
+    <div id="processx-345" class="section level1">
+<h1 class="page-header" data-toc-text="3.4.5">
+<a href="#processx-345" class="anchor"></a>processx 3.4.5<small> Unreleased </small>
+</h1>
+<ul>
+<li><p>New options in <code>pty_options</code> to set the initial size of the pseudo terminal.</p></li>
+<li><p>Reading the standard output or error now does not crash occasionally when a <code>\n</code> character is at the beginning of the input buffer (<a href='https://github.com/r-lib/processx/issues/281'>#281</a>).</p></li>
+</ul>
+</div>
+    <div id="processx-344" class="section level1">
 <h1 class="page-header" data-toc-text="3.4.4">
-<a href="#processx-3-4-4" class="anchor"></a>processx 3.4.4<small> 2020-09-03 </small>
+<a href="#processx-344" class="anchor"></a>processx 3.4.4<small> 2020-09-03 </small>
 </h1>
 <ul>
 <li><p>processx now works correctly for non-ASCII commands and arguments passed in the native encoding, on Windows (<a href='https://github.com/r-lib/processx/issues/261'>#261</a>, <a href='https://github.com/r-lib/processx/issues/262'>#262</a>, <a href='https://github.com/r-lib/processx/issues/263'>#263</a>, <a href='https://github.com/r-lib/processx/issues/264'>#264</a>).</p></li>
 <li><p>Providing multiple environment variables now works on windows (<a href='https://github.com/r-lib/processx/issues/267'>#267</a>).</p></li>
 </ul>
 </div>
-    <div id="processx-3-4-3" class="section level1">
+    <div id="processx-343" class="section level1">
 <h1 class="page-header" data-toc-text="3.4.3">
-<a href="#processx-3-4-3" class="anchor"></a>processx 3.4.3<small> 2020-07-05 </small>
+<a href="#processx-343" class="anchor"></a>processx 3.4.3<small> 2020-07-05 </small>
 </h1>
 <ul>
 <li><p>The supervisor (activated with <code>supervise = TRUE</code>) does not crash on the Windows Subsystem on Linux (WSL) now (<a href='https://github.com/r-lib/processx/issues/222'>#222</a>).</p></li>
@@ -134,9 +143,9 @@
 <li><p>The <code>$as_ps_handle()</code> method works now better; previously it sometimes created an invalid <code><a href="https://rdrr.io/pkg/ps/man/ps_handle.html">ps::ps_handle</a></code> object, if the system clock has changed (<a href='https://github.com/r-lib/processx/issues/258'>#258</a>).</p></li>
 </ul>
 </div>
-    <div id="processx-3-4-2" class="section level1">
+    <div id="processx-342" class="section level1">
 <h1 class="page-header" data-toc-text="3.4.2">
-<a href="#processx-3-4-2" class="anchor"></a>processx 3.4.2<small> 2020-02-09 </small>
+<a href="#processx-342" class="anchor"></a>processx 3.4.2<small> 2020-02-09 </small>
 </h1>
 <ul>
 <li><p><code><a href="../reference/run.html">run()</a></code> now does a better job with displaying the spinner on terminals that buffer the output (<a href='https://github.com/r-lib/processx/issues/223'>#223</a>).</p></li>
@@ -148,17 +157,17 @@
 <li><p>The <code>process$wait()</code> method now does not leak file descriptors on Unix when interrupted (<a href='https://github.com/r-lib/processx/issues/141'>#141</a>).</p></li>
 </ul>
 </div>
-    <div id="processx-3-4-1" class="section level1">
+    <div id="processx-341" class="section level1">
 <h1 class="page-header" data-toc-text="3.4.1">
-<a href="#processx-3-4-1" class="anchor"></a>processx 3.4.1<small> 2019-07-18 </small>
+<a href="#processx-341" class="anchor"></a>processx 3.4.1<small> 2019-07-18 </small>
 </h1>
 <ul>
 <li>Now <code><a href="../reference/run.html">run()</a></code> does not create an <code>ok</code> variable in the global environment.</li>
 </ul>
 </div>
-    <div id="processx-3-4-0" class="section level1">
+    <div id="processx-340" class="section level1">
 <h1 class="page-header" data-toc-text="3.4.0">
-<a href="#processx-3-4-0" class="anchor"></a>processx 3.4.0<small> 2019-07-03 </small>
+<a href="#processx-340" class="anchor"></a>processx 3.4.0<small> 2019-07-03 </small>
 </h1>
 <ul>
 <li><p>Processx has now better error messages, in particular, all errors from C code contain the file name and line number, and the system error code and message (where applicable).</p></li>
@@ -172,17 +181,17 @@
 <li><p><code><a href="../reference/run.html">run()</a></code> now does not error if the process is killed in a callback.</p></li>
 </ul>
 </div>
-    <div id="processx-3-3-1" class="section level1">
+    <div id="processx-331" class="section level1">
 <h1 class="page-header" data-toc-text="3.3.1">
-<a href="#processx-3-3-1" class="anchor"></a>processx 3.3.1<small> 2019-05-08 </small>
+<a href="#processx-331" class="anchor"></a>processx 3.3.1<small> 2019-05-08 </small>
 </h1>
 <ul>
 <li>Fix a crash on Windows, when a connection that has a pending read internally is finalized.</li>
 </ul>
 </div>
-    <div id="processx-3-3-0" class="section level1">
+    <div id="processx-330" class="section level1">
 <h1 class="page-header" data-toc-text="3.3.0">
-<a href="#processx-3-3-0" class="anchor"></a>processx 3.3.0<small> 2019-03-10 </small>
+<a href="#processx-330" class="anchor"></a>processx 3.3.0<small> 2019-03-10 </small>
 </h1>
 <ul>
 <li><p><code>process</code> can now redirect the standard error to the standard output, via specifying <code>stderr = "2&gt;&amp;1"</code>. This works both with files and pipes.</p></li>
@@ -191,17 +200,17 @@
 <li><p><code><a href="../reference/run.html">run()</a></code> now always kills the process (and its process tree if <code>cleanup_tree</code> is <code>TRUE</code>) before exiting. This also closes all pipe connections (<a href='https://github.com/r-lib/processx/issues/149'>#149</a>).</p></li>
 </ul>
 </div>
-    <div id="processx-3-2-1" class="section level1">
+    <div id="processx-321" class="section level1">
 <h1 class="page-header" data-toc-text="3.2.1">
-<a href="#processx-3-2-1" class="anchor"></a>processx 3.2.1<small> 2018-12-05 </small>
+<a href="#processx-321" class="anchor"></a>processx 3.2.1<small> 2018-12-05 </small>
 </h1>
 <ul>
 <li>processx does not depend on assertthat now, and the crayon package is now an optional dependency.</li>
 </ul>
 </div>
-    <div id="processx-3-2-0" class="section level1">
+    <div id="processx-320" class="section level1">
 <h1 class="page-header" data-toc-text="3.2.0">
-<a href="#processx-3-2-0" class="anchor"></a>processx 3.2.0<small> 2018-08-16 </small>
+<a href="#processx-320" class="anchor"></a>processx 3.2.0<small> 2018-08-16 </small>
 </h1>
 <ul>
 <li><p>New <code>process$kill_tree()</code> method, and new <code>cleanup_tree</code> arguments in <code><a href="../reference/run.html">run()</a></code> and <code>process$new()</code>, to clean up the process tree rooted at a processx process. (<a href='https://github.com/r-lib/processx/issues/139'>#139</a>, <a href='https://github.com/r-lib/processx/issues/143'>#143</a>).</p></li>
@@ -219,9 +228,9 @@
 <li><p>When <code><a href="../reference/run.html">run()</a></code> is interrupted, no error message is printed, just like for interruption of R code in general. The thrown condition now also has the <code>interrupt</code> class (<a href='https://github.com/r-lib/processx/issues/148'>#148</a>).</p></li>
 </ul>
 </div>
-    <div id="processx-3-1-0" class="section level1">
+    <div id="processx-310" class="section level1">
 <h1 class="page-header" data-toc-text="3.1.0">
-<a href="#processx-3-1-0" class="anchor"></a>processx 3.1.0<small> 2018-05-15 </small>
+<a href="#processx-310" class="anchor"></a>processx 3.1.0<small> 2018-05-15 </small>
 </h1>
 <ul>
 <li><p>Fix interference with the parallel package, and other packages that redefine the <code>SIGCHLD</code> signal handler on Unix. If the processx signal handler is overwritten, we might miss the exit status of some processes (they are set to <code>NA</code>).</p></li>
@@ -232,9 +241,9 @@
 <li><p>Fix a race condition on Windows, when creating named pipes for stdout or stderr. The client sometimes didn’t wait for the server, and processx failed with ERROR_PIPE_BUSY (231, All pipe instances are busy).</p></li>
 </ul>
 </div>
-    <div id="processx-3-0-3" class="section level1">
+    <div id="processx-303" class="section level1">
 <h1 class="page-header" data-toc-text="3.0.3">
-<a href="#processx-3-0-3" class="anchor"></a>processx 3.0.3<small> 2018-05-07 </small>
+<a href="#processx-303" class="anchor"></a>processx 3.0.3<small> 2018-05-07 </small>
 </h1>
 <ul>
 <li><p>Fix a crash on windows when trying to run a non-existing command (<a href='https://github.com/r-lib/processx/issues/90'>#90</a>)</p></li>
@@ -255,15 +264,15 @@
 <li><p>Fixes when running under job control that does not allow breaking away from the job, on Windows.</p></li>
 </ul>
 </div>
-    <div id="processx-2-0-0-1" class="section level1">
+    <div id="processx-2001" class="section level1">
 <h1 class="page-header" data-toc-text="2.0.0.1">
-<a href="#processx-2-0-0-1" class="anchor"></a>processx 2.0.0.1<small> 2017-07-30 </small>
+<a href="#processx-2001" class="anchor"></a>processx 2.0.0.1<small> 2017-07-30 </small>
 </h1>
 <p>This is an unofficial release, created by CRAN, to fix compilation on Solaris.</p>
 </div>
-    <div id="processx-2-0-0" class="section level1">
+    <div id="processx-200" class="section level1">
 <h1 class="page-header" data-toc-text="2.0.0">
-<a href="#processx-2-0-0" class="anchor"></a>processx 2.0.0<small> 2017-05-30 </small>
+<a href="#processx-200" class="anchor"></a>processx 2.0.0<small> 2017-05-30 </small>
 </h1>
 <p>First public release.</p>
 </div>
@@ -284,7 +293,7 @@
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.9000.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>
