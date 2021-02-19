@@ -422,7 +422,7 @@ process <- R6::R6Class(
     #' `$read_all_output()` waits for all standard output from the process.
     #' It does not return until the process has finished.
     #' Note that this process involves waiting for the process to finish,
-    #' polling for I/O and potentically several `readLines()` calls.
+    #' polling for I/O and potentially several `readLines()` calls.
     #' It returns a character scalar. This will return content only if
     #' `stdout="|"` was used. Otherwise, it will throw an error.
 
@@ -433,7 +433,7 @@ process <- R6::R6Class(
     #' `$read_all_error()` waits for all standard error from the process.
     #' It does not return until the process has finished.
     #' Note that this process involves waiting for the process to finish,
-    #' polling for I/O and potentically several `readLines()` calls.
+    #' polling for I/O and potentially several `readLines()` calls.
     #' It returns a character scalar. This will return content only if
     #' `stderr="|"` was used. Otherwise, it will throw an error.
 
@@ -444,7 +444,7 @@ process <- R6::R6Class(
     #' `$read_all_output_lines()` waits for all standard output lines
     #' from a process. It does not return until the process has finished.
     #' Note that this process involves waiting for the process to finish,
-    #' polling for I/O and potentically several `readLines()` calls.
+    #' polling for I/O and potentially several `readLines()` calls.
     #' It returns a character vector. This will return content only if
     #' `stdout="|"` was used. Otherwise, it will throw an error.
 
@@ -455,7 +455,7 @@ process <- R6::R6Class(
     #' `$read_all_error_lines()` waits for all standard error lines from
     #' a process. It does not return until the process has finished.
     #' Note that this process involves waiting for the process to finish,
-    #' polling for I/O and potentically several `readLines()` calls.
+    #' polling for I/O and potentially several `readLines()` calls.
     #' It returns a character vector. This will return content only if
     #' `stderr="|"` was used. Otherwise, it will throw an error.
 
