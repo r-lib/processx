@@ -1,6 +1,9 @@
 
 # processx development version
 
+* processx now optionally using the cli package to color error messages
+  and stack traces, instead of crayon.
+
 # processx 3.4.5
 
 * New options in `pty_options` to set the initial size of the pseudo

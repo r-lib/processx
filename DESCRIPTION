@@ -27,9 +27,9 @@ Imports:
     utils
 Suggests:
     callr (>= 3.2.0),
+    cli,
     codetools,
     covr,
-    crayon,
     curl,
     debugme,
     parallel,
