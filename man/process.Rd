@@ -186,14 +186,14 @@ correctly interleaved.
 }}
 
 \item{\code{pty}}{Whether to create a pseudo terminal (pty) for the
-background process. This is currently only supported on Unix
+background process. This is currently supported on Windows and Unix
 systems, but not supported on Solaris.
 If it is \code{TRUE}, then the \code{stdin}, \code{stdout} and \code{stderr} arguments
 must be \code{NULL}. If a pseudo terminal is created, then processx
 will create pipes for standard input and standard output. There is
 no separate pipe for standard error, because there is no way to
-distinguish between stdout and stderr on a pty. Note that the
-standard output connection of the pty is \emph{blocking}, so we always
+distinguish between stdout and stderr on a Unix pty. Note that the
+standard output connection of the pty is \emph{blocking}, so always
 poll the standard output connection before reading from it using
 the \verb{$read_output()} method. Also, because \verb{$read_output_lines()}
 could still block if no complete line is available, this function

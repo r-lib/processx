@@ -3,6 +3,8 @@
 #include <R_ext/Rdynload.h>
 
 #include "../processx.h"
+#define COMPILING_WINPTY_STATIC 1
+#include "include/winpty.h"
 
 #include <wchar.h>
 
@@ -875,12 +877,11 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   const char *cstd_in = isNull(std_in) ? 0 : CHAR(STRING_ELT(std_in, 0));
   const char *cstd_out = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
   const char *cstd_err = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
+  int cpty = LOGICAL(pty)[0];
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
   const char *ccwd = isNull(wd) ? 0 : CHAR(STRING_ELT(wd, 0));
   const char *ctree_id = CHAR(STRING_ELT(tree_id, 0));
   int i, num_connections = LENGTH(connections) + 3;
-  HANDLE* extra_connections =
-    (HANDLE*) R_alloc(num_connections - 3, sizeof(HANDLE));
 
   int err = 0;
   WCHAR *path;
@@ -963,25 +964,13 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   result = PROTECT(processx__make_handle(private, ccleanup));
   handle = R_ExternalPtrAddr(result);
 
-  for (i = 0; i < num_connections - 3; i++) {
-    processx_connection_t *ccon =
-      R_ExternalPtrAddr(VECTOR_ELT(connections, i));
-    extra_connections[i] = processx_c_connection_fileno(ccon);
-  }
-
-  err = processx__stdio_create(handle, extra_connections, num_connections,
-			       cstd_in, cstd_out, cstd_err,
-			       &handle->child_stdio_buffer, private,
-			       cencoding, ccommand);
-  if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "setup stdio for '%s'", ccommand); }
-
   application_path = processx__search_path(application, cwd, path);
 
   /* If a UNC Path, then we try to flip the forward slashes, if any.
    * It is apparently enough to flip the first two slashes, the rest
    * are not important. */
   if (! application_path && wcslen(path) >= 2 &&
-    application[0] == L'/' && application[1] == L'/') {
+  application[0] == L'/' && application[1] == L'/') {
     application[0] = L'\\';
     application[1] = L'\\';
     application_path = processx__search_path(application, cwd, path);
@@ -989,60 +978,90 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
 
   if (!application_path) {
     R_ClearExternalPtr(result);
-    processx__stdio_destroy(handle->child_stdio_buffer);
     free(handle);
     R_THROW_ERROR("Command '%s' not found", ccommand);
   }
 
-  startup.cb = sizeof(startup);
-  startup.lpReserved = NULL;
-  startup.lpDesktop = NULL;
-  startup.lpTitle = NULL;
-  startup.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+  if (!cpty) {
+    HANDLE* extra_connections =
+      (HANDLE*) R_alloc(num_connections - 3, sizeof(HANDLE));
 
-  startup.cbReserved2 = processx__stdio_size(handle->child_stdio_buffer);
-  startup.lpReserved2 = (BYTE*) handle->child_stdio_buffer;
+    for (i = 0; i < num_connections - 3; i++) {
+      processx_connection_t *ccon =
+        R_ExternalPtrAddr(VECTOR_ELT(connections, i));
+      extra_connections[i] = processx_c_connection_fileno(ccon);
+    }
 
-  startup.hStdInput = processx__stdio_handle(handle->child_stdio_buffer, 0);
-  startup.hStdOutput = processx__stdio_handle(handle->child_stdio_buffer, 1);
-  startup.hStdError = processx__stdio_handle(handle->child_stdio_buffer, 2);
-  startup.wShowWindow = options.windows_hide ? SW_HIDE : SW_SHOWDEFAULT;
+    err = processx__stdio_create(handle, extra_connections, num_connections,
+                                 cstd_in, cstd_out, cstd_err,
+                                 &handle->child_stdio_buffer, private,
+                                 cencoding, ccommand);
+    if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "setup stdio for '%s'", ccommand); }
 
-  process_flags = CREATE_UNICODE_ENVIRONMENT |
-    CREATE_SUSPENDED |
-    CREATE_NO_WINDOW;
+    startup.cb = sizeof(startup);
+    startup.lpReserved = NULL;
+    startup.lpDesktop = NULL;
+    startup.lpTitle = NULL;
+    startup.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
 
-  if (!ccleanup) {
-    /* Note that we're not setting the CREATE_BREAKAWAY_FROM_JOB flag. That
-     * means that processx might not let you create a fully deamonized
-     * process when run under job control. However the type of job control
-     * that processx itself creates doesn't trickle down to subprocesses
-     * so they can still daemonize.
-     *
-     * A reason to not do this is that CREATE_BREAKAWAY_FROM_JOB makes the
-     * CreateProcess call fail if we're under job control that doesn't
-     * allow breakaway.
-     */
+    startup.cbReserved2 = processx__stdio_size(handle->child_stdio_buffer);
+    startup.lpReserved2 = (BYTE*) handle->child_stdio_buffer;
 
-    process_flags |= DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP;
+    startup.hStdInput = processx__stdio_handle(handle->child_stdio_buffer, 0);
+    startup.hStdOutput = processx__stdio_handle(handle->child_stdio_buffer, 1);
+    startup.hStdError = processx__stdio_handle(handle->child_stdio_buffer, 2);
+    startup.wShowWindow = options.windows_hide ? SW_HIDE : SW_SHOWDEFAULT;
+
+    process_flags = CREATE_UNICODE_ENVIRONMENT |
+      CREATE_SUSPENDED |
+      CREATE_NO_WINDOW;
+
+    if (!ccleanup) {
+      /* Note that we're not setting the CREATE_BREAKAWAY_FROM_JOB flag. That
+       * means that processx might not let you create a fully deamonized
+       * process when run under job control. However the type of job control
+       * that processx itself creates doesn't trickle down to subprocesses
+       * so they can still daemonize.
+       *
+       * A reason to not do this is that CREATE_BREAKAWAY_FROM_JOB makes the
+       * CreateProcess call fail if we're under job control that doesn't
+       * allow breakaway.
+       */
+
+      process_flags |= DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP;
+    }
+
+    err = CreateProcessW(
+      /* lpApplicationName =    */ application_path,
+      /* lpCommandLine =        */ arguments,
+      /* lpProcessAttributes =  */ NULL,
+      /* lpThreadAttributes =   */ NULL,
+      /* bInheritHandles =      */ 1,
+      /* dwCreationFlags =      */ process_flags,
+      /* lpEnvironment =        */ cenv,
+      /* lpCurrentDirectory =   */ cwd,
+      /* lpStartupInfo =        */ &startup,
+      /* lpProcessInformation = */ &info);
+
+      if (!err) { R_THROW_SYSTEM_ERROR("create process '%s'", ccommand); }
+
+      handle->hProcess = info.hProcess;
+      handle->dwProcessId = info.dwProcessId;
+
+  } else {
+    /* pty */
+
+    winpty_error_t *err;
+    winpty_config_t *config = winpty_config_new(0, &err);
+    winpty_config_set_initial_size(config, 80, 25); /* TODO: size */
+    winpty_t *agent = winpty_open(config, &err);
+    REprintf("Config: %p, Agent: %p\n", config, agent);
+    REprintf("MEssage: %ls\n", winpty_error_msg(err));
+    winpty_config_free(config);
+    UNPROTECT(1);
+    return R_NilValue;
+
   }
-
-  err = CreateProcessW(
-    /* lpApplicationName =    */ application_path,
-    /* lpCommandLine =        */ arguments,
-    /* lpProcessAttributes =  */ NULL,
-    /* lpThreadAttributes =   */ NULL,
-    /* bInheritHandles =      */ 1,
-    /* dwCreationFlags =      */ process_flags,
-    /* lpEnvironment =        */ cenv,
-    /* lpCurrentDirectory =   */ cwd,
-    /* lpStartupInfo =        */ &startup,
-    /* lpProcessInformation = */ &info);
-
-  if (!err) { R_THROW_SYSTEM_ERROR("create process '%s'", ccommand); }
-
-  handle->hProcess = info.hProcess;
-  handle->dwProcessId = info.dwProcessId;
 
   /* Query official creation time. On Windows this is not used as
      an id, since the pid itself is valid until the process handle
@@ -1067,20 +1086,22 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
        */
       DWORD err = GetLastError();
       if (err != ERROR_ACCESS_DENIED) {
-	R_THROW_SYSTEM_ERROR_CODE(err, "Assign to job object '%s'",
+	      R_THROW_SYSTEM_ERROR_CODE(err, "Assign to job object '%s'",
                                   ccommand);
       }
     }
   }
 
-  dwerr = ResumeThread(info.hThread);
-  if (dwerr == (DWORD) -1) {
-    R_THROW_SYSTEM_ERROR("resume thread for '%s'", ccommand);
-  }
-  CloseHandle(info.hThread);
+  if (!cpty) {
+    dwerr = ResumeThread(info.hThread);
+    if (dwerr == (DWORD) -1) {
+      R_THROW_SYSTEM_ERROR("resume thread for '%s'", ccommand);
+    }
+    CloseHandle(info.hThread);
 
-  processx__stdio_destroy(handle->child_stdio_buffer);
-  handle->child_stdio_buffer = NULL;
+    processx__stdio_destroy(handle->child_stdio_buffer);
+    handle->child_stdio_buffer = NULL;
+  }
 
   UNPROTECT(1);
   return result;

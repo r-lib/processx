@@ -1,6 +1,7 @@
 
 progs <- if (WINDOWS) {
-  c(file.path("tools", c("px.exe", "pxu.exe", "interrupt.exe")),
+  c("winpty-agent.exe",
+    file.path("tools", c("px.exe", "pxu.exe", "interrupt.exe")),
     file.path("supervisor", "supervisor.exe"))
 } else {
   c(file.path("tools", "px"),
@@ -17,4 +18,8 @@ dir.create(dest, recursive = TRUE, showWarnings = FALSE)
 file.copy(files, dest, overwrite = TRUE)
 if (file.exists("symbols.rds")) {
   file.copy("symbols.rds", dest, overwrite = TRUE)
+}
+
+if (WINDOWS) {
+  file.copy("winpty-agent.exe", dest, overwrite = TRUE)
 }

@@ -3,13 +3,13 @@
 OBJECTS = init.o poll.o errors.o processx-connection.o		     \
           processx-vector.o create-time.o base64.o                   \
           win/processx.o win/stdio.o win/named_pipe.o                \
-	  win/utils.o win/thread.o cleancall.o
+	  			win/utils.o win/thread.o cleancall.o win/libwinpty.o
 
 .PHONY: all clean
 
-PKG_CFLAGS = -DSTRICT_R_HEADERS
+PKG_CPPFLAGS = -DSTRICT_R_HEADERS -DflagWIN$(WIN)
 
-PKG_LIBS = -lws2_32
+PKG_LIBS = -lws2_32 -lstdc++
 
 all: tools/px.exe tools/pxu.exe tools/interrupt.exe \
 	supervisor/supervisor.exe $(SHLIB) client$(SHLIB_EXT)
