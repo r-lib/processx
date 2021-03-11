@@ -250,3 +250,7 @@ is_interactive <- function() {
     interactive()
   }
 }
+
+catchall <- function() {
+  .Call( c_processx_catchall)
+}

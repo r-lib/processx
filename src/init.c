@@ -4,6 +4,8 @@
 
 #include <R_ext/Rdynload.h>
 #include <R.h>
+#include <R_ext/RStartup.h>
+extern Rboolean EmitEmbeddedUTF8;
 
 void R_init_processx_win();
 void R_init_processx_unix();
@@ -12,6 +14,11 @@ SEXP run_testthat_tests();
 SEXP processx__echo_on();
 SEXP processx__echo_off();
 SEXP processx__set_boot_time(SEXP);
+
+SEXP processx_catchall() {
+  EmitEmbeddedUTF8 = 1;
+  return R_NilValue;
+}
 
 static const R_CallMethodDef callMethods[]  = {
   CLEANCALL_METHOD_RECORD,
@@ -58,6 +65,8 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_base64_decode", (DL_FUNC) &processx_base64_decode, 1 },
   { "processx__echo_on", (DL_FUNC) &processx__echo_on, 0 },
   { "processx__echo_off", (DL_FUNC) &processx__echo_off, 0 },
+
+  { "processx_catchall", (DL_FUNC) &processx_catchall, 0 },
 
   { NULL, NULL, 0 }
 };
