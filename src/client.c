@@ -169,8 +169,6 @@ static SEXP processx_set_std(int which, int fd, int drop) {
     if (orig == -1) {
       R_THROW_SYSTEM_ERROR("Cannot reroute %s", what[which]);
     }
-  } else {
-    close(which);
   }
 
 #ifdef _WIN32
@@ -181,6 +179,8 @@ static SEXP processx_set_std(int which, int fd, int drop) {
   if (ret == -1) {
     R_THROW_SYSTEM_ERROR("Cannot reroute %s", what[which]);
   }
+
+  close(fd);
 
   if (!drop) {
     return ScalarInteger(orig);
