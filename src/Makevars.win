@@ -30,7 +30,8 @@ supervisor/supervisor.exe: supervisor/supervisor.c supervisor/utils.c \
 CLIENT_OBJECTS = base64.o client.o errors.o
 
 client$(SHLIB_EXT): $(CLIENT_OBJECTS)
-	$(SHLIB_LINK) -o client$(SHLIB_EXT) $(CLIENT_OBJECTS) $(PKG_LIBS) $(SHLIB_LIBADD) $(LIBR)
+	$(SHLIB_LD) -shared $(DLLFLAGS) -o client$(SHLIB_EXT) \
+		$(CLIENT_OBJECTS) $(PKG_LIBS) $(SHLIB_LIBADD) $(LIBR)
 
 clean:
 	rm -rf $(SHLIB) $(OBJECTS) $(CLIENT_OBJECTS)			\

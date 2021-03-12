@@ -2,7 +2,7 @@
 context("client-lib")
 
 test_that("client lib is standalone", {
-  lib <- load_client_lib()
+  lib <- load_client_lib(client)
   on.exit(try(lib$.finalize()), add = TRUE)
 
   objs <- ls(lib, all.names = TRUE)
@@ -17,7 +17,7 @@ test_that("client lib is standalone", {
 })
 
 test_that("base64", {
-  lib <- load_client_lib()
+  lib <- load_client_lib(client)
   on.exit(try(lib$.finalize()), add = TRUE)
 
   expect_equal(lib$base64_encode(charToRaw("foobar")), "Zm9vYmFy")
@@ -40,7 +40,7 @@ test_that("disable_inheritance", {
 })
 
 test_that("write_fd", {
-  lib <- load_client_lib()
+  lib <- load_client_lib(client)
   on.exit(try(lib$.finalize()), add = TRUE)
 
   tmp <- tempfile(fileext = ".rds")
@@ -59,7 +59,7 @@ test_that("write_fd", {
 
 test_that("processx_connection_set_stdout", {
   stdout_to_file <- function(filename) {
-    lib <- asNamespace("processx")$load_client_lib()
+    lib <- asNamespace("processx")$load_client_lib(processx:::client)
     lib$set_stdout_file(filename)
     cat("output\n")
     message("error")
@@ -85,7 +85,7 @@ test_that("processx_connection_set_stdout", {
 
 test_that("processx_connection_set_stdout", {
   stderr_to_file <- function(filename) {
-    lib <- asNamespace("processx")$load_client_lib()
+    lib <- asNamespace("processx")$load_client_lib(processx:::client)
     lib$set_stderr_file(filename)
     cat("output\n")
     message("error")
@@ -111,7 +111,7 @@ test_that("processx_connection_set_stdout", {
 
 test_that("setting stdout multiple times", {
   stdout_to_file <- function(file1, file2) {
-    lib <- asNamespace("processx")$load_client_lib()
+    lib <- asNamespace("processx")$load_client_lib(processx:::client)
     lib$set_stdout_file(file1)
     cat("output\n")
     message("error")
