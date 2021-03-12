@@ -46,7 +46,7 @@ test_that("UTF-8 argument", {
   unc <- "\u00fa\u00e1\u00f6\u0151\u00e9\u0414\u041e\u0411\u0420\u041e"
   out <- run(get_tool("pxu"), c("writefile", "of", unc))
   outarg <- readBin("of", what = "raw", n = 200)
-  exp <- iconv(unc, from = "UTF-8", to = "UCS-2LE", toRaw = TRUE)[[1]]
+  exp <- iconv(unc, from = "UTF-8", to = "UTF-16LE", toRaw = TRUE)[[1]]
   expect_equal(exp, outarg)
 })
 
@@ -74,7 +74,7 @@ test_that("native args are converted to UTF-8", {
 
   out2 <- run(get_tool("pxu"), c("writefile", "of2", name))
   expect_equal(
-    iconv(name, to = "UCS-2LE", toRaw = TRUE)[[1]],
+    iconv(name, to = "UTF-16LE", toRaw = TRUE)[[1]],
     readBin("of2", what = "raw", n = 100)
   )
 })
