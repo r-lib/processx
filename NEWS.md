@@ -1,6 +1,12 @@
 
 # processx development version
 
+* `run()` is now much faster with large standard output or standard
+  error (#286).
+
+* `run()` can now discard the standard output and error or redirect
+  them to file(s), instead of collecting them.
+
 * processx now optionally using the cli package to color error messages
   and stack traces, instead of crayon.
 
