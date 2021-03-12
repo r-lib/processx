@@ -1,25 +1,59 @@
 
-load_client_lib <- function(sofile = NULL) {
+client <- new.env(parent = emptyenv())
+
+local({
   ext <- .Platform$dynlib.ext
-  if (is.null(sofile)) {
-    arch <- .Platform$r_arch
-    sofile <- system.file(
-      "libs", arch, paste0("client", ext),
-      package = "processx")
-
-    # Try this as well, this is for devtools/pkgload
-    if (sofile == "") {
-      sofile <- system.file(
-        "src", paste0("client", ext),
-        package = "processx")
-    }
-
-    # stop() here and not throw(), because this function should be standalone
-    if (sofile == "") stop("Cannot find client file")
+  arch <- .Platform$r_arch
+  safe_md5sum <- function(path) {
+    stopifnot(length(path) == 1)
+    tryCatch(
+      tools::md5sum(path),
+      error = function(err) {
+        tmp <- tempfile()
+        on.exit(unlink(tmp, force = TRUE, recursive = TRUE), add = TRUE)
+        file.copy(path, tmp)
+        structure(tools::md5sum(tmp), names = path)
+      }
+    )
   }
+  read_all <- function(x) {
+    list(
+      bytes = readBin(x, "raw", file.size(x)),
+      md5 = unname(safe_md5sum(x)) # absolute file name <> stated install
+    )
+  }
+  libs <- system.file("libs", package = "processx")
+  if (!file.exists(libs)) {
+    # devtools
+    single <- system.file("src", paste0("client", ext), package = "processx")
+    client[[paste0("arch-", arch)]] <- read_all(single)
 
+  } else {
+    # not devtools
+    single <- file.path(libs, paste0("client", ext))
+    if (file.exists(single)) {
+      # not multiarch
+      bts <- file.size(single)
+      client[[paste0("arch-", arch)]] <- read_all(single)
+
+    } else {
+      # multiarch
+      multi <- dir(libs)
+      for (aa in multi) {
+        fn <- file.path(libs, aa, paste0("client", ext))
+        client[[paste0("arch-", aa)]] <- read_all(fn)
+      }
+    }
+  }
+})
+
+# This is really only here for testing
+
+load_client_lib <- function(client) {
+  ext <- .Platform$dynlib.ext
+  arch <- paste0("arch-", .Platform$r_arch)
   tmpsofile <- tempfile(fileext = ext)
-  file.copy(sofile, tmpsofile)
+  writeBin(client[[arch]]$bytes, tmpsofile)
   tmpsofile <- normalizePath(tmpsofile)
 
   lib <- dyn.load(tmpsofile)
