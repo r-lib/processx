@@ -248,6 +248,10 @@ BOOL processx__thread_getstatus_select(LPDWORD lpNumberOfBytes,
   SetEvent(processx__thread_start);
   ret = select(/* (ignored) */ 0, &processx__readfds, &processx__writefds,
 	 &processx__exceptionfds, &timeout);
+  if (ret == SOCKET_ERROR) {
+    processx__thread_last_error = WSAGetLastError();
+    return 0;
+  }
   if (FD_ISSET(processx__notify_socket[0], &processx__readfds)) {
     /* TODO: error */
     recv(processx__notify_socket[0], buf, 10, 0);
