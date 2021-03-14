@@ -13,6 +13,8 @@ run(
   echo = FALSE,
   spinner = FALSE,
   timeout = Inf,
+  stdout = "|",
+  stderr = "|",
   stdout_line_callback = NULL,
   stdout_callback = NULL,
   stderr_line_callback = NULL,
@@ -45,13 +47,28 @@ working directory is used.}
 \item{echo}{Whether to print the standard output and error
 to the screen. Note that the order of the standard output and error
 lines are not necessarily correct, as standard output is typically
-buffered.}
+buffered. If the standard output and/or error is redirected to a
+file or they are ignored, then they also not echoed.}
 
 \item{spinner}{Whether to show a reassuring spinner while the process
 is running.}
 
 \item{timeout}{Timeout for the process, in seconds, or as a \code{difftime}
 object. If it is not finished before this, it will be killed.}
+
+\item{stdout}{What to do with the standard output. By default it
+is collected in the result, and you can also use the
+\code{stdout_line_callback} and \code{stdout_callback} arguments to pass
+callbacks for output. If it is \code{NULL}, then standard output is
+discarded. If it is a string other than \code{"|"}, then it is taken
+as a file name and the output is redirected to this file.}
+
+\item{stderr}{What to do with the standard error. By default it
+is collected in the result, and you can also use the
+\code{stderr_line_callback} and \code{stderr_callback} arguments to pass
+callbacks for output. If it is \code{NULL}, then standard error is
+discarded. If it is another string than \code{"|"}, then it is taken
+as a file name and the standard error is redirected to this file.}
 
 \item{stdout_line_callback}{\code{NULL}, or a function to call for every
 line of the standard output. See \code{stdout_callback} and also more

@@ -124,3 +124,37 @@ test_that("stdin", {
     strsplit(res$stdout, "\r?\n")[[1]],
     c("foobar", "this is the input"))
 })
+
+test_that("drop stdout", {
+  px <- get_tool("px")
+  res <- run(px, c("out", "boo", "err", "bah"), stdout = NULL)
+  expect_null(res$stdout)
+  expect_equal(res$stderr, "bah")
+})
+
+test_that("drop stderr", {
+  px <- get_tool("px")
+  res <- run(px, c("out", "boo", "err", "bah"), stderr = NULL)
+  expect_equal(res$stdout, "boo")
+  expect_null(res$stderr)
+})
+
+test_that("drop std*", {
+  px <- get_tool("px")
+  res <- run(px, c("out", "boo", "err", "bah"), stdout = NULL, stderr = NULL)
+  expect_null(res$stdout)
+  expect_null(res$stderr)
+})
+
+test_that("redirect stout", {
+  tmp1 <- tempfile()
+  tmp2 <- tempfile()
+  on.exit(unlink(c(tmp1, tmp2)), add = TRUE)
+
+  px <- get_tool("px")
+  res <- run(px, c("outln", "boo", "errln", "bah"), stdout = tmp1, stderr = tmp2)
+  expect_null(res$stdout)
+  expect_null(res$stderr)
+  expect_equal(readLines(tmp1), "boo")
+  expect_equal(readLines(tmp2), "bah")
+})

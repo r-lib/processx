@@ -250,3 +250,20 @@ is_interactive <- function() {
     interactive()
   }
 }
+
+make_buffer <- function() {
+  con <- file(open = "w+b")
+  size <- 0L
+  list(
+    push = function(text) {
+      size <<- size + nchar(text)
+      cat(text, file = con)
+    },
+    read = function() {
+      readChar(con, size, useBytes = TRUE)
+    },
+    done = function() {
+      close(con)
+    }
+  )
+}

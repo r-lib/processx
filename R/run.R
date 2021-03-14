@@ -57,11 +57,24 @@
 #' @param echo Whether to print the standard output and error
 #'   to the screen. Note that the order of the standard output and error
 #'   lines are not necessarily correct, as standard output is typically
-#'   buffered.
+#'   buffered. If the standard output and/or error is redirected to a
+#'   file or they are ignored, then they also not echoed.
 #' @param spinner Whether to show a reassuring spinner while the process
 #'   is running.
 #' @param timeout Timeout for the process, in seconds, or as a `difftime`
 #'   object. If it is not finished before this, it will be killed.
+#' @param stdout What to do with the standard output. By default it
+#'   is collected in the result, and you can also use the
+#'   `stdout_line_callback` and `stdout_callback` arguments to pass
+#'   callbacks for output. If it is `NULL`, then standard output is
+#'   discarded. If it is a string other than `"|"`, then it is taken
+#'   as a file name and the output is redirected to this file.
+#' @param stderr What to do with the standard error. By default it
+#'   is collected in the result, and you can also use the
+#'   `stderr_line_callback` and `stderr_callback` arguments to pass
+#'   callbacks for output. If it is `NULL`, then standard error is
+#'   discarded. If it is another string than `"|"`, then it is taken
+#'   as a file name and the standard error is redirected to this file.
 #' @param stdout_line_callback `NULL`, or a function to call for every
 #'   line of the standard output. See `stdout_callback` and also more
 #'   below.
@@ -127,7 +140,8 @@
 run <- function(
   command = NULL, args = character(), error_on_status = TRUE, wd = NULL,
   echo_cmd = FALSE, echo = FALSE, spinner = FALSE,
-  timeout = Inf, stdout_line_callback = NULL, stdout_callback = NULL,
+  timeout = Inf, stdout = "|", stderr = "|",
+  stdout_line_callback = NULL, stdout_callback = NULL,
   stderr_line_callback = NULL, stderr_callback = NULL,
   stderr_to_stdout = FALSE, env = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = FALSE,
@@ -136,6 +150,8 @@ run <- function(
   assert_that(is_flag(error_on_status))
   assert_that(is_time_interval(timeout))
   assert_that(is_flag(spinner))
+  assert_that(is_string_or_null(stdout))
+  assert_that(is_string_or_null(stderr))
   assert_that(is.null(stdout_line_callback) ||
               is.function(stdout_line_callback))
   assert_that(is.null(stderr_line_callback) ||
@@ -150,12 +166,12 @@ run <- function(
   if (!interactive()) spinner <- FALSE
 
   ## Run the process
-  stderr <- if (stderr_to_stdout) "2>&1" else "|"
+  if (stderr_to_stdout) stderr <- "2>&1"
   pr <- process$new(
     command, args, echo_cmd = echo_cmd, wd = wd,
     windows_verbatim_args = windows_verbatim_args,
     windows_hide_window = windows_hide_window,
-    stdout = "|", stderr = stderr, env = env, encoding = encoding,
+    stdout = stdout, stderr = stderr, env = env, encoding = encoding,
     cleanup_tree = cleanup_tree, ...
   )
   "#!DEBUG run() Started the process: `pr$get_pid()`"
@@ -177,18 +193,40 @@ run <- function(
   ## Make the process interruptible, and kill it on interrupt
   runcall <- sys.call()
   resenv <- new.env(parent = emptyenv())
+  has_stdout <- !is.null(stdout) && stdout == "|"
+  has_stderr <- !is.null(stderr) && stderr %in% c("|", "2>&1")
+
+  if (has_stdout) {
+    resenv$outbuf <- make_buffer()
+    on.exit(resenv$outbuf$done(), add = TRUE)
+  }
+  if (has_stderr) {
+    resenv$errbuf <- make_buffer()
+    on.exit(resenv$errbuf$done(), add = TRUE)
+  }
+
   res <- tryCatch(
-    run_manage(pr, timeout, spinner, stdout_line_callback,
-               stdout_callback, stderr_line_callback,
-               stderr_callback, resenv),
+    run_manage(pr, timeout, spinner, stdout, stderr,
+               stdout_line_callback, stdout_callback,
+               stderr_line_callback, stderr_callback, resenv),
     interrupt = function(e) {
       "!DEBUG run() process `pr$get_pid()` killed on interrupt"
-      resenv$stdout <- paste0(resenv$stdout, pr$read_output(), pr$read_output())
-      resenv$stderr <- paste0(resenv$stderr, pr$read_error(), pr$read_error())
+      out <- if (has_stdout) {
+        resenv$outbuf$push(pr$read_output())
+        resenv$outbuf$push(pr$read_output())
+        resenv$outbuf$read()
+      }
+      err <- if (has_stderr) {
+        resenv$errbuf$push(pr$read_error())
+        resenv$errbuf$push(pr$read_error())
+        resenv$errbuf$read()
+      }
       tryCatch(pr$kill(), error = function(e) NULL)
       signalCondition(new_process_interrupt_cond(
-        list(interrupt = TRUE, stderr = resenv$stderr,
-             stdout = resenv$stdout, command = command, args = args),
+        list(
+          interrupt = TRUE, stderr = err, stdout = out,
+          command = command, args = args
+        ),
         runcall, echo = echo, stderr_to_stdout = stderr_to_stdout
       ))
       cat("\n")
@@ -216,15 +254,15 @@ echo_callback <- function(user_callback, type) {
   }
 }
 
-run_manage <- function(proc, timeout, spinner, stdout_line_callback,
-                       stdout_callback, stderr_line_callback,
-                       stderr_callback, resenv) {
+run_manage <- function(proc, timeout, spinner, stdout, stderr,
+                       stdout_line_callback, stdout_callback,
+                       stderr_line_callback, stderr_callback, resenv) {
 
   timeout <- as.difftime(timeout, units = "secs")
   start_time <- proc$get_start_time()
 
-  resenv$stdout <- ""
-  resenv$stderr <- ""
+  has_stdout <- !is.null(stdout) && stdout == "|"
+  has_stderr <- !is.null(stderr) && stderr %in% c("|", "2>&1")
 
   pushback_out <- ""
   pushback_err <- ""
@@ -232,45 +270,49 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
   do_output <- function() {
 
     ok <- FALSE
-    newout <- tryCatch({
-      ret <- proc$read_output(2000)
-      ok <- TRUE
-      ret
-    }, error = function(e) NULL)
+    if (has_stdout) {
+      newout <- tryCatch({
+        ret <- proc$read_output(2000)
+        ok <- TRUE
+        ret
+      }, error = function(e) NULL)
 
-    if (length(newout) && nzchar(newout)) {
-      if (!is.null(stdout_callback)) stdout_callback(newout, proc)
-      resenv$stdout <- paste0(resenv$stdout, newout)
-      if (!is.null(stdout_line_callback)) {
-        newout <- paste0(pushback_out, newout)
-        pushback_out <<- ""
-        lines <- strsplit(newout, "\r?\n")[[1]]
-        if (last_char(newout) != "\n") {
-          pushback_out <<- utils::tail(lines, 1)
-          lines <- utils::head(lines, -1)
+      if (length(newout) && nzchar(newout)) {
+        if (!is.null(stdout_callback)) stdout_callback(newout, proc)
+        resenv$outbuf$push(newout)
+        if (!is.null(stdout_line_callback)) {
+          newout <- paste0(pushback_out, newout)
+          pushback_out <<- ""
+          lines <- strsplit(newout, "\r?\n")[[1]]
+          if (last_char(newout) != "\n") {
+            pushback_out <<- utils::tail(lines, 1)
+            lines <- utils::head(lines, -1)
+          }
+          lapply(lines, function(x) stdout_line_callback(x, proc))
         }
-        lapply(lines, function(x) stdout_line_callback(x, proc))
       }
     }
 
-    newerr <- tryCatch({
-      ret <- proc$read_error(2000)
-      ok <- TRUE
-      ret
-    }, error = function(e) NULL)
+    if (has_stderr) {
+      newerr <- tryCatch({
+        ret <- proc$read_error(2000)
+        ok <- TRUE
+        ret
+      }, error = function(e) NULL)
 
-    if (length(newerr) && nzchar(newerr)) {
-      resenv$stderr <- paste0(resenv$stderr, newerr)
-      if (!is.null(stderr_callback)) stderr_callback(newerr, proc)
-      if (!is.null(stderr_line_callback)) {
-        newerr <- paste0(pushback_err, newerr)
-        pushback_err <<- ""
-        lines <- strsplit(newerr, "\r?\n")[[1]]
-        if (last_char(newerr) != "\n") {
-          pushback_err <<- utils::tail(lines, 1)
-          lines <- utils::head(lines, -1)
+      if (length(newerr) && nzchar(newerr)) {
+        resenv$errbuf$push(newerr)
+        if (!is.null(stderr_callback)) stderr_callback(newerr, proc)
+        if (!is.null(stderr_line_callback)) {
+          newerr <- paste0(pushback_err, newerr)
+          pushback_err <<- ""
+          lines <- strsplit(newerr, "\r?\n")[[1]]
+          if (last_char(newerr) != "\n") {
+            pushback_err <<- utils::tail(lines, 1)
+            lines <- utils::head(lines, -1)
+          }
+          lapply(lines, function(x) stderr_line_callback(x, proc))
         }
-        lapply(lines, function(x) stderr_line_callback(x, proc))
       }
     }
 
@@ -291,7 +333,8 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 
   while (proc$is_alive()) {
     ## Timeout? Maybe finished by now...
-    if (!is.null(timeout) && Sys.time() - start_time > timeout) {
+    if (!is.null(timeout) && is.finite(timeout) &&
+        Sys.time() - start_time > timeout) {
       if (proc$kill(close_connections = FALSE)) timeout_happened <- TRUE
       "!DEBUG Timeout killed run() process `proc$get_pid()`"
       break
@@ -323,7 +366,7 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 
   ## We might still have output
   "!DEBUG run() reading leftover output / error, process `proc$get_pid()`"
-  while (proc$is_incomplete_output() ||
+  while ((has_stdout && proc$is_incomplete_output()) ||
          (proc$has_error_connection() && proc$is_incomplete_error())) {
     proc$poll_io(-1)
     if (!do_output()) break
@@ -333,8 +376,8 @@ run_manage <- function(proc, timeout, spinner, stdout_line_callback,
 
   list(
     status = proc$get_exit_status(),
-    stdout = resenv$stdout,
-    stderr = resenv$stderr,
+    stdout = if (has_stdout) resenv$outbuf$read(),
+    stderr = if (has_stderr) resenv$errbuf$read(),
     timeout = timeout_happened
   )
 }
