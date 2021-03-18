@@ -94,10 +94,12 @@ process <- R6::R6Class(
     #'     provided;
     #'   * a file name, use this file as standard input;
     #'   * `"|"`: create a (writeable) connection for stdin.
+    #'   * `""` (empty string): inherit it from the main R process.
     #' @param stdout  What to do with the standard output. Possible values:
     #'   * `NULL`: discard it;
     #'   * a string, redirect it to this file;
     #'   * `"|"`: create a connection for it.
+    #'   * `""` (empty string): inherit it from the main R process.
     #' @param stderr What to do with the standard error. Possible values:
     #'   * `NULL`: discard it;
     #'   * a string, redirect it to this file;
@@ -105,6 +107,7 @@ process <- R6::R6Class(
     #'   * `"2>&1"`: redirect it to the same connection (i.e. pipe or file)
     #'     as `stdout`. `"2>&1"` is a way to keep standard output and error
     #'     correctly interleaved.
+    #'   * `""` (empty string): inherit it from the main R process.
     #' @param pty Whether to create a pseudo terminal (pty) for the
     #'   background process. This is currently only supported on Unix
     #'   systems, but not supported on Solaris.

@@ -149,11 +149,11 @@ process_initialize <- function(self, private, command, args,
   ## poll it.
   if (poll_connection) close(pipe[[2]])
 
-  if (is.character(stdin) && stdin != "|")
+  if (is.character(stdin) && stdin != "|" && stdin != "")
     stdin <- full_path(stdin)
-  if (is.character(stdout) && stdout != "|")
+  if (is.character(stdout) && stdout != "|" && stdout != "")
     stdout <- full_path(stdout)
-  if (is.character(stderr) && stderr != "|")
+  if (is.character(stderr) && stderr != "|" && stderr != "")
     stderr <- full_path(stderr)
 
   ## Store the output and error files, we'll open them later if needed
