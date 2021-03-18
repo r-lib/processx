@@ -222,7 +222,10 @@ the parent's environment is inherited. On Windows, many programs
 cannot function correctly if some environment variables are not
 set, so we always set \code{HOMEDRIVE}, \code{HOMEPATH}, \code{LOGONSERVER},
 \code{PATH}, \code{SYSTEMDRIVE}, \code{SYSTEMROOT}, \code{TEMP}, \code{USERDOMAIN},
-\code{USERNAME}, \code{USERPROFILE} and \code{WINDIR}.}
+\code{USERNAME}, \code{USERPROFILE} and \code{WINDIR}. To append new environment
+variables to the ones set in the current process, specify
+\code{"current"} in \code{env}, without a name, and the appended ones with
+names. The appended ones can overwrite the current ones.}
 
 \item{\code{cleanup}}{Whether to kill the process when the \code{process}
 object is garbage collected.}

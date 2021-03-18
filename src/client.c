@@ -227,6 +227,15 @@ SEXP processx_set_stderr_to_file(SEXP file) {
   return ret;
 }
 
+extern Rboolean R_Interactive;
+
+SEXP processx_set_interactive(SEXP flag) {
+  int cflag = LOGICAL(flag)[0];
+  int old = R_Interactive;
+  R_Interactive = cflag;
+  return ScalarLogical( (old) ? 1 : 0 );
+}
+
 SEXP processx_base64_encode(SEXP array);
 SEXP processx_base64_decode(SEXP array);
 
@@ -239,6 +248,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_set_stderr", (DL_FUNC) &processx_set_stderr, 2 },
   { "processx_set_stdout_to_file", (DL_FUNC) &processx_set_stdout_to_file, 1 },
   { "processx_set_stderr_to_file", (DL_FUNC) &processx_set_stderr_to_file, 1 },
+  { "processx_set_interactive", (DL_FUNC) &processx_set_interactive, 1 },
   { NULL, NULL, 0 }
 };
 

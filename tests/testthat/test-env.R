@@ -32,3 +32,16 @@ test_that("specify custom env", {
   expect_true(out$stdout %in% paste0("bar baz", c("\n", "\r\n")))
   gc()
 })
+
+test_that("append to env", {
+  withr::local_envvar(FOO = "fooe", BAR = "bare")
+  px <- get_tool("px")
+  out <- run(
+    px,
+    c("getenv", "FOO", "getenv", "BAR", "getenv", "BAZ"),
+    env = c("current", BAZ = "baze", BAR = "bare2")
+  )
+
+  outenv <- strsplit(out$stdout, "\r?\n")[[1]]
+  expect_equal(outenv, c("fooe", "bare2", "baze"))
+})

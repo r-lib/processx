@@ -138,7 +138,10 @@ process <- R6::R6Class(
     #'   cannot function correctly if some environment variables are not
     #'   set, so we always set `HOMEDRIVE`, `HOMEPATH`, `LOGONSERVER`,
     #'   `PATH`, `SYSTEMDRIVE`, `SYSTEMROOT`, `TEMP`, `USERDOMAIN`,
-    #'   `USERNAME`, `USERPROFILE` and `WINDIR`.
+    #'   `USERNAME`, `USERPROFILE` and `WINDIR`. To append new environment
+    #'   variables to the ones set in the current process, specify
+    #'   `"current"` in `env`, without a name, and the appended ones with
+    #'   names. The appended ones can overwrite the current ones.
     #' @param cleanup Whether to kill the process when the `process`
     #'   object is garbage collected.
     #' @param cleanup_tree Whether to kill the process and its child

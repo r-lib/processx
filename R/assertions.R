@@ -111,3 +111,20 @@ is_connection_list <- function(x) {
 on_failure(is_connection_list) <- function(call, env) {
   paste0(deparse(call$x), " must be a list of processx connections")
 }
+
+is_env_vector <- function(x) {
+  if (is_named_character(x)) return(TRUE)
+  if (!is.character(x) || anyNA(x)) return(FALSE)
+  if (is.null(names(x))) {
+    all(x == "current")
+  } else {
+    all(x[names(x) == ""] == "current")
+  }
+}
+
+on_failure(is_env_vector) <- function(call, env) {
+  paste0(
+    "all elements, except \"current\" must be named in ",
+    deparse(call$x)
+  )
+}

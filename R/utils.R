@@ -267,3 +267,14 @@ make_buffer <- function() {
     }
   )
 }
+
+update_vector <- function(x, y = NULL) {
+  if (length(y) == 0L) return(x)
+  c(x[!(names(x) %in% names(y))], y)
+}
+
+process_env <- function(env) {
+  current <- env == "current" & names(env) == ""
+  if (any(current)) env <- update_vector(Sys.getenv(), env[!current])
+  enc2utf8(paste(names(env), sep = "=", env))
+}

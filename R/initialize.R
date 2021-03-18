@@ -41,7 +41,7 @@ process_initialize <- function(self, private, command, args,
     is.list(pty_options), is_named(pty_options),
     is_connection_list(connections),
     is.null(poll_connection) || is_flag(poll_connection),
-    is.null(env) || is_named_character(env),
+    is.null(env) || is_env_vector(env),
     is_flag(cleanup),
     is_flag(cleanup_tree),
     is_string_or_null(wd),
@@ -115,7 +115,7 @@ process_initialize <- function(self, private, command, args,
 
   if (echo_cmd) do_echo_cmd(command, args)
 
-  if (!is.null(env)) env <- enc2utf8(paste(names(env), sep = "=", env))
+  if (!is.null(env)) env <- process_env(env)
 
   private$tree_id <- get_id()
 
