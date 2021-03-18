@@ -94,8 +94,15 @@
 #'   standard output, correctly interleaved. However, it is not possible
 #'   to deduce where pieces of the output were coming from. If this is
 #'   `TRUE`, the standard error callbacks  (if any) are never called.
-#' @param env Environment of the child process, a named character vector.
-#'   IF `NULL`, the environment of the parent is inherited.
+#' @param env Environment variables of the child process. If `NULL`,
+#'   the parent's environment is inherited. On Windows, many programs
+#'   cannot function correctly if some environment variables are not
+#'   set, so we always set `HOMEDRIVE`, `HOMEPATH`, `LOGONSERVER`,
+#'   `PATH`, `SYSTEMDRIVE`, `SYSTEMROOT`, `TEMP`, `USERDOMAIN`,
+#'   `USERNAME`, `USERPROFILE` and `WINDIR`. To append new environment
+#'   variables to the ones set in the current process, specify
+#'   `"current"` in `env`, without a name, and the appended ones with
+#'   names. The appended ones can overwrite the current ones.
 #' @param windows_verbatim_args Whether to omit the escaping of the
 #'   command and the arguments on windows. Ignored on other platforms.
 #' @param windows_hide_window Whether to hide the window of the
