@@ -166,6 +166,7 @@ They don't need to be escaped.}
 provided;
 \item a file name, use this file as standard input;
 \item \code{"|"}: create a (writeable) connection for stdin.
+\item \code{""} (empty string): inherit it from the main R process.
 }}
 
 \item{\code{stdout}}{What to do with the standard output. Possible values:
@@ -173,6 +174,7 @@ provided;
 \item \code{NULL}: discard it;
 \item a string, redirect it to this file;
 \item \code{"|"}: create a connection for it.
+\item \code{""} (empty string): inherit it from the main R process.
 }}
 
 \item{\code{stderr}}{What to do with the standard error. Possible values:
@@ -183,6 +185,7 @@ provided;
 \item \code{"2>&1"}: redirect it to the same connection (i.e. pipe or file)
 as \code{stdout}. \code{"2>&1"} is a way to keep standard output and error
 correctly interleaved.
+\item \code{""} (empty string): inherit it from the main R process.
 }}
 
 \item{\code{pty}}{Whether to create a pseudo terminal (pty) for the

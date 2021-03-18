@@ -248,7 +248,11 @@ static void processx__child_init(processx_handle_t* handle, int (*pipes)[2],
 	 no need to open any file */
       if (fd >= 3) continue;
 
-      if (out_files[fd]) {
+      if (out_files[fd] && ! strcmp(out_files[fd], "")) {
+        /* Inherit the fd of the parent process */
+        use_fd = fd;
+
+      } else if (out_files[fd]) {
 	/* A file was requested, open it */
 	if (fd == 0) {
 	  use_fd = open(out_files[fd], O_RDONLY);

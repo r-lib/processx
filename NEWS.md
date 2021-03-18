@@ -1,6 +1,10 @@
 
 # processx development version
 
+* Sub-processes can now inherit the standard input, output and error from
+  the main R process, by setting the corresponding argument to an empty
+  string. E.g. `run("ls", stdout = "")` (#72).
+
 * `run()` is now much faster with large standard output or standard
   error (#286).
 
