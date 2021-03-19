@@ -37,9 +37,9 @@ process_initialize <- function(self, private, command, args,
   assert_that(
     is_string(command),
     is.character(args),
-    is_string_or_null(stdin),
-    is_string_or_null(stdout),
-    is_string_or_null(stderr),
+    is_std_conn(stdin),
+    is_std_conn(stdout),
+    is_std_conn(stderr),
     is_flag(pty),
     is.list(pty_options), is_named(pty_options),
     is_connection_list(connections),
@@ -158,13 +158,16 @@ process_initialize <- function(self, private, command, args,
 
   private$tree_id <- get_id()
 
-  "!DEBUG process_initialize exec()"
   if (!is.null(wd)) {
     wd <- normalizePath(wd, winslash = "\\", mustWork = FALSE)
   }
+
+  connections <- c(list(stdin, stdout, stderr), connections)
+
+  "!DEBUG process_initialize exec()"
   private$status <- rethrow_call(
     c_processx_exec,
-    command, c(command, args), stdin, stdout, stderr, pty, pty_options,
+    command, c(command, args), pty, pty_options,
     connections, env, windows_verbatim_args, windows_hide_window,
     private, cleanup, wd, encoding,
     paste0("PROCESSX_", private$tree_id, "=YES")

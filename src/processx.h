@@ -42,10 +42,8 @@ extern "C" {
 
 /* API from R */
 
-SEXP processx_exec(SEXP command, SEXP args,
-		   SEXP std_in,  SEXP std_out, SEXP std_err, SEXP pty,
-		   SEXP pty_options, SEXP connections, SEXP env,
-		   SEXP windows_verbatim_args,
+SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
+		   SEXP connections, SEXP env, SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP private_, SEXP cleanup,
 		   SEXP wd, SEXP encoding, SEXP tree_id);
 SEXP processx_wait(SEXP status, SEXP timeout, SEXP name);
