@@ -276,15 +276,12 @@ static int processx__duplicate_handle(HANDLE handle, HANDLE* dup) {
 }
 
 int processx__stdio_create(processx_handle_t *handle,
-			   HANDLE *extra_connections, int count,
-			   const char *std_in, const char *std_out,
-			   const char *std_err,
-			   BYTE** buffer_ptr, SEXP private,
-			   const char *encoding,
-                           const char *cname) {
+			   SEXP connections, BYTE** buffer_ptr, SEXP private,
+			   const char *encoding, const char *cname) {
   BYTE* buffer;
   int i;
   int err;
+  int count = LENGTH(connections);
 
   if (count > 255) {
     R_THROW_ERROR("Too many processx connections to inherit, '%s'", cname);
@@ -305,57 +302,55 @@ int processx__stdio_create(processx_handle_t *handle,
   handle->pipes[0] = handle->pipes[1] = handle->pipes[2] = 0;
 
   for (i = 0; i < count; i++) {
-    DWORD access = (i == 0) ? FILE_GENERIC_READ | FILE_WRITE_ATTRIBUTES :
+    DWORD access = (i == 0) ?
+      FILE_GENERIC_READ | FILE_WRITE_ATTRIBUTES :
       FILE_GENERIC_WRITE | FILE_READ_ATTRIBUTES;
-    const char *output;
 
-    switch (i) {
-    case 0:  output = std_in;  break;
-    case 1:  output = std_out; break;
-    case 2:  output = std_err; break;
-    default: output = "";      break;
-    }
+    SEXP output = VECTOR_ELT(connections, i);
+    const char *stroutput =
+      Rf_isString(output) ? CHAR(STRING_ELT(output, 0)) : NULL;
 
-    if (!output) {
+    /* NULL means ignore */
+    if (isNull(output)) {
       /* ignored output */
       err = processx__create_nul_handle(&CHILD_STDIO_HANDLE(buffer, i), access);
       if (err) { goto error; }
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
 
-    } else if (i == 2 && output[0] != '\0' && ! strcmp("2>&1", output)) {
+    } else if (i == 2 && stroutput && ! strcmp("2>&1", stroutput)) {
       /* This is stderr, sent to stdout */
       /* We need to turn off buffering, otherwise the output on
-	 the two handles won't be correctly interleaved.
-	 We set FDEV on the pipes/files. This tricks windows
-	 into turning off the CRT buffering */
+       the two handles won't be correctly interleaved.
+       We set FDEV on the pipes/files. This tricks windows
+       into turning off the CRT buffering */
       CHILD_STDIO_COPY(buffer, 2, 1);
       CHILD_STDIO_CRT_FLAGS(buffer, 1) = FOPEN | FDEV;
       CHILD_STDIO_CRT_FLAGS(buffer, 2) = FOPEN | FDEV;
 
-    } else if (output[0] != '\0' && strcmp("|", output)) {
+    } else if (stroutput && strcmp("|", stroutput)) {
       /* output to file */
       if (i == 0) {
-	err = processx__create_input_handle(&CHILD_STDIO_HANDLE(buffer, i),
-					    output, access);
+        err = processx__create_input_handle(&CHILD_STDIO_HANDLE(buffer, i),
+                                            stroutput, access);
       } else {
-	err = processx__create_output_handle(&CHILD_STDIO_HANDLE(buffer, i),
-					     output, access);
+        err = processx__create_output_handle(&CHILD_STDIO_HANDLE(buffer, i),
+                                             stroutput, access);
       }
       if (err) { goto error; }
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
 
-    } else if (output[0] != '\0') {
+    } else if (stroutput && ! strcmp("|", stroutput)) {
       /* piped output */
       processx_connection_t *con = 0;
       HANDLE parent_handle;
       const char *r_pipe_name = i == 0 ? "stdin_pipe" :
-	(i == 1 ? "stdout_pipe" : "stderr_pipe");
+        (i == 1 ? "stdout_pipe" : "stderr_pipe");
       if (i == 0) {
-	err = processx__create_input_pipe(handle, &parent_handle,
-					  &CHILD_STDIO_HANDLE(buffer, i), cname);
+        err = processx__create_input_pipe(handle, &parent_handle,
+                                          &CHILD_STDIO_HANDLE(buffer, i), cname);
       } else {
-	err = processx__create_pipe(handle, &parent_handle,
-				    &CHILD_STDIO_HANDLE(buffer, i), cname);
+        err = processx__create_pipe(handle, &parent_handle,
+                                    &CHILD_STDIO_HANDLE(buffer, i), cname);
       }
       if (err) goto error;
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FPIPE;
@@ -367,24 +362,28 @@ int processx__stdio_create(processx_handle_t *handle,
       /* inherited output */
       HANDLE child_handle;
 
-      err = processx__duplicate_handle(extra_connections[i - 3], &child_handle);
+      processx_connection_t *ccon = R_ExternalPtrAddr(output);
+      if (!ccon) R_THROW_ERROR("Invalid (closed) connection");
+      HANDLE *hnd = (HANDLE*) processx_c_connection_fileno(ccon);
+
+      err = processx__duplicate_handle(hnd, &child_handle);
       if (err) goto error;
 
       switch (GetFileType(child_handle)) {
       case FILE_TYPE_DISK:
-	CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN;
-	break;
+        CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN;
+        break;
       case FILE_TYPE_PIPE:
-	CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
-	break;
+        CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
+        break;
       case FILE_TYPE_CHAR:
       case FILE_TYPE_REMOTE:
       case FILE_TYPE_UNKNOWN:
-	CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
-	break;
+        CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
+        break;
       default:
-	err = -1;
-	goto error;
+        err = -1;
+        goto error;
       }
 
       CHILD_STDIO_HANDLE(buffer, i) = child_handle;
