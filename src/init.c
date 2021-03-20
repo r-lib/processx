@@ -47,6 +47,8 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_connection_create_fd",  (DL_FUNC) &processx_connection_create_fd,  3 },
   { "processx_connection_create_file",
     (DL_FUNC) &processx_connection_create_file,    3 },
+  { "processx_connection_create_fifo",
+    (DL_FUNC) &processx_connection_create_fifo,    3 },
   { "processx_connection_set_stdout", (DL_FUNC) &processx_connection_set_stdout,  2 },
   { "processx_connection_set_stderr", (DL_FUNC) &processx_connection_set_stderr,  2 },
   { "processx_connection_get_fileno", (DL_FUNC) &processx_connection_get_fileno,  1 },
@@ -58,7 +60,6 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_base64_decode", (DL_FUNC) &processx_base64_decode, 1 },
   { "processx__echo_on", (DL_FUNC) &processx__echo_on, 0 },
   { "processx__echo_off", (DL_FUNC) &processx__echo_off, 0 },
-  { "processx_make_fifo", (DL_FUNC) &processx_make_fifo, 1 },
 
   { NULL, NULL, 0 }
 };

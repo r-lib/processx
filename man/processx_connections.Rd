@@ -16,6 +16,7 @@
 \alias{conn_write.processx_connection}
 \alias{processx_conn_write}
 \alias{conn_create_file}
+\alias{conn_create_fifo}
 \alias{conn_set_stdout}
 \alias{conn_set_stderr}
 \alias{conn_get_fileno}
@@ -53,6 +54,8 @@ conn_write(con, str, sep = "\\n", encoding = "")
 processx_conn_write(con, str, sep = "\\n", encoding = "")
 
 conn_create_file(filename, read = NULL, write = NULL)
+
+conn_create_fifo(name, read = NULL, write = NULL)
 
 conn_set_stdout(con, drop = TRUE)
 
@@ -93,7 +96,9 @@ characters or lines.}
 
 \item{read}{Whether the connection is readable.}
 
-\item{write}{Whethe the connection is writeable.}
+\item{write}{Whether the connection is writeable.}
+
+\item{name}{File name. Pipe name on Windows.}
 
 \item{drop}{Whether to close the original stdout/stderr, or keep it
 open and return a connection to it.}
@@ -126,6 +131,10 @@ case it returns the leftover bytes in a raw vector. Call \code{conn_write()}
 again with this raw vector.
 
 \code{conn_create_file()} creates a connection to a file.
+
+\code{conn_create_fifo()} creates a connection to a FIFO. On Unix a
+FIFO is a special file. On Windows \code{filename} refers to
+the namespace of pipes, and you won't see it in the file system.
 
 \code{conn_set_stdout()} set the standard output of the R process, to the
 specified connection.

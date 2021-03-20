@@ -169,12 +169,22 @@ processx_conn_write <- function(con, str, sep = "\n", encoding = "") {
 #'
 #' @param filename File name.
 #' @param read Whether the connection is readable.
-#' @param write Whethe the connection is writeable.
+#' @param write Whether the connection is writeable.
 #'
 #' @rdname processx_connections
 #' @export
 
 conn_create_file <- function(filename, read = NULL, write = NULL) {
+  args <- check_conn_create_file_args(filename, read , write)
+  rethrow_call(
+    c_processx_connection_create_file,
+    args$filename,
+    args$read,
+    args$write
+  )
+}
+
+check_conn_create_file_args <- function(filename, read, write) {
   if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
   if (is.null(read)) read <- !write
   if (is.null(write)) write <- !read
@@ -185,7 +195,29 @@ conn_create_file <- function(filename, read = NULL, write = NULL) {
     is_flag(write),
     read || write)
 
-  rethrow_call(c_processx_connection_create_file, filename, read, write)
+  list(filename = filename, read = read, write = write)
+}
+
+#' @details
+#' `conn_create_fifo()` creates a connection to a FIFO. On Unix a
+#' FIFO is a special file. On Windows `filename` refers to
+#' the namespace of pipes, and you won't see it in the file system.
+#'
+#' @param name File name. Pipe name on Windows.
+#' @param read Whether the connection is readable.
+#' @param write Whether the connection is writeable.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_create_fifo <- function(name, read = NULL, write = NULL) {
+  args <- check_conn_create_file_args(name, read, write)
+  rethrow_call(
+    c_processx_connection_create_fifo,
+    args$filename,
+    args$read,
+    args$write
+  )
 }
 
 #' @details

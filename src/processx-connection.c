@@ -281,6 +281,79 @@ SEXP processx_connection_create_pipepair(SEXP encoding, SEXP nonblocking) {
   return result;
 }
 
+#ifdef _WIN32
+
+SEXP processx_connection_create_fifo(SEXP name, SEXP read, SEXP write) {
+  const char *c_name = CHAR(STRING_ELT(name, 0));
+  int c_read = LOGICAL(read)[0];
+  int c_write = LOGICAL(write)[0];
+  SEXP result = R_NilValue;
+  processx_file_handle_t os_handle;
+
+  DWORD access = 0;
+  if (c_read) access |= GENERIC_READ;
+  if (c_write) access |= GENERIC_WRITE;
+
+  char pipe_name[400];
+  int ret = snprintf(
+    pipe_name,
+    sizeof(pipe_name),
+    "\\\\?\\pipe\\px\\%s",
+    c_name
+  );
+  if (ret >= sizeof(pipe_name)) R_THROW_ERROR("FIFO name is too long");
+  if (ret < 0) R_THROW_POSIX_ERROR("Cannot create FIFO name");
+
+  DWORD overlapped = c_read ? FILE_FLAG_OVERLAPPED : 0;
+
+  /* first we try to create it, and if that fails, try to connect */
+  os_handle = CreateNamedPipeA(
+    /* lpName = */ pipe_name,
+    /* dwOpenMode = */ PIPE_ACCESS_OUTBOUND | PIPE_ACCESS_INBOUND |
+      overlapped | FILE_FLAG_FIRST_PIPE_INSTANCE,
+    /* dwPipeMode = */ PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+    /* nMaxInstances =  */ 1,
+    /* nOutBufferSize = */ 65536,
+    /* nInBufferSize =  */ 65536,
+    /* nDefaultTimeOut = */ 0,
+    /* lpSecurityAttributes = */ NULL
+  );
+
+  if (os_handle == INVALID_HANDLE_VALUE) {
+    DWORD err = GetLastError();
+    if (err != ERROR_PIPE_BUSY && err != ERROR_ACCESS_DENIED) {
+      R_THROW_SYSTEM_ERROR_CODE(err, "Cannot create FIFO");
+    }
+
+    /* Failed to create, maybe already there? */
+    DWORD attr = c_read ? FILE_FLAG_OVERLAPPED : FILE_ATTRIBUTE_NORMAL;
+    os_handle = CreateFileA(
+      /* lpFilename = */ pipe_name,
+      /* dwDesiredAccess = */ access,
+      /* dwShareMode = */ 0,
+      /* lpSecurityAttributes = */ NULL,
+      /* dwCreationDisposition = */ OPEN_EXISTING,
+      /* dwFlagsAndAttributes = */ attr,
+      /* hTemplateFile = */ NULL
+    );
+
+    if (os_handle == INVALID_HANDLE_VALUE) {
+      R_THROW_SYSTEM_ERROR("Cannot create or open FIFO");
+    }
+  }
+
+  processx_c_connection_create(
+    os_handle,
+    c_read ? PROCESSX_FILE_TYPE_ASYNCPIPE : PROCESSX_FILE_TYPE_PIPE,
+    /* encoding = */ "",
+    &result
+  );
+
+  return result;
+}
+
+#endif
+
 SEXP processx__connection_set_std(SEXP con, int which, int drop) {
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
   if (!ccon) R_THROW_ERROR("Invalid connection object");

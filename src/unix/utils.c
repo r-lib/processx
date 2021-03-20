@@ -102,13 +102,3 @@ SEXP processx__echo_off() {
 
   return R_NilValue;
 }
-
-SEXP processx_make_fifo(SEXP path) {
-  const char *cpath = CHAR(STRING_ELT(path, 0));
-  int ret = mkfifo(cpath, 0600);
-  if (ret == -1) {
-    R_THROW_SYSTEM_ERROR("Cannot create FIFO at '%s'.", cpath);
-  }
-
-  return R_NilValue;
-}
