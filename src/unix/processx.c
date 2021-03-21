@@ -589,9 +589,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 
   if (signal_pipe[0] >= 0) close(signal_pipe[0]);
 
-  /* Closed unused ends of std pipes */
+  /* Closed unused ends of std pipes. If there is no parent end, then
+     this is an inherited std{in,out,err} fd, so we should not close it. */
   for (i = 0; i < 3; i++) {
-    if (pipes[i][1] >= 0) close(pipes[i][1]);
+    if (pipes[i][1] >= 0 && pipes[i][0] >= 0) close(pipes[i][1]);
   }
 
   /* Create proper connections */
