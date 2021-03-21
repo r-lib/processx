@@ -4,6 +4,9 @@
 #include "../processx.h"
 #include "processx-stdio.h"
 
+#include <stdio.h>
+#include <io.h>
+
 HANDLE processx__default_iocp = NULL;
 
 static int processx__create_nul_handle(HANDLE *handle_ptr, DWORD access) {
@@ -277,7 +280,7 @@ static int processx__duplicate_handle(HANDLE handle, HANDLE* dup) {
 
 int processx__stdio_create(processx_handle_t *handle,
 			   SEXP connections, BYTE** buffer_ptr, SEXP private,
-			   const char *encoding, const char *cname) {
+			   const char *encoding, const char *cname, int* inherit_std) {
   BYTE* buffer;
   int i;
   int err;
@@ -327,18 +330,6 @@ int processx__stdio_create(processx_handle_t *handle,
       CHILD_STDIO_CRT_FLAGS(buffer, 1) = FOPEN | FDEV;
       CHILD_STDIO_CRT_FLAGS(buffer, 2) = FOPEN | FDEV;
 
-    } else if (stroutput && strcmp("|", stroutput)) {
-      /* output to file */
-      if (i == 0) {
-        err = processx__create_input_handle(&CHILD_STDIO_HANDLE(buffer, i),
-                                            stroutput, access);
-      } else {
-        err = processx__create_output_handle(&CHILD_STDIO_HANDLE(buffer, i),
-                                             stroutput, access);
-      }
-      if (err) { goto error; }
-      CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
-
     } else if (stroutput && ! strcmp("|", stroutput)) {
       /* piped output */
       processx_connection_t *con = 0;
@@ -355,18 +346,48 @@ int processx__stdio_create(processx_handle_t *handle,
       if (err) goto error;
       CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FPIPE;
       con = processx__create_connection(parent_handle, r_pipe_name,
-					private, encoding, i != 0);
+                                        private, encoding, i != 0);
       handle->pipes[i] = con;
 
+    } else if (stroutput && strcmp("", stroutput)) {
+      /* output to file */
+      if (i == 0) {
+        err = processx__create_input_handle(&CHILD_STDIO_HANDLE(buffer, i),
+                                            stroutput, access);
+      } else {
+        err = processx__create_output_handle(&CHILD_STDIO_HANDLE(buffer, i),
+                                             stroutput, access);
+      }
+      if (err) { goto error; }
+      CHILD_STDIO_CRT_FLAGS(buffer, i) = FOPEN | FDEV;
+
     } else {
-      /* inherited output */
+      /* inherit connection */
       HANDLE child_handle;
+      HANDLE ihnd;
 
-      processx_connection_t *ccon = R_ExternalPtrAddr(output);
-      if (!ccon) R_THROW_ERROR("Invalid (closed) connection");
-      HANDLE *hnd = (HANDLE*) processx_c_connection_fileno(ccon);
+      /* std connection or extra connection */
+      if (i < 3) {
+        *inherit_std = 1;
+        DWORD nh = i == 0 ? STD_INPUT_HANDLE :
+          (i == 1 ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE );
+        ihnd = GetStdHandle(nh);
+        if (ihnd == INVALID_HANDLE_VALUE ||
+            ihnd == NULL ||
+            ihnd == (HANDLE) -2) {
+          FILE *sh = i == 0 ? stdin : (i == 1 ? stdout : stderr);
+          int fd = _fileno(sh);
+          REprintf("Opening fd %i\n", fd);
+          ihnd = (HANDLE) _get_osfhandle(fd);
+        }
 
-      err = processx__duplicate_handle(hnd, &child_handle);
+      } else {
+        processx_connection_t *ccon = R_ExternalPtrAddr(output);
+        if (!ccon) R_THROW_ERROR("Invalid (closed) connection");
+        ihnd = (HANDLE*) processx_c_connection_fileno(ccon);
+      }
+
+      err = processx__duplicate_handle(ihnd, &child_handle);
       if (err) goto error;
 
       switch (GetFileType(child_handle)) {

@@ -956,9 +956,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
   result = PROTECT(processx__make_handle(private, ccleanup));
   handle = R_ExternalPtrAddr(result);
 
+  int inherit_std = 0;
   err = processx__stdio_create(handle, connections,
 			       &handle->child_stdio_buffer, private,
-			       cencoding, ccommand);
+			       cencoding, ccommand, &inherit_std);
   if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "setup stdio for '%s'", ccommand); }
 
   application_path = processx__search_path(application, cwd, path);
@@ -994,9 +995,15 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
   startup.hStdError = processx__stdio_handle(handle->child_stdio_buffer, 2);
   startup.wShowWindow = options.windows_hide ? SW_HIDE : SW_SHOWDEFAULT;
 
-  process_flags = CREATE_UNICODE_ENVIRONMENT |
-    CREATE_SUSPENDED |
-    CREATE_NO_WINDOW;
+  process_flags = CREATE_UNICODE_ENVIRONMENT | CREATE_SUSPENDED;
+
+  /* We only use CREATE_NO_WINDOW if none of stdin, stdout and stderr
+   * are inherited, because if there is no window, then inherited
+   * handles do not work. Other inherited handles should be fine,
+   * I think. See https://github.com/gaborcsardi/win32-console-docs
+   * for more about CREATE_NO_WINDOW. */
+
+  if (! inherit_std) process_flags |= CREATE_NO_WINDOW;
 
   if (!ccleanup) {
     /* Note that we're not setting the CREATE_BREAKAWAY_FROM_JOB flag. That

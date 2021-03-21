@@ -20,7 +20,7 @@ int processx__utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr);
 
 int processx__stdio_create(processx_handle_t *handle,
 			   SEXP connections, BYTE** buffer_ptr, SEXP privatex,
-			   const char *encoding, const char *cname);
+			   const char *encoding, const char *cname, int* inherit_std);
 WORD processx__stdio_size(BYTE* buffer);
 HANDLE processx__stdio_handle(BYTE* buffer, int fd);
 void processx__stdio_destroy(BYTE* buffer);
