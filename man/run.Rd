@@ -59,16 +59,24 @@ object. If it is not finished before this, it will be killed.}
 \item{stdout}{What to do with the standard output. By default it
 is collected in the result, and you can also use the
 \code{stdout_line_callback} and \code{stdout_callback} arguments to pass
-callbacks for output. If it is \code{NULL}, then standard output is
-discarded. If it is a string other than \code{"|"}, then it is taken
-as a file name and the output is redirected to this file.}
+callbacks for output. If it is the empty string (\code{""}), then
+the child process inherits the standard output stream of the
+R process. (If the main R process does not have a standard output
+stream, e.g. in RGui on Windows, then an error is thrown.)
+If it is \code{NULL}, then standard output is discarded. If it is a string
+other than \code{"|"} and \code{""}, then it is taken as a file name and the
+output is redirected to this file.}
 
 \item{stderr}{What to do with the standard error. By default it
 is collected in the result, and you can also use the
 \code{stderr_line_callback} and \code{stderr_callback} arguments to pass
-callbacks for output. If it is \code{NULL}, then standard error is
-discarded. If it is another string than \code{"|"}, then it is taken
-as a file name and the standard error is redirected to this file.}
+callbacks for output. If it is the empty string (\code{""}), then
+the child process inherits the standard error stream of the
+R process. (If the main R process does not have a standard error
+stream, e.g. in RGui on Windows, then an error is thrown.)
+If it is \code{NULL}, then standard error is discarded. If it is a string
+other than \code{"|"} and \code{""}, then it is taken as a file name and the
+standard error is redirected to this file.}
 
 \item{stdout_line_callback}{\code{NULL}, or a function to call for every
 line of the standard output. See \code{stdout_callback} and also more
