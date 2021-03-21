@@ -1621,10 +1621,10 @@ SEXP processx_is_valid_fd(SEXP fd) {
 
 #else
 
-SEXP process_is_valid_fd(SEXP fd) {
+SEXP processx_is_valid_fd(SEXP fd) {
   int cfd = INTEGER(fd)[0];
   errno = 0;
-  int valid = fcntl(fd, F_GETFD) != -1 || errno != EBADF;
+  int valid = fcntl(cfd, F_GETFD) != -1 || errno != EBADF;
   return ScalarLogical(valid);
 }
 
