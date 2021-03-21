@@ -367,7 +367,7 @@ int processx__stdio_create(processx_handle_t *handle,
       HANDLE ihnd;
 
       /* std connection or extra connection */
-      if (i < 3) {
+      if (stroutput) {
         *inherit_std = 1;
         DWORD nh = i == 0 ? STD_INPUT_HANDLE :
           (i == 1 ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE );
