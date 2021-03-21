@@ -150,4 +150,12 @@ at least.
 descriptor. You can use it to check if the R process has standard
 input, output or error. E.g. R processes running in GUI (like RGui)
 might not have any of the standard streams available.
+
+If a stream is redirected to the null device (e.g. in a callr
+subprocess), that is is still a valid file descriptor.
+}
+\examples{
+is_valid_fd(0L)      # stdin
+is_valid_fd(1L)      # stdout
+is_valid_fd(2L)      # stderr
 }
