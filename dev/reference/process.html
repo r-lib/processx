@@ -266,6 +266,9 @@ They don't need to be escaped.</p></dd>
 provided;</p></li>
 <li><p>a file name, use this file as standard input;</p></li>
 <li><p><code>"|"</code>: create a (writeable) connection for stdin.</p></li>
+<li><p><code>""</code> (empty string): inherit it from the main R process. If the
+main R process does not have a standard input stream, e.g. in
+RGui on Windows, then an error is thrown.</p></li>
 </ul></p></dd>
 
 <dt><code>stdout</code></dt><dd><p>What to do with the standard output. Possible values:
@@ -273,6 +276,9 @@ provided;</p></li>
 <li><p><code>NULL</code>: discard it;</p></li>
 <li><p>a string, redirect it to this file;</p></li>
 <li><p><code>"|"</code>: create a connection for it.</p></li>
+<li><p><code>""</code> (empty string): inherit it from the main R process. If the
+main R process does not have a standard output stream, e.g. in
+RGui on Windows, then an error is thrown.</p></li>
 </ul></p></dd>
 
 <dt><code>stderr</code></dt><dd><p>What to do with the standard error. Possible values:
@@ -283,6 +289,9 @@ provided;</p></li>
 <li><p><code>"2&gt;&amp;1"</code>: redirect it to the same connection (i.e. pipe or file)
 as <code>stdout</code>. <code>"2&gt;&amp;1"</code> is a way to keep standard output and error
 correctly interleaved.</p></li>
+<li><p><code>""</code> (empty string): inherit it from the main R process. If the
+main R process does not have a standard error stream, e.g. in
+RGui on Windows, then an error is thrown.</p></li>
 </ul></p></dd>
 
 <dt><code>pty</code></dt><dd><p>Whether to create a pseudo terminal (pty) for the
@@ -803,7 +812,7 @@ the process.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#ar
     <pre class="examples"><div class='input'><span class='va'>p</span> <span class='op'>&lt;-</span> <span class='va'>process</span><span class='op'>$</span><span class='fu'>new</span><span class='op'>(</span><span class='st'>"sleep"</span>, <span class='st'>"2"</span><span class='op'>)</span>
 <span class='va'>p</span><span class='op'>$</span><span class='fu'>is_alive</span><span class='op'>(</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='va'>p</span>
-</div><div class='output co'>#&gt; PROCESS 'sleep', running, pid 3637.</div><div class='input'><span class='va'>p</span><span class='op'>$</span><span class='fu'>kill</span><span class='op'>(</span><span class='op'>)</span>
+</div><div class='output co'>#&gt; PROCESS 'sleep', running, pid 6937.</div><div class='input'><span class='va'>p</span><span class='op'>$</span><span class='fu'>kill</span><span class='op'>(</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='va'>p</span><span class='op'>$</span><span class='fu'>is_alive</span><span class='op'>(</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; [1] FALSE</div><div class='input'>
 <span class='va'>p</span> <span class='op'>&lt;-</span> <span class='va'>process</span><span class='op'>$</span><span class='fu'>new</span><span class='op'>(</span><span class='st'>"sleep"</span>, <span class='st'>"1"</span><span class='op'>)</span>

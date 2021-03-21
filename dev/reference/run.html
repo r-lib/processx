@@ -199,18 +199,26 @@ object. If it is not finished before this, it will be killed.</p></td>
       <td><p>What to do with the standard output. By default it
 is collected in the result, and you can also use the
 <code>stdout_line_callback</code> and <code>stdout_callback</code> arguments to pass
-callbacks for output. If it is <code>NULL</code>, then standard output is
-discarded. If it is a string other than <code>"|"</code>, then it is taken
-as a file name and the output is redirected to this file.</p></td>
+callbacks for output. If it is the empty string (<code>""</code>), then
+the child process inherits the standard output stream of the
+R process. (If the main R process does not have a standard output
+stream, e.g. in RGui on Windows, then an error is thrown.)
+If it is <code>NULL</code>, then standard output is discarded. If it is a string
+other than <code>"|"</code> and <code>""</code>, then it is taken as a file name and the
+output is redirected to this file.</p></td>
     </tr>
     <tr>
       <th>stderr</th>
       <td><p>What to do with the standard error. By default it
 is collected in the result, and you can also use the
 <code>stderr_line_callback</code> and <code>stderr_callback</code> arguments to pass
-callbacks for output. If it is <code>NULL</code>, then standard error is
-discarded. If it is another string than <code>"|"</code>, then it is taken
-as a file name and the standard error is redirected to this file.</p></td>
+callbacks for output. If it is the empty string (<code>""</code>), then
+the child process inherits the standard error stream of the
+R process. (If the main R process does not have a standard error
+stream, e.g. in RGui on Windows, then an error is thrown.)
+If it is <code>NULL</code>, then standard error is discarded. If it is a string
+other than <code>"|"</code> and <code>""</code>, then it is taken as a file name and the
+standard error is redirected to this file.</p></td>
     </tr>
     <tr>
       <th>stdout_line_callback</th>
@@ -368,14 +376,14 @@ of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
 #&gt; [1] FALSE
 #&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/system.time.html'>system.time</a></span><span class='op'>(</span><span class='fu'>run</span><span class='op'>(</span><span class='st'>"sleep"</span>, <span class='st'>"10"</span>, timeout <span class='op'>=</span> <span class='fl'>1</span>, error_on_status <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span><span class='op'>)</span>
 </div><div class='output co'>#&gt;    user  system elapsed 
-#&gt;   0.004   0.007   1.336 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/system.time.html'>system.time</a></span><span class='op'>(</span>
+#&gt;   0.005   0.007   1.381 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/system.time.html'>system.time</a></span><span class='op'>(</span>
   <span class='fu'>run</span><span class='op'>(</span>
     <span class='st'>"sh"</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"-c"</span>, <span class='st'>"for i in 1 2 3 4 5; do echo $i; sleep 1; done"</span><span class='op'>)</span>,
     timeout <span class='op'>=</span> <span class='fl'>2</span>, error_on_status <span class='op'>=</span> <span class='cn'>FALSE</span>
   <span class='op'>)</span>
 <span class='op'>)</span>
 </div><div class='output co'>#&gt;    user  system elapsed 
-#&gt;   0.009   0.013   2.143 </div><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+#&gt;   0.007   0.009   2.225 </div><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># This works on Windows systems, if the ping command is available</span>
 <span class='fu'>run</span><span class='op'>(</span><span class='st'>"ping"</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"-n"</span>, <span class='st'>"1"</span>, <span class='st'>"127.0.0.1"</span><span class='op'>)</span><span class='op'>)</span>
 <span class='fu'>run</span><span class='op'>(</span><span class='st'>"ping"</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"-n"</span>, <span class='st'>"6"</span>, <span class='st'>"127.0.0.1"</span><span class='op'>)</span>, timeout <span class='op'>=</span> <span class='fl'>1</span>,
