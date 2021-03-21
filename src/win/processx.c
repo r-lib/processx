@@ -865,22 +865,15 @@ void processx__handle_destroy(processx_handle_t *handle) {
   free(handle);
 }
 
-SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
-                   SEXP std_err, SEXP pty, SEXP pty_options,
-		   SEXP connections, SEXP env, SEXP windows_verbatim_args,
+SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
+		               SEXP connections, SEXP env, SEXP windows_verbatim_args,
                    SEXP windows_hide, SEXP private, SEXP cleanup,
                    SEXP wd, SEXP encoding, SEXP tree_id) {
 
   const char *ccommand = CHAR(STRING_ELT(command, 0));
-  const char *cstd_in = isNull(std_in) ? 0 : CHAR(STRING_ELT(std_in, 0));
-  const char *cstd_out = isNull(std_out) ? 0 : CHAR(STRING_ELT(std_out, 0));
-  const char *cstd_err = isNull(std_err) ? 0 : CHAR(STRING_ELT(std_err, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
   const char *ccwd = isNull(wd) ? 0 : CHAR(STRING_ELT(wd, 0));
   const char *ctree_id = CHAR(STRING_ELT(tree_id, 0));
-  int i, num_connections = LENGTH(connections) + 3;
-  HANDLE* extra_connections =
-    (HANDLE*) R_alloc(num_connections - 3, sizeof(HANDLE));
 
   int err = 0;
   WCHAR *path;
@@ -963,16 +956,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   result = PROTECT(processx__make_handle(private, ccleanup));
   handle = R_ExternalPtrAddr(result);
 
-  for (i = 0; i < num_connections - 3; i++) {
-    processx_connection_t *ccon =
-      R_ExternalPtrAddr(VECTOR_ELT(connections, i));
-    extra_connections[i] = processx_c_connection_fileno(ccon);
-  }
-
-  err = processx__stdio_create(handle, extra_connections, num_connections,
-			       cstd_in, cstd_out, cstd_err,
+  int inherit_std = 0;
+  err = processx__stdio_create(handle, connections,
 			       &handle->child_stdio_buffer, private,
-			       cencoding, ccommand);
+			       cencoding, ccommand, &inherit_std);
   if (err) { R_THROW_SYSTEM_ERROR_CODE(err, "setup stdio for '%s'", ccommand); }
 
   application_path = processx__search_path(application, cwd, path);
@@ -1008,9 +995,15 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP std_in, SEXP std_out,
   startup.hStdError = processx__stdio_handle(handle->child_stdio_buffer, 2);
   startup.wShowWindow = options.windows_hide ? SW_HIDE : SW_SHOWDEFAULT;
 
-  process_flags = CREATE_UNICODE_ENVIRONMENT |
-    CREATE_SUSPENDED |
-    CREATE_NO_WINDOW;
+  process_flags = CREATE_UNICODE_ENVIRONMENT | CREATE_SUSPENDED;
+
+  /* We only use CREATE_NO_WINDOW if none of stdin, stdout and stderr
+   * are inherited, because if there is no window, then inherited
+   * handles do not work. Other inherited handles should be fine,
+   * I think. See https://github.com/gaborcsardi/win32-console-docs
+   * for more about CREATE_NO_WINDOW. */
+
+  if (! inherit_std) process_flags |= CREATE_NO_WINDOW;
 
   if (!ccleanup) {
     /* Note that we're not setting the CREATE_BREAKAWAY_FROM_JOB flag. That

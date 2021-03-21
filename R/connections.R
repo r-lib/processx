@@ -264,3 +264,25 @@ close.processx_connection <- function(con, ...) {
 processx_conn_close <- function(con, ...) {
   rethrow_call(c_processx_connection_close, con)
 }
+
+#' @details
+#' `is_valid_fd()` returns `TRUE` if `fd` is a valid open file
+#' descriptor. You can use it to check if the R process has standard
+#' input, output or error. E.g. R processes running in GUI (like RGui)
+#' might not have any of the standard streams available.
+#'
+#' If a stream is redirected to the null device (e.g. in a callr
+#' subprocess), that is is still a valid file descriptor.
+#'
+#' @rdname processx_connections
+#' @export
+#' @examples
+#' is_valid_fd(0L)      # stdin
+#' is_valid_fd(1L)      # stdout
+#' is_valid_fd(2L)      # stderr
+
+is_valid_fd <- function(fd) {
+  assert_that(is_integerish_scalar(fd))
+  fd <- as.integer(fd)
+  rethrow_call(c_processx_is_valid_fd, fd)
+}

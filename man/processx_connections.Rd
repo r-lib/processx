@@ -22,6 +22,7 @@
 \alias{conn_disable_inheritance}
 \alias{close.processx_connection}
 \alias{processx_conn_close}
+\alias{is_valid_fd}
 \title{Processx connections}
 \usage{
 conn_create_fd(fd, encoding = "", close = TRUE)
@@ -65,6 +66,8 @@ conn_disable_inheritance()
 \method{close}{processx_connection}(con, ...)
 
 processx_conn_close(con, ...)
+
+is_valid_fd(fd)
 }
 \arguments{
 \item{fd}{Integer scalar, a Unix file descriptor.}
@@ -142,4 +145,17 @@ process to avoid inheriting the inherited handles even further.
 The function is best effort to close the handles, it might still leave
 some handles open. It should work for \code{stdin}, \code{stdout} and \code{stderr},
 at least.
+
+\code{is_valid_fd()} returns \code{TRUE} if \code{fd} is a valid open file
+descriptor. You can use it to check if the R process has standard
+input, output or error. E.g. R processes running in GUI (like RGui)
+might not have any of the standard streams available.
+
+If a stream is redirected to the null device (e.g. in a callr
+subprocess), that is is still a valid file descriptor.
+}
+\examples{
+is_valid_fd(0L)      # stdin
+is_valid_fd(1L)      # stdout
+is_valid_fd(2L)      # stderr
 }

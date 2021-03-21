@@ -128,3 +128,14 @@ on_failure(is_env_vector) <- function(call, env) {
     deparse(call$x)
   )
 }
+
+is_std_conn <- function(x) {
+  is.null(x) || is_string(x) || is_connection(x)
+}
+
+on_failure(is_std_conn) <- function(call, env) {
+  paste0(
+    deparse(call$x),
+    " must be `NULL`, a string or a processx connection"
+  )
+}

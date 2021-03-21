@@ -92,3 +92,80 @@ test_that("Convert from another encoding to UTF-8", {
 
   expect_equal(charToRaw(out), charToRaw("\xc3\xa1\xc3\xa9\xc3\xad"))
 })
+
+test_that("Passing connection to stdout", {
+
+  # file first
+  tmp <- tempfile()
+  con <- conn_create_file(tmp, write = TRUE)
+  cmd <- c(get_tool("px"), c("outln", "hello", "outln", "world"))
+
+  p <- process$new(cmd[1], cmd[-1], stdout = con)
+  on.exit(p$kill(), add = TRUE)
+  close(con)
+
+  p$wait(3000)
+  expect_false(p$is_alive())
+
+  out <- readLines(tmp)
+  expect_equal(out, c("hello", "world"))
+
+  # pass a pipe to write to
+  pipe <- conn_create_pipepair()
+  on.exit(close(pipe[[1]]), add = TRUE)
+  on.exit(close(pipe[[2]]), add = TRUE)
+
+  p2 <- process$new(cmd[1], cmd[-1], stdout = pipe[[2]])
+  on.exit(p2$kill(), add = TRUE)
+  close(pipe[[2]])
+
+  ready <- poll(list(pipe[[1]]), 3000)
+  expect_equal(ready[[1]], "ready")
+  lines <- conn_read_lines(pipe[[1]])
+  expect_equal(lines[1], "hello")
+
+  ready <- poll(list(pipe[[1]]), 3000)
+  expect_equal(ready[[1]], "ready")
+  lines <- c(lines, conn_read_lines(pipe[[1]]))
+  expect_equal(lines, c("hello", "world"))
+  p2$wait(3000)
+  expect_false(p2$is_alive())
+})
+
+test_that("Passing connection to stderr", {
+  # file first
+  tmp <- tempfile()
+  con <- conn_create_file(tmp, write = TRUE)
+  cmd <- c(get_tool("px"), c("errln", "hello", "errln", "world"))
+
+  p <- process$new(cmd[1], cmd[-1], stderr = con)
+  on.exit(p$kill(), add = TRUE)
+  close(con)
+
+  p$wait(3000)
+  expect_false(p$is_alive())
+
+  err <- readLines(tmp)
+  expect_equal(err, c("hello", "world"))
+
+  # pass a pipe to write to
+  pipe <- conn_create_pipepair()
+  on.exit(close(pipe[[1]]), add = TRUE)
+  on.exit(close(pipe[[2]]), add = TRUE)
+
+  p2 <- process$new(cmd[1], cmd[-1], stderr = pipe[[2]])
+  on.exit(p2$kill(), add = TRUE)
+  close(pipe[[2]])
+
+  ready <- poll(list(pipe[[1]]), 3000)
+  expect_equal(ready[[1]], "ready")
+  lines <- conn_read_lines(pipe[[1]])
+  expect_equal(lines[1], "hello")
+
+  ready <- poll(list(pipe[[1]]), 3000)
+  expect_equal(ready[[1]], "ready")
+  lines <- c(lines, conn_read_lines(pipe[[1]]))
+  expect_equal(lines, c("hello", "world"))
+  p2$wait(3000)
+  expect_false(p2$is_alive())
+})

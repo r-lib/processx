@@ -66,15 +66,23 @@
 #' @param stdout What to do with the standard output. By default it
 #'   is collected in the result, and you can also use the
 #'   `stdout_line_callback` and `stdout_callback` arguments to pass
-#'   callbacks for output. If it is `NULL`, then standard output is
-#'   discarded. If it is a string other than `"|"`, then it is taken
-#'   as a file name and the output is redirected to this file.
+#'   callbacks for output. If it is the empty string (`""`), then
+#'   the child process inherits the standard output stream of the
+#'   R process. (If the main R process does not have a standard output
+#'   stream, e.g. in RGui on Windows, then an error is thrown.)
+#'   If it is `NULL`, then standard output is discarded. If it is a string
+#'   other than `"|"` and `""`, then it is taken as a file name and the
+#'   output is redirected to this file.
 #' @param stderr What to do with the standard error. By default it
 #'   is collected in the result, and you can also use the
 #'   `stderr_line_callback` and `stderr_callback` arguments to pass
-#'   callbacks for output. If it is `NULL`, then standard error is
-#'   discarded. If it is another string than `"|"`, then it is taken
-#'   as a file name and the standard error is redirected to this file.
+#'   callbacks for output. If it is the empty string (`""`), then
+#'   the child process inherits the standard error stream of the
+#'   R process. (If the main R process does not have a standard error
+#'   stream, e.g. in RGui on Windows, then an error is thrown.)
+#'   If it is `NULL`, then standard error is discarded. If it is a string
+#'   other than `"|"` and `""`, then it is taken as a file name and the
+#'   standard error is redirected to this file.
 #' @param stdout_line_callback `NULL`, or a function to call for every
 #'   line of the standard output. See `stdout_callback` and also more
 #'   below.

@@ -15,7 +15,7 @@ SEXP processx__set_boot_time(SEXP);
 
 static const R_CallMethodDef callMethods[]  = {
   CLEANCALL_METHOD_RECORD,
-  { "processx_exec",               (DL_FUNC) &processx_exec,              16 },
+  { "processx_exec",               (DL_FUNC) &processx_exec,              13 },
   { "processx_wait",               (DL_FUNC) &processx_wait,               3 },
   { "processx_is_alive",           (DL_FUNC) &processx_is_alive,           2 },
   { "processx_get_exit_status",    (DL_FUNC) &processx_get_exit_status,    2 },
@@ -52,6 +52,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_connection_get_fileno", (DL_FUNC) &processx_connection_get_fileno,  1 },
   { "processx_connection_disable_inheritance",
     (DL_FUNC) &processx_connection_disable_inheritance, 0 },
+  { "processx_is_valid_fd",           (DL_FUNC) &processx_is_valid_fd,            1 },
 
   { "processx_disable_crash_dialog",  (DL_FUNC) &processx_disable_crash_dialog,   0 },
   { "processx_base64_encode", (DL_FUNC) &processx_base64_encode, 1 },

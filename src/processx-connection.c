@@ -1607,4 +1607,27 @@ int processx__connection_schedule_destroy(processx_connection_t *ccon) {
 
 #endif
 
+#ifdef _WIN32
+
+SEXP processx_is_valid_fd(SEXP fd) {
+  int cfd = INTEGER(fd)[0];
+  HANDLE hnd = (HANDLE) _get_osfhandle(cfd);
+  int valid =
+    hnd != INVALID_HANDLE_VALUE &&
+    hnd != NULL &&
+    hnd != (HANDLE) (-2);
+  return ScalarLogical(valid);
+}
+
+#else
+
+SEXP processx_is_valid_fd(SEXP fd) {
+  int cfd = INTEGER(fd)[0];
+  errno = 0;
+  int valid = fcntl(cfd, F_GETFD) != -1 || errno != EBADF;
+  return ScalarLogical(valid);
+}
+
+#endif
+
 #undef PROCESSX_CHECK_VALID_CONN
