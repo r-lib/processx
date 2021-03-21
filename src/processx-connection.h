@@ -165,6 +165,8 @@ SEXP processx_connection_get_fileno(SEXP con);
 
 SEXP processx_connection_disable_inheritance();
 
+SEXP processx_is_valid_fd(SEXP fd);
+
 /* --------------------------------------------------------------------- */
 /* API from C                                                            */
 /* --------------------------------------------------------------------- */

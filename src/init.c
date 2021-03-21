@@ -52,6 +52,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_connection_get_fileno", (DL_FUNC) &processx_connection_get_fileno,  1 },
   { "processx_connection_disable_inheritance",
     (DL_FUNC) &processx_connection_disable_inheritance, 0 },
+  { "processx_is_valid_fd",           (DL_FUNC) &processx_is_valid_fd,            1 },
 
   { "processx_disable_crash_dialog",  (DL_FUNC) &processx_disable_crash_dialog,   0 },
   { "processx_base64_encode", (DL_FUNC) &processx_base64_encode, 1 },
