@@ -67,7 +67,6 @@ load_client_lib <- function(client) {
   sym_seterr <- getNativeSymbolInfo("processx_set_stderr", lib)
   sym_setoutf <- getNativeSymbolInfo("processx_set_stdout_to_file", lib)
   sym_seterrf <- getNativeSymbolInfo("processx_set_stderr_to_file", lib)
-  sym_setint <- getNativeSymbolInfo("processx_set_interactive", lib)
 
   env <- new.env(parent = emptyenv())
   env$.path <- tmpsofile
@@ -110,10 +109,6 @@ load_client_lib <- function(client) {
 
   env$set_stderr_file <- function(path) {
     mycall(sym_seterrf, as.character(path)[1])
-  }
-
-  env$setint <- function(flag) {
-    mycall(sym_setint, as.logical(flag)[1]);
   }
 
   env$.finalize <- function() {
