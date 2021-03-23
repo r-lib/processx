@@ -76,7 +76,7 @@ streams. The process id is then used to manage the process." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.5.0</span>
       </span>
     </div>
 
@@ -84,7 +84,7 @@ streams. The process id is then used to manage the process." />
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -98,7 +98,7 @@ streams. The process id is then used to manage the process." />
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/r-lib/processx/">
-    <span class="fab fa fab fa-github fa-lg"></span>
+    <span class="fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -244,6 +244,7 @@ closed. The same happens at a regular exit.</p>
   supervise <span class='op'>=</span> <span class='cn'>FALSE</span>,
   windows_verbatim_args <span class='op'>=</span> <span class='cn'>FALSE</span>,
   windows_hide_window <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  windows_detached_process <span class='op'>=</span> <span class='op'>!</span><span class='va'>cleanup</span>,
   encoding <span class='op'>=</span> <span class='st'>""</span>,
   post_process <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre><p></div></p>
@@ -266,6 +267,9 @@ They don't need to be escaped.</p></dd>
 provided;</p></li>
 <li><p>a file name, use this file as standard input;</p></li>
 <li><p><code>"|"</code>: create a (writeable) connection for stdin.</p></li>
+<li><p><code>""</code> (empty string): inherit it from the main R process. If the
+main R process does not have a standard input stream, e.g. in
+RGui on Windows, then an error is thrown.</p></li>
 </ul></p></dd>
 
 <dt><code>stdout</code></dt><dd><p>What to do with the standard output. Possible values:
@@ -273,6 +277,9 @@ provided;</p></li>
 <li><p><code>NULL</code>: discard it;</p></li>
 <li><p>a string, redirect it to this file;</p></li>
 <li><p><code>"|"</code>: create a connection for it.</p></li>
+<li><p><code>""</code> (empty string): inherit it from the main R process. If the
+main R process does not have a standard output stream, e.g. in
+RGui on Windows, then an error is thrown.</p></li>
 </ul></p></dd>
 
 <dt><code>stderr</code></dt><dd><p>What to do with the standard error. Possible values:
@@ -283,6 +290,9 @@ provided;</p></li>
 <li><p><code>"2&gt;&amp;1"</code>: redirect it to the same connection (i.e. pipe or file)
 as <code>stdout</code>. <code>"2&gt;&amp;1"</code> is a way to keep standard output and error
 correctly interleaved.</p></li>
+<li><p><code>""</code> (empty string): inherit it from the main R process. If the
+main R process does not have a standard error stream, e.g. in
+RGui on Windows, then an error is thrown.</p></li>
 </ul></p></dd>
 
 <dt><code>pty</code></dt><dd><p>Whether to create a pseudo terminal (pty) for the
@@ -322,7 +332,10 @@ the parent's environment is inherited. On Windows, many programs
 cannot function correctly if some environment variables are not
 set, so we always set <code>HOMEDRIVE</code>, <code>HOMEPATH</code>, <code>LOGONSERVER</code>,
 <code>PATH</code>, <code>SYSTEMDRIVE</code>, <code>SYSTEMROOT</code>, <code>TEMP</code>, <code>USERDOMAIN</code>,
-<code>USERNAME</code>, <code>USERPROFILE</code> and <code>WINDIR</code>.</p></dd>
+<code>USERNAME</code>, <code>USERPROFILE</code> and <code>WINDIR</code>. To append new environment
+variables to the ones set in the current process, specify
+<code>"current"</code> in <code>env</code>, without a name, and the appended ones with
+names. The appended ones can overwrite the current ones.</p></dd>
 
 <dt><code>cleanup</code></dt><dd><p>Whether to kill the process when the <code>process</code>
 object is garbage collected.</p></dd>
@@ -345,6 +358,11 @@ on Windows. It is ignored on other platforms.</p></dd>
 
 <dt><code>windows_hide_window</code></dt><dd><p>Whether to hide the application's window
 on Windows. It is ignored on other platforms.</p></dd>
+
+<dt><code>windows_detached_process</code></dt><dd><p>Whether to use the
+<code>DETACHED_PROCESS</code> flag on Windows. If this is <code>TRUE</code>, then
+the child process will have no attached console, even if the
+parent had one.</p></dd>
 
 <dt><code>encoding</code></dt><dd><p>The encoding to assume for <code>stdin</code>, <code>stdout</code> and
 <code>stderr</code>. By default the encoding of the current locale is
@@ -631,7 +649,7 @@ standard error stream of the process.</p><h4 class='hasAnchor' id='arguments'><a
 <p><code>$read_all_output()</code> waits for all standard output from the process.
 It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
-polling for I/O and potentically several <code><a href='https://rdrr.io/r/base/readLines.html'>readLines()</a></code> calls.
+polling for I/O and potentially several <code><a href='https://rdrr.io/r/base/readLines.html'>readLines()</a></code> calls.
 It returns a character scalar. This will return content only if
 <code>stdout="|"</code> was used. Otherwise, it will throw an error.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>process</span><span class='op'>$</span><span class='fu'>read_all_output</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
@@ -641,7 +659,7 @@ It returns a character scalar. This will return content only if
 <p><code>$read_all_error()</code> waits for all standard error from the process.
 It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
-polling for I/O and potentically several <code><a href='https://rdrr.io/r/base/readLines.html'>readLines()</a></code> calls.
+polling for I/O and potentially several <code><a href='https://rdrr.io/r/base/readLines.html'>readLines()</a></code> calls.
 It returns a character scalar. This will return content only if
 <code>stderr="|"</code> was used. Otherwise, it will throw an error.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>process</span><span class='op'>$</span><span class='fu'>read_all_error</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
@@ -651,7 +669,7 @@ It returns a character scalar. This will return content only if
 <p><code>$read_all_output_lines()</code> waits for all standard output lines
 from a process. It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
-polling for I/O and potentically several <code><a href='https://rdrr.io/r/base/readLines.html'>readLines()</a></code> calls.
+polling for I/O and potentially several <code><a href='https://rdrr.io/r/base/readLines.html'>readLines()</a></code> calls.
 It returns a character vector. This will return content only if
 <code>stdout="|"</code> was used. Otherwise, it will throw an error.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>process</span><span class='op'>$</span><span class='fu'>read_all_output_lines</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
@@ -661,7 +679,7 @@ It returns a character vector. This will return content only if
 <p><code>$read_all_error_lines()</code> waits for all standard error lines from
 a process. It does not return until the process has finished.
 Note that this process involves waiting for the process to finish,
-polling for I/O and potentically several <code><a href='https://rdrr.io/r/base/readLines.html'>readLines()</a></code> calls.
+polling for I/O and potentially several <code><a href='https://rdrr.io/r/base/readLines.html'>readLines()</a></code> calls.
 It returns a character vector. This will return content only if
 <code>stderr="|"</code> was used. Otherwise, it will throw an error.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
 <p><div class="r"></p><pre><span class='va'>process</span><span class='op'>$</span><span class='fu'>read_all_error_lines</span><span class='op'>(</span><span class='op'>)</span></pre><p></div></p>
@@ -800,7 +818,7 @@ the process.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#ar
     <pre class="examples"><div class='input'><span class='va'>p</span> <span class='op'>&lt;-</span> <span class='va'>process</span><span class='op'>$</span><span class='fu'>new</span><span class='op'>(</span><span class='st'>"sleep"</span>, <span class='st'>"2"</span><span class='op'>)</span>
 <span class='va'>p</span><span class='op'>$</span><span class='fu'>is_alive</span><span class='op'>(</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='va'>p</span>
-</div><div class='output co'>#&gt; PROCESS 'sleep', running, pid 2472.</div><div class='input'><span class='va'>p</span><span class='op'>$</span><span class='fu'>kill</span><span class='op'>(</span><span class='op'>)</span>
+</div><div class='output co'>#&gt; PROCESS 'sleep', running, pid 5281.</div><div class='input'><span class='va'>p</span><span class='op'>$</span><span class='fu'>kill</span><span class='op'>(</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; [1] TRUE</div><div class='input'><span class='va'>p</span><span class='op'>$</span><span class='fu'>is_alive</span><span class='op'>(</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; [1] FALSE</div><div class='input'>
 <span class='va'>p</span> <span class='op'>&lt;-</span> <span class='va'>process</span><span class='op'>$</span><span class='fu'>new</span><span class='op'>(</span><span class='st'>"sleep"</span>, <span class='st'>"1"</span><span class='op'>)</span>

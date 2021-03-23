@@ -74,7 +74,7 @@ extra features, see below." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.4.5</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">3.5.0</span>
       </span>
     </div>
 
@@ -82,7 +82,7 @@ extra features, see below." />
       <ul class="nav navbar-nav">
         <li>
   <a href="../index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
+    <span class="fas fa-home fa-lg"></span>
      
   </a>
 </li>
@@ -96,7 +96,7 @@ extra features, see below." />
       <ul class="nav navbar-nav navbar-right">
         <li>
   <a href="https://github.com/r-lib/processx/">
-    <span class="fab fa fab fa-github fa-lg"></span>
+    <span class="fab fa-github fa-lg"></span>
      
   </a>
 </li>
@@ -133,6 +133,8 @@ extra features, see below.</p>
   echo <span class='op'>=</span> <span class='cn'>FALSE</span>,
   spinner <span class='op'>=</span> <span class='cn'>FALSE</span>,
   timeout <span class='op'>=</span> <span class='cn'>Inf</span>,
+  stdout <span class='op'>=</span> <span class='st'>"|"</span>,
+  stderr <span class='op'>=</span> <span class='st'>"|"</span>,
   stdout_line_callback <span class='op'>=</span> <span class='cn'>NULL</span>,
   stdout_callback <span class='op'>=</span> <span class='cn'>NULL</span>,
   stderr_line_callback <span class='op'>=</span> <span class='cn'>NULL</span>,
@@ -179,7 +181,8 @@ working directory is used.</p></td>
       <td><p>Whether to print the standard output and error
 to the screen. Note that the order of the standard output and error
 lines are not necessarily correct, as standard output is typically
-buffered.</p></td>
+buffered. If the standard output and/or error is redirected to a
+file or they are ignored, then they also not echoed.</p></td>
     </tr>
     <tr>
       <th>spinner</th>
@@ -190,6 +193,32 @@ is running.</p></td>
       <th>timeout</th>
       <td><p>Timeout for the process, in seconds, or as a <code>difftime</code>
 object. If it is not finished before this, it will be killed.</p></td>
+    </tr>
+    <tr>
+      <th>stdout</th>
+      <td><p>What to do with the standard output. By default it
+is collected in the result, and you can also use the
+<code>stdout_line_callback</code> and <code>stdout_callback</code> arguments to pass
+callbacks for output. If it is the empty string (<code>""</code>), then
+the child process inherits the standard output stream of the
+R process. (If the main R process does not have a standard output
+stream, e.g. in RGui on Windows, then an error is thrown.)
+If it is <code>NULL</code>, then standard output is discarded. If it is a string
+other than <code>"|"</code> and <code>""</code>, then it is taken as a file name and the
+output is redirected to this file.</p></td>
+    </tr>
+    <tr>
+      <th>stderr</th>
+      <td><p>What to do with the standard error. By default it
+is collected in the result, and you can also use the
+<code>stderr_line_callback</code> and <code>stderr_callback</code> arguments to pass
+callbacks for output. If it is the empty string (<code>""</code>), then
+the child process inherits the standard error stream of the
+R process. (If the main R process does not have a standard error
+stream, e.g. in RGui on Windows, then an error is thrown.)
+If it is <code>NULL</code>, then standard error is discarded. If it is a string
+other than <code>"|"</code> and <code>""</code>, then it is taken as a file name and the
+standard error is redirected to this file.</p></td>
     </tr>
     <tr>
       <th>stdout_line_callback</th>
@@ -227,8 +256,15 @@ to deduce where pieces of the output were coming from. If this is
     </tr>
     <tr>
       <th>env</th>
-      <td><p>Environment of the child process, a named character vector.
-IF <code>NULL</code>, the environment of the parent is inherited.</p></td>
+      <td><p>Environment variables of the child process. If <code>NULL</code>,
+the parent's environment is inherited. On Windows, many programs
+cannot function correctly if some environment variables are not
+set, so we always set <code>HOMEDRIVE</code>, <code>HOMEPATH</code>, <code>LOGONSERVER</code>,
+<code>PATH</code>, <code>SYSTEMDRIVE</code>, <code>SYSTEMROOT</code>, <code>TEMP</code>, <code>USERDOMAIN</code>,
+<code>USERNAME</code>, <code>USERPROFILE</code> and <code>WINDIR</code>. To append new environment
+variables to the ones set in the current process, specify
+<code>"current"</code> in <code>env</code>, without a name, and the appended ones with
+names. The appended ones can overwrite the current ones.</p></td>
     </tr>
     <tr>
       <th>windows_verbatim_args</th>
@@ -340,14 +376,14 @@ of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
 #&gt; [1] FALSE
 #&gt; </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/system.time.html'>system.time</a></span><span class='op'>(</span><span class='fu'>run</span><span class='op'>(</span><span class='st'>"sleep"</span>, <span class='st'>"10"</span>, timeout <span class='op'>=</span> <span class='fl'>1</span>, error_on_status <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span><span class='op'>)</span>
 </div><div class='output co'>#&gt;    user  system elapsed 
-#&gt;   0.004   0.005   1.306 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/system.time.html'>system.time</a></span><span class='op'>(</span>
+#&gt;   0.005   0.007   1.385 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/system.time.html'>system.time</a></span><span class='op'>(</span>
   <span class='fu'>run</span><span class='op'>(</span>
     <span class='st'>"sh"</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"-c"</span>, <span class='st'>"for i in 1 2 3 4 5; do echo $i; sleep 1; done"</span><span class='op'>)</span>,
     timeout <span class='op'>=</span> <span class='fl'>2</span>, error_on_status <span class='op'>=</span> <span class='cn'>FALSE</span>
   <span class='op'>)</span>
 <span class='op'>)</span>
 </div><div class='output co'>#&gt;    user  system elapsed 
-#&gt;   0.007   0.011   2.209 </div><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+#&gt;   0.011   0.015   2.215 </div><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
 <span class='co'># This works on Windows systems, if the ping command is available</span>
 <span class='fu'>run</span><span class='op'>(</span><span class='st'>"ping"</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"-n"</span>, <span class='st'>"1"</span>, <span class='st'>"127.0.0.1"</span><span class='op'>)</span><span class='op'>)</span>
 <span class='fu'>run</span><span class='op'>(</span><span class='st'>"ping"</span>, <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"-n"</span>, <span class='st'>"6"</span>, <span class='st'>"127.0.0.1"</span><span class='op'>)</span>, timeout <span class='op'>=</span> <span class='fl'>1</span>,
