@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">processx</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">3.4.5.9001</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">3.5.0.9000</span>
       </span>
     </div>
 
@@ -114,6 +114,23 @@
       <small>Source: <a href='https://github.com/r-lib/processx/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
+    <div id="processx-development-version" class="section level1">
+<h1 class="page-header" data-toc-text="development version">
+<a href="#processx-development-version" class="anchor"></a>processx (development version)<small> Unreleased </small>
+</h1>
+</div>
+    <div id="processx-350" class="section level1">
+<h1 class="page-header" data-toc-text="3.5.0">
+<a href="#processx-350" class="anchor"></a>processx 3.5.0<small> Unreleased </small>
+</h1>
+<ul>
+<li><p>You can now append environment variables to the ones set in the current process if you include <code>"current"</code> in the value of <code>env</code>, in <code><a href="../reference/run.html">run()</a></code> and for <code>process$new()</code>: <code>env = c("current", NEW = "newvalue")</code> (<a href='https://github.com/r-lib/processx/issues/232'>#232</a>).</p></li>
+<li><p>Sub-processes can now inherit the standard input, output and error from the main R process, by setting the corresponding argument to an empty string. E.g. <code><a href="../reference/run.html">run("ls", stdout = "")</a></code> (<a href='https://github.com/r-lib/processx/issues/72'>#72</a>).</p></li>
+<li><p><code><a href="../reference/run.html">run()</a></code> is now much faster with large standard output or standard error (<a href='https://github.com/r-lib/processx/issues/286'>#286</a>).</p></li>
+<li><p><code><a href="../reference/run.html">run()</a></code> can now discard the standard output and error or redirect them to file(s), instead of collecting them.</p></li>
+<li><p>processx now optionally uses the cli package to color error messages and stack traces, instead of crayon.</p></li>
+</ul>
+</div>
     <div id="processx-345" class="section level1">
 <h1 class="page-header" data-toc-text="3.4.5">
 <a href="#processx-345" class="anchor"></a>processx 3.4.5<small> 2020-11-30 </small>
