@@ -1,3 +1,6 @@
+---
+output: github_document
+---
 
 ```{r, setup, echo = FALSE, message = FALSE}
 knitr::opts_chunk$set(
