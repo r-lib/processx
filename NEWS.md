@@ -15,7 +15,7 @@
 * `run()` can now discard the standard output and error or redirect
   them to file(s), instead of collecting them.
 
-* processx now optionally using the cli package to color error messages
+* processx now optionally uses the cli package to color error messages
   and stack traces, instead of crayon.
 
 # processx 3.4.5
