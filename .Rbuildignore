@@ -2,6 +2,7 @@
 ^\.Rproj\.user$
 ^Makefile$
 ^README.Rmd$
+^README\.html$
 ^docs$
 ^.travis.yml$
 ^_pkgdown\.yml$
