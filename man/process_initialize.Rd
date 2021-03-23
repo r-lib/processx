@@ -24,6 +24,7 @@ process_initialize(
   supervise,
   windows_verbatim_args,
   windows_hide_window,
+  windows_detached_process,
   encoding,
   post_process
 )

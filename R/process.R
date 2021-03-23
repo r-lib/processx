@@ -166,6 +166,10 @@ process <- R6::R6Class(
     #'   on Windows. It is ignored on other platforms.
     #' @param windows_hide_window Whether to hide the application's window
     #'   on Windows. It is ignored on other platforms.
+    #' @param windows_detached_process Whether to use the
+    #'   `DETACHED_PROCESS` flag on Windows. If this is `TRUE`, then
+    #'   the child process will have no attached console, even if the
+    #'   parent had one.
     #' @param encoding The encoding to assume for `stdin`, `stdout` and
     #'   `stderr`. By default the encoding of the current locale is
     #'   used. Note that `processx` always reencodes the output of the
@@ -181,13 +185,15 @@ process <- R6::R6Class(
       pty_options = list(), connections = list(), poll_connection = NULL,
       env = NULL, cleanup = TRUE, cleanup_tree = FALSE, wd = NULL,
       echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
-      windows_hide_window = FALSE, encoding = "",  post_process = NULL)
+      windows_hide_window = FALSE, windows_detached_process = !cleanup,
+      encoding = "",  post_process = NULL)
 
       process_initialize(self, private, command, args, stdin,
                          stdout, stderr, pty, pty_options, connections,
                          poll_connection, env, cleanup, cleanup_tree, wd,
                          echo_cmd, supervise, windows_verbatim_args,
-                         windows_hide_window, encoding, post_process),
+                         windows_hide_window, windows_detached_process,
+                         encoding, post_process),
 
     #' @description
     #' Cleanup method that is called when the `process` object is garbage

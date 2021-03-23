@@ -142,6 +142,7 @@ Start a new process in the background, and then return immediately.
   supervise = FALSE,
   windows_verbatim_args = FALSE,
   windows_hide_window = FALSE,
+  windows_detached_process = !cleanup,
   encoding = "",
   post_process = NULL
 )}\if{html}{\out{</div>}}
@@ -257,6 +258,11 @@ on Windows. It is ignored on other platforms.}
 
 \item{\code{windows_hide_window}}{Whether to hide the application's window
 on Windows. It is ignored on other platforms.}
+
+\item{\code{windows_detached_process}}{Whether to use the
+\code{DETACHED_PROCESS} flag on Windows. If this is \code{TRUE}, then
+the child process will have no attached console, even if the
+parent had one.}
 
 \item{\code{encoding}}{The encoding to assume for \code{stdin}, \code{stdout} and
 \code{stderr}. By default the encoding of the current locale is

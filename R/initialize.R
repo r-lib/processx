@@ -27,7 +27,8 @@ process_initialize <- function(self, private, command, args,
                                connections, poll_connection, env, cleanup,
                                cleanup_tree, wd, echo_cmd, supervise,
                                windows_verbatim_args, windows_hide_window,
-                               encoding, post_process) {
+                               windows_detached_process, encoding,
+                               post_process) {
 
   "!DEBUG process_initialize `command`"
 
@@ -48,6 +49,7 @@ process_initialize <- function(self, private, command, args,
     is_flag(echo_cmd),
     is_flag(windows_verbatim_args),
     is_flag(windows_hide_window),
+    is_flag(windows_detached_process),
     is_string(encoding),
     is.function(post_process) || is.null(post_process))
 
@@ -130,7 +132,7 @@ process_initialize <- function(self, private, command, args,
     c_processx_exec,
     command, c(command, args), pty, pty_options,
     connections, env, windows_verbatim_args, windows_hide_window,
-    private, cleanup, wd, encoding,
+    windows_detached_process, private, cleanup, wd, encoding,
     paste0("PROCESSX_", private$tree_id, "=YES")
   )
 

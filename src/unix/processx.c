@@ -424,8 +424,9 @@ skip:
 
 SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
                    SEXP connections, SEXP env, SEXP windows_verbatim_args,
-                   SEXP windows_hide_window, SEXP private, SEXP cleanup,
-                   SEXP wd, SEXP encoding, SEXP tree_id) {
+                   SEXP windows_hide_window, SEXP windows_detached_process,
+                   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding,
+                   SEXP tree_id) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
