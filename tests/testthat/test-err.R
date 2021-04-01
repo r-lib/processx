@@ -45,7 +45,7 @@ test_that("throw() adds the proper call, if requested", {
   g <- function() throw(new_error("ooops", call. = FALSE))
   err <- tryCatch(g(), error = function(e) e)
   expect_s3_class(err, "rlib_error")
-  expect_identical(err$call, FALSE)
+  expect_null(err$call)
 })
 
 test_that("throw() only stops for errors", {

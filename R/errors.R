@@ -89,6 +89,10 @@
 # ### 1.2.3 -- 2021-03-06
 #
 # * Use cli instead of crayon
+#
+# ### 1.2.4 -- 2012-04-01
+#
+# * Allow omitting the call with call. = FALSE in `new_cond()`, etc.
 
 err <- local({
 
@@ -101,7 +105,7 @@ err <- local({
   #'   character and then concatenated, like in [stop()].
   #' @param call. A call object to include in the condition, or `TRUE`
   #'   or `NULL`, meaning that [throw()] should add a call object
-  #'   automatically.
+  #'   automatically. If `FALSE`, then no call is added.
   #' @param domain Translation domain, see [stop()].
   #' @return Condition object. Currently a list, but you should not rely
   #'   on that.
@@ -154,6 +158,8 @@ err <- local({
 
     if (isTRUE(cond$call)) {
       cond$call <- sys.call(-1) %||% sys.call()
+    } else if (identical(cond$call, FALSE)) {
+      cond$call <- NULL
     }
 
     # Eventually the nframe numbers will help us print a better trace
