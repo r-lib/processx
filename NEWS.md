@@ -1,5 +1,7 @@
 # processx (development version)
 
+* Fix a potential failure when polling curl file descriptors on Windows.
+
 # processx 3.5.0
 
 * You can now append environment variables to the ones set in the current
