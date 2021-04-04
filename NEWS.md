@@ -1,4 +1,4 @@
-# processx (development version)
+# processx 3.5.1
 
 * Fix a potential failure when polling curl file descriptors on Windows.
 
