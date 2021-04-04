@@ -16,7 +16,6 @@ Description: Tools to run system processes in the background.
     a process for standard output or error, with a timeout. It can also
     poll several processes at once.
 License: MIT + file LICENSE
-LazyData: true
 URL: https://processx.r-lib.org, https://github.com/r-lib/processx#readme
 BugReports: https://github.com/r-lib/processx/issues
 RoxygenNote: 7.1.1.9001
