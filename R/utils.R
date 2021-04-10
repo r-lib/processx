@@ -256,7 +256,7 @@ make_buffer <- function() {
   size <- 0L
   list(
     push = function(text) {
-      size <<- size + nchar(text)
+      size <<- size + nchar(text, type = "bytes")
       cat(text, file = con)
     },
     read = function() {
