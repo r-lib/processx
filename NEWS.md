@@ -1,5 +1,8 @@
 # processx (development version)
 
+* Multibyte characters in stdout or stderr no longer cause truncation at
+  the end of the string.
+
 # processx 3.5.1
 
 * Fix a potential failure when polling curl file descriptors on Windows.
