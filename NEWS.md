@@ -1,5 +1,8 @@
 # processx (development version)
 
+* `run()` now does not truncate stdout and stderr when the output
+  contains multibyte characters (#298, @infotroph).
+
 # processx 3.5.1
 
 * Fix a potential failure when polling curl file descriptors on Windows.
