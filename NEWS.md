@@ -1,7 +1,7 @@
 # processx (development version)
 
-* Fix a string truncation in stdout and stderr of `run()` when output
-  contains multibyte characters.
+* `run()` now does not truncate stdout and stderr when the output
+  contains multibyte characters (#298, @infotroph).
 
 # processx 3.5.1
 
