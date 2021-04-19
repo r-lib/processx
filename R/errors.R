@@ -90,9 +90,13 @@
 #
 # * Use cli instead of crayon
 #
-# ### 1.2.4 -- 2012-04-01
+# ### 1.2.4 -- 2021-04-01
 #
 # * Allow omitting the call with call. = FALSE in `new_cond()`, etc.
+#
+# ### 1.3.0 -- 2021-04-19
+#
+# * Avoid embedding calls in trace with embed = FALSE.
 
 err <- local({
 
@@ -423,10 +427,14 @@ err <- local({
   #' so there is currently not much use to call it directly.
   #'
   #' @param cond Condition to add the trace to
+  #' @param embed Whether to embed calls into the condition.
   #'
   #' @return A condition object, with the trace added.
 
-  add_trace_back <- function(cond) {
+  add_trace_back <- function(
+      cond,
+      embed = getOption("rlib_error_embed_calls", FALSE)) {
+
     idx <- seq_len(sys.parent(1L))
     frames <- sys.frames()[idx]
 
@@ -441,6 +449,8 @@ err <- local({
     ignore <- cond$`_ignore`
     classes <- class(cond)
     pids <- rep(cond$`_pid` %||% Sys.getpid(), length(calls))
+
+    if (!embed) calls <- as.list(format_calls(calls, topenvs, nframes))
 
     if (is.null(cond$parent)) {
       # Nothing to do, no parent
@@ -561,14 +571,22 @@ err <- local({
     print_parents(x, ...)
   }
 
+  format_calls <- function(calls, topenv, nframes, messages = NULL) {
+    calls <- map2(calls, topenv, namespace_calls)
+    callstr <- vapply(calls, format_call_src, character(1))
+    if (!is.null(messages)) {
+      callstr[nframes] <-
+        paste0(callstr[nframes], "\n", style_error_msg(messages), "\n")
+    }
+    callstr
+  }
+
   print_rlib_trace <- function(x, ...) {
     cl <- paste0(" Stack trace:")
     cat(sep = "", "\n", style_trace_title(cl), "\n\n")
-    calls <- map2(x$calls, x$topenv, namespace_calls)
-    callstr <- vapply(calls, format_call_src, character(1))
-    callstr[x$nframes] <-
-      paste0(callstr[x$nframes], "\n", style_error_msg(x$messages), "\n")
-    callstr <- enumerate(callstr)
+    callstr <- enumerate(
+      format_calls(x$calls, x$topenv, x$nframes, x$messages)
+    )
 
     # Ignore what we were told to ignore
     ign <- integer()
