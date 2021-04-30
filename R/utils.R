@@ -1,4 +1,12 @@
 
+enc2path <- function(x) {
+  if (is_windows()) {
+    enc2utf8(x)
+  } else {
+    enc2native(x)
+  }
+}
+
 `%||%` <- function(l, r) if (is.null(l)) r else l
 
 os_type <- function() {
@@ -276,5 +284,5 @@ update_vector <- function(x, y = NULL) {
 process_env <- function(env) {
   current <- env == "current" & names(env) == ""
   if (any(current)) env <- update_vector(Sys.getenv(), env[!current])
-  enc2utf8(paste(names(env), sep = "=", env))
+  enc2path(paste(names(env), sep = "=", env))
 }

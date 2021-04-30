@@ -5,6 +5,9 @@
 
 * processx now compiles with custom compilers that enable OpenMP (#297).
 
+* processx now works with non-ASCII path names on non-UTF-8 Unix platforms
+  (#293).
+
 # processx 3.5.1
 
 * Fix a potential failure when polling curl file descriptors on Windows.
