@@ -87,14 +87,8 @@ local_temp_dir <- function(pattern = "file", tmpdir = tempdir(),
                            fileext = "", envir = parent.frame()) {
   path <- tempfile(pattern = pattern, tmpdir = tmpdir, fileext = fileext)
   dir.create(path)
-  setwd(path)
-  do.call(
-    withr::defer,
-    list(
-      bquote(unlink(.(path), recursive = TRUE)),
-      envir = envir
-    )
-  )
+  withr::local_dir(path, .local_envir = envir)
+  withr::defer(unlink(path, recursive = TRUE), envir = envir)
   invisible(path)
 }
 
