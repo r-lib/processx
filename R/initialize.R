@@ -85,8 +85,8 @@ process_initialize <- function(self, private, command, args,
   pty_options$cols <- as.integer(pty_options$cols)
   pty_options <- pty_options[names(def)]
 
-  command <- enc2utf8(command)
-  args <- enc2utf8(args)
+  command <- enc2path(command)
+  args <- enc2path(args)
 
   private$command <- command
   private$args <- args
