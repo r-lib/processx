@@ -5,6 +5,10 @@
 
 * processx now compiles with custom compilers that enable OpenMP (#297).
 
+* processx now avoids a race condition when the working directory is
+  changed right after starting a process, potentially before the
+  sub-process is initialized (#300).
+
 * processx now works with non-ASCII path names on non-UTF-8 Unix platforms
   (#293).
 

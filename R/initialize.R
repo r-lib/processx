@@ -88,6 +88,7 @@ process_initialize <- function(self, private, command, args,
   command <- enc2path(command)
   args <- enc2path(args)
 
+  wd <- wd %||% getwd()
   private$command <- command
   private$args <- args
   private$cleanup <- cleanup
