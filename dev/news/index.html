@@ -121,6 +121,7 @@
 <ul>
 <li><p><code><a href="../reference/run.html">run()</a></code> now does not truncate stdout and stderr when the output contains multibyte characters (<a href='https://github.com/r-lib/processx/issues/298'>#298</a>, <a href='https://github.com/infotroph'>@infotroph</a>).</p></li>
 <li><p>processx now compiles with custom compilers that enable OpenMP (<a href='https://github.com/r-lib/processx/issues/297'>#297</a>).</p></li>
+<li><p>processx now avoids a race condition when the working directory is changed right after starting a process, potentially before the sub-process is initialized (<a href='https://github.com/r-lib/processx/issues/300'>#300</a>).</p></li>
 <li><p>processx now works with non-ASCII path names on non-UTF-8 Unix platforms (<a href='https://github.com/r-lib/processx/issues/293'>#293</a>).</p></li>
 </ul>
 </div>
