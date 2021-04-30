@@ -6,13 +6,30 @@ reg.finalizer(supervisor_info, function(s) {
   # `processx:::supervisor_info` has been created and the name
   # `supervisor_info` is bound to the new object. This could happen if the
   # package is unloaded and reloaded.
-  supervisor_kill(s)
+  supervisor_kill2(s)
 }, onexit = TRUE)
 
+#' Terminate all supervised processes and the supervisor process itself as
+#' well
+#'
+#' On Unix the supervisor sends a `SIGTERM` signal to all supervised
+#' processes, and gives them five seconds to quit, before sending a
+#' `SIGKILL` signal. Then the supervisor itself terminates.
+#'
+#' Windows is similar, but instead of `SIGTERM`, a console CTRL+C interrupt
+#' is sent first, then a `WM_CLOSE` message is sent to the windows of the
+#' supervised processes, if they have windows.
+#'
+#' @keywords internal
+#' @export
+
+supervisor_kill <- function() {
+  supervisor_kill2()
+}
 
 # This takes an object s, because a new `supervisor_info` object could have been
 # created.
-supervisor_kill <- function(s = supervisor_info) {
+supervisor_kill2 <- function(s = supervisor_info) {
   if (is.null(s$pid))
     return()
 
