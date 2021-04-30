@@ -22,6 +22,19 @@ dummy_r6 <- function() R6::R6Class
 #' @param timeout Timeout in milliseconds, for the wait or the I/O
 #'   polling.
 #'
+#' @section Batch files:
+#' Running Windows batch files (`.bat` or `.cmd` files) may be complicated
+#' because of the `cmd.exe` command line parsing rules. For example you
+#' cannot easily have whitespace in both the command (path) and one of the
+#' arguments. To work around these limitations you need to start a
+#' `cmd.exe` shell explicitly and use its `call` command. For example:
+#'
+#' ```r
+#' process$new("cmd.exe", c("/c", "call", bat_file, "arg 1", "arg 2"))
+#' ```
+#'
+#' This works even if `bat_file` contains whitespace characters.
+#'
 #' @section Polling:
 #' The `poll_io()` function polls the standard output and standard
 #' error connections of a process, with a timeout. If there is output
@@ -85,7 +98,9 @@ process <- R6::R6Class(
     #'   Note that this argument is not passed to a shell, so no
     #'   tilde-expansion or variable substitution is performed on it.
     #'   It should not be quoted with [base::shQuote()]. See
-    #'   [base::normalizePath()] for tilde-expansion.
+    #'   [base::normalizePath()] for tilde-expansion. If you want to run
+    #'   `.bat` or `.cmd` files on Windows, make sure you read the
+    #'   'Batch files' section above.
     #' @param args Character vector, arguments to the command. They will be
     #'   passed to the process as is, without a shell transforming them,
     #'   They don't need to be escaped.

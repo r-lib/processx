@@ -10,6 +10,18 @@ wrapper around the \code{system} base R function, to return the process
 id of the started process, and set its standard output and error
 streams. The process id is then used to manage the process.
 }
+\section{Batch files}{
+
+Running Windows batch files (\code{.bat} or \code{.cmd} files) may be complicated
+because of the \code{cmd.exe} command line parsing rules. For example you
+cannot easily have whitespace in both the command (path) and one of the
+arguments. To work around these limitations you need to start a
+\code{cmd.exe} shell explicitly and use its \code{call} command. For example:\if{html}{\out{<div class="r">}}\preformatted{process$new("cmd.exe", c("/c", "call", bat_file, "arg 1", "arg 2"))
+}\if{html}{\out{</div>}}
+
+This works even if \code{bat_file} contains whitespace characters.
+}
+
 \section{Polling}{
 
 The \code{poll_io()} function polls the standard output and standard
@@ -155,7 +167,9 @@ Start a new process in the background, and then return immediately.
 Note that this argument is not passed to a shell, so no
 tilde-expansion or variable substitution is performed on it.
 It should not be quoted with \code{\link[base:shQuote]{base::shQuote()}}. See
-\code{\link[base:normalizePath]{base::normalizePath()}} for tilde-expansion.}
+\code{\link[base:normalizePath]{base::normalizePath()}} for tilde-expansion. If you want to run
+\code{.bat} or \code{.cmd} files on Windows, make sure you read the
+'Batch files' section above.}
 
 \item{\code{args}}{Character vector, arguments to the command. They will be
 passed to the process as is, without a shell transforming them,

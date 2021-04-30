@@ -44,7 +44,9 @@
 #' * `stderr_to_stdout`: the value of the `stderr_to_stdout` argument.
 #' * `status`: the exit status for `system_command_status_error` errors.
 #'
-#' @param command Character scalar, the command to run.
+#' @param command Character scalar, the command to run. If you are
+#'   running `.bat` or `.cmd` files on Windows, make sure you read the
+#'   'Batch files' section in the [process] manual page.
 #' @param args Character vector, arguments to the command.
 #' @param error_on_status Whether to throw an error if the command returns
 #'   with a non-zero status, or it is interrupted. The error classes are

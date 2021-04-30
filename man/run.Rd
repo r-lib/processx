@@ -29,7 +29,9 @@ run(
 )
 }
 \arguments{
-\item{command}{Character scalar, the command to run.}
+\item{command}{Character scalar, the command to run. If you are
+running \code{.bat} or \code{.cmd} files on Windows, make sure you read the
+'Batch files' section in the \link{process} manual page.}
 
 \item{args}{Character vector, arguments to the command.}
 
