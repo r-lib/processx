@@ -3,6 +3,8 @@
 * `run()` now does not truncate stdout and stderr when the output
   contains multibyte characters (#298, @infotroph).
 
+* processx now compiles with custom compilers that enable OpenMP (#297).
+
 # processx 3.5.1
 
 * Fix a potential failure when polling curl file descriptors on Windows.

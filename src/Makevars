@@ -11,11 +11,11 @@ OBJECTS = init.o poll.o errors.o processx-connection.o   \
 all: tools/px supervisor/supervisor client$(SHLIB_EXT) $(SHLIB)
 
 tools/px: tools/px.c
-	$(CC) $(CFLAGS) -Wall tools/px.c -o tools/px
+	$(CC) $(CFLAGS) $(LDFLAGS) -Wall tools/px.c -o tools/px
 
 supervisor/supervisor: supervisor/supervisor.c supervisor/utils.c
-	$(CC) $(CFLAGS) supervisor/supervisor.c supervisor/utils.c \
-	      -o supervisor/supervisor
+	$(CC) $(CFLAGS) $(LDFLAGS) supervisor/supervisor.c \
+	      supervisor/utils.c -o supervisor/supervisor
 
 CLIENT_OBJECTS = base64.o client.o errors.o
 
