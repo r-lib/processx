@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/signal.h>
+#include <pthread.h>
 
 # ifndef O_CLOEXEC
 #  define O_CLOEXEC 02000000
@@ -30,6 +31,7 @@ typedef struct processx_handle_s {
 char *processx__tmp_string(SEXP str, int i);
 char **processx__tmp_character(SEXP chr);
 
+extern pthread_t processx__main_thread;
 void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx);
 void processx__setup_sigchld();
 void processx__remove_sigchld();
