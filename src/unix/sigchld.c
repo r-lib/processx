@@ -1,18 +1,32 @@
 
 #include "../processx.h"
 
+#include <pthread.h>
+
 extern processx__child_list_t *child_list;
 
 static struct sigaction old_sig_handler = {{ 0 }};
 int processx__notify_old_sigchld_handler = 0;
+pthread_t processx__main_thread = { 0 };
 
 void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
+  /* This might be called on another thread, if the main thread blocks
+     the signal temporarily, so we forward it to the main thread.
+     It is OK to call pthread_self() and pthread_kill() in the signal
+     handler, according to POSIX.1-2008 TC1.
+     https://man7.org/linux/man-pages/man7/signal-safety.7.html */
+  if (pthread_self() != processx__main_thread) {
+    pthread_kill(processx__main_thread, SIGCHLD);
+  }
+
+  /* This should really not happem, but just in case. */
   if (sig != SIGCHLD) return;
 
   /* While we get a pid in info, this is basically useless, as
      (on some platforms at least) a single signal might be delivered
-     for multiple children exiting around the same time. So we need to
-     iterate over all children to see which one has exited. */
+     for multiple children exiting around the same time. For example this
+     happens if multiple SIGCHLD signals arrive while SIGCHLD is blocked.
+     So we need to iterate over all children to see which one has exited. */
 
   processx__child_list_t *ptr = child_list->next;
   processx__child_list_t *prev = child_list;
