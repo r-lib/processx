@@ -346,6 +346,12 @@ void processx__finalizer(SEXP status) {
     if (wp == pid) processx__collect_exit_status(status, wp, wstat);
 
     /* If it is running, we need to kill it, and wait for the exit status */
+    /* Close input connection first, otherwise the waitpid might get a
+       signal every single time. */
+    if (handle->fd0 >= 0) {
+      close(handle->fd0);
+      handle->fd0 = -1;
+    }
     if (wp == 0) {
       kill(-pid, SIGKILL);
       do {
