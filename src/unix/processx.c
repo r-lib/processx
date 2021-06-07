@@ -50,6 +50,7 @@ extern char **environ;
 
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <pthread.h>
 
 extern processx__child_list_t child_list_head;
 extern processx__child_list_t *child_list;
@@ -63,6 +64,8 @@ extern int processx__notify_old_sigchld_handler;
    This function is called from `R_init_processx`. */
 
 void R_init_processx_unix() {
+  processx__main_thread = pthread_self();
+
   child_list_head.pid = 0;
   child_list_head.weak_status = R_NilValue;
   child_list_head.next = 0;
