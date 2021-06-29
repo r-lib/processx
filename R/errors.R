@@ -29,8 +29,8 @@
 # ## API
 #
 # ```
-# new_cond(..., call. = TRUE, domain = NULL)
-# new_error(..., call. = TRUE, domain = NULL)
+# new_cond(..., call. = TRUE, domain = NA)
+# new_error(..., call. = TRUE, domain = NA)
 # throw(cond, parent = NULL)
 # catch_rethrow(expr, ...)
 # rethrow(expr, cond)
@@ -119,11 +119,14 @@ err <- local({
   #' @param call. A call object to include in the condition, or `TRUE`
   #'   or `NULL`, meaning that [throw()] should add a call object
   #'   automatically. If `FALSE`, then no call is added.
-  #' @param domain Translation domain, see [stop()].
+  #' @param domain Translation domain, see [stop()]. We set this to
+  #'   `NA` by default, which means that no translation occurs. This
+  #'   has the benefit that the error message is not re-encoded into
+  #'   the native locale.
   #' @return Condition object. Currently a list, but you should not rely
   #'   on that.
 
-  new_cond <- function(..., call. = TRUE, domain = NULL) {
+  new_cond <- function(..., call. = TRUE, domain = NA) {
     message <- .makeMessage(..., domain = domain)
     structure(
       list(message = message, call = call.),
@@ -141,7 +144,7 @@ err <- local({
   #' @return Error condition object with classes `rlib_error`, `error`
   #'   and `condition`.
 
-  new_error <- function(..., call. = TRUE, domain = NULL) {
+  new_error <- function(..., call. = TRUE, domain = NA) {
     cond <- new_cond(..., call. = call., domain = domain)
     class(cond) <- c("rlib_error_2_0", "rlib_error", "error", "condition")
     cond
