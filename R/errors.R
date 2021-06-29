@@ -101,6 +101,11 @@
 # ### 2.0.0 -- 2021-04-19
 #
 # * Versioned classes and print methods
+#
+# ### 2.0.1 -- 2021-06-29
+#
+# * Do not convert error messages to native encoding before printing,
+#   to be able to print UTF-8 error messages on Windows.
 
 err <- local({
 
@@ -252,9 +257,9 @@ err <- local({
         # message length limit.
         cat("\n", file = stderr())
         cat(style_error(gettext("Error: ")), file = stderr())
-        out <- capture_output(print(cond))
+        out <- format_cond(cond)
         cat(out, file = stderr(), sep = "\n")
-        out <- capture_output(print(cond$trace))
+        out <- format_trace(cond$trace)
         cat(out, file = stderr(), sep = "\n")
 
         # Turn off the regular error printing to avoid printing
@@ -543,32 +548,57 @@ err <- local({
 
   # -- printing ---------------------------------------------------------
 
-  print_this <- function(x, ...) {
-    msg <- conditionMessage(x)
-    call <- conditionCall(x)
+  format_this <- function(x, ...) {
+    msg <- paste0(conditionMessage(x), collapse = "\n")
+    call <- paste0(format_call(conditionCall(x)), collapse = "\n")
     cl <- class(x)[1L]
-    if (!is.null(call)) {
-      cat("<", cl, " in ", format_call(call), ":\n ", msg, ">\n", sep = "")
+    head <- if (!is.null(call)) {
+      strsplit(
+        paste0("<", cl, " in ", call, ":\n ", msg, ">\n"),
+        split = "\n",
+        fixed = TRUE,
+        useBytes = TRUE
+      )[[1]]
     } else {
-      cat("<", cl, ": ", msg, ">\n", sep = "")
+      strsplit(
+        paste0("<", cl, ": ", msg, ">\n"),
+        split = "\n",
+        fixed = TRUE,
+        useBytes = TRUE
+      )[[1]]
     }
 
-    print_srcref(x$call)
+    src <- format_srcref(x$call)
 
-    if (!identical(x$`_pid`, Sys.getpid())) {
-      cat(" in process", x$`_pid`, "\n")
+    proc <- if (!identical(x$`_pid`, Sys.getpid())) {
+      paste0(" in process ", x$`_pid`, "\n")
     }
 
+    c(head, src, proc)
+ }
+
+  print_this <- function(x, ...) {
+    cat(format_this(x, ...), sep = "\n")
     invisible(x)
+  }
+
+  format_parents <- function(x, ...) {
+    if (!is.null(x$parent)) {
+      c("--->", format_this(x$parent))
+    }
   }
 
   print_parents <- function(x, ...) {
-    if (!is.null(x$parent)) {
-      cat("-->\n")
-      print(x$parent)
-    }
+    cat(format_parents(x, ...), sep = "\n")
     invisible(x)
   }
+
+  format_rlib_error_2_0 <- function(x, ...) {
+    c(format_this(x, ...),
+      format_parents(x, ...))
+  }
+
+  format_cond <- format_rlib_error_2_0
 
   print_rlib_error_2_0 <- function(x, ...) {
     print_this(x, ...)
@@ -585,9 +615,9 @@ err <- local({
     callstr
   }
 
-  print_rlib_trace_2_0 <- function(x, ...) {
-    cl <- paste0(" Stack trace:")
-    cat(sep = "", "\n", style_trace_title(cl), "\n\n")
+  format_rlib_trace_2_0 <- function(x, ...) {
+    cl <- paste0("Stack trace:")
+    fmt <- c("", style_trace_title(cl))
     callstr <- enumerate(
       format_calls(x$calls, x$topenv, x$nframes, x$messages)
     )
@@ -613,27 +643,18 @@ err <- local({
     if (length(unique(x$pids)) >= 2) {
       pids <- x$pids[-ign]
       pid_add <- which(!duplicated(pids))
-      pid_str <- style_process(paste0("Process ", pids[pid_add], ":"))
+      pid_str <- style_process(paste0("\nProcess ", pids[pid_add], ":"))
       callstr[pid_add] <- paste0(" ", pid_str, "\n", callstr[pid_add])
     }
 
-    cat(callstr, sep = "\n")
-    invisible(x)
+    c(fmt, unlist(strsplit(callstr, "\n", fixed = TRUE, useBytes = TRUE)))
   }
 
-  capture_output <- function(expr) {
-    if (has_cli()) {
-      opts <- options(cli.num_colors = cli::num_ansi_colors())
-      on.exit(options(opts), add = TRUE)
-    }
+  format_trace <- format_rlib_trace_2_0
 
-    out <- NULL
-    file <- textConnection("out", "w", local = TRUE)
-    sink(file)
-    on.exit(sink(NULL), add = TRUE)
-
-    expr
-    if (is.null(out)) invisible(NULL) else out
+  print_rlib_trace_2_0 <- function(x, ...) {
+    cat(format_rlib_trace_2_0(x, ...), sep = "\n")
+    invisible(x)
   }
 
   is_interactive <- function() {
@@ -673,6 +694,7 @@ err <- local({
   print_srcref <- function(call) {
     src <- format_srcref(call)
     if (length(src)) cat(sep = "", " ", src, "\n")
+    invisible(call)
   }
 
   `%||%` <- function(l, r) if (is.null(l)) r else l
@@ -783,7 +805,9 @@ err <- local({
       rethrow_call   = rethrow_call,
       add_trace_back = add_trace_back,
       onload_hook    = onload_hook,
+      format_this    = format_this,
       print_this     = print_this,
+      format_parents = format_parents,
       print_parents  = print_parents
     ),
     class = c("standalone_errors", "standalone"))
