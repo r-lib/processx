@@ -554,6 +554,8 @@ err <- local({
   format_this <- function(x, ...) {
     msg <- paste0(conditionMessage(x), collapse = "\n")
     call <- paste0(format_call(conditionCall(x)), collapse = "\n")
+    msg <- enc2utf8(msg)
+    call <- enc2utf8(call)
     cl <- class(x)[1L]
     head <- if (!is.null(call)) {
       strsplit(
@@ -570,10 +572,12 @@ err <- local({
         useBytes = TRUE
       )[[1]]
     }
+    Encoding(head) <- "UTF-8"
 
     src <- format_srcref(x$call)
 
-    proc <- if (!identical(x$`_pid`, Sys.getpid())) {
+    proc <- if (!is.null(x$`_pid`) &&
+                !identical(x$`_pid`, Sys.getpid())) {
       paste0(" in process ", x$`_pid`, "\n")
     }
 
@@ -620,7 +624,8 @@ err <- local({
 
   format_rlib_trace_2_0 <- function(x, ...) {
     cl <- paste0("Stack trace:")
-    fmt <- c("", style_trace_title(cl))
+    title <- c("", style_trace_title(cl))
+
     callstr <- enumerate(
       format_calls(x$calls, x$topenv, x$nframes, x$messages)
     )
@@ -649,8 +654,11 @@ err <- local({
       pid_str <- style_process(paste0("\nProcess ", pids[pid_add], ":"))
       callstr[pid_add] <- paste0(" ", pid_str, "\n", callstr[pid_add])
     }
+    callstr <- enc2utf8(callstr)
+    body <- unlist(strsplit(callstr, "\n", fixed = TRUE, useBytes = TRUE))
+    Encoding(body) <- "UTF-8"
 
-    c(fmt, unlist(strsplit(callstr, "\n", fixed = TRUE, useBytes = TRUE)))
+    c(title, body)
   }
 
   format_trace <- format_rlib_trace_2_0
