@@ -29,8 +29,8 @@
 # ## API
 #
 # ```
-# new_cond(..., call. = TRUE, domain = NULL)
-# new_error(..., call. = TRUE, domain = NULL)
+# new_cond(..., call. = TRUE, domain = NA)
+# new_error(..., call. = TRUE, domain = NA)
 # throw(cond, parent = NULL)
 # catch_rethrow(expr, ...)
 # rethrow(expr, cond)
@@ -106,6 +106,11 @@
 #
 # * Do not convert error messages to native encoding before printing,
 #   to be able to print UTF-8 error messages on Windows.
+#
+# ### 2.0.2 -- 2021-09-07
+#
+# * Do not translate error messages, as this converts them to the native
+#   encoding. We keep messages in UTF-8 now.
 
 err <- local({
 
@@ -119,11 +124,14 @@ err <- local({
   #' @param call. A call object to include in the condition, or `TRUE`
   #'   or `NULL`, meaning that [throw()] should add a call object
   #'   automatically. If `FALSE`, then no call is added.
-  #' @param domain Translation domain, see [stop()].
+  #' @param domain Translation domain, see [stop()]. We set this to
+  #'   `NA` by default, which means that no translation occurs. This
+  #'   has the benefit that the error message is not re-encoded into
+  #'   the native locale.
   #' @return Condition object. Currently a list, but you should not rely
   #'   on that.
 
-  new_cond <- function(..., call. = TRUE, domain = NULL) {
+  new_cond <- function(..., call. = TRUE, domain = NA) {
     message <- .makeMessage(..., domain = domain)
     structure(
       list(message = message, call = call.),
@@ -141,7 +149,7 @@ err <- local({
   #' @return Error condition object with classes `rlib_error`, `error`
   #'   and `condition`.
 
-  new_error <- function(..., call. = TRUE, domain = NULL) {
+  new_error <- function(..., call. = TRUE, domain = NA) {
     cond <- new_cond(..., call. = call., domain = domain)
     class(cond) <- c("rlib_error_2_0", "rlib_error", "error", "condition")
     cond
@@ -551,6 +559,8 @@ err <- local({
   format_this <- function(x, ...) {
     msg <- paste0(conditionMessage(x), collapse = "\n")
     call <- paste0(format_call(conditionCall(x)), collapse = "\n")
+    msg <- enc2utf8(msg)
+    call <- enc2utf8(call)
     cl <- class(x)[1L]
     head <- if (!is.null(call)) {
       strsplit(
@@ -567,10 +577,12 @@ err <- local({
         useBytes = TRUE
       )[[1]]
     }
+    Encoding(head) <- "UTF-8"
 
     src <- format_srcref(x$call)
 
-    proc <- if (!identical(x$`_pid`, Sys.getpid())) {
+    proc <- if (!is.null(x$`_pid`) &&
+                !identical(x$`_pid`, Sys.getpid())) {
       paste0(" in process ", x$`_pid`, "\n")
     }
 
@@ -617,7 +629,8 @@ err <- local({
 
   format_rlib_trace_2_0 <- function(x, ...) {
     cl <- paste0("Stack trace:")
-    fmt <- c("", style_trace_title(cl))
+    title <- c("", style_trace_title(cl))
+
     callstr <- enumerate(
       format_calls(x$calls, x$topenv, x$nframes, x$messages)
     )
@@ -646,8 +659,11 @@ err <- local({
       pid_str <- style_process(paste0("\nProcess ", pids[pid_add], ":"))
       callstr[pid_add] <- paste0(" ", pid_str, "\n", callstr[pid_add])
     }
+    callstr <- enc2utf8(callstr)
+    body <- unlist(strsplit(callstr, "\n", fixed = TRUE, useBytes = TRUE))
+    Encoding(body) <- "UTF-8"
 
-    c(fmt, unlist(strsplit(callstr, "\n", fixed = TRUE, useBytes = TRUE)))
+    c(title, body)
   }
 
   format_trace <- format_rlib_trace_2_0
