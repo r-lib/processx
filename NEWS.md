@@ -1,6 +1,9 @@
 
 # processx (development version)
 
+* `run()` now sets `stderr` to `NULL` in the result (instead of an empty
+  string), if the standard error was redirected to the standard output.
+
 # processx 3.5.2
 
 * `run()` now does not truncate stdout and stderr when the output

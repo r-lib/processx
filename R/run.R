@@ -211,7 +211,7 @@ run <- function(
   runcall <- sys.call()
   resenv <- new.env(parent = emptyenv())
   has_stdout <- !is.null(stdout) && stdout == "|"
-  has_stderr <- !is.null(stderr) && stderr %in% c("|", "2>&1")
+  has_stderr <- !is.null(stderr) && stderr == "|"
 
   if (has_stdout) {
     resenv$outbuf <- make_buffer()
@@ -279,7 +279,7 @@ run_manage <- function(proc, timeout, spinner, stdout, stderr,
   start_time <- proc$get_start_time()
 
   has_stdout <- !is.null(stdout) && stdout == "|"
-  has_stderr <- !is.null(stderr) && stderr %in% c("|", "2>&1")
+  has_stderr <- !is.null(stderr) && stderr == "|"
 
   pushback_out <- ""
   pushback_err <- ""

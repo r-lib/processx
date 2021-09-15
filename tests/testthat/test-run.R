@@ -92,7 +92,7 @@ test_that("stderr_to_stdout", {
   expect_equal(out$status, 0L)
   expect_equal(
     out$stdout, paste0("o1e1o2e2", if (is_windows()) "\r", "\n"))
-  expect_equal(out$stderr, "")
+  expect_equal(out$stderr, NULL)
   expect_false(out$timeout)
 })
 
