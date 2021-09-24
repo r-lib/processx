@@ -245,7 +245,7 @@ test_that("rethrowing non rlib errors", {
 })
 
 test_that("errors from subprocess", {
-  skip_if_not_installed("callr", minimum_version = "3.2.0.9001")
+  skip_if_not_installed("callr", minimum_version = "3.7.0")
   err <- tryCatch(
     callr::r(function() 1 + "a"),
     error = function(e) e)
@@ -256,7 +256,7 @@ test_that("errors from subprocess", {
 
 test_that("error trace from subprocess", {
   skip_on_cran()
-  skip_if_not_installed("callr", minimum_version = "3.2.0.9001")
+  skip_if_not_installed("callr", minimum_version = "3.7.0")
 
   sf <- tempfile(fileext = ".R")
   op <- sub("\\.R$", ".rds", sf)
@@ -292,7 +292,7 @@ test_that("error trace from subprocess", {
 
 test_that("error trace from throw() in subprocess", {
   skip_on_cran()
-  skip_if_not_installed("callr", minimum_version = "3.2.0.9001")
+  skip_if_not_installed("callr", minimum_version = "3.7.0")
 
   sf <- tempfile(fileext = ".R")
   op <- sub("\\.R$", ".rds", sf)

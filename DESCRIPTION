@@ -25,7 +25,7 @@ Imports:
     R6,
     utils
 Suggests:
-    callr (>= 3.2.0),
+    callr (>= 3.7.0),
     cli,
     codetools,
     covr,
