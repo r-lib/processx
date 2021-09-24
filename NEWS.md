@@ -3,6 +3,8 @@
 
 * `run()` now sets `stderr` to `NULL` in the result (instead of an empty
   string), if the standard error was redirected to the standard output.
+  This also fixes an error when interrupting a `run()` with a redirected
+  standard error.
 
 # processx 3.5.2
 
