@@ -617,11 +617,12 @@ ssize_t processx_c_connection_write_bytes(
   sigaction(SIGPIPE, &new_handler, &old_handler );
 
   ssize_t ret = write(ccon->handle, buffer, nbytes);
+  int err = errno;
 
   sigaction(SIGPIPE, &old_handler, NULL );
 
   if (ret == -1) {
-    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+    if (err == EAGAIN || err == EWOULDBLOCK) {
       return 0;
     } else {
       R_THROW_SYSTEM_ERROR("Cannot write connection");
