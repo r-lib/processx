@@ -26,7 +26,7 @@ Imports:
     utils
 Suggests:
     callr (>= 3.7.0),
-    cli,
+    cli (>= 1.1.0),
     codetools,
     covr,
     curl,
