@@ -356,6 +356,7 @@ test_that("error is printed on error", {
     sf,
     stdout = so,
     stderr = se,
+    env = c(LC_ALL = "C"),
     fail_on_status = FALSE,
     show = FALSE
   )
@@ -386,6 +387,7 @@ test_that("trace is printed on error in non-interactive sessions", {
     sf,
     stdout = so,
     stderr = se,
+    env = c(LC_ALL = "C"),
     fail_on_status = FALSE,
     show = FALSE
   )
