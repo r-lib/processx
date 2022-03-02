@@ -1,7 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://processx.r-lib.org/404.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/CODE_OF_CONDUCT.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/LICENSE-text.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/LICENSE.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/authors.html</loc>
+  </url>
+  <url>
     <loc>http://processx.r-lib.org/index.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/news/index.html</loc>
   </url>
   <url>
     <loc>http://processx.r-lib.org/reference/base64_decode.html</loc>
@@ -11,6 +29,9 @@
   </url>
   <url>
     <loc>http://processx.r-lib.org/reference/default_pty_options.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/reference/index.html</loc>
   </url>
   <url>
     <loc>http://processx.r-lib.org/reference/poll.html</loc>
