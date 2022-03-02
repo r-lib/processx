@@ -1,6 +1,4 @@
 
-context("io")
-
 test_that("Output and error are discarded by default", {
 
   px <- get_tool("px")

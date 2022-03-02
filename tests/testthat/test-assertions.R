@@ -1,6 +1,4 @@
 
-context("assertions")
-
 strings <- list("foo", "", "111", "1", "-", "NA")
 not_strings <- list(1, character(), NA_character_, NA,
                     c("foo", NA), c("1", "2"), NULL)

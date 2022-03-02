@@ -1,6 +1,4 @@
 
-context("stress test")
-
 test_that("can start 100 processes quickly", {
   skip_on_cran()
   px <- get_tool("px")

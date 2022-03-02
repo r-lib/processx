@@ -21,6 +21,8 @@ knitr::opts_chunk$set(
 [![](https://www.r-pkg.org/badges/version/processx)](https://www.r-pkg.org/pkg/processx)
 [![CRAN RStudio mirror downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
 [![Coverage Status](https://img.shields.io/codecov/c/github/r-lib/processx/master.svg)](https://codecov.io/github/r-lib/processx?branch=master)
+[![Codecov test coverage](https://codecov.io/gh/r-lib/processx/branch/main/graph/badge.svg)](https://app.codecov.io/gh/r-lib/processx?branch=main)
+[![R-CMD-check](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 Tools to run system processes in the background,
@@ -447,9 +449,9 @@ p2$get_exit_status()
 
 ## Code of Conduct
 
-Please note that this project is released with a
-[Contributor Code of Conduct](https://processx.r-lib.org/CODE_OF_CONDUCT.html).
-By participating in this project you agree to abide by its terms.
+Please note that the processx project is released with a
+[Contributor Code of Conduct](http://processx.r-lib.org/CODE_OF_CONDUCT.html).
+By contributing to this project, you agree to abide by its terms.
 
 ## License
 

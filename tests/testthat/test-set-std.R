@@ -1,6 +1,4 @@
 
-context("set std streams")
-
 test_that("setting stdout to a file", {
   stdout_to_file <- function(filename) {
     con <- processx::conn_create_file(filename, write = TRUE)

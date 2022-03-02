@@ -1,6 +1,4 @@
 
-context("Connections")
-
 if (!is.null(packageDescription("stats")[["ExperimentalWindowsRuntime"]])) {
   if (!identical(Sys.getenv("NOT_CRAN"), "true")) return()
 }

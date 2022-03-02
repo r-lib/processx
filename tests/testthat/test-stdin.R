@@ -1,6 +1,4 @@
 
-context("stdin")
-
 test_that("stdin", {
 
   skip_on_cran()

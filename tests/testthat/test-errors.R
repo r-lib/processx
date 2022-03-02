@@ -1,6 +1,4 @@
 
-context("errors")
-
 test_that("run() prints stderr if echo = FALSE", {
   px <- get_tool("px")
   err <- tryCatch(

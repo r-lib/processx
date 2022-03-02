@@ -1,6 +1,4 @@
 
-context("client-lib")
-
 test_that("client lib is standalone", {
   lib <- load_client_lib(client)
   on.exit(try(lib$.finalize()), add = TRUE)

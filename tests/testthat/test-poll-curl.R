@@ -1,6 +1,4 @@
 
-context("poll-curl")
-
 ## To resolve....
 online <- curl::has_internet()
 if (online) httpbin()

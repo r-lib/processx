@@ -1,6 +1,4 @@
 
-context("poll")
-
 test_that("polling for output available", {
 
   px <- get_tool("px")

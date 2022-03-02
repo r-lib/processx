@@ -2,24 +2,23 @@ Package: processx
 Title: Execute and Control System Processes
 Version: 3.5.2.9000
 Authors@R: c(
-    person("Gábor", "Csárdi", role = c("aut", "cre", "cph"),
-           email = "csardi.gabor@gmail.com",
-	   comment = c(ORCID = "0000-0001-7098-9676")),
+    person("Gábor", "Csárdi", , "csardi.gabor@gmail.com", role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0001-7098-9676")),
     person("Winston", "Chang", role = "aut"),
     person("RStudio", role = c("cph", "fnd")),
-    person("Mango Solutions", role  = c("cph", "fnd")))
-Description: Tools to run system processes in the background.
-    It can check if a background process is running; wait on a background
-    process to finish; get the exit status of finished processes; kill
-    background processes. It can read the standard output and error of
-    the processes, using non-blocking connections. 'processx' can poll
-    a process for standard output or error, with a timeout. It can also
-    poll several processes at once.
+    person("Mango Solutions", role = c("cph", "fnd"))
+  )
+Description: Tools to run system processes in the background.  It can
+    check if a background process is running; wait on a background process
+    to finish; get the exit status of finished processes; kill background
+    processes. It can read the standard output and error of the processes,
+    using non-blocking connections. 'processx' can poll a process for
+    standard output or error, with a timeout. It can also poll several
+    processes at once.
 License: MIT + file LICENSE
 URL: https://processx.r-lib.org, https://github.com/r-lib/processx#readme
 BugReports: https://github.com/r-lib/processx/issues
-RoxygenNote: 7.1.1.9001
-Roxygen: { library(roxygenlabs); list(markdown = TRUE) }
+Depends: R (>= 3.4.0)
 Imports:
     ps (>= 1.2.0),
     R6,
@@ -32,6 +31,10 @@ Suggests:
     curl,
     debugme,
     parallel,
-    testthat,
+    testthat (>= 3.0.0),
     withr
 Encoding: UTF-8
+RoxygenNote: 7.1.2
+Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3
+Config/Needs/website: tidyverse/tidytemplate

@@ -1,6 +1,4 @@
 
-context("ps methods")
-
 test_that("ps methods", {
   skip_if_no_ps()
 
