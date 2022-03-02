@@ -16,7 +16,7 @@ Running Windows batch files (\code{.bat} or \code{.cmd} files) may be complicate
 because of the \code{cmd.exe} command line parsing rules. For example you
 cannot easily have whitespace in both the command (path) and one of the
 arguments. To work around these limitations you need to start a
-\code{cmd.exe} shell explicitly and use its \code{call} command. For example:\if{html}{\out{<div class="r">}}\preformatted{process$new("cmd.exe", c("/c", "call", bat_file, "arg 1", "arg 2"))
+\code{cmd.exe} shell explicitly and use its \code{call} command. For example:\if{html}{\out{<div class="sourceCode r">}}\preformatted{process$new("cmd.exe", c("/c", "call", bat_file, "arg 1", "arg 2"))
 }\if{html}{\out{</div>}}
 
 This works even if \code{bat_file} contains whitespace characters.
@@ -43,7 +43,7 @@ also set to \code{TRUE}).
 The cleanup happens when the references of the processes object are
 garbage collected. To clean up earlier, you can call the \code{kill()} or
 \code{kill_tree()} method of the process(es), from an \code{on.exit()} expression,
-or an error handler:\if{html}{\out{<div class="r">}}\preformatted{process_manager <- function() \{
+or an error handler:\if{html}{\out{<div class="sourceCode r">}}\preformatted{process_manager <- function() \{
   on.exit(\{
     try(p1$kill(), silent = TRUE)
     try(p2$kill(), silent = TRUE)
