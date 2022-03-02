@@ -1,33 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>http://processx.r-lib.org/index.html</loc>
+    <loc>http://processx.r-lib.org/dev/CODE_OF_CONDUCT.html</loc>
   </url>
   <url>
-    <loc>http://processx.r-lib.org/reference/base64_decode.html</loc>
+    <loc>http://processx.r-lib.org/dev/LICENSE-text.html</loc>
   </url>
   <url>
-    <loc>http://processx.r-lib.org/reference/curl_fds.html</loc>
+    <loc>http://processx.r-lib.org/dev/LICENSE.html</loc>
   </url>
   <url>
-    <loc>http://processx.r-lib.org/reference/default_pty_options.html</loc>
+    <loc>http://processx.r-lib.org/dev/authors.html</loc>
   </url>
   <url>
-    <loc>http://processx.r-lib.org/reference/poll.html</loc>
+    <loc>http://processx.r-lib.org/dev/index.html</loc>
   </url>
   <url>
-    <loc>http://processx.r-lib.org/reference/process.html</loc>
+    <loc>http://processx.r-lib.org/dev/news/index.html</loc>
   </url>
   <url>
-    <loc>http://processx.r-lib.org/reference/process_initialize.html</loc>
+    <loc>http://processx.r-lib.org/dev/reference/base64_decode.html</loc>
   </url>
   <url>
-    <loc>http://processx.r-lib.org/reference/processx_connections.html</loc>
+    <loc>http://processx.r-lib.org/dev/reference/curl_fds.html</loc>
   </url>
   <url>
-    <loc>http://processx.r-lib.org/reference/run.html</loc>
+    <loc>http://processx.r-lib.org/dev/reference/default_pty_options.html</loc>
   </url>
   <url>
-    <loc>http://processx.r-lib.org/reference/supervisor_kill.html</loc>
+    <loc>http://processx.r-lib.org/dev/reference/index.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/dev/reference/poll.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/dev/reference/process.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/dev/reference/process_initialize.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/dev/reference/processx-package.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/dev/reference/processx_connections.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/dev/reference/run.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/dev/reference/supervisor_kill.html</loc>
   </url>
 </urlset>
