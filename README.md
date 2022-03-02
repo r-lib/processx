@@ -6,16 +6,12 @@
 <!-- badges: start -->
 
 [![lifecycle](https://lifecycle.r-lib.org/articles/figures/lifecycle-stable.svg)](https://lifecycle.r-lib.org/articles/stages.html)
-[![R build
-status](https://github.com/r-lib/processx/workflows/R-CMD-check/badge.svg)](https://github.com/r-lib/processx/actions)
+[![R-CMD-check](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml)
 [![](https://www.r-pkg.org/badges/version/processx)](https://www.r-pkg.org/pkg/processx)
 [![CRAN RStudio mirror
 downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
-[![Coverage
-Status](https://img.shields.io/codecov/c/github/r-lib/processx/main.svg)](https://codecov.io/github/r-lib/processx?branch=main)
 [![Codecov test
 coverage](https://codecov.io/gh/r-lib/processx/branch/main/graph/badge.svg)](https://app.codecov.io/gh/r-lib/processx?branch=main)
-[![R-CMD-check](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 Tools to run system processes in the background, read their standard
@@ -99,7 +95,7 @@ px <- paste0(
 px
 ```
 
-    #> [1] "/private/var/folders/ph/fpcmzfd16rgbbk8mxvy9m2_h0000gn/T/RtmpbQqm3e/temp_libpathf8956f4207a1/processx/bin/px"
+    #> [1] "/Users/gaborcsardi/Library/R/arm64/4.1/library/processx/bin/px"
 
 ### Running an external process
 

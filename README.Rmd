@@ -17,12 +17,10 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 [![lifecycle](https://lifecycle.r-lib.org/articles/figures/lifecycle-stable.svg)](https://lifecycle.r-lib.org/articles/stages.html)
-[![R build status](https://github.com/r-lib/processx/workflows/R-CMD-check/badge.svg)](https://github.com/r-lib/processx/actions)
+[![R-CMD-check](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml)
 [![](https://www.r-pkg.org/badges/version/processx)](https://www.r-pkg.org/pkg/processx)
 [![CRAN RStudio mirror downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
-[![Coverage Status](https://img.shields.io/codecov/c/github/r-lib/processx/main.svg)](https://codecov.io/github/r-lib/processx?branch=main)
 [![Codecov test coverage](https://codecov.io/gh/r-lib/processx/branch/main/graph/badge.svg)](https://app.codecov.io/gh/r-lib/processx?branch=main)
-[![R-CMD-check](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 Tools to run system processes in the background,
