@@ -2,9 +2,7 @@ url: http://processx.r-lib.org
 
 authors:
   "Gábor Csárdi":
-    href: https://github.com/gaborcsardi
   "Winston Chang":
-    href: https://github.com/wch
 
 destination: docs
 
@@ -35,4 +33,11 @@ reference:
   contents:
   - base64_decode
   - base64_encode
-  
+
+template:
+  package: tidytemplate
+  bootstrap: 5
+
+  includes:
+    in_header: |
+      <script defer data-domain="{YOUR DOMAIN},all.tidyverse.org" src="https://plausible.io/js/plausible.js"></script>
