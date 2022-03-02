@@ -12,7 +12,7 @@ status](https://github.com/r-lib/processx/workflows/R-CMD-check/badge.svg)](http
 [![CRAN RStudio mirror
 downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
 [![Coverage
-Status](https://img.shields.io/codecov/c/github/r-lib/processx/master.svg)](https://codecov.io/github/r-lib/processx?branch=master)
+Status](https://img.shields.io/codecov/c/github/r-lib/processx/main.svg)](https://codecov.io/github/r-lib/processx?branch=main)
 [![Codecov test
 coverage](https://codecov.io/gh/r-lib/processx/branch/main/graph/badge.svg)](https://app.codecov.io/gh/r-lib/processx?branch=main)
 [![R-CMD-check](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml)
