@@ -1,6 +1,4 @@
 
-context("polling connections")
-
 test_that("poll a connection", {
 
   px <- get_tool("px")

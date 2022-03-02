@@ -1,6 +1,4 @@
 
-context("process")
-
 test_that("process works", {
 
   px <- get_tool("px")

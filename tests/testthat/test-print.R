@@ -1,6 +1,4 @@
 
-context("print")
-
 test_that("print", {
 
   px <- get_tool("px")

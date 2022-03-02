@@ -1,6 +1,4 @@
 
-context("waiting on processes")
-
 test_that("no deadlock when no stdout + wait", {
 
   skip("failure would freeze")

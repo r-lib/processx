@@ -1,6 +1,4 @@
 
-context("run")
-
 test_that("run can run", {
 
   px <- get_tool("px")

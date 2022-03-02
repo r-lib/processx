@@ -1,6 +1,4 @@
 
-context("errors.R")
-
 test_that("throw() is standalone", {
   stenv <- environment(throw)
   objs <- ls(stenv, all.names = TRUE)

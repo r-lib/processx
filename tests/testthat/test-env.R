@@ -1,6 +1,4 @@
 
-context("environment")
-
 test_that("inherit by default", {
 
   v <- basename(tempfile())

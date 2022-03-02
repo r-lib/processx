@@ -1,6 +1,4 @@
 
-context("Cleanup")
-
 test_that("process is cleaned up", {
 
   px <- get_tool("px")

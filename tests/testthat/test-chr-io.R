@@ -1,6 +1,4 @@
 
-context("character IO")
-
 test_that("Can read last line without trailing newline", {
 
   px <- get_tool("px")

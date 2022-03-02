@@ -1,6 +1,4 @@
 
-context("poll connection")
-
 test_that("poll connection", {
   px <- get_tool("px")
   p <- process$new(px, c("sleep", ".5", "outln", "foobar"))

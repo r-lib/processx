@@ -1,4 +1,3 @@
-context("utils")
 
 test_that("full_path gives correct values", {
 

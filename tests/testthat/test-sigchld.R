@@ -1,6 +1,4 @@
 
-context("SIGCHLD handler interference")
-
 test_that("is_alive()", {
   skip_other_platforms("unix")
   skip_on_cran()

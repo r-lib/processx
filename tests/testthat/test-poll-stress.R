@@ -1,6 +1,4 @@
 
-context("poll stress test")
-
 test_that("many processes", {
   skip_on_cran()
 

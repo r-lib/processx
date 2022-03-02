@@ -1,6 +1,4 @@
 
-context("kill_tree")
-
 test_that("tree ids are inherited", {
   skip_on_cran()
   skip_if_no_ps()

@@ -30,8 +30,9 @@ Suggests:
     curl,
     debugme,
     parallel,
-    testthat,
+    testthat (>= 3.0.0),
     withr
 Encoding: UTF-8
 RoxygenNote: 7.1.2
 Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3

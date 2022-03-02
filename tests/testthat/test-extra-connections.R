@@ -1,6 +1,4 @@
 
-context("extra connections")
-
 test_that("writing to extra connection", {
 
   skip_on_cran()

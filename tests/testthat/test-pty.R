@@ -1,6 +1,4 @@
 
-context("pty")
-
 test_that("fails in windows", {
   skip_other_platforms("windows")
   expect_error(process$new("R", pty = TRUE), "only implemented on Unix",

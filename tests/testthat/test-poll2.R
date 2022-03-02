@@ -1,6 +1,4 @@
 
-context("poll multiple processes")
-
 test_that("single process", {
 
   px <- get_tool("px")
