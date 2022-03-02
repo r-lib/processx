@@ -99,7 +99,7 @@ px <- paste0(
 px
 ```
 
-    #> [1] "/private/var/folders/ph/fpcmzfd16rgbbk8mxvy9m2_h0000gn/T/RtmpmzYdS1/temp_libpathf96a5ca6fdd9/processx/bin/px"
+    #> [1] "/private/var/folders/ph/fpcmzfd16rgbbk8mxvy9m2_h0000gn/T/RtmpbQqm3e/temp_libpathf8956f4207a1/processx/bin/px"
 
 ### Running an external process
 
@@ -358,8 +358,8 @@ gc()
 ```
 
     #>           used (Mb) gc trigger (Mb) limit (Mb) max used (Mb)
-    #> Ncells  564211 30.2    1258760 67.3         NA   706542 37.8
-    #> Vcells 1053516  8.1    8388608 64.0      16384  1903149 14.6
+    #> Ncells  564211 30.2    1258764 67.3         NA   706534 37.8
+    #> Vcells 1053517  8.1    8388608 64.0      16384  1903207 14.6
 
 Here, the direct call to the garbage collector kills the `sleep` process
 as well. See the `cleanup` option if you want to avoid this behavior.
@@ -552,14 +552,14 @@ p$is_alive()
 Sys.time()
 ```
 
-    #> [1] "2022-03-02 11:00:36 CET"
+    #> [1] "2022-03-02 11:07:37 CET"
 
 ``` r
 p$wait()
 Sys.time()
 ```
 
-    #> [1] "2022-03-02 11:00:38 CET"
+    #> [1] "2022-03-02 11:07:39 CET"
 
 It is safe to call `wait()` multiple times:
 
@@ -637,9 +637,9 @@ p2$get_exit_status()
 
 ## Code of Conduct
 
-Please note that this project is released with a [Contributor Code of
-Conduct](https://processx.r-lib.org/CODE_OF_CONDUCT.html). By
-participating in this project you agree to abide by its terms.
+Please note that the processx project is released with a [Contributor
+Code of Conduct](http://processx.r-lib.org/CODE_OF_CONDUCT.html). By
+contributing to this project, you agree to abide by its terms.
 
 ## License
 
