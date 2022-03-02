@@ -13,6 +13,9 @@ status](https://github.com/r-lib/processx/workflows/R-CMD-check/badge.svg)](http
 downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
 [![Coverage
 Status](https://img.shields.io/codecov/c/github/r-lib/processx/master.svg)](https://codecov.io/github/r-lib/processx?branch=master)
+[![Codecov test
+coverage](https://codecov.io/gh/r-lib/processx/branch/main/graph/badge.svg)](https://app.codecov.io/gh/r-lib/processx?branch=main)
+[![R-CMD-check](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 Tools to run system processes in the background, read their standard
@@ -22,50 +25,50 @@ processx can poll the standard output and error of a single process, or
 multiple processes, using the operating system’s polling and waiting
 facilities, with a timeout.
 
------
+------------------------------------------------------------------------
 
-  - [Features](#features)
-  - [Installation](#installation)
-  - [Usage](#usage)
-      - [Running an external process](#running-an-external-process)
-          - [Errors](#errors)
-          - [Showing output](#showing-output)
-          - [Spinner](#spinner)
-          - [Callbacks for I/O](#callbacks-for-io)
-      - [Managing external processes](#managing-external-processes)
-          - [Starting processes](#starting-processes)
-          - [Killing a process](#killing-a-process)
-          - [Standard output and error](#standard-output-and-error)
-          - [End of output](#end-of-output)
-          - [Polling the standard output and
+-   [Features](#features)
+-   [Installation](#installation)
+-   [Usage](#usage)
+    -   [Running an external process](#running-an-external-process)
+        -   [Errors](#errors)
+        -   [Showing output](#showing-output)
+        -   [Spinner](#spinner)
+        -   [Callbacks for I/O](#callbacks-for-io)
+    -   [Managing external processes](#managing-external-processes)
+        -   [Starting processes](#starting-processes)
+        -   [Killing a process](#killing-a-process)
+        -   [Standard output and error](#standard-output-and-error)
+        -   [End of output](#end-of-output)
+        -   [Polling the standard output and
             error](#polling-the-standard-output-and-error)
-          - [Polling multiple processes](#polling-multiple-processes)
-          - [Waiting on a process](#waiting-on-a-process)
-          - [Exit statuses](#exit-statuses)
-          - [Mixing processx and the parallel base R
+        -   [Polling multiple processes](#polling-multiple-processes)
+        -   [Waiting on a process](#waiting-on-a-process)
+        -   [Exit statuses](#exit-statuses)
+        -   [Mixing processx and the parallel base R
             package](#mixing-processx-and-the-parallel-base-r-package)
-          - [Errors](#errors-1)
-  - [Related tools](#related-tools)
-  - [Code of Conduct](#code-of-conduct)
-  - [License](#license)
+        -   [Errors](#errors-1)
+-   [Related tools](#related-tools)
+-   [Code of Conduct](#code-of-conduct)
+-   [License](#license)
 
 ## Features
 
-  - Start system processes in the background and find their process id.
-  - Read the standard output and error, using non-blocking connections
-  - Poll the standard output and error connections of a single process
+-   Start system processes in the background and find their process id.
+-   Read the standard output and error, using non-blocking connections
+-   Poll the standard output and error connections of a single process
     or multiple processes.
-  - Write to the standard input of background processes.
-  - Check if a background process is running.
-  - Wait on a background process, or multiple processes, with a timeout.
-  - Get the exit status of a background process, if it has already
+-   Write to the standard input of background processes.
+-   Check if a background process is running.
+-   Wait on a background process, or multiple processes, with a timeout.
+-   Get the exit status of a background process, if it has already
     finished.
-  - Kill background processes.
-  - Kill background process, when its associated object is garbage
+-   Kill background processes.
+-   Kill background process, when its associated object is garbage
     collected.
-  - Kill background processes and all their child processes.
-  - Works on Linux, macOS and Windows.
-  - Lightweight, it only depends on the also lightweight R6 and ps
+-   Kill background processes and all their child processes.
+-   Works on Linux, macOS and Windows.
+-   Lightweight, it only depends on the also lightweight R6 and ps
     packages.
 
 ## Installation
@@ -96,7 +99,7 @@ px <- paste0(
 px
 ```
 
-    #> [1] "/private/var/folders/59/0gkmw1yj2w7bf2dfc3jznv5w0000gn/T/Rtmp7ipFsS/temp_libpathb89a55e5c2f9/processx/bin/px"
+    #> [1] "/private/var/folders/ph/fpcmzfd16rgbbk8mxvy9m2_h0000gn/T/RtmpmzYdS1/temp_libpathf96a5ca6fdd9/processx/bin/px"
 
 ### Running an external process
 
@@ -232,7 +235,7 @@ out2
     #>  [1] "CODE_OF_CONDUCT.md" "DESCRIPTION"        "LICENSE"           
     #>  [4] "LICENSE.md"         "Makefile"           "NAMESPACE"         
     #>  [7] "NEWS.md"            "R"                  "README.Rmd"        
-    #> [10] "README.html"        "README.md"          "_pkgdown.yml"      
+    #> [10] "README.md"          "_pkgdown.yml"       "codecov.yml"       
     #> [13] "inst"               "man"                "processx.Rproj"    
     #> [16] "src"                "tests"
 
@@ -354,9 +357,9 @@ rm(p)
 gc()
 ```
 
-    #>          used (Mb) gc trigger (Mb) limit (Mb) max used (Mb)
-    #> Ncells 493821 26.4    1069461 57.2         NA   682911 36.5
-    #> Vcells 928674  7.1    8388608 64.0      16384  1883216 14.4
+    #>           used (Mb) gc trigger (Mb) limit (Mb) max used (Mb)
+    #> Ncells  564211 30.2    1258760 67.3         NA   706542 37.8
+    #> Vcells 1053516  8.1    8388608 64.0      16384  1903149 14.6
 
 Here, the direct call to the garbage collector kills the `sleep` process
 as well. See the `cleanup` option if you want to avoid this behavior.
@@ -380,7 +383,7 @@ the connection and the buffer is freed.
 
 > **Always make sure that you read out the standard output and/or
 > error** **of the pipes, otherwise the background process will stop
-> running\!**
+> running!**
 
 If you don’t need the standard output or error any more, you can also
 close it, like this:
@@ -428,13 +431,13 @@ The `poll_io()` method waits for data on the standard output and/or
 error of a process. It will return if any of the following events
 happen:
 
-  - data is available on the standard output of the process (assuming
+-   data is available on the standard output of the process (assuming
     there is a connection to the standard output).
-  - data is available on the standard error of the process (assuming the
+-   data is available on the standard error of the process (assuming the
     is a connection to the standard error).
-  - The process has finished and the standard output and/or error
+-   The process has finished and the standard output and/or error
     connections were closed on the other end.
-  - The specified timeout period expired.
+-   The specified timeout period expired.
 
 For example the following code waits about a second for output.
 
@@ -549,14 +552,14 @@ p$is_alive()
 Sys.time()
 ```
 
-    #> [1] "2021-03-23 15:08:37 CET"
+    #> [1] "2022-03-02 11:00:36 CET"
 
 ``` r
 p$wait()
 Sys.time()
 ```
 
-    #> [1] "2021-03-23 15:08:39 CET"
+    #> [1] "2022-03-02 11:00:38 CET"
 
 It is safe to call `wait()` multiple times:
 
@@ -610,7 +613,7 @@ started running.
 p <- process$new("nonexistant-command-for-sure")
 ```
 
-    #> Error in rethrow_call(c_processx_exec, command, c(command, args), pty, : cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:610 (processx_exec)
+    #> Error in rethrow_call(c_processx_exec, command, c(command, args), pty, : cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:613 (processx_exec)
 
 ``` r
 p2 <- process$new(px, c("sleep", "1", "command-does-not-exist"))
@@ -622,13 +625,13 @@ p2$get_exit_status()
 
 ## Related tools
 
-  - The [`ps` package](https://ps.r-lib.org/) can query, list,
+-   The [`ps` package](https://ps.r-lib.org/) can query, list,
     manipulate all system processes (not just subprocesses), and
     processx uses it internally for some of its functionality. You can
     also convert a `processx::process` object to a `ps::ps_handle` with
     the `as_ps_handle()` method.
 
-  - The [`callr` package](https://callr.r-lib.org/) uses processx to
+-   The [`callr` package](https://callr.r-lib.org/) uses processx to
     start another R process, and run R code in it, in the foreground or
     background.
 
