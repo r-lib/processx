@@ -37,6 +37,7 @@ reference:
 template:
   package: tidytemplate
   bootstrap: 5
+  template: tidytemplate
 
   includes:
     in_header: |
