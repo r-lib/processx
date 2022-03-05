@@ -1,5 +1,12 @@
 url: http://processx.r-lib.org
 
+template:
+  package: tidytemplate
+  bootstrap: 5
+  includes:
+    in_header: |
+      <script defer data-domain="processx.r-lib.org,all.tidyverse.org" src="https://plausible.io/js/plausible.js"></script>
+
 authors:
   "Gábor Csárdi":
   "Winston Chang":
