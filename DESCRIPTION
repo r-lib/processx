@@ -35,3 +35,4 @@ Suggests:
     testthat,
     withr
 Encoding: UTF-8
+Config/Needs/website: tidyverse/tidytemplate
