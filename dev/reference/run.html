@@ -262,7 +262,7 @@ of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="fu">run</span><span class="op">(</span><span class="st">"sleep"</span>, <span class="st">"10"</span>, timeout <span class="op">=</span> <span class="fl">1</span>, error_on_status <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    user  system elapsed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   0.011   0.004   0.357 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   0.004   0.013   0.428 </span>
 <span class="r-in"><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
 <span class="r-in">  <span class="fu">run</span><span class="op">(</span></span>
 <span class="r-in">    <span class="st">"sh"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"-c"</span>, <span class="st">"for i in 1 2 3 4 5; do echo $i; sleep 1; done"</span><span class="op">)</span>,</span>
@@ -270,7 +270,7 @@ of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
 <span class="r-in">  <span class="op">)</span></span>
 <span class="r-in"><span class="op">)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    user  system elapsed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   0.006   0.009   1.359 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   0.001   0.013   1.427 </span>
 <span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
 <span class="r-in"><span class="co"># This works on Windows systems, if the ping command is available</span></span>
 <span class="r-in"><span class="fu">run</span><span class="op">(</span><span class="st">"ping"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"-n"</span>, <span class="st">"1"</span>, <span class="st">"127.0.0.1"</span><span class="op">)</span><span class="op">)</span></span>
