@@ -17,6 +17,7 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
      https://man7.org/linux/man-pages/man7/signal-safety.7.html */
   if (pthread_self() != processx__main_thread) {
     pthread_kill(processx__main_thread, SIGCHLD);
+    return;
   }
 
   /* This should really not happem, but just in case. */
