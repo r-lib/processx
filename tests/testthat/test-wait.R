@@ -48,6 +48,7 @@ test_that("no fd leak on unix", {
   skip_on_cran()
   skip_on_os("solaris")
   if (is_windows()) return(expect_true(TRUE))
+  skip_on_covr()
 
   # We run this test in a subprocess, so we can send an interrupt to it
   # We start a subprocess (within the subprocess) and wait on it.
