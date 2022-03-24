@@ -164,67 +164,6 @@ test_that("cleanup_tree option", {
   expect_false(ps::ps_is_running(ps))
 })
 
-
-test_that("run cleanup", {
-  ## This currently only works on macOS
-  if (Sys.info()[["sysname"]] != "Darwin") {
-    expect_true(TRUE)
-    return()
-  }
-  skip_on_cran()
-
-  ## This is cumbesome to test... here is what we are doing.
-  ## We run a grandchild process in the background, i.e. it will be
-  ## orphaned. nohup will detach the process from the terminal, we
-  ## need that, otherwise `run()` will wait for the shell to finish.
-  ## We orphaned process writes its pid to a file, so we can read that
-  ## back to see its process id.
-  ## We also need to create a random file and run that, so that we
-  ## can be sure that this process is not runing after the cleanup.
-  ## Otherwise pid reuse might create the same pid, but then this pid
-  ## will have a different command line.
-
-  tmp <- tempfile()
-  pid <- paste0(tmp, ".pid")
-  btmp <- basename(tmp)
-  bpid <- basename(pid)
-  dtmp <- dirname(tmp)
-  on.exit(unlink(c(tmp, pid)), add = TRUE)
-
-  ## The sleep at the end gives a better chance for the grandchild
-  ## process to write the pid before it is killed by the GC finalizer
-  ## on the processx process.
-
-  cat(sprintf("#! /bin/sh\necho $$ >%s\nsleep 10\n", bpid), file = tmp)
-  Sys.chmod(tmp, "0777")
-  run("sh",
-      c("--norc", "-c",
-        paste0("(nohup ", "./", btmp, " </dev/null &>/dev/null &); sleep 0.5")),
-      wd = dtmp, cleanup_tree = TRUE)
-
-  ## We need to wait until the process writes it pid into `pid`
-
-  deadline <- Sys.time() + 3
-  while ((!file.exists(pid) || !length(readLines(pid))) &&
-         Sys.time() < deadline) Sys.sleep(0.05)
-  expect_true(Sys.time() < deadline)
-
-  ## Make sure the finalizer is called
-
-  gc(); gc()
-
-  ## Now either the pid should not exist, or, in the unlikely event
-  ## when it does because of pid reuse, it should have a different command
-  ## line.
-
-  tryCatch({
-    ps <- ps::ps_handle(as.integer(readLines(pid)))
-    cmd <- ps::ps_cmdline(ps)
-    expect_false(any(grepl(btmp, cmd))) },
-    no_such_process = function(e) expect_true(TRUE)
-  )
-})
-
 test_that("cleanup_tree stress test", {
   skip_on_cran()
   skip_if_no_ps()
