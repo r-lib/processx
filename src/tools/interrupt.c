@@ -20,7 +20,7 @@ int main(int argc, const char **argv) {
 
   printf("Free console\n");
   bret = FreeConsole();
-  if (!bret) return GetLastError();
+  // This might fail if we have no console, and that is OK.
 
   printf("Attach console\n");
   bret = AttachConsole(pid);
