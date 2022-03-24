@@ -97,7 +97,9 @@ test_that("stderr_to_stdout", {
 test_that("condition on interrupt", {
   skip_if_no_ps()
   skip_on_cran()
-  skip_on_appveyor() # TODO: why does this fail?
+  if (is_windows() && Sys.getenv("_R_CHECK_PACKAGE_NAME_", "") != "") {
+    skip("Fails in Windows R CMD check")
+  }
 
   px <- get_tool("px")
   cnd <- tryCatch(
