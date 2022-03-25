@@ -89,6 +89,12 @@ process_initialize <- function(self, private, command, args,
   args <- enc2path(args)
 
   wd <- wd %||% getwd()
+  if (!is.null(wd)) {
+    # check is needed if the current working directory does not exist
+    # `mustWork = FALSE` is needed if the supplied wd does not exist
+    wd <- enc2path(normalizePath(wd, mustWork = FALSE))
+  }
+
   private$command <- command
   private$args <- args
   private$cleanup <- cleanup
