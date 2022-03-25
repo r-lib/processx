@@ -1,5 +1,5 @@
 
-# processx (development version)
+# processx 3.5.3
 
 * `run()` now sets `stderr` to `NULL` in the result (instead of an empty
   string), if the standard error was redirected to the standard output.
