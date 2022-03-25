@@ -20,6 +20,14 @@ arguments. To work around these limitations you need to start a
 }\if{html}{\out{</div>}}
 
 This works even if \code{bat_file} contains whitespace characters.
+For more information about this, see this processx issue:
+https://github.com/r-lib/processx/issues/301
+
+The detailed parsing rules are at
+https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/cmd
+
+A very good practical guide is at
+https://ss64.com/nt/syntax-esc.html
 }
 
 \section{Polling}{

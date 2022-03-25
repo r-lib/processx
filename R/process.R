@@ -34,6 +34,14 @@ dummy_r6 <- function() R6::R6Class
 #' ```
 #'
 #' This works even if `bat_file` contains whitespace characters.
+#' For more information about this, see this processx issue:
+#' https://github.com/r-lib/processx/issues/301
+#'
+#' The detailed parsing rules are at
+#' https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/cmd
+#'
+#' A very good practical guide is at
+#' https://ss64.com/nt/syntax-esc.html
 #'
 #' @section Polling:
 #' The `poll_io()` function polls the standard output and standard
