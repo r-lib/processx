@@ -100,14 +100,16 @@ test_that("Passing connection to stdout", {
   # file first
   tmp <- tempfile()
   con <- conn_create_file(tmp, write = TRUE)
+  on.exit(try(close(con), silent = TRUE), add = TRUE)
   cmd <- c(get_tool("px"), c("outln", "hello", "outln", "world"))
 
   p <- process$new(cmd[1], cmd[-1], stdout = con)
   on.exit(p$kill(), add = TRUE)
-  close(con)
 
   p$wait(3000)
   expect_false(p$is_alive())
+  # Need to close here, otherwise Windows cannot read it
+  close(con)
 
   out <- readLines(tmp)
   expect_equal(out, c("hello", "world"))
@@ -119,15 +121,13 @@ test_that("Passing connection to stdout", {
 
   p2 <- process$new(cmd[1], cmd[-1], stdout = pipe[[2]])
   on.exit(p2$kill(), add = TRUE)
-  close(pipe[[2]])
 
   ready <- poll(list(pipe[[1]]), 3000)
   expect_equal(ready[[1]], "ready")
   lines <- conn_read_lines(pipe[[1]])
-  expect_equal(lines[1], "hello")
-
-  ready <- poll(list(pipe[[1]]), 3000)
-  expect_equal(ready[[1]], "ready")
+  # sometimes it takes two reads to read something.
+  # we really should have a better way to do this....
+  lines <- c(lines, conn_read_lines(pipe[[1]]))
   lines <- c(lines, conn_read_lines(pipe[[1]]))
   expect_equal(lines, c("hello", "world"))
   p2$wait(3000)
@@ -162,10 +162,9 @@ test_that("Passing connection to stderr", {
   ready <- poll(list(pipe[[1]]), 3000)
   expect_equal(ready[[1]], "ready")
   lines <- conn_read_lines(pipe[[1]])
-  expect_equal(lines[1], "hello")
-
-  ready <- poll(list(pipe[[1]]), 3000)
-  expect_equal(ready[[1]], "ready")
+  # sometimes it takes two reads to read something.
+  # we really should have a better way to do this....
+  lines <- c(lines, conn_read_lines(pipe[[1]]))
   lines <- c(lines, conn_read_lines(pipe[[1]]))
   expect_equal(lines, c("hello", "world"))
   p2$wait(3000)
