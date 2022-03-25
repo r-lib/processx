@@ -6,6 +6,10 @@
   This also fixes an error when interrupting a `run()` with a redirected
   standard error.
 
+* processx now does not fail if the current working directory contains
+  a non-ASCII character on Windows, and `getwd()` returns a short path
+  for it (#313).
+
 # processx 3.5.2
 
 * `run()` now does not truncate stdout and stderr when the output
@@ -55,7 +59,7 @@
 
 * processx now works correctly for non-ASCII commands and arguments passed
   in the native encoding, on Windows (#261, #262, #263, #264).
-  
+
 * Providing multiple environment variables now works on windows (#267).
 
 # processx 3.4.3
