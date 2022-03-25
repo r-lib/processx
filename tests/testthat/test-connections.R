@@ -125,10 +125,12 @@ test_that("Passing connection to stdout", {
   ready <- poll(list(pipe[[1]]), 3000)
   expect_equal(ready[[1]], "ready")
   lines <- conn_read_lines(pipe[[1]])
-  # sometimes it takes two reads to read something.
-  # we really should have a better way to do this....
-  lines <- c(lines, conn_read_lines(pipe[[1]]))
-  lines <- c(lines, conn_read_lines(pipe[[1]]))
+  # sometimes it takes more tried to read everything.
+  deadline <- Sys.time() + as.difftime(3, units = "secs")
+  while (Sys.time() < deadline && length(lines) < 2) {
+    poll(list(pipe[[1]]), 1000)
+    lines <- c(lines, conn_read_lines(pipe[[1]]))
+  }
   expect_equal(lines, c("hello", "world"))
   p2$wait(3000)
   expect_false(p2$is_alive())
@@ -162,10 +164,12 @@ test_that("Passing connection to stderr", {
   ready <- poll(list(pipe[[1]]), 3000)
   expect_equal(ready[[1]], "ready")
   lines <- conn_read_lines(pipe[[1]])
-  # sometimes it takes two reads to read something.
-  # we really should have a better way to do this....
-  lines <- c(lines, conn_read_lines(pipe[[1]]))
-  lines <- c(lines, conn_read_lines(pipe[[1]]))
+  # sometimes it takes more tried to read everything.
+  deadline <- Sys.time() + as.difftime(3, units = "secs")
+  while (Sys.time() < deadline && length(lines) < 2) {
+    poll(list(pipe[[1]]), 1000)
+    lines <- c(lines, conn_read_lines(pipe[[1]]))
+  }
   expect_equal(lines, c("hello", "world"))
   p2$wait(3000)
   expect_false(p2$is_alive())
