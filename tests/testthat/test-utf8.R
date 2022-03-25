@@ -82,11 +82,15 @@ test_that("native args are converted to UTF-8", {
 # TODO: more UTF-8 output
 
 test_that("UTF-8 in stdout", {
-  out <- run(get_tool("px"), c("out", "\u00fa\u00e1\u00f6"))
+  skip_on_cran()
+  # "px" is not unicode, so we need to specify encoding = "latin1"
+  out <- run(get_tool("px"), c("out", "\u00fa\u00e1\u00f6"), encoding = "latin1")
   expect_equal(out$stdout, "\u00fa\u00e1\u00f6")
 })
 
 test_that("UTF-8 in stderr", {
-  out <- run(get_tool("px"), c("err", "\u00fa\u00e1\u00f6"))
+  skip_on_cran()
+  # "px" is not unicode, so we need to specify encoding = "latin1"
+  out <- run(get_tool("px"), c("err", "\u00fa\u00e1\u00f6"), encoding = "latin1")
   expect_equal(out$stderr, "\u00fa\u00e1\u00f6")
 })
