@@ -197,7 +197,10 @@ RGui on Windows, then an error is thrown.
 \item{\code{stdout}}{What to do with the standard output. Possible values:
 \itemize{
 \item \code{NULL}: discard it;
-\item a string, redirect it to this file;
+\item A string, redirect it to this file.
+Note that if you specify a relative path, it will be relative to
+the current working directory, even if you specify another
+directory in the \code{wd} argument. (See issue 324.)
 \item \code{"|"}: create a connection for it.
 \item \code{""} (empty string): inherit it from the main R process. If the
 main R process does not have a standard output stream, e.g. in
@@ -206,9 +209,12 @@ RGui on Windows, then an error is thrown.
 
 \item{\code{stderr}}{What to do with the standard error. Possible values:
 \itemize{
-\item \code{NULL}: discard it;
-\item a string, redirect it to this file;
-\item \code{"|"}: create a connection for it;
+\item \code{NULL}: discard it.
+\item A string, redirect it to this file.
+Note that if you specify a relative path, it will be relative to
+the current working directory, even if you specify another
+directory in the \code{wd} argument. (See issue 324.)
+\item \code{"|"}: create a connection for it.
 \item \code{"2>&1"}: redirect it to the same connection (i.e. pipe or file)
 as \code{stdout}. \code{"2>&1"} is a way to keep standard output and error
 correctly interleaved.

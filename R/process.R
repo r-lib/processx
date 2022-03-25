@@ -122,15 +122,21 @@ process <- R6::R6Class(
     #'     RGui on Windows, then an error is thrown.
     #' @param stdout  What to do with the standard output. Possible values:
     #'   * `NULL`: discard it;
-    #'   * a string, redirect it to this file;
+    #'   * A string, redirect it to this file.
+    #'     Note that if you specify a relative path, it will be relative to
+    #'     the current working directory, even if you specify another
+    #'     directory in the `wd` argument. (See issue 324.)
     #'   * `"|"`: create a connection for it.
     #'   * `""` (empty string): inherit it from the main R process. If the
     #'     main R process does not have a standard output stream, e.g. in
     #'     RGui on Windows, then an error is thrown.
     #' @param stderr What to do with the standard error. Possible values:
-    #'   * `NULL`: discard it;
-    #'   * a string, redirect it to this file;
-    #'   * `"|"`: create a connection for it;
+    #'   * `NULL`: discard it.
+    #'   * A string, redirect it to this file.
+    #'     Note that if you specify a relative path, it will be relative to
+    #'     the current working directory, even if you specify another
+    #'     directory in the `wd` argument. (See issue 324.)
+    #'   * `"|"`: create a connection for it.
     #'   * `"2>&1"`: redirect it to the same connection (i.e. pipe or file)
     #'     as `stdout`. `"2>&1"` is a way to keep standard output and error
     #'     correctly interleaved.
