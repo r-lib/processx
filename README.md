@@ -634,7 +634,7 @@ p2$get_exit_status()
 ## Code of Conduct
 
 Please note that the processx project is released with a [Contributor
-Code of Conduct](http://processx.r-lib.org/CODE_OF_CONDUCT.html). By
+Code of Conduct](https://processx.r-lib.org/CODE_OF_CONDUCT.html). By
 contributing to this project, you agree to abide by its terms.
 
 ## License
