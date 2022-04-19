@@ -154,7 +154,7 @@ err <- local({
 
   new_error <- function(..., call. = TRUE, domain = NA) {
     cond <- new_cond(..., call. = call., domain = domain)
-    class(cond) <- c("rlib_error_2_0", "rlib_error", "error", "condition")
+    class(cond) <- c("rlib_error_3_0", "rlib_error", "error", "condition")
     cond
   }
 
@@ -314,7 +314,7 @@ err <- local({
         e$`_nframe` <- nframe
         e$call <- call
         if (inherits(e, "simpleError")) {
-          class(e) <- c("c_error", "rlib_error_2_0", "rlib_error", "error", "condition")
+          class(e) <- c("c_error", "rlib_error_3_0", "rlib_error", "error", "condition")
         }
         e$`_ignore` <- list(c(nframe + 1L, sys.nframe() + 1L))
         throw(e)
@@ -345,7 +345,7 @@ err <- local({
         e$`_nframe` <- nframe
         e$call <- call
         if (inherits(e, "simpleError")) {
-          class(e) <- c("c_error", "rlib_error_2_0", "rlib_error", "error", "condition")
+          class(e) <- c("c_error", "rlib_error_3_0", "rlib_error", "error", "condition")
         }
         e$`_ignore` <- list(c(nframe + 1L, sys.nframe() + 1L))
         throw(e)
@@ -434,7 +434,7 @@ err <- local({
       list(calls = calls, parents = parents, envs = envs, topenvs = topenvs,
            indices = indices, nframes = nframes, messages = messages,
            ignore = ignore, classes = classes, pids = pids),
-      class = c("rlib_trace_2_0", "rlib_trace"))
+      class = c("rlib_trace_3_0", "rlib_trace"))
   }
 
   env_label <- function(env) {
@@ -522,14 +522,14 @@ err <- local({
     invisible(x)
   }
 
-  format_rlib_error_2_0 <- function(x, ...) {
+  format_rlib_error_3_0 <- function(x, ...) {
     c(format_this(x, ...),
       format_parents(x, ...))
   }
 
-  format_cond <- format_rlib_error_2_0
+  format_cond <- format_rlib_error_3_0
 
-  print_rlib_error_2_0 <- function(x, ...) {
+  print_rlib_error_3_0 <- function(x, ...) {
     print_this(x, ...)
     print_parents(x, ...)
   }
@@ -544,7 +544,7 @@ err <- local({
     callstr
   }
 
-  format_rlib_trace_2_0 <- function(x, ...) {
+  format_rlib_trace_3_0 <- function(x, ...) {
     cl <- paste0("Stack trace:")
     title <- c("", style_trace_title(cl))
 
@@ -583,10 +583,10 @@ err <- local({
     c(title, body)
   }
 
-  format_trace <- format_rlib_trace_2_0
+  format_trace <- format_rlib_trace_3_0
 
-  print_rlib_trace_2_0 <- function(x, ...) {
-    cat(format_rlib_trace_2_0(x, ...), sep = "\n")
+  print_rlib_trace_3_0 <- function(x, ...) {
+    cat(format_rlib_trace_3_0(x, ...), sep = "\n")
     invisible(x)
   }
 
@@ -610,8 +610,8 @@ err <- local({
   onload_hook <- function() {
     reg_env <- Sys.getenv("R_LIB_ERROR_REGISTER_PRINT_METHODS", "TRUE")
     if (tolower(reg_env) != "false") {
-      registerS3method("print", "rlib_error_2_0", print_rlib_error_2_0, baseenv())
-      registerS3method("print", "rlib_trace_2_0", print_rlib_trace_2_0, baseenv())
+      registerS3method("print", "rlib_error_3_0", print_rlib_error_3_0, baseenv())
+      registerS3method("print", "rlib_trace_3_0", print_rlib_trace_3_0, baseenv())
     }
   }
 
