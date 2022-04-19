@@ -185,17 +185,7 @@ err <- local({
       cond$call <- NULL
     }
 
-    # Eventually the nframe numbers will help us print a better trace
-    # When a child condition is created, the child will use the parent
-    # error object to make note of its own nframe. Here we copy that back
-    # to the parent.
-    if (is.null(cond$`_nframe`)) cond$`_nframe` <- sys.nframe()
-    if (!is.null(parent)) {
-      cond$parent <- parent
-      cond$call <- cond$parent$`_childcall`
-      cond$`_nframe` <- cond$parent$`_childframe`
-      cond$`_ignore` <- cond$parent$`_childignore`
-    }
+    cond$parent <- parent
 
     # We can set an option to always add the trace to the thrown
     # conditions. This is useful for example in context that always catch
@@ -311,7 +301,6 @@ err <- local({
       # do.call to work around an R CMD check issue
       do.call(".Call", list(.NAME, ...)),
       error = function(e) {
-        e$`_nframe` <- nframe
         e$call <- call
         if (inherits(e, "simpleError")) {
           class(e) <- c("c_error", "rlib_error_3_0", "rlib_error", "error", "condition")
@@ -342,7 +331,6 @@ err <- local({
     withCallingHandlers(
       package_env$call_with_cleanup(.NAME, ...),
       error = function(e) {
-        e$`_nframe` <- nframe
         e$call <- call
         if (inherits(e, "simpleError")) {
           class(e) <- c("c_error", "rlib_error_3_0", "rlib_error", "error", "condition")
@@ -378,46 +366,15 @@ err <- local({
     topenvs <- lapply(
       seq_along(frames),
       function(i) env_label(topenvx(environment(sys.function(i)))))
-    nframes <- if (!is.null(cond$`_nframe`)) cond$`_nframe` else sys.parent()
     messages <- list(conditionMessage(cond))
     ignore <- cond$`_ignore`
     classes <- class(cond)
     pids <- rep(cond$`_pid` %||% Sys.getpid(), length(calls))
 
-    if (!embed) calls <- as.list(format_calls(calls, topenvs, nframes))
-
-    if (is.null(cond$parent)) {
-      # Nothing to do, no parent
-
-    } else if (is.null(cond$parent$trace) ||
-               !inherits(cond$parent, "rlib_error_2_0")) {
-      # If the parent does not have a trace, that means that it is using
-      # the same trace as us. We ignore traces from non-r-lib errors.
-      # E.g. rlang errors have a trace, but we do not use that.
-      parent <- cond
-      while (!is.null(parent <- parent$parent)) {
-        nframes <- c(nframes, parent$`_nframe`)
-        messages <- c(messages, list(conditionMessage(parent)))
-        ignore <- c(ignore, parent$`_ignore`)
-      }
-
-    } else {
-      # If it has a trace, that means that it is coming from another
-      # process or top level evaluation. In this case we'll merge the two
-      # traces.
-      pt <- cond$parent$trace
-      parents <- c(parents, pt$parents + length(calls))
-      nframes <- c(nframes, pt$nframes + length(calls))
-      ignore <- c(ignore, lapply(pt$ignore, function(x) x + length(calls)))
-      envs <- c(envs, pt$envs)
-      topenvs <- c(topenvs, pt$topenvs)
-      calls <- c(calls, pt$calls)
-      messages <- c(messages, pt$messages)
-      pids <- c(pids, pt$pids)
-    }
+    if (!embed) calls <- as.list(format_calls(calls, topenvs))
 
     cond$trace <- new_trace(
-      calls, parents, envs, topenvs, nframes, messages, ignore, classes,
+      calls, parents, envs, topenvs, messages, ignore, classes,
       pids)
 
     cond
@@ -427,12 +384,12 @@ err <- local({
     topenv(x, matchThisEnv = err_env)
   }
 
-  new_trace <- function (calls, parents, envs, topenvs, nframes, messages,
+  new_trace <- function (calls, parents, envs, topenvs, messages,
                          ignore, classes, pids) {
     indices <- seq_along(calls)
     structure(
       list(calls = calls, parents = parents, envs = envs, topenvs = topenvs,
-           indices = indices, nframes = nframes, messages = messages,
+           indices = indices, messages = messages,
            ignore = ignore, classes = classes, pids = pids),
       class = c("rlib_trace_3_0", "rlib_trace"))
   }
@@ -534,13 +491,9 @@ err <- local({
     print_parents(x, ...)
   }
 
-  format_calls <- function(calls, topenv, nframes, messages = NULL) {
+  format_calls <- function(calls, topenv, messages = NULL) {
     calls <- map2(calls, topenv, namespace_calls)
     callstr <- vapply(calls, format_call_src, character(1))
-    if (!is.null(messages)) {
-      callstr[nframes] <-
-        paste0(callstr[nframes], "\n", style_error_msg(messages), "\n")
-    }
     callstr
   }
 
@@ -549,7 +502,7 @@ err <- local({
     title <- c("", style_trace_title(cl))
 
     callstr <- enumerate(
-      format_calls(x$calls, x$topenv, x$nframes, x$messages)
+      format_calls(x$calls, x$topenv, x$messages)
     )
 
     # Ignore what we were told to ignore
@@ -557,13 +510,6 @@ err <- local({
     for (iv in x$ignore) {
       if (iv[2] == Inf) iv[2] <- length(callstr)
       ign <- c(ign, iv[1]:iv[2])
-    }
-
-    # Plus always ignore the tail. This is not always good for
-    # catch_rethrow(), but should be good otherwise
-    last_err_frame <- x$nframes[length(x$nframes)]
-    if (!is.na(last_err_frame) && last_err_frame < length(callstr)) {
-      ign <- c(ign, (last_err_frame+1):length(callstr))
     }
 
     ign <- unique(ign)
