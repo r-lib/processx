@@ -204,10 +204,6 @@ err <- local({
     always_trace <- isTRUE(getOption("rlib_error_always_trace"))
     if (!always_trace) signalCondition(cond)
 
-    # If this is not an error, then we'll just return here. This allows
-    # throwing interrupt conditions for example, with the same UI.
-    if (! inherits(cond, "error")) return(invisible())
-
     if (is.null(cond$`_pid`)) cond$`_pid` <- Sys.getpid()
     if (is.null(cond$`_timestamp`)) cond$`_timestamp` <- Sys.time()
 
@@ -231,6 +227,10 @@ err <- local({
 
     # If we always wanted a trace, then we signal the condition here
     if (always_trace) signalCondition(cond)
+
+    # If this is not an error, then we'll just return here. This allows
+    # throwing interrupt conditions for example, with the same UI.
+    if (! inherits(cond, "error")) return(invisible())
 
     # Top-level handler, this is intended for testing only for now,
     # and its design might change.
