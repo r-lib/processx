@@ -154,7 +154,7 @@ err <- local({
 
   new_error <- function(..., call. = TRUE, domain = NA) {
     cond <- new_cond(..., call. = call., domain = domain)
-    class(cond) <- c("rlib_error_3_0", "rlib_error", "error", "condition")
+    class(cond) <- c("rlib_error_3_0", "rlib_error", "rlang_error", "error", "condition")
     cond
   }
 
@@ -205,7 +205,7 @@ err <- local({
 
     # Set up environment to store .Last.error, it will be just before
     # baseenv(), so it is almost as if it was in baseenv() itself, like
-    # .Last.value. We save the print methos here as well, and then they
+    # .Last.value. We save the print methods here as well, and then they
     # will be found automatically.
     if (! "org:r-lib" %in% search()) {
       do.call("attach", list(new.env(), pos = length(search()),
@@ -239,9 +239,7 @@ err <- local({
         max_msg_len <- as.integer(getOption("warning.length"))
         if (is.na(max_msg_len)) max_msg_len <- 1000
         msg <- conditionMessage(cond)
-        adv <- style_advice(
-          "\nType .Last.error.trace to see where the error occurred"
-        )
+        adv <- "\nType .Last.error.trace to see where the error occurred"
         dots <- "\033[0m\n[...]"
         if (bytes(msg) + bytes(adv) + bytes(dots) + 5L> max_msg_len) {
           msg <- paste0(
@@ -256,7 +254,7 @@ err <- local({
         # manually, to make sure that it won't be truncated by R's error
         # message length limit.
         cat("\n", file = stderr())
-        cat(style_error(gettext("Error: ")), file = stderr())
+        cat(gettext("Error: "), file = stderr())
         out <- format_cond(cond)
         cat(out, file = stderr(), sep = "\n")
         out <- format_trace(cond$trace)
@@ -296,16 +294,14 @@ err <- local({
 
   rethrow_call <- function(.NAME, ...) {
     call <- sys.call()
-    nframe <- sys.nframe()
     withCallingHandlers(
       # do.call to work around an R CMD check issue
       do.call(".Call", list(.NAME, ...)),
       error = function(e) {
         e$call <- call
         if (inherits(e, "simpleError")) {
-          class(e) <- c("c_error", "rlib_error_3_0", "rlib_error", "error", "condition")
+          class(e) <- c("c_error", "rlib_error_3_0", "rlib_error", "rlang_error", "error", "condition")
         }
-        e$`_ignore` <- list(c(nframe + 1L, sys.nframe() + 1L))
         throw(e)
       }
     )
@@ -327,15 +323,13 @@ err <- local({
 
   rethrow_call_with_cleanup <- function(.NAME, ...) {
     call <- sys.call()
-    nframe <- sys.nframe()
     withCallingHandlers(
       package_env$call_with_cleanup(.NAME, ...),
       error = function(e) {
         e$call <- call
         if (inherits(e, "simpleError")) {
-          class(e) <- c("c_error", "rlib_error_3_0", "rlib_error", "error", "condition")
+          class(e) <- c("c_error", "rlib_error_3_0", "rlib_error", "rlang_error", "error", "condition")
         }
-        e$`_ignore` <- list(c(nframe + 1L, sys.nframe() + 1L))
         throw(e)
       }
     )
@@ -349,33 +343,34 @@ err <- local({
   #' so there is currently not much use to call it directly.
   #'
   #' @param cond Condition to add the trace to
-  #' @param embed Whether to embed calls into the condition.
   #'
   #' @return A condition object, with the trace added.
 
-  add_trace_back <- function(
-      cond,
-      embed = getOption("rlib_error_embed_calls", FALSE)) {
+  add_trace_back <- function(cond) {
 
     idx <- seq_len(sys.parent(1L))
     frames <- sys.frames()[idx]
 
-    parents <- sys.parents()[idx]
+    # TODO: remove embedded objects from calls
     calls <- as.list(sys.calls()[idx])
-    envs <- lapply(frames, env_label)
-    topenvs <- lapply(
+    parents <- sys.parents()[idx]
+    namespaces <- unlist(lapply(
       seq_along(frames),
-      function(i) env_label(topenvx(environment(sys.function(i)))))
-    messages <- list(conditionMessage(cond))
-    ignore <- cond$`_ignore`
-    classes <- class(cond)
+      function(i) {
+        env_label(topenvx(environment(sys.function(i))))
+      }
+    ))
     pids <- rep(cond$`_pid` %||% Sys.getpid(), length(calls))
 
-    if (!embed) calls <- as.list(format_calls(calls, topenvs))
-
     cond$trace <- new_trace(
-      calls, parents, envs, topenvs, messages, ignore, classes,
-      pids)
+      calls,
+      parents,
+      visibles = TRUE,
+      namespaces,
+      # TODO: :: and :::
+      scopes = ifelse(is.na(namespaces), "global", ":::"),
+      pids
+    )
 
     cond
   }
@@ -384,14 +379,19 @@ err <- local({
     topenv(x, matchThisEnv = err_env)
   }
 
-  new_trace <- function (calls, parents, envs, topenvs, messages,
-                         ignore, classes, pids) {
-    indices <- seq_along(calls)
-    structure(
-      list(calls = calls, parents = parents, envs = envs, topenvs = topenvs,
-           indices = indices, messages = messages,
-           ignore = ignore, classes = classes, pids = pids),
-      class = c("rlib_trace_3_0", "rlib_trace"))
+  new_trace <- function (calls, parents, visibles, namespaces, scopes, pids) {
+    trace <- data.frame(
+      stringsAsFactors = FALSE,
+      parent = parents,
+      visible = visibles,
+      namespace = namespaces,
+      scope = scopes,
+      pid = pids
+    )
+    trace$call <- calls
+
+    class(trace) <- c("rlib_trace_3_0", "rlang_trace", "rlib_trace", "tbl", "data.frame")
+    trace
   }
 
   env_label <- function(env) {
@@ -410,131 +410,47 @@ err <- local({
 
   env_name <- function(env) {
     if (identical(env, err_env)) {
-      return("")
+      return(env_name(package_env))
     }
     if (identical(env, globalenv())) {
-      return("global")
+      return(NA_character_)
     }
     if (identical(env, baseenv())) {
-      return("namespace:base")
+      return("base")
     }
     if (identical(env, emptyenv())) {
       return("empty")
     }
     nm <- environmentName(env)
     if (isNamespace(env)) {
-      return(paste0("namespace:", nm))
+      return(nm)
     }
     nm
   }
 
   # -- printing ---------------------------------------------------------
 
-  format_this <- function(x, ...) {
-    msg <- paste0(conditionMessage(x), collapse = "\n")
-    call <- paste0(format_call(conditionCall(x)), collapse = "\n")
-    msg <- enc2utf8(msg)
-    call <- enc2utf8(call)
-    cl <- class(x)[1L]
-    head <- if (!is.null(call)) {
-      strsplit(
-        paste0("<", cl, " in ", call, ":\n ", msg, ">\n"),
-        split = "\n",
-        fixed = TRUE,
-        useBytes = TRUE
-      )[[1]]
-    } else {
-      strsplit(
-        paste0("<", cl, ": ", msg, ">\n"),
-        split = "\n",
-        fixed = TRUE,
-        useBytes = TRUE
-      )[[1]]
-    }
-    Encoding(head) <- "UTF-8"
-
-    src <- format_srcref(x$call)
-
-    proc <- if (!is.null(x$`_pid`) &&
-                !identical(x$`_pid`, Sys.getpid())) {
-      paste0(" in process ", x$`_pid`, "\n")
-    }
-
-    c(head, src, proc)
- }
-
-  print_this <- function(x, ...) {
-    cat(format_this(x, ...), sep = "\n")
-    invisible(x)
-  }
-
-  format_parents <- function(x, ...) {
-    if (!is.null(x$parent)) {
-      c("--->", format_this(x$parent))
-    }
-  }
-
-  print_parents <- function(x, ...) {
-    cat(format_parents(x, ...), sep = "\n")
-    invisible(x)
-  }
-
   format_rlib_error_3_0 <- function(x, ...) {
-    c(format_this(x, ...),
-      format_parents(x, ...))
+    rlang:::format.rlang_error(x, ...)
   }
 
   format_cond <- format_rlib_error_3_0
 
   print_rlib_error_3_0 <- function(x, ...) {
-    print_this(x, ...)
-    print_parents(x, ...)
-  }
-
-  format_calls <- function(calls, topenv, messages = NULL) {
-    calls <- map2(calls, topenv, namespace_calls)
-    callstr <- vapply(calls, format_call_src, character(1))
-    callstr
+    rlang:::print.rlang_error(x, ...)
   }
 
   format_rlib_trace_3_0 <- function(x, ...) {
-    cl <- paste0("Stack trace:")
-    title <- c("", style_trace_title(cl))
-
-    callstr <- enumerate(
-      format_calls(x$calls, x$topenv, x$messages)
-    )
-
-    # Ignore what we were told to ignore
-    ign <- integer()
-    for (iv in x$ignore) {
-      if (iv[2] == Inf) iv[2] <- length(callstr)
-      ign <- c(ign, iv[1]:iv[2])
-    }
-
-    ign <- unique(ign)
-    if (length(ign)) callstr <- callstr[-ign]
-
-    # Add markers for subprocesses
-    if (length(unique(x$pids)) >= 2) {
-      pids <- x$pids[-ign]
-      pid_add <- which(!duplicated(pids))
-      pid_str <- style_process(paste0("\nProcess ", pids[pid_add], ":"))
-      callstr[pid_add] <- paste0(" ", pid_str, "\n", callstr[pid_add])
-    }
-    callstr <- enc2utf8(callstr)
-    body <- unlist(strsplit(callstr, "\n", fixed = TRUE, useBytes = TRUE))
-    Encoding(body) <- "UTF-8"
-
-    c(title, body)
+    rlang:::format.rlang_trance(x, ...)
   }
 
   format_trace <- format_rlib_trace_3_0
 
   print_rlib_trace_3_0 <- function(x, ...) {
-    cat(format_rlib_trace_3_0(x, ...), sep = "\n")
-    invisible(x)
+    rlang:::print.rlang_trace(x, ...)
   }
+
+  # -- utilities ---------------------------------------------------------
 
   is_interactive <- function() {
     opt <- getOption("rlib_interactive")
@@ -553,6 +469,12 @@ err <- local({
     }
   }
 
+  `%||%` <- function(l, r) if (is.null(l)) r else l
+
+  bytes <- function(x) {
+    nchar(x, type = "bytes")
+  }
+
   onload_hook <- function() {
     reg_env <- Sys.getenv("R_LIB_ERROR_REGISTER_PRINT_METHODS", "TRUE")
     if (tolower(reg_env) != "false") {
@@ -561,114 +483,8 @@ err <- local({
     }
   }
 
-  namespace_calls <- function(call, env) {
-    if (length(call) < 1) return(call)
-    if (typeof(call[[1]]) != "symbol") return(call)
-    pkg <- strsplit(env, "^namespace:")[[1]][2]
-    if (is.na(pkg)) return(call)
-    call[[1]] <- substitute(p:::f, list(p = as.symbol(pkg), f = call[[1]]))
-    call
-  }
 
-  print_srcref <- function(call) {
-    src <- format_srcref(call)
-    if (length(src)) cat(sep = "", " ", src, "\n")
-    invisible(call)
-  }
-
-  `%||%` <- function(l, r) if (is.null(l)) r else l
-
-  format_srcref <- function(call) {
-    if (is.null(call)) return(NULL)
-    file <- utils::getSrcFilename(call)
-    if (!length(file)) return(NULL)
-    dir <- utils::getSrcDirectory(call)
-    if (length(dir) && nzchar(dir) && nzchar(file)) {
-      srcfile <- attr(utils::getSrcref(call), "srcfile")
-      if (isTRUE(srcfile$isFile)) {
-        file <- file.path(dir, file)
-      } else {
-        file <- file.path("R", file)
-      }
-    } else {
-      file <- "??"
-    }
-    line <- utils::getSrcLocation(call) %||% "??"
-    col <- utils::getSrcLocation(call, which = "column") %||% "??"
-    style_srcref(paste0(file, ":", line, ":", col))
-  }
-
-  format_call <- function(call) {
-    width <- getOption("width")
-    str <- format(call)
-    callstr <- if (length(str) > 1 || nchar(str[1]) > width) {
-      paste0(substr(str[1], 1, width - 5), " ...")
-    } else {
-      str[1]
-    }
-    style_call(callstr)
-  }
-
-  format_call_src <- function(call) {
-    callstr <- format_call(call)
-    src <- format_srcref(call)
-    if (length(src)) callstr <- paste0(callstr, "\n    ", src)
-    callstr
-  }
-
-  enumerate <- function(x) {
-    paste0(style_numbers(paste0(" ", seq_along(x), ". ")), x)
-  }
-
-  map2 <- function (.x, .y, .f, ...) {
-    mapply(.f, .x, .y, MoreArgs = list(...), SIMPLIFY = FALSE,
-           USE.NAMES = FALSE)
-  }
-
-  bytes <- function(x) {
-    nchar(x, type = "bytes")
-  }
-
-  # -- printing, styles -------------------------------------------------
-
-  has_cli <- function() "cli" %in% loadedNamespaces()
-
-  style_numbers <- function(x) {
-    if (has_cli()) cli::col_silver(x) else x
-  }
-
-  style_advice <- function(x) {
-    if (has_cli()) cli::col_silver(x) else x
-  }
-
-  style_srcref <- function(x) {
-    if (has_cli()) cli::style_italic(cli::col_cyan(x))
-  }
-
-  style_error <- function(x) {
-    if (has_cli()) cli::style_bold(cli::col_red(x)) else x
-  }
-
-  style_error_msg <- function(x) {
-    sx <- paste0("\n x ", x, " ")
-    style_error(sx)
-  }
-
-  style_trace_title <- function(x) {
-    x
-  }
-
-  style_process <- function(x) {
-    if (has_cli()) cli::style_bold(x) else x
-  }
-
-  style_call <- function(x) {
-    if (!has_cli()) return(x)
-    call <- sub("^([^(]+)[(].*$", "\\1", x)
-    rest <- sub("^[^(]+([(].*)$", "\\1", x)
-    if (call == x || rest == x) return(x)
-    paste0(cli::col_yellow(call), rest)
-  }
+  # -- public API --------------------------------------------------------
 
   err_env <- environment()
   parent.env(err_env) <- baseenv()
@@ -681,11 +497,7 @@ err <- local({
       throw          = throw,
       rethrow_call   = rethrow_call,
       add_trace_back = add_trace_back,
-      onload_hook    = onload_hook,
-      format_this    = format_this,
-      print_this     = print_this,
-      format_parents = format_parents,
-      print_parents  = print_parents
+      onload_hook    = onload_hook
     ),
     class = c("standalone_errors", "standalone"))
 })

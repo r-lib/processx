@@ -22,7 +22,7 @@ test_that("new_error", {
   c <- new_error("foo", "bar")
   expect_identical(
     class(c),
-    c("rlib_error_3_0", "rlib_error", "error", "condition")
+    c("rlib_error_3_0", "rlib_error", "rlang_error", "error", "condition")
   )
   expect_identical(c$message, "foobar")
 })
@@ -51,9 +51,6 @@ test_that("throw() adds the proper call, if requested", {
 
 test_that("throw() only stops for errors", {
   f <- function() throw(new_cond("nothing important"))
-
-  cond <- tryCatch(f(), condition = function(e) e)
-  expect_s3_class(cond, "condition")
 
   expect_error(f(), NA)
 })
@@ -258,5 +255,5 @@ test_that("trace is printed on error in non-interactive sessions", {
     any(grepl("No such file or directory", selines)) ||
       any(grepl("Command .* not found", selines))
   )
-  expect_true(any(grepl("Stack trace", selines)))
+  expect_true(any(grepl("Backtrace", selines)))
 })
