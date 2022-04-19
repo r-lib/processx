@@ -97,62 +97,6 @@ test_that("un-caught condition has trace", {
   expect_s3_class(cond$trace, "rlib_trace")
 })
 
-test_that("catch_rethow", {
-
-  h <- function() h2()
-  h2 <- function() throw(new_error("oops"))
-
-  f <- function() g()
-  g <- function() {
-    err$catch_rethrow(
-      h(),
-      error = function(e) throw(new_error("oops2"), parent = e))
-  }
-
-  cond <- tryCatch(g(), error = function(e) e)
-  expect_s3_class(cond, "rlib_error")
-  expect_equal(cond$call, quote(g()))
-  expect_s3_class(cond$parent, "rlib_error")
-  expect_equal(cond$parent$call, quote(h2()))
-  expect_true(is.integer(cond$`_nframe`))
-  expect_true(is.integer(cond$parent$`_nframe`))
-  expect_true(cond$`_nframe` < cond$parent$`_nframe`)
-})
-
-test_that("rethrow", {
-  h <- function() h2()
-  h2 <- function() throw(new_error("oops"))
-
-  f <- function() g()
-  g <- function() rethrow(h(), new_error("oops2"))
-
-  cond <- tryCatch(g(), error = function(e) e)
-  expect_s3_class(cond, "rlib_error")
-  expect_equal(cond$call, quote(g()))
-  expect_s3_class(cond$parent, "rlib_error")
-  expect_equal(cond$parent$call, quote(h2()))
-  expect_true(is.integer(cond$`_nframe`))
-  expect_true(is.integer(cond$parent$`_nframe`))
-  expect_true(cond$`_nframe` < cond$parent$`_nframe`)
-})
-
-test_that("rethrow without call", {
-  h <- function() h2()
-  h2 <- function() throw(new_error("oops"))
-
-  f <- function() g()
-  g <- function() rethrow(h(), new_error("oops2"), call = FALSE)
-
-  cond <- tryCatch(g(), error = function(e) e)
-  expect_s3_class(cond, "rlib_error")
-  expect_null(cond$call)
-  expect_s3_class(cond$parent, "rlib_error")
-  expect_equal(cond$parent$call, quote(h2()))
-  expect_true(is.integer(cond$`_nframe`))
-  expect_true(is.integer(cond$parent$`_nframe`))
-  expect_true(cond$`_nframe` < cond$parent$`_nframe`)
-})
-
 test_that("rethrow_call", {
 
   cond <- tryCatch(

@@ -32,8 +32,6 @@
 # new_cond(..., call. = TRUE, domain = NA)
 # new_error(..., call. = TRUE, domain = NA)
 # throw(cond, parent = NULL)
-# catch_rethrow(expr, ...)
-# rethrow(expr, cond)
 # rethrow_call(.NAME, ...)
 # add_trace_back(cond)
 # ```
@@ -111,6 +109,11 @@
 #
 # * Do not translate error messages, as this converts them to the native
 #   encoding. We keep messages in UTF-8 now.
+#
+# ### 3.0.0 -- 2022-04-19
+#
+# * Remove `catch_rethrow()` and `rethrow()`, in favor of a cleaner
+#   implementation.
 
 err <- local({
 
@@ -166,8 +169,7 @@ err <- local({
   #' @noRd
   #' @param cond Condition object to throw. If it is an error condition,
   #'   then it calls [stop()].
-  #' @param parent Parent condition. Use this within [rethrow()] and
-  #'   [catch_rethrow()].
+  #' @param parent Parent condition.
 
   throw <- function(cond, parent = NULL) {
     if (!inherits(cond, "condition")) {
@@ -289,92 +291,7 @@ err <- local({
     }
   }
 
-  # -- rethrowing conditions --------------------------------------------
-
-  #' Catch and re-throw conditions
-  #'
-  #' See [rethrow()] for a simpler interface that handles `error`
-  #' conditions automatically.
-  #'
-  #' @noRd
-  #' @param expr Expression to evaluate.
-  #' @param ... Condition handler specification, the same way as in
-  #'   [withCallingHandlers()]. You are supposed to call [throw()] from
-  #'   the error handler, with a new error object, setting the original
-  #'   error object as parent. See examples below.
-  #' @param call Logical flag, whether to add the call to
-  #'   `catch_rethrow()` to the error.
-  #' @examples
-  #' f <- function() {
-  #'   ...
-  #'   err$catch_rethrow(
-  #'     ... code that potentially errors ...,
-  #'     error = function(e) {
-  #'       throw(new_error("This will be the child error"), parent = e)
-  #'     }
-  #'   )
-  #' }
-
-  catch_rethrow <- function(expr, ..., call = TRUE) {
-    realcall <- if (isTRUE(call)) sys.call(-1) %||% sys.call()
-    realframe <- sys.nframe()
-    parent <- parent.frame()
-
-    cl <- match.call()
-    cl[[1]] <- quote(withCallingHandlers)
-    handlers <- list(...)
-    for (h in names(handlers)) {
-      cl[[h]] <- function(e) {
-        # This will be NULL if the error is not throw()-n
-        if (is.null(e$`_nframe`)) e$`_nframe` <- length(sys.calls())
-        e$`_childcall` <- realcall
-        e$`_childframe` <- realframe
-        # We drop after realframe, until the first withCallingHandlers
-        wch <- find_call(sys.calls(), quote(withCallingHandlers))
-        if (!is.na(wch)) e$`_childignore` <- list(c(realframe + 1L, wch))
-        handlers[[h]](e)
-      }
-    }
-    eval(cl, envir = parent)
-  }
-
-  find_call <- function(calls, call) {
-    which(vapply(
-      calls, function(x) length(x) >= 1 && identical(x[[1]], call),
-      logical(1)))[1]
-  }
-
-  #' Catch and re-throw conditions
-  #'
-  #' `rethrow()` is similar to [catch_rethrow()], but it has a simpler
-  #' interface. It catches conditions with class `error`, and re-throws
-  #' `cond` instead, using the original condition as the parent.
-  #'
-  #' @noRd
-  #' @param expr Expression to evaluate.
-  #' @param ... Condition handler specification, the same way as in
-  #'   [withCallingHandlers()].
-  #' @param call Logical flag, whether to add the call to
-  #'   `rethrow()` to the error.
-
-  rethrow <- function(expr, cond, call = TRUE) {
-    realcall <- if (isTRUE(call)) sys.call(-1) %||% sys.call()
-    realframe <- sys.nframe()
-    withCallingHandlers(
-      expr,
-      error = function(e) {
-        # This will be NULL if the error is not throw()-n
-        if (is.null(e$`_nframe`)) e$`_nframe` <- length(sys.calls())
-        e$`_childcall` <- realcall
-        e$`_childframe` <- realframe
-        # We just ignore the withCallingHandlers call, and the tail
-        e$`_childignore` <- list(
-          c(realframe + 1L, realframe + 1L),
-          c(e$`_nframe` + 1L, sys.nframe() + 1L))
-        throw(cond, parent = e)
-      }
-    )
-  }
+  # -- rethrowing conditions from C code ---------------------------------
 
   #' Version of .Call that throw()s errors
   #'
@@ -816,8 +733,6 @@ err <- local({
       new_cond       = new_cond,
       new_error      = new_error,
       throw          = throw,
-      rethrow        = rethrow,
-      catch_rethrow  = catch_rethrow,
       rethrow_call   = rethrow_call,
       add_trace_back = add_trace_back,
       onload_hook    = onload_hook,
@@ -835,6 +750,5 @@ err <- local({
 new_cond  <- err$new_cond
 new_error <- err$new_error
 throw     <- err$throw
-rethrow   <- err$rethrow
 rethrow_call <- err$rethrow_call
 rethrow_call_with_cleanup <- err$.internal$rethrow_call_with_cleanup
