@@ -443,18 +443,20 @@ err <- local({
 
   # -- printing ---------------------------------------------------------
 
-  format_rlib_error_3_0 <- function(x, trace = TRUE, class = TRUE, ...) {
+  format_rlib_error_3_0 <- function(x, trace = FALSE, class = FALSE,
+                                    advice = FALSE, ...) {
     if (has_cli()) {
-      format_rlib_error_cli(x, trace, class, ...)
+      format_rlib_error_cli(x, trace, class, advice, ...)
     } else {
-      format_rlib_error_plain(x, trace, class, ...)
+      format_rlib_error_plain(x, trace, class, advice, ...)
     }
   }
 
   format_cond <- format_rlib_error_3_0
 
-  print_rlib_error_3_0 <- function(x, trace = TRUE, class = TRUE, ...) {
-    writeLines(format_rlib_error_3_0(x, trace, class, ...))
+  print_rlib_error_3_0 <- function(x, trace = TRUE, class = TRUE,
+                                   advice = !trace,  ...) {
+    writeLines(format_rlib_error_3_0(x, trace, class, advice, ...))
   }
 
   format_rlib_trace_3_0 <- function(x, ...) {
@@ -467,9 +469,24 @@ err <- local({
     writeLines(format_rlib_trace_3_0(x, ...))
   }
 
-  cnd_message_3_0 <- function(c) {
-    # TODO: this falls back to rlang currently
-    NextMethod()
+  cnd_message_3_0 <- function(cond) {
+    if (has_cli()) {
+      cnd_message_3_0_cli(cond)
+    } else {
+      cnd_message_3_0_plain(cond)
+    }
+  }
+
+  # -- condition message with cli ------------------------------------------
+
+  cnd_message_3_0_cli <- function(cond) {
+    c(
+      cond$message,
+      if (inherits(cond$parent, "condition")) {
+        c(format_header_line_cli(cond$parent, prefix = "Cased by error"),
+          conditionMessage(cond$parent))
+      }
+    )
   }
 
   # -- printing error with cli ------------------------------------------
@@ -481,11 +498,10 @@ err <- local({
   # - error message, just `conditionMessage()`
   # - advice about .Last.error and/or .Last.error.trace
 
-  format_rlib_error_cli <- function(x, trace = TRUE, class = TRUE, ...) {
+  format_rlib_error_cli <- function(x, trace = TRUE, class = TRUE,
+                                    advice = !trace, ...) {
     p_class <- if (class) format_class_cli(x)
-    p_error <- format_error_heading_cli(x)
-    p_call <- format_call_cli(x)
-    p_srcref <- format_srcref_cli(x)
+    p_header <- format_header_line_cli(x)
     p_msg <- conditionMessage(x)
     p_advice <- if (!trace) format_advice_cli(x) else NULL
     p_trace <- if (trace && !is.null(x$trace)) {
@@ -493,10 +509,17 @@ err <- local({
     }
 
     c(p_class,
-      paste0(p_error, p_call, p_srcref),
+      p_header,
       p_msg,
       p_advice,
       p_trace)
+  }
+
+  format_header_line_cli <- function(x, prefix = NULL) {
+    p_error <- format_error_heading_cli(x, prefix)
+    p_call <- format_call_cli(x)
+    p_srcref <- format_srcref_cli(x)
+    paste0(p_error, p_call, p_srcref)
   }
 
   format_class_cli <- function(x) {
@@ -505,8 +528,12 @@ err <- local({
     cli::format_inline("{.cls {cls}}")
   }
 
-  format_error_heading_cli <- function(x) {
-    str_error <- cli::style_bold(cli::col_yellow("Error"))
+  format_error_heading_cli <- function(x, prefix = NULL) {
+    str_error <- if (is.null(prefix)) {
+      cli::style_bold(cli::col_yellow("Error"))
+    } else {
+      cli::style_bold(paste0(prefix))
+    }
     if (is.null(conditionCall(x))) {
       paste0(str_error, ": ")
     } else {
@@ -535,7 +562,7 @@ err <- local({
       )
 
     } else {
-      paste0("Line ", ref$line)
+      paste0("line ", ref$line)
     }
 
     cli::col_silver(paste0(" at ", link))
