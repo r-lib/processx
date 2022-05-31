@@ -94,12 +94,17 @@ test_that("un-caught condition has trace", {
   expect_s3_class(cond$trace, "rlib_trace")
 })
 
-test_that("rethrow_call", {
+test_that("entrace_call", {
 
+  do <- function() {
+    entrace_call(c_processx_base64_encode, "foobar")
+  }
   cond <- tryCatch(
-    rethrow_call(c_processx_base64_encode, "foobar"),
-    error = function(e) e)
-  expect_equal(cond$call[[1]], quote(rethrow_call))
+   do(),
+   error = function(e) e
+  )
+
+  expect_equal(cond$call[[1]], quote(do))
   expect_s3_class(cond, "c_error")
   expect_s3_class(cond, "rlib_error")
 })
@@ -256,4 +261,25 @@ test_that("trace is printed on error in non-interactive sessions", {
       any(grepl("Command .* not found", selines))
   )
   expect_true(any(grepl("Backtrace", selines)))
+})
+
+test_that("format_rlib_error_3_0", {
+
+  err <- local({
+    withr::local_options(rlib_error_always_trace = TRUE)
+    f <- function() g()
+    g <- function() h()
+    h <- function() throw(new_error("ooops"))
+    tryCatch(f(), error = function(e) e)
+  })
+
+  err2 <- local({
+    withr::local_options(rlib_error_always_trace = TRUE)
+    f2 <- function() g2()
+    g2 <- function() h2()
+    h2 <- function() rlang::abort("ooops")
+    tryCatch(f2(), error = function(e) e)
+  })
+
+  expect_snapshot(err)
 })

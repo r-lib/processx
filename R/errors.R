@@ -7,6 +7,9 @@
 # The canonical location of this file is in the processx package:
 # https://github.com/r-lib/processx/blob/main/R/errors.R
 #
+# ## Dependencies
+# - rstudio-detect.R for better printing in RStudio
+#
 # ## Features
 #
 # - Throw conditions and errors with the same API.
@@ -32,7 +35,7 @@
 # new_cond(..., call. = TRUE, domain = NA)
 # new_error(..., call. = TRUE, domain = NA)
 # throw(cond, parent = NULL)
-# rethrow_call(.NAME, ...)
+# entrace_call(.NAME, ...)
 # add_trace_back(cond)
 # ```
 #
@@ -117,6 +120,9 @@
 
 err <- local({
 
+  # -- dependencies -----------------------------------------------------
+  rstudio_detect <- rstudio$detect
+
   # -- condition constructors -------------------------------------------
 
   #' Create a new condition
@@ -170,8 +176,10 @@ err <- local({
   #' @param cond Condition object to throw. If it is an error condition,
   #'   then it calls [stop()].
   #' @param parent Parent condition.
+  #' @param frame The throwing context. Can be used to hide frames from
+  #'   the backtrace.
 
-  throw <- function(cond, parent = NULL) {
+  throw <- function(cond, parent = NULL, frame = parent.frame()) {
     if (!inherits(cond, "condition")) {
       throw(new_error("You can only throw conditions"))
     }
@@ -201,7 +209,7 @@ err <- local({
     # an exiting handler. That means that we need to create a trace.
     # If there is a hand-constructed trace already in the error object,
     # then we'll just leave it there.
-    if (is.null(cond$trace)) cond <- add_trace_back(cond)
+    if (is.null(cond$trace)) cond <- add_trace_back(cond, frame = frame)
 
     # Set up environment to store .Last.error, it will be just before
     # baseenv(), so it is almost as if it was in baseenv() itself, like
@@ -226,57 +234,51 @@ err <- local({
     # and its design might change.
     if (!is.null(th <- getOption("rlib_error_handler")) &&
         is.function(th)) {
-      th(cond)
+      return(th(cond))
+    }
+
+    if (.Platform$GUI == "RStudio") {
+      # At the RStudio console, we print the error message through
+      # conditionMessage() and also add a note about .Last.error.trace.
+      # R will potentially truncate the error message, so we make sure
+      # that the note is shown. Ideally we would print the error
+      # ourselves, but then RStudio would not highlight it.
+      max_msg_len <- as.integer(getOption("warning.length"))
+      if (is.na(max_msg_len)) max_msg_len <- 1000
+      msg <- conditionMessage(cond)
+      adv <- format_advice(cond)
+      dots <- paste0("\n", style_dots("[...]"))
+      if (bytes(msg) + bytes(adv) + bytes(dots) + 5L > max_msg_len) {
+        msg <- paste0(
+          substr(msg, 1, max_msg_len - bytes(dots) - bytes(adv) - 5L),
+          dots
+        )
+      }
+      cond$message <- paste0(msg, adv)
 
     } else {
+      # In non-interactive mode, we print the error + the traceback
+      # manually, to make sure that it won't be truncated by R's error
+      # message length limit.
+      out <- format_cond(cond, trace = !is_interactive(), class = FALSE)
+      writeLines(out, con = default_output())
 
-      if (is_interactive()) {
-        # In interactive mode, we print the error message through
-        # conditionMessage() and also add a note about .Last.error.trace.
-        # R will potentially truncate the error message, so we make sure
-        # that the note is shown. Ideally we would print the error
-        # ourselves, but then RStudio would not highlight it.
-        max_msg_len <- as.integer(getOption("warning.length"))
-        if (is.na(max_msg_len)) max_msg_len <- 1000
-        msg <- conditionMessage(cond)
-        adv <- "\nType .Last.error.trace to see where the error occurred"
-        dots <- "\033[0m\n[...]"
-        if (bytes(msg) + bytes(adv) + bytes(dots) + 5L> max_msg_len) {
-          msg <- paste0(
-            substr(msg, 1, max_msg_len - bytes(dots) - bytes(adv) - 5L),
-            dots
-          )
-        }
-        cond$message <- paste0(msg, adv)
-
-      } else {
-        # In non-interactive mode, we print the error + the traceback
-        # manually, to make sure that it won't be truncated by R's error
-        # message length limit.
-        cat("\n", file = stderr())
-        cat(gettext("Error: "), file = stderr())
-        out <- format_cond(cond)
-        cat(out, file = stderr(), sep = "\n")
-        out <- format_trace(cond$trace)
-        cat(out, file = stderr(), sep = "\n")
-
-        # Turn off the regular error printing to avoid printing
-        # the error twice.
-        opts <- options(show.error.messages = FALSE)
-        on.exit(options(opts), add = TRUE)
-      }
-
-      # Dropping the classes and adding "duplicate_condition" is a workaround
-      # for the case when we have non-exiting handlers on throw()-n
-      # conditions. These would get the condition twice, because stop()
-      # will also signal it. If we drop the classes, then only handlers
-      # on "condition" objects (i.e. all conditions) get duplicate signals.
-      # This is probably quite rare, but for this rare case they can also
-      # recognize the duplicates from the "duplicate_condition" extra class.
-      class(cond) <- c("duplicate_condition", "condition")
-
-      stop(cond)
+      # Turn off the regular error printing to avoid printing
+      # the error twice.
+      opts <- options(show.error.messages = FALSE)
+      on.exit(options(opts), add = TRUE)
     }
+
+    # Dropping the classes and adding "duplicate_condition" is a workaround
+    # for the case when we have non-exiting handlers on throw()-n
+    # conditions. These would get the condition twice, because stop()
+    # will also signal it. If we drop the classes, then only handlers
+    # on "condition" objects (i.e. all conditions) get duplicate signals.
+    # This is probably quite rare, but for this rare case they can also
+    # recognize the duplicates from the "duplicate_condition" extra class.
+    class(cond) <- c("duplicate_condition", "condition")
+
+    stop(cond)
   }
 
   # -- rethrowing conditions from C code ---------------------------------
@@ -292,26 +294,28 @@ err <- local({
   #' @param ... Function arguments, see [.Call()].
   #' @return Result of the call.
 
-  rethrow_call <- function(.NAME, ...) {
+  entrace_call <- function(.NAME, ...) {
     call <- sys.call()
+    call1 <- sys.call(-1)
+    base_frame <- environment()
     withCallingHandlers(
       # do.call to work around an R CMD check issue
       do.call(".Call", list(.NAME, ...)),
       error = function(e) {
         e$call <- call
-        if (inherits(e, "simpleError")) {
-          class(e) <- c("c_error", "rlib_error_3_0", "rlib_error", "rlang_error", "error", "condition")
-        }
-        throw(e)
+        name <- native_name(.NAME)
+        e2 <- new_error("Native call to `", name, "` failed", call. = call1)
+        class(e2) <- c("c_error", "rlib_error_3_0", "rlib_error", "rlang_error", "error", "condition")
+        throw(e2, parent = e, frame = base_frame)
       }
     )
   }
 
   package_env <- topenv()
 
-  #' Version of rethrow_call that supports cleancall
+  #' Version of entrace_call that supports cleancall
   #'
-  #' This function is the same as [rethrow_call()], except that it
+  #' This function is the same as [entrace_call()], except that it
   #' uses cleancall's [.Call()] wrapper, to enable resource cleanup.
   #' See https://github.com/r-lib/cleancall#readme for more about
   #' resource cleanup.
@@ -321,16 +325,18 @@ err <- local({
   #' @param ... Function arguments, see [.Call()].
   #' @return Result of the call.
 
-  rethrow_call_with_cleanup <- function(.NAME, ...) {
+  entrace_call_with_cleanup <- function(.NAME, ...) {
     call <- sys.call()
+    call1 <- sys.call(-1)
+    base_frame <- environment()
     withCallingHandlers(
       package_env$call_with_cleanup(.NAME, ...),
       error = function(e) {
         e$call <- call
-        if (inherits(e, "simpleError")) {
-          class(e) <- c("c_error", "rlib_error_3_0", "rlib_error", "rlang_error", "error", "condition")
-        }
-        throw(e)
+        name <- native_name(.NAME)
+        e2 <- new_error("Native call to ", name, " failed", call. = call1)
+        class(e2) <- c("c_error", "rlib_error_3_0", "rlib_error", "rlang_error", "error", "condition")
+        throw(e2, parent = e, frame = base_frame)
       }
     )
   }
@@ -346,7 +352,7 @@ err <- local({
   #'
   #' @return A condition object, with the trace added.
 
-  add_trace_back <- function(cond) {
+  add_trace_back <- function(cond, frame = NULL) {
 
     idx <- seq_len(sys.parent(1L))
     frames <- sys.frames()[idx]
@@ -362,10 +368,17 @@ err <- local({
     ))
     pids <- rep(cond$`_pid` %||% Sys.getpid(), length(calls))
 
+    mch <- match(format(frame), sapply(frames, format))
+    if (is.na(mch)) {
+      visibles <- TRUE
+    } else {
+      visibles <- c(rep(TRUE, mch), rep(FALSE, length(frames) - mch))
+    }
+
     cond$trace <- new_trace(
       calls,
       parents,
-      visibles = TRUE,
+      visibles = visibles,
       namespaces,
       # TODO: :: and :::
       scopes = ifelse(is.na(namespaces), "global", ":::"),
@@ -430,27 +443,180 @@ err <- local({
 
   # -- printing ---------------------------------------------------------
 
-  format_rlib_error_3_0 <- function(x, ...) {
-    rlang:::format.rlang_error(x, ...)
+  format_rlib_error_3_0 <- function(x, trace = TRUE, class = TRUE, ...) {
+    if (has_cli()) {
+      format_rlib_error_cli(x, trace, class, ...)
+    } else {
+      format_rlib_error_plain(x, trace, class, ...)
+    }
   }
 
   format_cond <- format_rlib_error_3_0
 
-  print_rlib_error_3_0 <- function(x, ...) {
-    rlang:::print.rlang_error(x, ...)
+  print_rlib_error_3_0 <- function(x, trace = TRUE, class = TRUE, ...) {
+    writeLines(format_rlib_error_3_0(x, trace, class, ...))
   }
 
   format_rlib_trace_3_0 <- function(x, ...) {
-    rlang:::format.rlang_trance(x, ...)
+    format_rlib_trace_3_0_cli(x, ...)
   }
 
   format_trace <- format_rlib_trace_3_0
 
   print_rlib_trace_3_0 <- function(x, ...) {
-    rlang:::print.rlang_trace(x, ...)
+    writeLines(format_rlib_trace_3_0(x, ...))
+  }
+
+  cnd_message_3_0 <- function(c) {
+    # TODO: this falls back to rlang currently
+    NextMethod()
+  }
+
+  # -- printing error with cli ------------------------------------------
+
+  # Error parts:
+  # - "Error:" or "Error in " prefix, the latter if the error has a call
+  # - the call, possibly syntax highlightedm possibly trimmed (?)
+  # - source ref, with link to the file, potentially in a new line in cli
+  # - error message, just `conditionMessage()`
+  # - advice about .Last.error and/or .Last.error.trace
+
+  format_rlib_error_cli <- function(x, trace = TRUE, class = TRUE, ...) {
+    p_class <- if (class) format_class_cli(x)
+    p_error <- format_error_heading_cli(x)
+    p_call <- format_call_cli(x)
+    p_srcref <- format_srcref_cli(x)
+    p_msg <- conditionMessage(x)
+    p_advice <- if (!trace) format_advice_cli(x) else NULL
+    p_trace <- if (trace && !is.null(x$trace)) {
+      c("---", format_rlib_trace_3_0_cli(x$trace))
+    }
+
+    c(p_class,
+      paste0(p_error, p_call, p_srcref),
+      p_msg,
+      p_advice,
+      p_trace)
+  }
+
+  format_class_cli <- function(x) {
+    cls <- unique(setdiff(class(x), "condition"))
+    cls # silence codetools
+    cli::format_inline("{.cls {cls}}")
+  }
+
+  format_error_heading_cli <- function(x) {
+    str_error <- cli::style_bold(cli::col_yellow("Error"))
+    if (is.null(conditionCall(x))) {
+      paste0(str_error, ": ")
+    } else {
+      paste0(str_error, " in ")
+    }
+  }
+
+  format_call_cli <- function(x) {
+    call <- conditionCall(x)
+    if (is.null(call)) {
+      NULL
+    } else {
+      cli::format_inline("{.code {format(call)}}")
+    }
+  }
+
+  format_srcref_cli <- function(x) {
+    ref <- get_srcref(conditionCall(x))
+    if (is.null(ref)) return("")
+
+    link <- if (ref$file != "") {
+      cli::style_hyperlink(
+        cli::format_inline("{basename(ref$file)}:{ref$line}:{ref$col}"),
+        paste0("file://", ref$file),
+        params = c(line = ref$line, col = ref$col)
+      )
+
+    } else {
+      paste0("Line ", ref$line)
+    }
+
+    cli::col_silver(paste0(" at ", link))
+  }
+
+  str_advice <- "Type .Last.error to see the more details."
+
+  format_advice_cli <- function(x) {
+    cli::col_silver(str_advice)
+  }
+
+  format_rlib_trace_3_0_cli <- function(x, ...) {
+    # TODO
+    rlang:::format.rlang_trace(x, simplify = "branch", ...)
+  }
+
+  # ----------------------------------------------------------------------
+
+  format_rlib_error_plain <- function(x, ...) {
+    # TODO
+    rlang:::format.rlang_error(x, ...)
+  }
+
+  format_advice <- function(x) {
+    if (has_cli()) {
+      format_advice_cli(x)
+    } else {
+      format_advice_nocli(x)
+    }
+  }
+
+  format_advice_nocli <- function(x, ...) {
+    paste0("\n", str_advice)
+  }
+
+  # -- styling -----------------------------------------------------------
+
+  cli_version <- function() {
+    # this loads cli!
+    package_version(asNamespace("cli")[[".__NAMESPACE__."]]$spec[["version"]])
+  }
+
+  has_cli <- function() {
+    "cli" %in% loadedNamespaces() && cli_version() >= "3.3.0"
+  }
+
+  style_dots <- function(x) {
+    if (has_cli() && cli::num_ansi_colors() > 1) {
+      paste0("\033[0m", "[...]")
+    } else {
+      "[...]"
+    }
   }
 
   # -- utilities ---------------------------------------------------------
+
+  `%||%` <- function(l, r) if (is.null(l)) r else l
+
+  bytes <- function(x) {
+    nchar(x, type = "bytes")
+  }
+
+  get_srcref <- function(call) {
+    if (is.null(call)) return(NULL)
+    file <- utils::getSrcFilename(call)
+    if (!length(file)) return(NULL)
+    dir <- utils::getSrcDirectory(call)
+    if (length(dir) && nzchar(dir) && nzchar(file)) {
+      srcfile <- attr(utils::getSrcref(call), "srcfile")
+      if (isTRUE(srcfile$isFile)) {
+        file <- file.path(dir, file)
+      } else {
+        file <- file.path("R", file)
+      }
+    } else {
+      file <- ""
+    }
+    line <- utils::getSrcLocation(call) %||% ""
+    col <- utils::getSrcLocation(call, which = "column") %||% ""
+    list(file = file, line = line, col = col)
+  }
 
   is_interactive <- function() {
     opt <- getOption("rlib_interactive")
@@ -469,20 +635,47 @@ err <- local({
     }
   }
 
-  `%||%` <- function(l, r) if (is.null(l)) r else l
+  no_sink <- function() {
+    sink.number() == 0 && sink.number("message") == 2
+  }
 
-  bytes <- function(x) {
-    nchar(x, type = "bytes")
+  rstudio_stdout <- function() {
+    rstudio <- rstudio_detect()
+    rstudio$type %in% c(
+      "rstudio_console",
+      "rstudio_console_starting",
+      "rstudio_build_pane",
+      "rstudio_job",
+      "rstudio_render_pane"
+    )
+  }
+
+  default_output <- function() {
+    if ((is_interactive() || rstudio_stdout()) && no_sink()) {
+      stdout()
+    } else {
+      stderr()
+    }
   }
 
   onload_hook <- function() {
     reg_env <- Sys.getenv("R_LIB_ERROR_REGISTER_PRINT_METHODS", "TRUE")
     if (tolower(reg_env) != "false") {
+      registerS3method("format", "rlib_error_3_0", format_rlib_error_3_0, baseenv())
+      registerS3method("format", "rlib_trace_3_0", format_rlib_trace_3_0, baseenv())
       registerS3method("print", "rlib_error_3_0", print_rlib_error_3_0, baseenv())
       registerS3method("print", "rlib_trace_3_0", print_rlib_trace_3_0, baseenv())
+      registerS3method("conditionMessage", "rlib_error_3_0", cnd_message_3_0, baseenv())
     }
   }
 
+  native_name <- function(x) {
+    if (inherits(x, "NativeSymbolInfo")) {
+      x$name
+    } else {
+      format(x)
+    }
+  }
 
   # -- public API --------------------------------------------------------
 
@@ -495,7 +688,7 @@ err <- local({
       new_cond       = new_cond,
       new_error      = new_error,
       throw          = throw,
-      rethrow_call   = rethrow_call,
+      entrace_call   = entrace_call,
       add_trace_back = add_trace_back,
       onload_hook    = onload_hook
     ),
@@ -508,5 +701,5 @@ err <- local({
 new_cond  <- err$new_cond
 new_error <- err$new_error
 throw     <- err$throw
-rethrow_call <- err$rethrow_call
-rethrow_call_with_cleanup <- err$.internal$rethrow_call_with_cleanup
+entrace_call <- err$entrace_call
+entrace_call_with_cleanup <- err$.internal$entrace_call_with_cleanup
