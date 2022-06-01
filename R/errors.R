@@ -237,7 +237,7 @@ err <- local({
       return(th(cond))
     }
 
-    if (.Platform$GUI == "RStudio") {
+    if (.Platform$GUI == "RStudio TOOD") {
       # At the RStudio console, we print the error message through
       # conditionMessage() and also add a note about .Last.error.trace.
       # R will potentially truncate the error message, so we make sure
@@ -485,9 +485,9 @@ err <- local({
   format_rlib_error_3_0 <- function(x, trace = FALSE, class = FALSE,
                                     advice = FALSE, ...) {
     if (has_cli()) {
-      format_rlib_error_cli(x, trace, class, advice, ...)
+      format_rlib_error_3_0_cli(x, trace, class, advice, ...)
     } else {
-      format_rlib_error_plain(x, trace, class, advice, ...)
+      format_rlib_error_3_0_plain(x, trace, class, advice, ...)
     }
   }
 
@@ -499,7 +499,11 @@ err <- local({
   }
 
   format_rlib_trace_3_0 <- function(x, ...) {
-    format_rlib_trace_3_0_cli(x, ...)
+    if (has_cli()) {
+      format_rlib_trace_3_0_cli(x, ...)
+    } else {
+      format_rlib_trace_3_0_plain(x, ...)
+    }
   }
 
   format_trace <- format_rlib_trace_3_0
@@ -537,7 +541,7 @@ err <- local({
   # - error message, just `conditionMessage()`
   # - advice about .Last.error and/or .Last.error.trace
 
-  format_rlib_error_cli <- function(x, trace = TRUE, class = TRUE,
+  format_rlib_error_3_0_cli <- function(x, trace = TRUE, class = TRUE,
                                     advice = !trace, ...) {
     p_class <- if (class) format_class_cli(x)
     p_header <- format_header_line_cli(x)
@@ -556,8 +560,8 @@ err <- local({
 
   format_header_line_cli <- function(x, prefix = NULL) {
     p_error <- format_error_heading_cli(x, prefix)
-    p_call <- format_call_cli(x)
-    p_srcref <- format_srcref_cli(x)
+    p_call <- format_call_cli(x$call)
+    p_srcref <- format_srcref_cli(conditionCall(x))
     paste0(p_error, p_call, p_srcref)
   }
 
@@ -580,8 +584,7 @@ err <- local({
     }
   }
 
-  format_call_cli <- function(x) {
-    call <- conditionCall(x)
+  format_call_cli <- function(call) {
     if (is.null(call)) {
       NULL
     } else {
@@ -589,8 +592,8 @@ err <- local({
     }
   }
 
-  format_srcref_cli <- function(x) {
-    ref <- get_srcref(conditionCall(x))
+  format_srcref_cli <- function(call) {
+    ref <- get_srcref(call)
     if (is.null(ref)) return("")
 
     link <- if (ref$file != "") {
@@ -614,15 +617,42 @@ err <- local({
   }
 
   format_rlib_trace_3_0_cli <- function(x, ...) {
-    # TODO
-    rlang:::format.rlang_trace(x, ...)
+    x$num <- seq_len(nrow(x))
+    if ("visible" %in% names(x)) {
+      x <- x[x$visible, ]
+    }
+
+    scope <- ifelse(
+      is.na(x$namespace),
+      paste0(x$scope, " "),
+      paste0(x$namespace, x$scope)
+    )
+
+    paste0(
+      cli::col_silver(format(x$num), ". "),
+      scope,
+      vapply(x$call, format_trace_call_cli, character(1)),
+      vapply(x$call, format_srcref_cli, character(1))
+    )
+  }
+
+  format_trace_call_cli <- function(call) {
+    fmc <- cli::code_highlight(format(call))[1]
+    cli::ansi_strtrim(fmc, cli::console_width() - 5)
   }
 
   # ----------------------------------------------------------------------
 
   format_rlib_error_plain <- function(x, ...) {
     # TODO
+    class(x) <- setdiff(class(x), c("rlib_error_3_0", "rlib_error"))
     rlang:::format.rlang_error(x, ...)
+  }
+
+  format_rlib_trace_3_0_plain <- function(x, ...) {
+    # TODO
+    class(x) <- setdiff(class(x), c("rlib_trace_3_0", "rlib_trace"))
+    rlang::format.rlang_trace(x, ...)
   }
 
   format_advice <- function(x) {
