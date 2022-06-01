@@ -375,17 +375,56 @@ err <- local({
       visibles <- c(rep(TRUE, mch), rep(FALSE, length(frames) - mch))
     }
 
+    scopes <- vapply(idx, FUN.VALUE = character(1), function(i) {
+      tryCatch(
+        get_call_scope(calls[[i]], namespaces[[i]]),
+        error = function(e) ""
+      )
+    })
+
     cond$trace <- new_trace(
       calls,
       parents,
       visibles = visibles,
-      namespaces,
-      # TODO: :: and :::
-      scopes = ifelse(is.na(namespaces), "global", ":::"),
+      namespaces = ifelse(scopes %in% c("::", ":::"), namespaces, NA_character_),
+      scopes = scopes,
       pids
     )
 
     cond
+  }
+
+  call_name <- function(x) {
+    if (is.call(x)) {
+      if (is.symbol(x[[1]])) {
+        as.character(x[[1]])
+      } else if (x[[1]][[1]] == quote(`::`)) {
+        as.character(x[[1]][[2]])
+      } else {
+        NULL
+      }
+    } else {
+      NULL
+    }
+  }
+
+  get_call_scope <- function(call, ns) {
+    if (is.na(ns)) return("global")
+    if (!is.call(call)) return("")
+    if (ns == "base") return("::")
+    if (! ns %in% loadedNamespaces()) return("")
+    if (is.call(call[[1]]) && call[[1]][[1]] == quote(`::`)) return("")
+    name <- call_name(call)
+    nsenv <- asNamespace(ns)$.__NAMESPACE__.
+    if (is.null(nsenv)) return("::")
+    if (is.null(nsenv$exports)) return(":::")
+    if (exists(name, envir = nsenv$exports, inherits = FALSE)) {
+      "::"
+    } else if (exists(name, envir = asNamespace(ns), inherits = FALSE)) {
+      ":::"
+    } else {
+      "local"
+    }
   }
 
   topenvx <- function(x) {
@@ -477,7 +516,7 @@ err <- local({
     }
   }
 
-  # -- condition message with cli ------------------------------------------
+  # -- condition message with cli ---------------------------------------
 
   cnd_message_3_0_cli <- function(cond) {
     c(
@@ -576,7 +615,7 @@ err <- local({
 
   format_rlib_trace_3_0_cli <- function(x, ...) {
     # TODO
-    rlang:::format.rlang_trace(x, simplify = "branch", ...)
+    rlang:::format.rlang_trace(x, ...)
   }
 
   # ----------------------------------------------------------------------
@@ -730,3 +769,4 @@ new_error <- err$new_error
 throw     <- err$throw
 entrace_call <- err$entrace_call
 entrace_call_with_cleanup <- err$.internal$entrace_call_with_cleanup
+add_trace_back <- err$.internal$add_trace_back
