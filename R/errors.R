@@ -237,37 +237,16 @@ err <- local({
       return(th(cond))
     }
 
-    if (.Platform$GUI == "RStudio TOOD") {
-      # At the RStudio console, we print the error message through
-      # conditionMessage() and also add a note about .Last.error.trace.
-      # R will potentially truncate the error message, so we make sure
-      # that the note is shown. Ideally we would print the error
-      # ourselves, but then RStudio would not highlight it.
-      max_msg_len <- as.integer(getOption("warning.length"))
-      if (is.na(max_msg_len)) max_msg_len <- 1000
-      msg <- conditionMessage(cond)
-      adv <- format_advice(cond)
-      dots <- paste0("\n", style_dots("[...]"))
-      if (bytes(msg) + bytes(adv) + bytes(dots) + 5L > max_msg_len) {
-        msg <- paste0(
-          substr(msg, 1, max_msg_len - bytes(dots) - bytes(adv) - 5L),
-          dots
-        )
-      }
-      cond$message <- paste0(msg, adv)
+    # In non-interactive mode, we print the error + the traceback
+    # manually, to make sure that it won't be truncated by R's error
+    # message length limit.
+    out <- format_cond(cond, trace = !is_interactive(), class = FALSE)
+    writeLines(out, con = default_output())
 
-    } else {
-      # In non-interactive mode, we print the error + the traceback
-      # manually, to make sure that it won't be truncated by R's error
-      # message length limit.
-      out <- format_cond(cond, trace = !is_interactive(), class = FALSE)
-      writeLines(out, con = default_output())
-
-      # Turn off the regular error printing to avoid printing
-      # the error twice.
-      opts <- options(show.error.messages = FALSE)
-      on.exit(options(opts), add = TRUE)
-    }
+    # Turn off the regular error printing to avoid printing
+    # the error twice.
+    opts <- options(show.error.messages = FALSE)
+    on.exit(options(opts), add = TRUE)
 
     # Dropping the classes and adding "duplicate_condition" is a workaround
     # for the case when we have non-exiting handlers on throw()-n
