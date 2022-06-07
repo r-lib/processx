@@ -879,7 +879,9 @@ err <- local({
     if (is.null(call)) {
       NULL
     } else {
-      paste0("`", paste(format(call), collapse = " "), "`")
+      cl <- format(call)
+      if (length(cl) > 1) cl <- paste0(cl[1], " ", cli::symbol$ellipsis)
+      paste0("`", cl, "`")
     }
   }
 
