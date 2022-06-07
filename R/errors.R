@@ -207,7 +207,11 @@ err <- local({
       cond$call <- NULL
     }
 
-    cond$parent <- parent
+    cond <- process_call(cond)
+
+    if (!is.null(parent)) {
+      cond$parent <- process_call(parent)
+    }
 
     # We can set an option to always add the trace to the thrown
     # conditions. This is useful for example in context that always catch
@@ -427,12 +431,17 @@ err <- local({
     )
     visibles <- visibles & mark_invisible_frames(funs, frames)
 
+    pcs <- lapply(calls, function(c) process_call(list(call = c)))
+    calls <- lapply(pcs, "[[", "call")
+    srcrefs <- I(lapply(pcs, "[[", "srcref"))
+
     cond$trace <- new_trace(
       calls,
       parents,
       visibles = visibles,
       namespaces = namespaces,
       scopes = scopes,
+      srcrefs = srcrefs,
       pids
     )
 
@@ -508,13 +517,14 @@ err <- local({
     topenv(x, matchThisEnv = err_env)
   }
 
-  new_trace <- function (calls, parents, visibles, namespaces, scopes, pids) {
+  new_trace <- function (calls, parents, visibles, namespaces, scopes, srcrefs, pids) {
     trace <- data.frame(
       stringsAsFactors = FALSE,
       parent = parents,
       visible = visibles,
       namespace = namespaces,
       scope = scopes,
+      srcref = srcrefs,
       pid = pids
     )
     trace$call <- calls
@@ -739,7 +749,7 @@ err <- local({
     if (is.null(call)) {
       NULL
     } else {
-      cl <- format(call)
+      cl <- trimws(format(call))
       if (length(cl) > 1) cl <- paste0(cl[1], " ", cli::symbol$ellipsis)
       cli::format_inline("{.code {cl}}")
     }
@@ -784,12 +794,22 @@ err <- local({
       rep(TRUE, nrow(x))
     }
 
+    srcref <- if ("srcref" %in% names(x)) {
+      vapply(
+        seq_len(nrow(x)),
+        function(i) format_srcref_cli(x$call[[i]], x$srcref[[i]]),
+        character(1)
+      )
+    } else {
+      unname(vapply(x$call, format_srcref_cli, character(1)))
+    }
+
     lines <- paste0(
       cli::col_silver(format(x$num), ". "),
       ifelse (visible, "", "| "),
       scope,
       vapply(x$call, format_trace_call_cli, character(1)),
-      vapply(x$call, format_srcref_cli, character(1))
+      srcref
     )
 
     lines[!visible] <- cli::col_silver(cli::ansi_strip(
@@ -801,7 +821,9 @@ err <- local({
   }
 
   format_trace_call_cli <- function(call) {
-    fmc <- cli::code_highlight(format(call))[1]
+    cl <- trimws(format(call))
+    if (length(cl) > 1) { cl <- paste0(cl[1], " ", cli::symbol$ellipsis) }
+    fmc <- cli::code_highlight(cl)[1]
     cli::ansi_strtrim(fmc, cli::console_width() - 5)
   }
 
@@ -839,12 +861,22 @@ err <- local({
       rep(TRUE, nrow(x))
     }
 
+    srcref <- if ("srcref" %in% names(x)) {
+      vapply(
+        seq_len(nrow(x)),
+        function(i) format_srcref_plain(x$call[[i]], x$srcref[[i]]),
+        character(1)
+      )
+    } else {
+      unname(vapply(x$call, format_srcref_plain, character(1)))
+    }
+
     lines <- paste0(
       paste0(format(x$num), ". "),
       ifelse (visible, "", "| "),
       scope,
       vapply(x$call, format_trace_call_plain, character(1)),
-      vapply(x$call, format_srcref_plain, character(1))
+      srcref
     )
 
     lines
@@ -879,7 +911,7 @@ err <- local({
     if (is.null(call)) {
       NULL
     } else {
-      cl <- format(call)
+      cl <- trimws(format(call))
       if (length(cl) > 1) cl <- paste0(cl[1], " ", cli::symbol$ellipsis)
       paste0("`", cl, "`")
     }
@@ -899,7 +931,8 @@ err <- local({
   }
 
   format_trace_call_plain <- function(call) {
-    fmc <- format(call)[1]
+    fmc <- trimws(format(call)[1])
+    if (length(fmc) > 1) { fmc <- paste0(fmc[1], " ...") }
     strtrim(fmc, getOption("width") - 5)
   }
 
@@ -920,14 +953,32 @@ err <- local({
     nchar(x, type = "bytes")
   }
 
+  process_call <- function(cond) {
+    cond[c("call", "srcref")] <- list(
+      call = if (is.null(cond$call)) {
+        NULL
+      } else if (is.character(cond$call)) {
+        cond$call
+      } else {
+        deparse(cond$call, nlines = 2)
+      },
+      srcref = get_srcref(cond$call, cond$srcref)
+    )
+    cond
+  }
+
   get_srcref <- function(call, srcref = NULL) {
     ref <- srcref %||% utils::getSrcref(call)
     if (is.null(ref)) return(NULL)
+    if (inherits(ref, "processed_srcref")) return(ref)
     file <- utils::getSrcFilename(ref, full.names = TRUE)[1]
     if (is.na(file)) file <- ""
     line <- utils::getSrcLocation(ref) %||% ""
     col <- utils::getSrcLocation(ref, which = "column") %||% ""
-    list(file = file, line = line, col = col)
+    structure(
+      list(file = file, line = line, col = col),
+      class = "processed_srcref"
+    )
   }
 
   is_interactive <- function() {
@@ -1005,6 +1056,7 @@ err <- local({
       chain_call       = chain_call,
       chain_clean_call = chain_clean_call,
       add_trace_back   = add_trace_back,
+      process_call     = process_call,
       onload_hook      = onload_hook,
       format = list(
         advice        = format_advice,
