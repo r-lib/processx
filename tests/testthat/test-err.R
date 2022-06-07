@@ -7,9 +7,17 @@ test_that("throw() is standalone", {
   for (f in funobjs) expect_identical(environmentName(topenv(f)), "base")
 
   expect_message(
-    mapply(codetools::checkUsage, funobjs, funs,
-           MoreArgs = list(report = message)),
-    NA)
+    withCallingHandlers(
+      res <- mapply(codetools::checkUsage, funobjs, funs,
+                    MoreArgs = list(report = message)),
+      message = function(c) {
+        if (grepl(".hide_from_trace", c$message)) {
+          invokeRestart("muffleMessage")
+        }
+      }
+    ),
+    NA
+  )
 })
 
 test_that("new_cond", {
@@ -27,10 +35,16 @@ test_that("new_error", {
   expect_identical(c$message, "foobar")
 })
 
-test_that("throw() needs condition objects", {
+test_that("throw() works with condition objects or strings", {
   expect_error(
-    throw("foobar"), "can only throw conditions",
+    throw("foobar"), "foobar",
     class = "rlib_error")
+  expect_error(
+    throw(new_error("foobar")), "foobar",
+    class = "rlib_error")
+})
+
+test_that("parent must be an error object", {
   expect_error(
     throw(new_error("foobar"), parent = "nope"),
     "Parent condition must be a condition object",
@@ -94,10 +108,10 @@ test_that("un-caught condition has trace", {
   expect_s3_class(cond$trace, "rlib_trace")
 })
 
-test_that("entrace_call", {
+test_that("chain_call", {
 
   do <- function() {
-    entrace_call(c_processx_base64_encode, "foobar")
+    chain_call(c_processx_base64_encode, "foobar")
   }
   cond <- tryCatch(
    do(),
@@ -225,7 +239,7 @@ test_that("error is printed on error", {
     show = FALSE
   )
 
-  selines <- readLines(se)
+  selines <- readLines(so)
   expect_true(
     any(grepl("No such file or directory", selines)) ||
     any(grepl("Command .* not found", selines))
@@ -261,25 +275,4 @@ test_that("trace is printed on error in non-interactive sessions", {
       any(grepl("Command .* not found", selines))
   )
   expect_true(any(grepl("Backtrace", selines)))
-})
-
-test_that("format_rlib_error_3_0", {
-
-  err <- local({
-    withr::local_options(rlib_error_always_trace = TRUE)
-    f <- function() g()
-    g <- function() h()
-    h <- function() throw(new_error("ooops"))
-    tryCatch(f(), error = function(e) e)
-  })
-
-  err2 <- local({
-    withr::local_options(rlib_error_always_trace = TRUE)
-    f2 <- function() g2()
-    g2 <- function() h2()
-    h2 <- function() rlang::abort("ooops")
-    tryCatch(f2(), error = function(e) e)
-  })
-
-  expect_snapshot(err)
 })

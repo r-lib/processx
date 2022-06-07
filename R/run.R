@@ -452,45 +452,58 @@ new_process_timeout_error <- function(result, call, echo, stderr_to_stdout,
 
 #' @export
 
-conditionMessage.system_command_error <- function(c) {
-  paste(format(c), collapse = "\n")
-}
+format.system_command_error <- function(x, trace = TRUE, class = TRUE,
+                                        advice = !trace, ...) {
+  class(x) <- setdiff(class(x), "system_command_error")
 
-#' @export
+  lines <- NextMethod(
+    object = x,
+    trace = FALSE,
+    class = class,
+    advice = FALSE,
+    ...
+  )
 
-format.system_command_error <- function(x, ...) {
-  parts <- system_error_parts(x)
+  c(
+    lines,
+    system_error_parts(x),
+    if (advice) c("---", err$format$advice()),
+    if (trace && !is.null(x$trace)) {
+      c("---", "Backtrace:", err$format$trace(x$trace))
+    }
+  )
 }
 
 #' @export
 
 print.system_command_error <- function(x, ...) {
-  cat(format(x, ...), sep = "\n")
+  writeLines(format(x, ...))
 }
 
 system_error_parts <- function(x) {
-  exit <- if (!is.na(x$status)) paste0(", exit status: ", x$status)
-  msg <- paste0(x$message, exit)
-  parts <- if (x$echo) {
-    paste0(msg, ", stdout & stderr were printed")
-  } else {
-    std <- if (x$stderr_to_stdout) "stdout + stderr" else "stderr"
-    out <- last_stderr_lines(x$stderr, std)
-    c(paste0(msg, out[1]), out[-1])
-  }
+  c(
+    "---",
+    paste0("Exit status: ", x$status),
+    if (x$echo) {
+      "stdout & stderr: <printed>"
+    } else {
+      std <- if (x$stderr_to_stdout) "Stdout & stderr" else "Stderr"
+      last_stderr_lines(x$stderr, std)
+    }
+  )
 }
 
-last_stderr_lines <- function(text, std) {
-  if (!nzchar(text)) return(paste0(", ", std, " empty"))
+last_stderr_lines <- function(text, std, prefix = "") {
+  if (!nzchar(text)) return(paste0(std, ": <empty>"))
   lines <- strsplit(text, "\r?\n")[[1]]
 
-  if (is_interactive()) {
-    pref <- paste0(
-      ", ", std, if (length(lines) > 10) " (last 10 lines)", ":")
-    out <- paste0("E> ", utils::tail(lines, 10))
-    c(pref, out)
-  } else {
-    out <- paste0("E> ", lines)
-    c(paste0(", ", std, ":"), out)
+  if (is_interactive() && length(lines) > 10) {
+    std <- paste0(std, " (last 10 lines, see `$stderr` for more)")
+    lines <- utils::tail(lines, 10)
   }
+
+  c(
+    paste0(std, ":"),
+    paste0(prefix, lines)
+  )
 }
