@@ -102,20 +102,32 @@ has_locale <- function(l) {
   has
 }
 
-run_script <- function(expr, ..., encoding = "") {
-  sf <- tempfile(fileext = ".R")
+run_script <- function(expr, ..., quoted = NULL, encoding = "") {
+  dir.create(dir <- tempfile())
+  sf <- file.path(dir, "script.R")
+  sf2 <- file.path(dir, "script2.R")
   so <- paste0(sf, "out")
   se <- paste0(sf, "err")
-  on.exit(unlink(c(sf, so, se), recursive = TRUE), add = TRUE)
+  on.exit(unlink(c(dir), recursive = TRUE), add = TRUE)
 
-  writeLines(deparse(substitute(expr)), con = sf)
+  if (is.null(quoted)) quoted <- substitute(expr)
+  writeLines(deparse(quoted), con = sf)
+
+  writeLines(
+    deparse(substitute({
+      options(keep.source = TRUE)
+      source(sf)
+    }, list(sf = basename(sf)))),
+    con = sf2
+  )
 
   out <- callr::rscript(
-    sf,
+    basename(sf2),
     stdout = so,
     stderr = se,
     fail_on_status = FALSE,
-    show = FALSE
+    show = FALSE,
+    wd = dirname(sf)
   )
 
   enc <- function(x) iconv(list(x), encoding, "UTF-8")
