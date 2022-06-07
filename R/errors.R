@@ -646,11 +646,19 @@ err <- local({
   # -- condition message with cli ---------------------------------------
 
   cnd_message_cli <- function(cond) {
+    exp <- paste0(cli::col_yellow("!"), " ")
+    add_exp <- is.null(names(cond$message))
     c(
-      cond$message,
+      paste0(if (add_exp) exp, cond$message),
       if (inherits(cond$parent, "condition")) {
-        c(format_header_line_cli(cond$parent, prefix = "Cased by error"),
-          conditionMessage(cond$parent))
+        msg <- conditionMessage(cond$parent)
+        add_exp <- substr(cli::ansi_strip(msg[1]), 1, 1) != "!"
+        if (add_exp) {
+          msg[1] <- paste0(exp, msg[1])
+        }
+        c(format_header_line_cli(cond$parent, prefix = "Caused by error"),
+          msg
+        )
       }
     )
   }
@@ -658,11 +666,19 @@ err <- local({
   # -- condition message w/o cli ----------------------------------------
 
   cnd_message_plain <- function(cond) {
+    exp <- "! "
+    add_exp <- is.null(names(cond$message))
     c(
-      cond$message,
+      paste0(if (add_exp) exp, cond$message),
       if (inherits(cond$parent, "condition")) {
-        c(format_header_line_plain(cond$parent, prefix = "Cased by error"),
-          conditionMessage(cond$parent))
+        msg <- conditionMessage(cond$parent)
+        add_exp <- substr(msg[1], 1, 1) != "!"
+        if (add_exp) {
+          msg[1] <- paste0(exp, msg[1])
+        }
+        c(format_header_line_plain(cond$parent, prefix = "Caused by error"),
+          msg
+        )
       }
     )
   }

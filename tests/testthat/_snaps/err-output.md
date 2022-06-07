@@ -4,7 +4,7 @@
       cat(out$stderr)
     Output
       Error in `f()`:
-      This failed
+      ! This failed
       ---
       Backtrace:
       1. global f()
@@ -17,6 +17,6 @@
       cat(out$stdout)
     Output
       Error in `f()`:
-      This failed
+      ! This failed
       Type .Last.error to see the more details.
 
