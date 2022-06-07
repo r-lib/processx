@@ -835,7 +835,7 @@ err <- local({
   }
 
   format_advice_plain <- function(x, ...) {
-    paste0("\n", str_advice)
+    str_advice
   }
 
   format_header_line_plain <- function(x, prefix = NULL) {

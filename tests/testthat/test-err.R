@@ -250,10 +250,9 @@ test_that("error is printed on error", {
 test_that("trace is printed on error in non-interactive sessions", {
 
   sf <- tempfile(fileext = ".R")
-  op <- sub("\\.R$", ".rds", sf)
   so <- paste0(sf, "out")
   se <- paste0(sf, "err")
-  on.exit(unlink(c(sf, op, so, se), recursive = TRUE), add = TRUE)
+  on.exit(unlink(c(sf, so, se), recursive = TRUE), add = TRUE)
 
   expr <- substitute({
     processx::run(basename(tempfile()))

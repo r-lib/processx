@@ -101,3 +101,29 @@ has_locale <- function(l) {
   )
   has
 }
+
+run_script <- function(expr, ..., encoding = "") {
+  sf <- tempfile(fileext = ".R")
+  so <- paste0(sf, "out")
+  se <- paste0(sf, "err")
+  on.exit(unlink(c(sf, so, se), recursive = TRUE), add = TRUE)
+
+  writeLines(deparse(substitute(expr)), con = sf)
+
+  out <- callr::rscript(
+    sf,
+    stdout = so,
+    stderr = se,
+    fail_on_status = FALSE,
+    show = FALSE
+  )
+
+  enc <- function(x) iconv(list(x), encoding, "UTF-8")
+  
+  list(
+    script = readLines(sf),
+    stdout = enc(readBin(so, "raw", file.size(so))),
+    stderr = enc(readBin(se, "raw", file.size(se))),
+    status = out$status
+  )
+}
