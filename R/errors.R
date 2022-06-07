@@ -921,12 +921,8 @@ err <- local({
   get_srcref <- function(call, srcref = NULL) {
     ref <- srcref %||% utils::getSrcref(call)
     if (is.null(ref)) return(NULL)
-    srcfile <- attr(ref, "srcfile")
-    if (isTRUE(srcfile$isFile)) {
-      file <- srcfile$filename
-    } else {
-      file <- ""
-    }
+    file <- utils::getSrcFilename(ref, full.names = TRUE)[1]
+    if (is.na(file)) file <- ""
     line <- utils::getSrcLocation(ref) %||% ""
     col <- utils::getSrcLocation(ref, which = "column") %||% ""
     list(file = file, line = line, col = col)
