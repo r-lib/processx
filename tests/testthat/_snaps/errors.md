@@ -3,7 +3,7 @@
     Code
       cat(out$stderr)
     Output
-      Error in `processx::run(processx:::get_tool("px"), c("errln", paste(1:20, …` at script.R:2:5:
+      Error in `processx::run(processx:::get_tool("px"), c("errln", paste(1:20, ...` at script.R:2:5:
       ! System command 'px' failed
       ---
       Exit status: 100
@@ -34,7 +34,7 @@
       2. | base::withVisible(eval(ei, envir))
       3. | base::eval(ei, envir)
       4. | base::eval(ei, envir)
-      5. processx::run(processx:::get_tool("px"), c("errln", paste(1:20, … at script.R:2:5
-      6. processx:::throw(new_process_error(res, call = sys.call(), echo = echo, …
+      5. processx::run(processx:::get_tool("px"), c("errln", paste(1:20, at script.R:2:5
+      6. processx:::throw(new_process_error(res, call = sys.call(), echo = echo,
       Execution halted
 

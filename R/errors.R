@@ -942,7 +942,7 @@ err <- local({
       NULL
     } else {
       cl <- trimws(format(call))
-      if (length(cl) > 1) cl <- paste0(cl[1], " ", cli::symbol$ellipsis)
+      if (length(cl) > 1) cl <- paste0(cl[1], " ...")
       paste0("`", cl, "`")
     }
   }
