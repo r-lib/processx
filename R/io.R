@@ -50,13 +50,13 @@ process_read_output <- function(self, private, n) {
   "!DEBUG process_read_output `private$get_short_name()`"
   con <- process_get_output_connection(self, private)
   if (private$pty) if (poll(list(con), 0)[[1]] == "timeout") return("")
-  rethrow_call(c_processx_connection_read_chars, con, n)
+  chain_call(c_processx_connection_read_chars, con, n)
 }
 
 process_read_error <- function(self, private, n) {
   "!DEBUG process_read_error `private$get_short_name()`"
   con <- process_get_error_connection(self, private)
-  rethrow_call(c_processx_connection_read_chars, con, n)
+  chain_call(c_processx_connection_read_chars, con, n)
 
 }
 
@@ -66,23 +66,23 @@ process_read_output_lines <- function(self, private, n) {
   if (private$pty) {
     throw(new_error("Cannot read lines from a pty (see manual)"))
   }
-  rethrow_call(c_processx_connection_read_lines, con, n)
+  chain_call(c_processx_connection_read_lines, con, n)
 }
 
 process_read_error_lines <- function(self, private, n) {
   "!DEBUG process_read_error_lines `private$get_short_name()`"
   con <- process_get_error_connection(self, private)
-  rethrow_call(c_processx_connection_read_lines, con, n)
+  chain_call(c_processx_connection_read_lines, con, n)
 }
 
 process_is_incompelete_output <- function(self, private) {
   con <- process_get_output_connection(self, private)
-  ! rethrow_call(c_processx_connection_is_eof, con)
+  ! chain_call(c_processx_connection_is_eof, con)
 }
 
 process_is_incompelete_error <- function(self, private) {
   con <- process_get_error_connection(self, private)
-  ! rethrow_call(c_processx_connection_is_eof, con)
+  ! chain_call(c_processx_connection_is_eof, con)
 }
 
 process_read_all_output <- function(self, private) {
@@ -128,7 +128,7 @@ process_write_input <- function(self, private, str, sep) {
     pstr <- paste(str, collapse = sep)
     str <- iconv(pstr, "", private$encoding, toRaw = TRUE)[[1]]
   }
-  invisible(rethrow_call(c_processx_connection_write_bytes, con, str))
+  invisible(chain_call(c_processx_connection_write_bytes, con, str))
 }
 
 process_get_input_file <- function(self, private) {

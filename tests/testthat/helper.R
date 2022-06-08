@@ -101,3 +101,53 @@ has_locale <- function(l) {
   )
   has
 }
+
+run_script <- function(expr, ..., quoted = NULL, encoding = "") {
+  dir.create(dir <- tempfile())
+  sf <- file.path(dir, "script.R")
+  sf2 <- file.path(dir, "script2.R")
+  so <- paste0(sf, "out")
+  se <- paste0(sf, "err")
+  on.exit(unlink(c(dir), recursive = TRUE), add = TRUE)
+
+  if (is.null(quoted)) quoted <- substitute(expr)
+  writeLines(deparse(quoted), con = sf)
+
+  writeLines(
+    deparse(substitute({
+      options(keep.source = TRUE)
+      source(sf)
+    }, list(sf = basename(sf)))),
+    con = sf2
+  )
+
+  out <- callr::rscript(
+    basename(sf2),
+    stdout = so,
+    stderr = se,
+    fail_on_status = FALSE,
+    show = FALSE,
+    wd = dirname(sf)
+  )
+
+  enc <- function(x) iconv(list(x), encoding, "UTF-8")
+  
+  list(
+    script = readLines(sf),
+    stdout = enc(readBin(so, "raw", file.size(so))),
+    stderr = enc(readBin(se, "raw", file.size(se))),
+    status = out$status
+  )
+}
+
+scrub_px <- function(x) {
+  sub("'px.exe'", "'px'", x, fixed = TRUE)
+}
+
+scrub_srcref <- function(x) {
+  x <- sub(" at cnd-abort.R:[0-9]+:[0-9]+", "", x)
+  x <- sub(" at errors.R:[0-9]+:[0-9]+", "", x)
+  x <- sub(" at run.R:[0-9]+:[0-9]+", "", x)
+  x <- sub("\033[90m\033[39m", "", x, fixed = TRUE)
+  x
+}

@@ -135,7 +135,7 @@ process_initialize <- function(self, private, command, args,
   connections <- c(list(stdin, stdout, stderr), connections)
 
   "!DEBUG process_initialize exec()"
-  private$status <- rethrow_call(
+  private$status <- chain_call(
     c_processx_exec,
     command, c(command, args), pty, pty_options,
     connections, env, windows_verbatim_args, windows_hide_window,
@@ -150,7 +150,7 @@ process_initialize <- function(self, private, command, args,
   ## current time instead. (In the C process handle, there will be 0,
   ## still.)
   private$starttime <-
-    rethrow_call(c_processx__proc_start_time, private$status)
+    chain_call(c_processx__proc_start_time, private$status)
   if (private$starttime == 0) private$starttime <- Sys.time()
 
   ## Need to close this, otherwise the child's end of the pipe

@@ -609,7 +609,7 @@ started running.
 p <- process$new("nonexistant-command-for-sure")
 ```
 
-    #> Error in rethrow_call(c_processx_exec, command, c(command, args), pty, : cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:613 (processx_exec)
+    #> Error in entrace_call(c_processx_exec, command, c(command, args), pty, : cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:613 (processx_exec)
 
 ``` r
 p2 <- process$new(px, c("sleep", "1", "command-does-not-exist"))

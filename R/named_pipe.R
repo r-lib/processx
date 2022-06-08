@@ -20,7 +20,7 @@ is_pipe_open <- function(pipe) {
 
 #' @export
 is_pipe_open.windows_named_pipe <- function(pipe) {
-  rethrow_call(c_processx_is_named_pipe_open, pipe$handle)
+  chain_call(c_processx_is_named_pipe_open, pipe$handle)
 }
 
 #' @export
@@ -44,7 +44,7 @@ create_named_pipe <- function(name) {
   if (is_windows()) {
     structure(
       list(
-        handle = rethrow_call(c_processx_create_named_pipe, name, "")
+        handle = chain_call(c_processx_create_named_pipe, name, "")
       ),
       class = c("windows_named_pipe", "named_pipe")
     )
@@ -66,7 +66,7 @@ close_named_pipe <- function(pipe) {
 
 #' @export
 close_named_pipe.windows_named_pipe <- function(pipe) {
-  rethrow_call(c_processx_close_named_pipe, pipe$handle)
+  chain_call(c_processx_close_named_pipe, pipe$handle)
 }
 
 #' @export
@@ -87,7 +87,7 @@ write_lines_named_pipe.windows_named_pipe <- function(pipe, text) {
   if (substr(text, len, len) != "\n")
     text <- paste0(text, "\n")
 
-  rethrow_call(c_processx_write_named_pipe, pipe$handle, text)
+  chain_call(c_processx_write_named_pipe, pipe$handle, text)
 }
 
 #' @export

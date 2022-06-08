@@ -25,12 +25,13 @@ Imports:
     utils
 Suggests:
     callr (>= 3.7.0),
-    cli (>= 1.1.0),
+    cli (>= 3.3.0),
     codetools,
     covr,
     curl,
     debugme,
     parallel,
+    rlang (>= 1.0.2),
     testthat (>= 3.0.0),
     withr
 Encoding: UTF-8

@@ -698,7 +698,7 @@ process <- R6::R6Class(
 
 process_wait <- function(self, private, timeout) {
   "!DEBUG process_wait `private$get_short_name()`"
-  rethrow_call_with_cleanup(
+  chain_clean_call(
     c_processx_wait, private$status,
     as.integer(timeout),
     private$get_short_name()
@@ -708,18 +708,18 @@ process_wait <- function(self, private, timeout) {
 
 process_is_alive <- function(self, private) {
   "!DEBUG process_is_alive `private$get_short_name()`"
-  rethrow_call(c_processx_is_alive, private$status, private$get_short_name())
+  chain_call(c_processx_is_alive, private$status, private$get_short_name())
 }
 
 process_get_exit_status <- function(self, private) {
   "!DEBUG process_get_exit_status `private$get_short_name()`"
-  rethrow_call(c_processx_get_exit_status, private$status,
+  chain_call(c_processx_get_exit_status, private$status,
                private$get_short_name())
 }
 
 process_signal <- function(self, private, signal) {
   "!DEBUG process_signal `private$get_short_name()` `signal`"
-  rethrow_call(c_processx_signal, private$status, as.integer(signal),
+  chain_call(c_processx_signal, private$status, as.integer(signal),
                private$get_short_name())
 }
 
@@ -730,14 +730,14 @@ process_interrupt <- function(self, private) {
     st <- run(get_tool("interrupt"), c(pid, "c"), error_on_status = FALSE)
     if (st$status == 0) TRUE else FALSE
   } else {
-    rethrow_call(c_processx_interrupt, private$status,
+    chain_call(c_processx_interrupt, private$status,
                  private$get_short_name())
   }
 }
 
 process_kill <- function(self, private, grace, close_connections) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `self$get_pid()`"
-  ret <- rethrow_call(c_processx_kill, private$status, as.numeric(grace),
+  ret <- chain_call(c_processx_kill, private$status, as.numeric(grace),
                       private$get_short_name())
   if (close_connections) private$close_connections()
   ret
@@ -760,7 +760,7 @@ process_get_start_time <- function(self, private) {
 }
 
 process_get_pid <- function(self, private) {
-  rethrow_call(c_processx_get_pid, private$status)
+  chain_call(c_processx_get_pid, private$status)
 }
 
 process_is_supervised <- function(self, private) {
@@ -798,7 +798,7 @@ ps_method <- function(fun, self) {
 process_close_connections <- function(self, private) {
   for (f in c("stdin_pipe", "stdout_pipe", "stderr_pipe", "poll_pipe")) {
     if (!is.null(p <- private[[f]])) {
-      rethrow_call(c_processx_connection_close, p)
+      chain_call(c_processx_connection_close, p)
     }
   }
 }

@@ -10,12 +10,12 @@ base64_decode <- function(x) {
   if (is.character(x)) {
     x <- charToRaw(paste(gsub("\\s+", "", x), collapse = ""))
   }
-  rethrow_call(c_processx_base64_decode, x)
+  chain_call(c_processx_base64_decode, x)
 }
 
 #' @export
 #' @rdname base64_decode
 
 base64_encode <- function(x) {
-  rawToChar(rethrow_call(c_processx_base64_encode, x))
+  rawToChar(chain_call(c_processx_base64_encode, x))
 }

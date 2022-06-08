@@ -7,9 +7,17 @@ test_that("throw() is standalone", {
   for (f in funobjs) expect_identical(environmentName(topenv(f)), "base")
 
   expect_message(
-    mapply(codetools::checkUsage, funobjs, funs,
-           MoreArgs = list(report = message)),
-    NA)
+    withCallingHandlers(
+      res <- mapply(codetools::checkUsage, funobjs, funs,
+                    MoreArgs = list(report = message)),
+      message = function(c) {
+        if (grepl(".hide_from_trace", c$message)) {
+          invokeRestart("muffleMessage")
+        }
+      }
+    ),
+    NA
+  )
 })
 
 test_that("new_cond", {
@@ -22,15 +30,21 @@ test_that("new_error", {
   c <- new_error("foo", "bar")
   expect_identical(
     class(c),
-    c("rlib_error_2_0", "rlib_error", "error", "condition")
+    c("rlib_error_3_0", "rlib_error", "rlang_error", "error", "condition")
   )
   expect_identical(c$message, "foobar")
 })
 
-test_that("throw() needs condition objects", {
+test_that("throw() works with condition objects or strings", {
   expect_error(
-    throw("foobar"), "can only throw conditions",
+    throw("foobar"), "foobar",
     class = "rlib_error")
+  expect_error(
+    throw(new_error("foobar")), "foobar",
+    class = "rlib_error")
+})
+
+test_that("parent must be an error object", {
   expect_error(
     throw(new_error("foobar"), parent = "nope"),
     "Parent condition must be a condition object",
@@ -41,7 +55,7 @@ test_that("throw() adds the proper call, if requested", {
   f <- function() throw(new_error("ooops"))
   err <- tryCatch(f(), error = function(e) e)
   expect_s3_class(err, "rlib_error")
-  expect_identical(err$call, quote(f()))
+  expect_identical(err$call, "f()")
 
   g <- function() throw(new_error("ooops", call. = FALSE))
   err <- tryCatch(g(), error = function(e) e)
@@ -51,9 +65,6 @@ test_that("throw() adds the proper call, if requested", {
 
 test_that("throw() only stops for errors", {
   f <- function() throw(new_cond("nothing important"))
-
-  cond <- tryCatch(f(), condition = function(e) e)
-  expect_s3_class(cond, "condition")
 
   expect_error(f(), NA)
 })
@@ -97,149 +108,19 @@ test_that("un-caught condition has trace", {
   expect_s3_class(cond$trace, "rlib_trace")
 })
 
-test_that("catch_rethow", {
+test_that("chain_call", {
 
-  h <- function() h2()
-  h2 <- function() throw(new_error("oops"))
-
-  f <- function() g()
-  g <- function() {
-    err$catch_rethrow(
-      h(),
-      error = function(e) throw(new_error("oops2"), parent = e))
+  do <- function() {
+    chain_call(c_processx_base64_encode, "foobar")
   }
-
-  cond <- tryCatch(g(), error = function(e) e)
-  expect_s3_class(cond, "rlib_error")
-  expect_equal(cond$call, quote(g()))
-  expect_s3_class(cond$parent, "rlib_error")
-  expect_equal(cond$parent$call, quote(h2()))
-  expect_true(is.integer(cond$`_nframe`))
-  expect_true(is.integer(cond$parent$`_nframe`))
-  expect_true(cond$`_nframe` < cond$parent$`_nframe`)
-})
-
-test_that("rethrow", {
-  h <- function() h2()
-  h2 <- function() throw(new_error("oops"))
-
-  f <- function() g()
-  g <- function() rethrow(h(), new_error("oops2"))
-
-  cond <- tryCatch(g(), error = function(e) e)
-  expect_s3_class(cond, "rlib_error")
-  expect_equal(cond$call, quote(g()))
-  expect_s3_class(cond$parent, "rlib_error")
-  expect_equal(cond$parent$call, quote(h2()))
-  expect_true(is.integer(cond$`_nframe`))
-  expect_true(is.integer(cond$parent$`_nframe`))
-  expect_true(cond$`_nframe` < cond$parent$`_nframe`)
-})
-
-test_that("rethrow without call", {
-  h <- function() h2()
-  h2 <- function() throw(new_error("oops"))
-
-  f <- function() g()
-  g <- function() rethrow(h(), new_error("oops2"), call = FALSE)
-
-  cond <- tryCatch(g(), error = function(e) e)
-  expect_s3_class(cond, "rlib_error")
-  expect_null(cond$call)
-  expect_s3_class(cond$parent, "rlib_error")
-  expect_equal(cond$parent$call, quote(h2()))
-  expect_true(is.integer(cond$`_nframe`))
-  expect_true(is.integer(cond$parent$`_nframe`))
-  expect_true(cond$`_nframe` < cond$parent$`_nframe`)
-})
-
-test_that("rethrow_call", {
-
   cond <- tryCatch(
-    rethrow_call(c_processx_base64_encode, "foobar"),
-    error = function(e) e)
-  expect_equal(cond$call[[1]], quote(rethrow_call))
+   do(),
+   error = function(e) e
+  )
+
+  expect_equal(cond$call, "do()")
   expect_s3_class(cond, "c_error")
   expect_s3_class(cond, "rlib_error")
-})
-
-test_that("trace when rethrowing", {
-
-  skip_on_cran()
-
-  sf <- tempfile(fileext = ".R")
-  op <- sub("\\.R$", ".rds", sf)
-  so <- paste0(sf, "out")
-  se <- paste0(sf, "err")
-  on.exit(unlink(c(sf, op, so, se), recursive = TRUE), add = TRUE)
-
-  expr <- substitute({
-    f <- function() g()
-    g <- function() processx:::throw(processx:::new_error("oooops"))
-    h <- function() processx:::rethrow(f(), processx:::new_error("and again"))
-    options(rlib_error_handler = function(c) {
-      saveRDS(c, file = `__op__`)
-      # quit after the first, because the other one is caught here as well
-      q()
-    })
-    h()
-  }, list("__op__" = op))
-
-  cat(deparse(expr), file = sf, sep = "\n")
-
-  callr::rscript(sf, stdout = so, stderr = se)
-
-  cond <- readRDS(op)
-
-  expect_s3_class(cond, "rlib_error")
-  expect_s3_class(cond$parent, "rlib_error")
-  expect_s3_class(cond$trace, "rlib_trace")
-  expect_null(cond$parent$trace)
-
-  expect_equal(length(cond$trace$nframe), 2)
-  expect_true(cond$trace$nframe[1] < cond$trace$nframe[2])
-  expect_equal(cond$trace$messages, list("and again", "oooops"))
-  expect_equal(cond$trace$calls[[cond$trace$nframe[1]-1]], "h()")
-  expect_equal(cond$trace$calls[[cond$trace$nframe[2]-1]], "g()")
-})
-
-test_that("rethrowing non rlib errors", {
-  skip_on_cran()
-
-  sf <- tempfile(fileext = ".R")
-  op <- sub("\\.R$", ".rds", sf)
-  so <- paste0(sf, "out")
-  se <- paste0(sf, "err")
-  on.exit(unlink(c(sf, op, so, se), recursive = TRUE), add = TRUE)
-
-  expr <- substitute({
-    f <- function() g()
-    g <- function() stop("oooopsie")
-    h <- function() processx:::rethrow(f(), processx:::new_error("and again"))
-    options(rlib_error_handler = function(c) {
-      saveRDS(c, file = `__op__`)
-      # quit after the first, because the other one is caught here as well
-      q()
-    })
-    h()
-  }, list("__op__" = op))
-
-  cat(deparse(expr), file = sf, sep = "\n")
-
-  callr::rscript(sf, stdout = so, stderr = se)
-
-  cond <- readRDS(op)
-
-  expect_s3_class(cond, "rlib_error")
-  expect_s3_class(cond$parent, "simpleError")
-  expect_false(inherits(cond$parent, "rlib_error"))
-  expect_s3_class(cond$trace, "rlib_trace")
-  expect_null(cond$parent$trace)
-
-  expect_equal(length(cond$trace$nframe), 2)
-  expect_true(cond$trace$nframe[1] < cond$trace$nframe[2])
-  expect_equal(cond$trace$messages, list("and again", "oooopsie"))
-  expect_equal(cond$trace$calls[[cond$trace$nframe[1]-1]], "h()")
 })
 
 test_that("errors from subprocess", {
@@ -358,7 +239,7 @@ test_that("error is printed on error", {
     show = FALSE
   )
 
-  selines <- readLines(se)
+  selines <- readLines(so)
   expect_true(
     any(grepl("No such file or directory", selines)) ||
     any(grepl("Command .* not found", selines))
@@ -369,10 +250,9 @@ test_that("error is printed on error", {
 test_that("trace is printed on error in non-interactive sessions", {
 
   sf <- tempfile(fileext = ".R")
-  op <- sub("\\.R$", ".rds", sf)
   so <- paste0(sf, "out")
   se <- paste0(sf, "err")
-  on.exit(unlink(c(sf, op, so, se), recursive = TRUE), add = TRUE)
+  on.exit(unlink(c(sf, so, se), recursive = TRUE), add = TRUE)
 
   expr <- substitute({
     processx::run(basename(tempfile()))
@@ -393,5 +273,5 @@ test_that("trace is printed on error in non-interactive sessions", {
     any(grepl("No such file or directory", selines)) ||
       any(grepl("Command .* not found", selines))
   )
-  expect_true(any(grepl("Stack trace", selines)))
+  expect_true(any(grepl("Backtrace", selines)))
 })

@@ -3,7 +3,6 @@
 S3method(close,processx_connection)
 S3method(close_named_pipe,unix_named_pipe)
 S3method(close_named_pipe,windows_named_pipe)
-S3method(conditionMessage,system_command_error)
 S3method(conn_is_incomplete,processx_connection)
 S3method(conn_read_chars,processx_connection)
 S3method(conn_read_lines,processx_connection)

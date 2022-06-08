@@ -23,7 +23,7 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
     is_string(encoding),
     is_flag(close))
   fd <- as.integer(fd)
-  rethrow_call(c_processx_connection_create_fd, fd, encoding, close)
+  chain_call(c_processx_connection_create_fd, fd, encoding, close)
 }
 
 #' @details
@@ -42,7 +42,7 @@ conn_create_pipepair <- function(encoding = "",
     is_string(encoding),
     is.logical(nonblocking), length(nonblocking) == 2,
     !any(is.na(nonblocking)))
-  rethrow_call(c_processx_connection_create_pipepair, encoding, nonblocking)
+  chain_call(c_processx_connection_create_pipepair, encoding, nonblocking)
 }
 
 #' @details
@@ -71,7 +71,7 @@ conn_read_chars.processx_connection <- function(con, n = -1) {
 
 processx_conn_read_chars <- function(con, n = -1) {
   assert_that(is_connection(con), is_integerish_scalar(n))
-  rethrow_call(c_processx_connection_read_chars, con, n)
+  chain_call(c_processx_connection_read_chars, con, n)
 }
 
 #' @details
@@ -95,7 +95,7 @@ conn_read_lines.processx_connection <- function(con, n = -1) {
 
 processx_conn_read_lines <- function(con, n = -1) {
   assert_that(is_connection(con), is_integerish_scalar(n))
-  rethrow_call(c_processx_connection_read_lines, con, n)
+  chain_call(c_processx_connection_read_lines, con, n)
 }
 
 #' @details
@@ -120,7 +120,7 @@ conn_is_incomplete.processx_connection <- function(con) {
 
 processx_conn_is_incomplete <- function(con) {
   assert_that(is_connection(con))
-  ! rethrow_call(c_processx_connection_is_eof, con)
+  ! chain_call(c_processx_connection_is_eof, con)
 }
 
 #' @details
@@ -161,7 +161,7 @@ processx_conn_write <- function(con, str, sep = "\n", encoding = "") {
     pstr <- paste(str, collapse = sep)
     str <- iconv(pstr, "", encoding, toRaw = TRUE)[[1]]
   }
-  invisible(rethrow_call(c_processx_connection_write_bytes, con, str))
+  invisible(chain_call(c_processx_connection_write_bytes, con, str))
 }
 
 #' @details
@@ -185,7 +185,7 @@ conn_create_file <- function(filename, read = NULL, write = NULL) {
     is_flag(write),
     read || write)
 
-  rethrow_call(c_processx_connection_create_file, filename, read, write)
+  chain_call(c_processx_connection_create_file, filename, read, write)
 }
 
 #' @details
@@ -204,7 +204,7 @@ conn_set_stdout <- function(con, drop = TRUE) {
     is_flag(drop))
 
   flush(stdout())
-  invisible(rethrow_call(c_processx_connection_set_stdout, con, drop))
+  invisible(chain_call(c_processx_connection_set_stdout, con, drop))
 }
 
 #' @details
@@ -220,7 +220,7 @@ conn_set_stderr <- function(con, drop = TRUE) {
     is_flag(drop))
 
   flush(stderr())
-  invisible(rethrow_call(c_processx_connection_set_stderr, con, drop))
+  invisible(chain_call(c_processx_connection_set_stderr, con, drop))
 }
 
 #' @details
@@ -231,7 +231,7 @@ conn_set_stderr <- function(con, drop = TRUE) {
 #' @export
 
 conn_get_fileno <- function(con) {
-  rethrow_call(c_processx_connection_get_fileno, con)
+  chain_call(c_processx_connection_get_fileno, con)
 }
 
 #' @details
@@ -246,7 +246,7 @@ conn_get_fileno <- function(con) {
 #' @export
 
 conn_disable_inheritance <- function() {
-  rethrow_call(c_processx_connection_disable_inheritance)
+  chain_call(c_processx_connection_disable_inheritance)
 }
 
 #' @rdname processx_connections
@@ -262,7 +262,7 @@ close.processx_connection <- function(con, ...) {
 #' @export
 
 processx_conn_close <- function(con, ...) {
-  rethrow_call(c_processx_connection_close, con)
+  chain_call(c_processx_connection_close, con)
 }
 
 #' @details
@@ -284,5 +284,5 @@ processx_conn_close <- function(con, ...) {
 is_valid_fd <- function(fd) {
   assert_that(is_integerish_scalar(fd))
   fd <- as.integer(fd)
-  rethrow_call(c_processx_is_valid_fd, fd)
+  chain_call(c_processx_is_valid_fd, fd)
 }
