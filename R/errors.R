@@ -431,7 +431,7 @@ err <- local({
     )
     funs <- paste0(
       funs,
-      vapply(calls, function(x) format(x[[1]])[1], character(1))
+      vapply(calls, function(x) format_name(x[[1]])[1], character(1))
     )
     visibles <- visibles & mark_invisible_frames(funs, frames)
 
@@ -1065,6 +1065,15 @@ err <- local({
   native_name <- function(x) {
     if (inherits(x, "NativeSymbolInfo")) {
       x$name
+    } else {
+      format(x)
+    }
+  }
+
+  # There is no format() for 'name' in R 3.6.x and before
+  format_name <- function(x) {
+    if (is.name(x)) {
+      as.character(x)
     } else {
       format(x)
     }
