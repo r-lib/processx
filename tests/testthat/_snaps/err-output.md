@@ -184,10 +184,10 @@
       [90m 8. [39mglobal [36mdo[39m[33m()[39m[90m at script.R:18:14[39m
       [90m 9. [39mprocessx:::[36mchain_error[39m[33m([39m[36mdo2[39m[34m()[39m, [33m"Failed to base64 encode")[39m[90m at script.R:14:13[39m
       [90m10. | base::withCallingHandlers({ …[39m
-      [90m11. [39mglobal [36mdo2[39m[33m()[39m[90m[39m
+      [90m11. [39mglobal [36mdo2[39m[33m()[39m
       [90m12. [39mprocessx:::[36mchain_error[39m[33m([39m[36mdo3[39m[34m()[39m, [33m"something is wrong here")[39m[90m at script.R:11:13[39m
       [90m13. | base::withCallingHandlers({ …[39m
-      [90m14. [39mglobal [36mdo3[39m[33m()[39m[90m[39m
+      [90m14. [39mglobal [36mdo3[39m[33m()[39m
       [90m15. [39mprocessx:::[36mthrow[39m[33m("because of this")[39m[90m at script.R:8:13[39m
       [90m16. | base::signalCondition(cond)[39m
       [90m17. | (function (e) …[39m
@@ -381,8 +381,8 @@
       [90m 4. | base::eval(ei, envir)[39m
       [90m 5. [39mprocessx:::[36mchain_error[39m[33m([39mprocessx::[36mrun[39m[34m([39mpx, [36mc([39m[33m"return"[39m, [33m"1"[39m[36m)[39m[34m)[39m, [33m"failed to run[39m…[90m at script.R:8:9[39m
       [90m 6. | base::withCallingHandlers({ …[39m
-      [90m 7. [39mprocessx::[36mrun[39m[33m([39mpx, [36mc[39m[34m([39m[33m"return"[39m, [33m"1"[39m[34m)[39m[33m)[39m[90m[39m
-      [90m 8. [39mprocessx:::throw(new_process_error(res, call = sys.call(), echo = echo, …[90m[39m
+      [90m 7. [39mprocessx::[36mrun[39m[33m([39mpx, [36mc[39m[34m([39m[33m"return"[39m, [33m"1"[39m[34m)[39m[33m)[39m
+      [90m 8. [39mprocessx:::throw(new_process_error(res, call = sys.call(), echo = echo, …
       [90m 9. | base::signalCondition(cond)[39m
       [90m10. | (function (e) …[39m
       [90m11. | processx:::throw_error(err, parent = e)[39m
