@@ -125,6 +125,7 @@ test_that("chain_call", {
 
 test_that("errors from subprocess", {
   skip_if_not_installed("callr", minimum_version = "3.7.0")
+  if (packageVersion("callr") != "3.7.0") skip("only with callr 3.7.0")
   err <- tryCatch(
     callr::r(function() 1 + "a"),
     error = function(e) e)
@@ -133,9 +134,20 @@ test_that("errors from subprocess", {
   expect_false(is.null(err$parent$trace))
 })
 
+test_that("errors from subprocess", {
+  skip_if_not_installed("callr", minimum_version = "3.7.0.9000")
+  err <- tryCatch(
+    callr::r(function() 1 + "a"),
+    error = function(e) e)
+  expect_s3_class(err, "rlib_error")
+  expect_s3_class(err$parent, "error")
+  expect_false(is.null(err$parent_trace))
+})
+
 test_that("error trace from subprocess", {
   skip_on_cran()
   skip_if_not_installed("callr", minimum_version = "3.7.0")
+  if (packageVersion("callr") != "3.7.0") skip("only with callr 3.7.0")
 
   sf <- tempfile(fileext = ".R")
   op <- sub("\\.R$", ".rds", sf)
@@ -169,9 +181,41 @@ test_that("error trace from subprocess", {
   expect_match(cond$trace$messages[[2]], "non-numeric argument")
 })
 
+test_that("error trace from subprocess", {
+  skip_on_cran()
+  skip_if_not_installed("callr", minimum_version = "3.7.0.9000")
+
+  sf <- tempfile(fileext = ".R")
+  op <- sub("\\.R$", ".rds", sf)
+  so <- paste0(sf, "out")
+  se <- paste0(sf, "err")
+  on.exit(unlink(c(sf, op, so, se), recursive = TRUE), add = TRUE)
+
+  expr <- substitute({
+    h <- function() callr::r(function() 1 + "a")
+    options(rlib_error_handler = function(c) {
+      saveRDS(c, file = `__op__`)
+      # quit after the first, because the other one is caught here as well
+      q()
+    })
+    h()
+  }, list("__op__" = op))
+
+  cat(deparse(expr), file = sf, sep = "\n")
+
+  callr::rscript(sf, stdout = so, stderr = se)
+
+  cond <- readRDS(op)
+
+  expect_s3_class(cond, "rlib_error")
+  expect_s3_class(cond$parent, "error")
+  expect_s3_class(cond$trace, "rlib_trace")
+})
+
 test_that("error trace from throw() in subprocess", {
   skip_on_cran()
   skip_if_not_installed("callr", minimum_version = "3.7.0")
+  if (packageVersion("callr") != "3.7.0") skip("only with callr 3.7.0")
 
   sf <- tempfile(fileext = ".R")
   op <- sub("\\.R$", ".rds", sf)
@@ -203,6 +247,37 @@ test_that("error trace from throw() in subprocess", {
   expect_true(cond$trace$nframe[1] < cond$trace$nframe[2])
   expect_match(cond$trace$messages[[1]], "subprocess failed: .*processx\\.c")
   expect_match(cond$trace$messages[[2]], "@.*processx\\.c")
+})
+
+test_that("error trace from throw() in subprocess", {
+  skip_on_cran()
+  skip_if_not_installed("callr", minimum_version = "3.7.0.9000")
+
+  sf <- tempfile(fileext = ".R")
+  op <- sub("\\.R$", ".rds", sf)
+  so <- paste0(sf, "out")
+  se <- paste0(sf, "err")
+  on.exit(unlink(c(sf, op, so, se), recursive = TRUE), add = TRUE)
+
+  expr <- substitute({
+    h <- function() callr::r(function() processx::run("does-not-exist---"))
+    options(rlib_error_handler = function(c) {
+      saveRDS(c, file = `__op__`)
+      # quit after the first, because the other one is caught here as well
+      q()
+    })
+    h()
+  }, list("__op__" = op))
+
+  cat(deparse(expr), file = sf, sep = "\n")
+
+  callr::rscript(sf, stdout = so, stderr = se)
+
+  cond <- readRDS(op)
+
+  expect_s3_class(cond, "rlib_error")
+  expect_s3_class(cond$parent, "rlib_error")
+  expect_s3_class(cond$trace, "rlib_trace")
 })
 
 test_that("trace is not overwritten", {
