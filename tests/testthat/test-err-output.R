@@ -162,3 +162,37 @@ test_that("chain_error with rlang::abort()", {
   out <- run_script(quoted = expr2)
   expect_snapshot(cat(out$stdout))
 })
+
+test_that("full parent error is printed in non-interactive mode", {
+  expr <- quote({
+    px <- processx:::get_tool("px")
+    processx:::chain_error(
+      processx::run(px, c("return", "1")),
+      "failed to run external program"
+    )
+  })
+
+  out <- run_script(quoted = expr)
+  expect_snapshot(cat(out$stderr))
+
+  expr2 <- substitute(
+    {o; c },
+    list(o = quote(options(rlib_interactive = TRUE)), c = expr)
+  )
+  out <- run_script(quoted = expr2)
+  expect_snapshot(cat(out$stdout))
+
+  expr2 <- substitute(
+    {o; c },
+    list(o = quote(library(cli)), c = expr)
+  )
+  out <- run_script(quoted = expr2)
+  expect_snapshot(cat(out$stderr))
+
+  expr2 <- substitute(
+    {o; c },
+    list(o = quote({library(cli); options(cli.num_colors = 256)}), c = expr)
+  )
+  out <- run_script(quoted = expr2)
+  expect_snapshot(cat(out$stderr))
+})

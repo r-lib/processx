@@ -296,3 +296,95 @@
       ! because of this
       Type .Last.error to see the more details.
 
+# full parent error is printed in non-interactive mode
+
+    Code
+      cat(out$stderr)
+    Output
+      Error in `eval(ei, envir)`:
+      ! failed to run external program
+      Caused by error in `processx::run(px, c("return", "1"))` at script.R:3:5:
+      ! System command 'px' failed
+      ---
+      Exit status: 1
+      Stderr: <empty>
+      ---
+      Backtrace:
+       1. base::source("script.R")
+       2. | base::withVisible(eval(ei, envir))
+       3. | base::eval(ei, envir)
+       4. | base::eval(ei, envir)
+       5. processx:::chain_error(processx::run(px, c("return", "1")), "failed to run  at script.R:3:5
+       6. | base::withCallingHandlers({ at errors.R:305:5
+       7. processx::run(px, c("return", "1")) at errors.R:306:7
+       8. processx:::throw(new_process_error(res, call = sys.call(), echo = echo, at run.R:256:5
+       9. | base::signalCondition(cond) at errors.R:223:5
+      10. | (function (e)
+      11. | processx:::throw_error(err, parent = e) at errors.R:313:7
+      Execution halted
+
+---
+
+    Code
+      cat(out$stdout)
+    Output
+      Error in `eval(ei, envir)`:
+      ! failed to run external program
+      Caused by error in `processx::run(px, c("return", "1"))` at script.R:5:9:
+      ! System command 'px' failed
+      Type .Last.error to see the more details.
+
+---
+
+    Code
+      cat(out$stderr)
+    Output
+      Error in `eval(ei, envir)`:
+      ! failed to run external program
+      Caused by error in `processx::run(px, c("return", "1"))` at script.R:5:9:
+      ! System command 'px' failed
+      ---
+      Exit status: 1
+      Stderr: <empty>
+      ---
+      Backtrace:
+       1. base::source("script.R")
+       2. | base::withVisible(eval(ei, envir))
+       3. | base::eval(ei, envir)
+       4. | base::eval(ei, envir)
+       5. processx:::chain_error(processx::run(px, c("return", "1")), "failed to run… at script.R:5:9
+       6. | base::withCallingHandlers({ … at errors.R:305:5
+       7. processx::run(px, c("return", "1")) at errors.R:306:7
+       8. processx:::throw(new_process_error(res, call = sys.call(), echo = echo, … at run.R:256:5
+       9. | base::signalCondition(cond) at errors.R:223:5
+      10. | (function (e) …
+      11. | processx:::throw_error(err, parent = e) at errors.R:313:7
+      Execution halted
+
+---
+
+    Code
+      cat(out$stderr)
+    Output
+      [1m[33mError[39m[22m in `eval(ei, envir)`:
+      [33m![39m failed to run external program
+      [1mCaused by error[22m in `processx::run(px, c("return", "1"))`[90m at script.R:8:9[39m:
+      [33m![39m System command 'px' failed
+      ---
+      Exit status: 1
+      Stderr: <empty>
+      ---
+      Backtrace:
+      [90m 1. [39mbase::[36msource[39m[33m("script.R")[39m
+      [90m 2. | base::withVisible(eval(ei, envir))[39m
+      [90m 3. | base::eval(ei, envir)[39m
+      [90m 4. | base::eval(ei, envir)[39m
+      [90m 5. [39mprocessx:::[36mchain_error[39m[33m([39mprocessx::[36mrun[39m[34m([39mpx, [36mc([39m[33m"return"[39m, [33m"1"[39m[36m)[39m[34m)[39m, [33m"failed to run[39m…[90m at script.R:8:9[39m
+      [90m 6. | base::withCallingHandlers({ … at errors.R:305:5[39m
+      [90m 7. [39mprocessx::[36mrun[39m[33m([39mpx, [36mc[39m[34m([39m[33m"return"[39m, [33m"1"[39m[34m)[39m[33m)[39m[90m at errors.R:306:7[39m
+      [90m 8. [39mprocessx:::throw(new_process_error(res, call = sys.call(), echo = echo, …[90m at run.R:256:5[39m
+      [90m 9. | base::signalCondition(cond) at errors.R:223:5[39m
+      [90m10. | (function (e) …[39m
+      [90m11. | processx:::throw_error(err, parent = e) at errors.R:313:7[39m
+      Execution halted
+

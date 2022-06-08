@@ -574,11 +574,12 @@ err <- local({
   # -- S3 methods -------------------------------------------------------
 
   format_error <- function(x, trace = FALSE, class = FALSE,
-                           advice = !trace, full = trace, ...) {
+                           advice = !trace, full = trace, header = TRUE,
+                           ...) {
     if (has_cli()) {
-      format_error_cli(x, trace, class, advice, full, ...)
+      format_error_cli(x, trace, class, advice, full, header, ...)
     } else {
-      format_error_plain(x, trace, class, advice, full, ...)
+      format_error_plain(x, trace, class, advice, full, header, ...)
     }
   }
 
@@ -698,7 +699,17 @@ err <- local({
     c(
       paste0(if (add_exp) exp, cond$message),
       if (inherits(cond$parent, "condition")) {
-        msg <- conditionMessage(cond$parent)
+        msg <- if (full && inherits(cond$parent, "rlib_error_3_0")) {
+          format(cond$parent,
+                 trace = FALSE,
+                 full = TRUE,
+                 class = FALSE,
+                 header = FALSE,
+                 advice = FALSE
+          )
+        } else {
+          conditionMessage(cond$parent)
+        }
         add_exp <- substr(msg[1], 1, 1) != "!"
         if (add_exp) {
           msg[1] <- paste0(exp, msg[1])
@@ -848,9 +859,10 @@ err <- local({
   # ----------------------------------------------------------------------
 
   format_error_plain <- function(x, trace = TRUE, class = TRUE,
-                                 advice = !trace, full = trace, ...) {
+                                 advice = !trace, full = trace, header = TRUE,
+                                 ...) {
     p_class <- if (class) format_class_plain(x)
-    p_header <- format_header_line_plain(x)
+    p_header <- if (header) format_header_line_plain(x)
     p_msg <- cnd_message_plain(x, full)
     p_advice <- if (advice) format_advice_plain(x) else NULL
     p_trace <- if (trace && !is.null(x$trace)) {
