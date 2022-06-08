@@ -35,6 +35,6 @@
       3. | base::eval(ei, envir)
       4. | base::eval(ei, envir)
       5. processx::run(processx:::get_tool("px"), c("errln", paste(1:20, … at script.R:2:5
-      6. processx:::throw(new_process_error(res, call = sys.call(), echo = echo, … at run.R:256:5
+      6. processx:::throw(new_process_error(res, call = sys.call(), echo = echo, …
       Execution halted
 

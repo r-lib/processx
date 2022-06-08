@@ -317,7 +317,7 @@
        5. processx:::chain_error(processx::run(px, c("return", "1")), "failed to run  at script.R:3:5
        6. | base::withCallingHandlers({
        7. processx::run(px, c("return", "1"))
-       8. processx:::throw(new_process_error(res, call = sys.call(), echo = echo, at run.R:256:5
+       8. processx:::throw(new_process_error(res, call = sys.call(), echo = echo,
        9. | base::signalCondition(cond)
       10. | (function (e)
       11. | processx:::throw_error(err, parent = e)
@@ -355,7 +355,7 @@
        5. processx:::chain_error(processx::run(px, c("return", "1")), "failed to run… at script.R:5:9
        6. | base::withCallingHandlers({ …
        7. processx::run(px, c("return", "1"))
-       8. processx:::throw(new_process_error(res, call = sys.call(), echo = echo, … at run.R:256:5
+       8. processx:::throw(new_process_error(res, call = sys.call(), echo = echo, …
        9. | base::signalCondition(cond)
       10. | (function (e) …
       11. | processx:::throw_error(err, parent = e)
@@ -382,7 +382,7 @@
       [90m 5. [39mprocessx:::[36mchain_error[39m[33m([39mprocessx::[36mrun[39m[34m([39mpx, [36mc([39m[33m"return"[39m, [33m"1"[39m[36m)[39m[34m)[39m, [33m"failed to run[39m…[90m at script.R:8:9[39m
       [90m 6. | base::withCallingHandlers({ …[39m
       [90m 7. [39mprocessx::[36mrun[39m[33m([39mpx, [36mc[39m[34m([39m[33m"return"[39m, [33m"1"[39m[34m)[39m[33m)[39m[90m[39m
-      [90m 8. [39mprocessx:::throw(new_process_error(res, call = sys.call(), echo = echo, …[90m at run.R:256:5[39m
+      [90m 8. [39mprocessx:::throw(new_process_error(res, call = sys.call(), echo = echo, …[90m[39m
       [90m 9. | base::signalCondition(cond)[39m
       [90m10. | (function (e) …[39m
       [90m11. | processx:::throw_error(err, parent = e)[39m

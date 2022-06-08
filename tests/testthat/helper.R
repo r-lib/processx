@@ -147,5 +147,6 @@ scrub_px <- function(x) {
 scrub_srcref <- function(x) {
   x <- sub(" at cnd-abort.R:[0-9]+:[0-9]+", "", x)
   x <- sub(" at errors.R:[0-9]+:[0-9]+", "", x)
+  x <- sub(" at run.R:[0-9]+:[0-9]+", "", x)
   x
 }
