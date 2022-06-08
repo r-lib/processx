@@ -139,3 +139,7 @@ run_script <- function(expr, ..., quoted = NULL, encoding = "") {
     status = out$status
   )
 }
+
+scrub_px <- function(x) {
+  sub("'px.exe'", "'px'", x, fixed = TRUE)
+}
