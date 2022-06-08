@@ -258,15 +258,15 @@ err <- local({
       return(th(cond))
     }
 
-    # Turn off the regular error printing to avoid printing
-    # the error twice.
-    opts <- options(show.error.messages = FALSE)
-    on.exit(options(opts), add = TRUE)
-
     # In non-interactive mode, we print the error + the traceback
     # manually, to make sure that it won't be truncated by R's error
     # message length limit.
-    out <- format(cond, trace = !is_interactive(), class = FALSE)
+    out <- format(
+      cond,
+      trace = !is_interactive(),
+      class = FALSE,
+      full = !is_interactive()
+    )
     writeLines(out, con = default_output())
 
     # Dropping the classes and adding "duplicate_condition" is a workaround
@@ -276,10 +276,14 @@ err <- local({
     # on "condition" objects (i.e. all conditions) get duplicate signals.
     # This is probably quite rare, but for this rare case they can also
     # recognize the duplicates from the "duplicate_condition" extra class.
-    cond2 <- cond
-    class(cond2) <- c("duplicate_condition", "condition")
+    class(cond) <- c("duplicate_condition", "condition")
 
-    stop(cond2)
+    # Turn off the regular error printing to avoid printing
+    # the error twice.
+    opts <- options(show.error.messages = FALSE)
+    on.exit(options(opts), add = TRUE)
+
+    stop(cond)
   }
 
   # -- rethrow with parent -----------------------------------------------
@@ -570,11 +574,11 @@ err <- local({
   # -- S3 methods -------------------------------------------------------
 
   format_error <- function(x, trace = FALSE, class = FALSE,
-                           advice = !trace, ...) {
+                           advice = !trace, full = trace, ...) {
     if (has_cli()) {
-      format_error_cli(x, trace, class, advice, ...)
+      format_error_cli(x, trace, class, advice, full, ...)
     } else {
-      format_error_plain(x, trace, class, advice, ...)
+      format_error_plain(x, trace, class, advice, full, ...)
     }
   }
 
@@ -596,10 +600,14 @@ err <- local({
   }
 
   cnd_message <- function(cond) {
+    cnd_message_(cond, full = FALSE)
+  }
+
+  cnd_message_ <- function(cond, full = FALSE) {
     if (has_cli()) {
-      cnd_message_cli(cond)
+      cnd_message_cli(cond, full)
     } else {
-      cnd_message_plain(cond)
+      cnd_message_plain(cond, full)
     }
   }
 
@@ -655,17 +663,26 @@ err <- local({
 
   # -- condition message with cli ---------------------------------------
 
-  cnd_message_cli <- function(cond) {
+  cnd_message_cli <- function(cond, full = FALSE) {
     exp <- paste0(cli::col_yellow("!"), " ")
     add_exp <- is.null(names(cond$message))
+
     c(
       paste0(if (add_exp) exp, cond$message),
       if (inherits(cond$parent, "condition")) {
-        msg <- conditionMessage(cond$parent)
-        add_exp <- substr(cli::ansi_strip(msg[1]), 1, 1) != "!"
-        if (add_exp) {
-          msg[1] <- paste0(exp, msg[1])
+        msg <- if (full && inherits(cond$parent, "rlib_error_3_0")) {
+          format(cond$parent,
+                 trace = FALSE,
+                 full = TRUE,
+                 class = FALSE,
+                 header = FALSE,
+                 advice = FALSE
+          )
+        } else {
+          conditionMessage(cond$parent)
         }
+        add_exp <- substr(cli::ansi_strip(msg[1]), 1, 1) != "!"
+        if (add_exp) msg[1] <- paste0(exp, msg[1])
         c(format_header_line_cli(cond$parent, prefix = "Caused by error"),
           msg
         )
@@ -675,7 +692,7 @@ err <- local({
 
   # -- condition message w/o cli ----------------------------------------
 
-  cnd_message_plain <- function(cond) {
+  cnd_message_plain <- function(cond, full = FALSE) {
     exp <- "! "
     add_exp <- is.null(names(cond$message))
     c(
@@ -703,10 +720,11 @@ err <- local({
   # - advice about .Last.error and/or .Last.error.trace
 
   format_error_cli <- function(x, trace = TRUE, class = TRUE,
-                               advice = !trace, ...) {
+                               advice = !trace, full = trace,
+                               header = TRUE, ...) {
     p_class <- if (class) format_class_cli(x)
-    p_header <- format_header_line_cli(x)
-    p_msg <- conditionMessage(x)
+    p_header <- if (header) format_header_line_cli(x)
+    p_msg <- cnd_message_cli(x, full)
     p_advice <- if (advice) format_advice_cli(x) else NULL
     p_trace <- if (trace && !is.null(x$trace)) {
       c("---", "Backtrace:", format_trace_cli(x$trace))
@@ -830,10 +848,10 @@ err <- local({
   # ----------------------------------------------------------------------
 
   format_error_plain <- function(x, trace = TRUE, class = TRUE,
-                                 advice = !trace, ...) {
+                                 advice = !trace, full = trace, ...) {
     p_class <- if (class) format_class_plain(x)
     p_header <- format_header_line_plain(x)
-    p_msg <- conditionMessage(x)
+    p_msg <- cnd_message_plain(x, full)
     p_advice <- if (advice) format_advice_plain(x) else NULL
     p_trace <- if (trace && !is.null(x$trace)) {
       c("---", "Backtrace:", format_trace_plain(x$trace))

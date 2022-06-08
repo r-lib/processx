@@ -98,18 +98,18 @@
        7. global h() at script.R:12:10
        8. global do() at script.R:13:10
        9. processx:::chain_error(do2(), "Failed to base64 encode") at script.R:9:9
-      10. | base::withCallingHandlers({ at errors.R:301:5
-      11. global do2() at errors.R:302:7
+      10. | base::withCallingHandlers({ at errors.R:305:5
+      11. global do2() at errors.R:306:7
       12. processx:::chain_error(do3(), "something is wrong here") at script.R:6:9
-      13. | base::withCallingHandlers({ at errors.R:301:5
-      14. global do3() at errors.R:302:7
+      13. | base::withCallingHandlers({ at errors.R:305:5
+      14. global do3() at errors.R:306:7
       15. processx:::throw("because of this") at script.R:3:9
       16. | base::signalCondition(cond) at errors.R:223:5
       17. | (function (e)
-      18. | processx:::throw_error(err, parent = e) at errors.R:309:7
+      18. | processx:::throw_error(err, parent = e) at errors.R:313:7
       19. | base::signalCondition(cond) at errors.R:223:5
       20. | (function (e)
-      21. | processx:::throw_error(err, parent = e) at errors.R:309:7
+      21. | processx:::throw_error(err, parent = e) at errors.R:313:7
       Execution halted
 
 ---
@@ -147,18 +147,18 @@
        7. global h() at script.R:14:14
        8. global do() at script.R:15:14
        9. processx:::chain_error(do2(), "Failed to base64 encode") at script.R:11:13
-      10. | base::withCallingHandlers({ … at errors.R:301:5
-      11. global do2() at errors.R:302:7
+      10. | base::withCallingHandlers({ … at errors.R:305:5
+      11. global do2() at errors.R:306:7
       12. processx:::chain_error(do3(), "something is wrong here") at script.R:8:13
-      13. | base::withCallingHandlers({ … at errors.R:301:5
-      14. global do3() at errors.R:302:7
+      13. | base::withCallingHandlers({ … at errors.R:305:5
+      14. global do3() at errors.R:306:7
       15. processx:::throw("because of this") at script.R:5:13
       16. | base::signalCondition(cond) at errors.R:223:5
       17. | (function (e) …
-      18. | processx:::throw_error(err, parent = e) at errors.R:309:7
+      18. | processx:::throw_error(err, parent = e) at errors.R:313:7
       19. | base::signalCondition(cond) at errors.R:223:5
       20. | (function (e) …
-      21. | processx:::throw_error(err, parent = e) at errors.R:309:7
+      21. | processx:::throw_error(err, parent = e) at errors.R:313:7
       Execution halted
 
 ---
@@ -183,18 +183,18 @@
       [90m 7. [39mglobal [36mh[39m[33m()[39m[90m at script.R:17:14[39m
       [90m 8. [39mglobal [36mdo[39m[33m()[39m[90m at script.R:18:14[39m
       [90m 9. [39mprocessx:::[36mchain_error[39m[33m([39m[36mdo2[39m[34m()[39m, [33m"Failed to base64 encode")[39m[90m at script.R:14:13[39m
-      [90m10. | base::withCallingHandlers({ … at errors.R:301:5[39m
-      [90m11. [39mglobal [36mdo2[39m[33m()[39m[90m at errors.R:302:7[39m
+      [90m10. | base::withCallingHandlers({ … at errors.R:305:5[39m
+      [90m11. [39mglobal [36mdo2[39m[33m()[39m[90m at errors.R:306:7[39m
       [90m12. [39mprocessx:::[36mchain_error[39m[33m([39m[36mdo3[39m[34m()[39m, [33m"something is wrong here")[39m[90m at script.R:11:13[39m
-      [90m13. | base::withCallingHandlers({ … at errors.R:301:5[39m
-      [90m14. [39mglobal [36mdo3[39m[33m()[39m[90m at errors.R:302:7[39m
+      [90m13. | base::withCallingHandlers({ … at errors.R:305:5[39m
+      [90m14. [39mglobal [36mdo3[39m[33m()[39m[90m at errors.R:306:7[39m
       [90m15. [39mprocessx:::[36mthrow[39m[33m("because of this")[39m[90m at script.R:8:13[39m
       [90m16. | base::signalCondition(cond) at errors.R:223:5[39m
       [90m17. | (function (e) …[39m
-      [90m18. | processx:::throw_error(err, parent = e) at errors.R:309:7[39m
+      [90m18. | processx:::throw_error(err, parent = e) at errors.R:313:7[39m
       [90m19. | base::signalCondition(cond) at errors.R:223:5[39m
       [90m20. | (function (e) …[39m
-      [90m21. | processx:::throw_error(err, parent = e) at errors.R:309:7[39m
+      [90m21. | processx:::throw_error(err, parent = e) at errors.R:313:7[39m
       Execution halted
 
 # chain_error with stop()
@@ -219,18 +219,18 @@
        7. global h() at script.R:12:10
        8. global do() at script.R:13:10
        9. processx:::chain_error(do2(), "Failed to base64 encode") at script.R:9:9
-      10. | base::withCallingHandlers({ at errors.R:301:5
-      11. global do2() at errors.R:302:7
+      10. | base::withCallingHandlers({ at errors.R:305:5
+      11. global do2() at errors.R:306:7
       12. processx:::chain_error(do3(), "something is wrong here") at script.R:6:9
-      13. | base::withCallingHandlers({ at errors.R:301:5
-      14. global do3() at errors.R:302:7
+      13. | base::withCallingHandlers({ at errors.R:305:5
+      14. global do3() at errors.R:306:7
       15. base::stop("because of this") at script.R:3:9
       16. | base::.handleSimpleError(function (e)
       17. | local h(simpleError(msg, call))
-      18. | processx:::throw_error(err, parent = e) at errors.R:309:7
+      18. | processx:::throw_error(err, parent = e) at errors.R:313:7
       19. | base::signalCondition(cond) at errors.R:223:5
       20. | (function (e)
-      21. | processx:::throw_error(err, parent = e) at errors.R:309:7
+      21. | processx:::throw_error(err, parent = e) at errors.R:313:7
       Execution halted
 
 ---
@@ -268,19 +268,19 @@
        7. global h() at script.R:12:10
        8. global do() at script.R:13:10
        9. processx:::chain_error(do2(), "Failed to base64 encode") at script.R:9:9
-      10. | base::withCallingHandlers({ … at errors.R:301:5
-      11. global do2() at errors.R:302:7
+      10. | base::withCallingHandlers({ … at errors.R:305:5
+      11. global do2() at errors.R:306:7
       12. processx:::chain_error(do3(), "something is wrong here") at script.R:6:9
-      13. | base::withCallingHandlers({ … at errors.R:301:5
-      14. global do3() at errors.R:302:7
+      13. | base::withCallingHandlers({ … at errors.R:305:5
+      14. global do3() at errors.R:306:7
       15. rlang::abort("because of this") at script.R:3:9
       16. | rlang:::signal_abort(cnd, .file)
       17. | base::signalCondition(cnd)
       18. | (function (e) …
-      19. | processx:::throw_error(err, parent = e) at errors.R:309:7
+      19. | processx:::throw_error(err, parent = e) at errors.R:313:7
       20. | base::signalCondition(cond) at errors.R:223:5
       21. | (function (e) …
-      22. | processx:::throw_error(err, parent = e) at errors.R:309:7
+      22. | processx:::throw_error(err, parent = e) at errors.R:313:7
       Execution halted
 
 ---
