@@ -601,7 +601,7 @@ err <- local({
   }
 
   cnd_message <- function(cond) {
-    cnd_message_(cond, full = FALSE)
+    paste(cnd_message_(cond, full = FALSE), collapse = "\n")
   }
 
   cnd_message_ <- function(cond, full = FALSE) {
