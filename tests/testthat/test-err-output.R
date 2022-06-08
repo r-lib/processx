@@ -54,8 +54,8 @@ test_that("simple error with cli and colors", {
 })
 
 test_that("chain_error", {
-
   expr <- quote({
+    options(cli.unicode = FALSE)
     do3 <- function() {
       processx:::throw("because of this")
     }
@@ -134,6 +134,7 @@ test_that("chain_error with stop()", {
 test_that("chain_error with rlang::abort()", {
 
   expr <- quote({
+    options(cli.unicode = FALSE)
     do3 <- function() {
       rlang::abort("because of this")
     }
@@ -165,6 +166,7 @@ test_that("chain_error with rlang::abort()", {
 
 test_that("full parent error is printed in non-interactive mode", {
   expr <- quote({
+    options(cli.unicode = FALSE)
     px <- processx:::get_tool("px")
     processx:::chain_error(
       processx::run(px, c("return", "1")),
