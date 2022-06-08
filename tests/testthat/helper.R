@@ -143,3 +143,7 @@ run_script <- function(expr, ..., quoted = NULL, encoding = "") {
 scrub_px <- function(x) {
   sub("'px.exe'", "'px'", x, fixed = TRUE)
 }
+
+scrub_srcref <- function(x) {
+  sub(" at cnd-abort.R:[0-9]+:[0-9]+", "", x)
+}

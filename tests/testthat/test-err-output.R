@@ -153,7 +153,7 @@ test_that("chain_error with rlang::abort()", {
   })
 
   out <- run_script(quoted = expr)
-  expect_snapshot(cat(out$stderr))
+  expect_snapshot(cat(out$stderr), transform = scrub_srcref)
 
   expr2 <- substitute(
     {o; c },
