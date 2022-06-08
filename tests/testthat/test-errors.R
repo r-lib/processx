@@ -68,5 +68,8 @@ test_that("output from error", {
     )
   })
 
-  expect_snapshot(cat(out$stderr))
+  expect_snapshot(
+    cat(out$stderr),
+    transform = function(x) scrub_px(scrub_srcref(x))
+  )
 })

@@ -75,7 +75,7 @@ test_that("chain_error", {
   })
 
   out <- run_script(quoted = expr)
-  expect_snapshot(cat(out$stderr))
+  expect_snapshot(cat(out$stderr), transform = scrub_srcref)
 
   expr2 <- substitute(
     {o; c },
@@ -89,14 +89,14 @@ test_that("chain_error", {
     list(o = quote(library(cli)), c = expr)
   )
   out <- run_script(quoted = expr2)
-  expect_snapshot(cat(out$stderr))
+  expect_snapshot(cat(out$stderr), transform = scrub_srcref)
 
   expr2 <- substitute(
     {o; c },
     list(o = quote({library(cli); options(cli.num_colors = 256)}), c = expr)
   )
   out <- run_script(quoted = expr2)
-  expect_snapshot(cat(out$stderr))
+  expect_snapshot(cat(out$stderr), transform = scrub_srcref)
 })
 
 test_that("chain_error with stop()", {
@@ -121,7 +121,7 @@ test_that("chain_error with stop()", {
   })
 
   out <- run_script(quoted = expr)
-  expect_snapshot(cat(out$stderr))
+  expect_snapshot(cat(out$stderr), transform = scrub_srcref)
 
   expr2 <- substitute(
     {o; c },
@@ -173,26 +173,38 @@ test_that("full parent error is printed in non-interactive mode", {
   })
 
   out <- run_script(quoted = expr)
-  expect_snapshot(cat(out$stderr), transform = scrub_px)
+  expect_snapshot(
+    cat(out$stderr),
+    transform = function(x) scrub_px(scrub_srcref(x))
+  )
 
   expr2 <- substitute(
     {o; c },
     list(o = quote(options(rlib_interactive = TRUE)), c = expr)
   )
   out <- run_script(quoted = expr2)
-  expect_snapshot(cat(out$stdout), transform = scrub_px)
+  expect_snapshot(
+    cat(out$stdout),
+    transform = function(x) scrub_px(scrub_srcref(x))
+  )
 
   expr2 <- substitute(
     {o; c },
     list(o = quote(library(cli)), c = expr)
   )
   out <- run_script(quoted = expr2)
-  expect_snapshot(cat(out$stderr), transform = scrub_px)
+  expect_snapshot(
+    cat(out$stderr),
+    transform = function(x) scrub_px(scrub_srcref(x))
+  )
 
   expr2 <- substitute(
     {o; c },
     list(o = quote({library(cli); options(cli.num_colors = 256)}), c = expr)
   )
   out <- run_script(quoted = expr2)
-  expect_snapshot(cat(out$stderr), transform = scrub_px)
+  expect_snapshot(
+    cat(out$stderr),
+    transform = function(x) scrub_px(scrub_srcref(x))
+  )
 })
