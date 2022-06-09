@@ -488,7 +488,7 @@ err <- local({
     if (is.call(x)) {
       if (is.symbol(x[[1]])) {
         as.character(x[[1]])
-      } else if (x[[1]][[1]] == quote(`::`)) {
+      } else if (x[[1]][[1]] == quote(`::`) || x[[1]][[1]] == quote(`:::`)) {
         as.character(x[[1]][[2]])
       } else {
         NULL
@@ -501,9 +501,10 @@ err <- local({
   get_call_scope <- function(call, ns) {
     if (is.na(ns)) return("global")
     if (!is.call(call)) return("")
+    if (is.call(call[[1]]) &&
+        (call[[1]][[1]] == quote(`::`) || call[[1]][[1]] == quote(`:::`))) return("")
     if (ns == "base") return("::")
     if (! ns %in% loadedNamespaces()) return("")
-    if (is.call(call[[1]]) && call[[1]][[1]] == quote(`::`)) return("")
     name <- call_name(call)
     nsenv <- asNamespace(ns)$.__NAMESPACE__.
     if (is.null(nsenv)) return("::")
@@ -601,7 +602,7 @@ err <- local({
   }
 
   cnd_message <- function(cond) {
-    cnd_message_(cond, full = FALSE)
+    paste(cnd_message_(cond, full = FALSE), collapse = "\n")
   }
 
   cnd_message_ <- function(cond, full = FALSE) {
@@ -752,7 +753,7 @@ err <- local({
     p_error <- format_error_heading_cli(x, prefix)
     p_call <- format_call_cli(x$call)
     p_srcref <- format_srcref_cli(conditionCall(x), x$srcref)
-    paste0(p_error, p_call, p_srcref, ":")
+    paste0(p_error, p_call, p_srcref, if (!is.null(conditionCall(x))) ":")
   }
 
   format_class_cli <- function(x) {
@@ -920,7 +921,7 @@ err <- local({
     p_error <- format_error_heading_plain(x, prefix)
     p_call <- format_call_plain(x$call)
     p_srcref <- format_srcref_plain(conditionCall(x), x$srcref)
-    paste0(p_error, p_call, p_srcref, ":")
+    paste0(p_error, p_call, p_srcref, if (!is.null(conditionCall(x))) ":")
   }
 
   format_error_heading_plain <- function(x, prefix = NULL) {
