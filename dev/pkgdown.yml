@@ -2,7 +2,7 @@ pandoc: 2.14.2
 pkgdown: 2.0.3
 pkgdown_sha: ~
 articles: {}
-last_built: 2022-06-08T11:01Z
+last_built: 2022-06-09T14:44Z
 urls:
   reference: http://processx.r-lib.org/reference
   article: http://processx.r-lib.org/articles
