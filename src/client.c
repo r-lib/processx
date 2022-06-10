@@ -180,8 +180,6 @@ static SEXP processx_set_std(int which, int fd, int drop) {
     R_THROW_SYSTEM_ERROR("Cannot reroute %s", what[which]);
   }
 
-  close(fd);
-
   if (!drop) {
     return ScalarInteger(orig);
   } else {
