@@ -95,7 +95,7 @@ px <- paste0(
 px
 ```
 
-    #> [1] "/Users/gaborcsardi/Library/R/arm64/4.1/library/processx/bin/px"
+    #> [1] "/Users/gaborcsardi/Library/R/arm64/4.2/library/processx/bin/px"
 
 ### Running an external process
 
@@ -350,12 +350,8 @@ is garbage collected by R:
 ``` r
 p <- process$new("sleep", "20")
 rm(p)
-gc()
+invisible(gc())
 ```
-
-    #>           used (Mb) gc trigger (Mb) limit (Mb) max used (Mb)
-    #> Ncells  564211 30.2    1258764 67.3         NA   706534 37.8
-    #> Vcells 1053517  8.1    8388608 64.0      16384  1903207 14.6
 
 Here, the direct call to the garbage collector kills the `sleep` process
 as well. See the `cleanup` option if you want to avoid this behavior.
@@ -548,14 +544,14 @@ p$is_alive()
 Sys.time()
 ```
 
-    #> [1] "2022-03-02 11:07:37 CET"
+    #> [1] "2022-06-10 13:57:49 CEST"
 
 ``` r
 p$wait()
 Sys.time()
 ```
 
-    #> [1] "2022-03-02 11:07:39 CET"
+    #> [1] "2022-06-10 13:57:51 CEST"
 
 It is safe to call `wait()` multiple times:
 
@@ -609,7 +605,10 @@ started running.
 p <- process$new("nonexistant-command-for-sure")
 ```
 
-    #> Error in entrace_call(c_processx_exec, command, c(command, args), pty, : cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:613 (processx_exec)
+    #> Error:
+    #> ! Native call to `processx_exec` failed
+    #> Caused by error:
+    #> ! cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:613 (processx_exec)
 
 ``` r
 p2 <- process$new(px, c("sleep", "1", "command-does-not-exist"))

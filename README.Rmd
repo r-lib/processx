@@ -257,7 +257,7 @@ is garbage collected by R:
 ```{r}
 p <- process$new("sleep", "20")
 rm(p)
-gc()
+invisible(gc())
 ```
 
 Here, the direct call to the garbage collector kills the `sleep` process
