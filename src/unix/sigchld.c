@@ -1,6 +1,7 @@
 
 #include "../processx.h"
 
+#include <errno.h>
 #include <pthread.h>
 
 extern processx__child_list_t *child_list;
@@ -10,6 +11,8 @@ int processx__notify_old_sigchld_handler = 0;
 pthread_t processx__main_thread = { 0 };
 
 void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
+
+  int saved_errno = errno;
   /* This might be called on another thread, if the main thread blocks
      the signal temporarily, so we forward it to the main thread.
      It is OK to call pthread_self() and pthread_kill() in the signal
@@ -17,11 +20,15 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
      https://man7.org/linux/man-pages/man7/signal-safety.7.html */
   if (pthread_self() != processx__main_thread) {
     pthread_kill(processx__main_thread, SIGCHLD);
+    errno = saved_errno;
     return;
   }
 
   /* This should really not happem, but just in case. */
-  if (sig != SIGCHLD) return;
+  if (sig != SIGCHLD) {
+    errno = saved_errno;
+    return;
+  }
 
   /* While we get a pid in info, this is basically useless, as
      (on some platforms at least) a single signal might be delivered
@@ -97,6 +104,8 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
       }
     }
   }
+
+  errno = saved_errno;
 }
 
 void processx__setup_sigchld() {
