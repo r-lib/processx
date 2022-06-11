@@ -1,8 +1,8 @@
 pandoc: 2.14.2
-pkgdown: 2.0.2
+pkgdown: 2.0.3
 pkgdown_sha: ~
 articles: {}
-last_built: 2022-03-25T22:02Z
+last_built: 2022-06-11T05:43Z
 urls:
   reference: http://processx.r-lib.org/reference
   article: http://processx.r-lib.org/articles

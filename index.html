@@ -40,7 +40,7 @@
     
     <a class="navbar-brand me-2" href="index.html">processx</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">3.5.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">3.6.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,11 +77,8 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="processx">processx<a class="anchor" aria-label="anchor" href="#processx"></a>
 </h1></div>
-<blockquote>
-<p>Execute and Control System Processes</p>
-</blockquote>
+<blockquote><p>Execute and Control System Processes</p></blockquote>
 <!-- badges: start -->
-
 <p>Tools to run system processes in the background, read their standard output and error and kill them.</p>
 <p>processx can poll the standard output and error of a single process, or multiple processes, using the operating system’s polling and waiting facilities, with a timeout.</p>
 <hr>
@@ -89,11 +86,9 @@
 <li><a href="#features">Features</a></li>
 <li><a href="#installation">Installation</a></li>
 <li>
-<a href="#usage">Usage</a>
-<ul>
+<a href="#usage">Usage</a><ul>
 <li>
-<a href="#running-an-external-process">Running an external process</a>
-<ul>
+<a href="#running-an-external-process">Running an external process</a><ul>
 <li><a href="#errors">Errors</a></li>
 <li><a href="#showing-output">Showing output</a></li>
 <li><a href="#spinner">Spinner</a></li>
@@ -101,8 +96,7 @@
 </ul>
 </li>
 <li>
-<a href="#managing-external-processes">Managing external processes</a>
-<ul>
+<a href="#managing-external-processes">Managing external processes</a><ul>
 <li><a href="#starting-processes">Starting processes</a></li>
 <li><a href="#killing-a-process">Killing a process</a></li>
 <li><a href="#standard-output-and-error">Standard output and error</a></li>
@@ -151,16 +145,14 @@
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://processx.r-lib.org" class="external-link">processx</a></span><span class="op">)</span></code></pre></div>
-<blockquote>
-<p>Note: the following external commands are usually present in macOS and Linux systems, but not necessarily on Windows. We will also use the <code>px</code> command line tool (<code>px.exe</code> on Windows), that is a very simple program that can produce output to <code>stdout</code> and <code>stderr</code>, with the specified timings.</p>
-</blockquote>
+<blockquote><p>Note: the following external commands are usually present in macOS and Linux systems, but not necessarily on Windows. We will also use the <code>px</code> command line tool (<code>px.exe</code> on Windows), that is a very simple program that can produce output to <code>stdout</code> and <code>stderr</code>, with the specified timings.</p></blockquote>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">px</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span>
   <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"processx"</span>, <span class="st">"bin"</span>, <span class="st">"px"</span><span class="op">)</span>,
   <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span>package <span class="op">=</span> <span class="st">"processx"</span>, <span class="st">"bin"</span>, <span class="va">.Platform</span><span class="op">$</span><span class="va">r_arch</span>, <span class="st">"px.exe"</span><span class="op">)</span>
 <span class="op">)</span>
 <span class="va">px</span></code></pre></div>
-<div class="sourceCode" id="cb4"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "/Users/gaborcsardi/Library/R/arm64/4.1/library/processx/bin/px"</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "/Users/gaborcsardi/Library/R/arm64/4.2/library/processx/bin/px"</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="running-an-external-process">Running an external process<a class="anchor" aria-label="anchor" href="#running-an-external-process"></a>
 </h3>
@@ -196,9 +188,7 @@
 <span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   write &lt;fd&gt; &lt;string&gt;        -- write to file descriptor</span></span>
 <span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   echo &lt;fd1&gt; &lt;fd2&gt; &lt;nbytes&gt;  -- echo from fd to another fd</span></span>
 <span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   getenv &lt;var&gt;               -- environment variable to stdout</span></span></code></pre></div>
-<blockquote>
-<p>Note: From version 3.0.1, processx does not let you specify a full shell command line, as this involves starting a grandchild process from the child process, and it is difficult to clean up the grandchild process when the child process is killed. The user can still start a shell (<code>sh</code> or <code>cmd.exe</code>) directly of course, and then proper cleanup is the user’s responsibility.</p>
-</blockquote>
+<blockquote><p>Note: From version 3.0.1, processx does not let you specify a full shell command line, as this involves starting a grandchild process from the child process, and it is difficult to clean up the grandchild process when the child process is killed. The user can still start a shell (<code>sh</code> or <code>cmd.exe</code>) directly of course, and then proper cleanup is the user’s responsibility.</p></blockquote>
 <div class="section level4">
 <h4 id="errors">Errors<a class="anchor" aria-label="anchor" href="#errors"></a>
 </h4>
@@ -335,10 +325,7 @@
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/process.html">process</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"sleep"</span>, <span class="st">"20"</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">p</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb33"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           used (Mb) gc trigger (Mb) limit (Mb) max used (Mb)</span></span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Ncells  564211 30.2    1258764 67.3         NA   706534 37.8</span></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Vcells 1053517  8.1    8388608 64.0      16384  1903207 14.6</span></span></code></pre></div>
+<span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/gc.html" class="external-link">gc</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p>Here, the direct call to the garbage collector kills the <code>sleep</code> process as well. See the <code>cleanup</code> option if you want to avoid this behavior.</p>
 </div>
 <div class="section level4">
@@ -347,23 +334,21 @@
 <p>By default the standard output and error of the processes are ignored. You can set the <code>stdout</code> and <code>stderr</code> constructor arguments to a file name, and then they are redirected there, or to <code>"|"</code>, and then processx creates connections to them. (Note that starting from processx 3.0.0 these connections are not regular R connections, because the public R connection API was retroactively removed from R.)</p>
 <p>The <code>read_output_lines()</code> and <code>read_error_lines()</code> methods can be used to read complete lines from the standard output or error connections. They work similarly to the <code><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines()</a></code> base R function.</p>
 <p>Note, that the connections have a buffer, which can fill up, if R does not read out the output, and then the process will stop, until R reads the connection and the buffer is freed.</p>
-<blockquote>
-<p><strong>Always make sure that you read out the standard output and/or error</strong> <strong>of the pipes, otherwise the background process will stop running!</strong></p>
-</blockquote>
+<blockquote><p><strong>Always make sure that you read out the standard output and/or error</strong> <strong>of the pipes, otherwise the background process will stop running!</strong></p></blockquote>
 <p>If you don’t need the standard output or error any more, you can also close it, like this:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/connections.html" class="external-link">close</a></span><span class="op">(</span><span class="va">p</span><span class="op">$</span><span class="fu">get_output_connection</span><span class="op">(</span><span class="op">)</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/connections.html" class="external-link">close</a></span><span class="op">(</span><span class="va">p</span><span class="op">$</span><span class="fu">get_error_connection</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p>Note that the connections used for reading the output and error streams are non-blocking, so the read functions will return immediately, even if there is no text to read from them. If you want to make sure that there is data available to read, you need to poll, see below.</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/process.html">process</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">px</span>,
   <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sleep"</span>, <span class="st">"1"</span>, <span class="st">"outln"</span>, <span class="st">"foo"</span>, <span class="st">"errln"</span>, <span class="st">"bar"</span>, <span class="st">"outln"</span>, <span class="st">"foobar"</span><span class="op">)</span>,
   stdout <span class="op">=</span> <span class="st">"|"</span>, stderr <span class="op">=</span> <span class="st">"|"</span><span class="op">)</span>
 <span class="va">p</span><span class="op">$</span><span class="fu">read_output_lines</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb36"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span></code></pre></div>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p</span><span class="op">$</span><span class="fu">read_error_lines</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb38"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="end-of-output">End of output<a class="anchor" aria-label="anchor" href="#end-of-output"></a>
@@ -382,101 +367,101 @@
 <li>The specified timeout period expired.</li>
 </ul>
 <p>For example the following code waits about a second for output.</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/process.html">process</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">px</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sleep"</span>, <span class="st">"1"</span>, <span class="st">"outln"</span>, <span class="st">"kuku"</span><span class="op">)</span>, stdout <span class="op">=</span> <span class="st">"|"</span><span class="op">)</span>
 
 <span class="co">## No output yet</span>
 <span class="va">p</span><span class="op">$</span><span class="fu">read_output_lines</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb40"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span></code></pre></div>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co">## Wait at most 5 sec</span>
 <span class="va">p</span><span class="op">$</span><span class="fu">poll_io</span><span class="op">(</span><span class="fl">5000</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb42"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   output    error  process </span></span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  "ready" "nopipe" "nopipe"</span></span></code></pre></div>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   output    error  process </span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  "ready" "nopipe" "nopipe"</span></span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co">## There is output now</span>
 <span class="va">p</span><span class="op">$</span><span class="fu">read_output_lines</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb44"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "kuku"</span></span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "kuku"</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="polling-multiple-processes">Polling multiple processes<a class="anchor" aria-label="anchor" href="#polling-multiple-processes"></a>
 </h4>
 <p>If you need to manage multiple background processes, and need to wait for output from all of them, processx defines a <code><a href="reference/poll.html">poll()</a></code> function that does just that. It is similar to the <code>poll_io()</code> method, but it takes multiple process objects, and returns as soon as one of them have data on standard output or error, or a timeout expires. Here is an example:</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p1</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/process.html">process</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">px</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sleep"</span>, <span class="st">"1"</span>, <span class="st">"outln"</span>, <span class="st">"output"</span><span class="op">)</span>, stdout <span class="op">=</span> <span class="st">"|"</span><span class="op">)</span>
 <span class="va">p2</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/process.html">process</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">px</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sleep"</span>, <span class="st">"2"</span>, <span class="st">"errln"</span>, <span class="st">"error"</span><span class="op">)</span>, stderr <span class="op">=</span> <span class="st">"|"</span><span class="op">)</span>
 
 <span class="co">## After 100ms no output yet</span>
 <span class="fu"><a href="reference/poll.html">poll</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>p1 <span class="op">=</span> <span class="va">p1</span>, p2 <span class="op">=</span> <span class="va">p2</span><span class="op">)</span>, <span class="fl">100</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb46"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $p1</span></span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    output     error   process </span></span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; "timeout"  "nopipe"  "nopipe" </span></span>
-<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $p2</span></span>
-<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    output     error   process </span></span>
-<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  "nopipe" "timeout"  "nopipe"</span></span></code></pre></div>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb45"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $p1</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    output     error   process </span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; "timeout"  "nopipe"  "nopipe" </span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $p2</span></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    output     error   process </span></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  "nopipe" "timeout"  "nopipe"</span></span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co">## But now we surely have something</span>
 <span class="fu"><a href="reference/poll.html">poll</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>p1 <span class="op">=</span> <span class="va">p1</span>, p2 <span class="op">=</span> <span class="va">p2</span><span class="op">)</span>, <span class="fl">1000</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb48"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $p1</span></span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   output    error  process </span></span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  "ready" "nopipe" "nopipe" </span></span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $p2</span></span>
-<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   output    error  process </span></span>
-<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; "nopipe" "silent" "nopipe"</span></span></code></pre></div>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb47"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $p1</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   output    error  process </span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  "ready" "nopipe" "nopipe" </span></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $p2</span></span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   output    error  process </span></span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; "nopipe" "silent" "nopipe"</span></span></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p1</span><span class="op">$</span><span class="fu">read_output_lines</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb50"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "output"</span></span></code></pre></div>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb49"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "output"</span></span></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co">## Done with p1</span>
 <span class="fu"><a href="https://rdrr.io/r/base/connections.html" class="external-link">close</a></span><span class="op">(</span><span class="va">p1</span><span class="op">$</span><span class="fu">get_output_connection</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb52"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb51"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
+<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co">## The second process should have data on stderr soonish</span>
 <span class="fu"><a href="reference/poll.html">poll</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>p1 <span class="op">=</span> <span class="va">p1</span>, p2 <span class="op">=</span> <span class="va">p2</span><span class="op">)</span>, <span class="fl">5000</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb54"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $p1</span></span>
-<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   output    error  process </span></span>
-<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; "closed" "nopipe" "nopipe" </span></span>
-<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $p2</span></span>
-<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   output    error  process </span></span>
-<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; "nopipe"  "ready" "nopipe"</span></span></code></pre></div>
-<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb53"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $p1</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   output    error  process </span></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; "closed" "nopipe" "nopipe" </span></span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $p2</span></span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   output    error  process </span></span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; "nopipe"  "ready" "nopipe"</span></span></code></pre></div>
+<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p2</span><span class="op">$</span><span class="fu">read_error_lines</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb56"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "error"</span></span></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "error"</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="waiting-on-a-process">Waiting on a process<a class="anchor" aria-label="anchor" href="#waiting-on-a-process"></a>
 </h4>
 <p>As seen before, <code>is_alive()</code> checks if a process is running. The <code>wait()</code> method can be used to wait until it has finished (or a specified timeout expires).. E.g. in the following code <code>wait()</code> needs to wait about 2 seconds for the <code>sleep</code> <code>px</code> command to finish.</p>
-<div class="sourceCode" id="cb57"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/process.html">process</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">px</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sleep"</span>, <span class="st">"2"</span><span class="op">)</span><span class="op">)</span>
 <span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb58"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
-<div class="sourceCode" id="cb59"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb57"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb60"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2022-03-02 11:07:37 CET"</span></span></code></pre></div>
-<div class="sourceCode" id="cb61"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb59"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2022-06-10 13:57:49 CEST"</span></span></code></pre></div>
+<div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p</span><span class="op">$</span><span class="fu">wait</span><span class="op">(</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb62"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2022-03-02 11:07:39 CET"</span></span></code></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] "2022-06-10 13:57:51 CEST"</span></span></code></pre></div>
 <p>It is safe to call <code>wait()</code> multiple times:</p>
-<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p</span><span class="op">$</span><span class="fu">wait</span><span class="op">(</span><span class="op">)</span> <span class="co"># already finished!</span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="exit-statuses">Exit statuses<a class="anchor" aria-label="anchor" href="#exit-statuses"></a>
 </h4>
 <p>After a process has finished, its exit status can be queried via the <code>get_exit_status()</code> method. If the process is still running, then this method returns <code>NULL</code>.</p>
-<div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb63"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/process.html">process</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">px</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sleep"</span>, <span class="st">"2"</span><span class="op">)</span><span class="op">)</span>
 <span class="va">p</span><span class="op">$</span><span class="fu">get_exit_status</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb65"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
-<div class="sourceCode" id="cb66"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb64"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
+<div class="sourceCode" id="cb65"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p</span><span class="op">$</span><span class="fu">wait</span><span class="op">(</span><span class="op">)</span>
 <span class="va">p</span><span class="op">$</span><span class="fu">get_exit_status</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb67"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span></code></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="mixing-processx-and-the-parallel-base-r-package">Mixing processx and the parallel base R package<a class="anchor" aria-label="anchor" href="#mixing-processx-and-the-parallel-base-r-package"></a>
@@ -487,14 +472,17 @@
 <h4 id="errors-1">Errors<a class="anchor" aria-label="anchor" href="#errors-1"></a>
 </h4>
 <p>Errors are typically signalled via non-zero exits statuses. The processx constructor fails if the external program cannot be started, but it does not deal with errors that happen after the program has successfully started running.</p>
-<div class="sourceCode" id="cb68"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb67"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/process.html">process</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"nonexistant-command-for-sure"</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb69"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error in rethrow_call(c_processx_exec, command, c(command, args), pty, : cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:613 (processx_exec)</span></span></code></pre></div>
-<div class="sourceCode" id="cb70"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb68"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error:</span></span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! Native call to `processx_exec` failed</span></span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Caused by error:</span></span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ! cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:613 (processx_exec)</span></span></code></pre></div>
+<div class="sourceCode" id="cb69"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">p2</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/process.html">process</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">px</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sleep"</span>, <span class="st">"1"</span>, <span class="st">"command-does-not-exist"</span><span class="op">)</span><span class="op">)</span>
 <span class="va">p2</span><span class="op">$</span><span class="fu">wait</span><span class="op">(</span><span class="op">)</span>
 <span class="va">p2</span><span class="op">$</span><span class="fu">get_exit_status</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<div class="sourceCode" id="cb71"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5</span></span></code></pre></div>
+<div class="sourceCode" id="cb70"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] 5</span></span></code></pre></div>
 </div>
 </div>
 </div>
@@ -502,7 +490,7 @@
 <h2 id="related-tools">Related tools<a class="anchor" aria-label="anchor" href="#related-tools"></a>
 </h2>
 <ul>
-<li><p>The <a href="https://ps.r-lib.org/" class="external-link"><code>ps</code> package</a> can query, list, manipulate all system processes (not just subprocesses), and processx uses it internally for some of its functionality. You can also convert a <code><a href="reference/process.html">processx::process</a></code> object to a <code><a href="https://rdrr.io/pkg/ps/man/ps_handle.html" class="external-link">ps::ps_handle</a></code> with the <code>as_ps_handle()</code> method.</p></li>
+<li><p>The <a href="https://ps.r-lib.org/" class="external-link"><code>ps</code> package</a> can query, list, manipulate all system processes (not just subprocesses), and processx uses it internally for some of its functionality. You can also convert a <code><a href="reference/process.html">processx::process</a></code> object to a <code><a href="https://ps.r-lib.org/reference/ps_handle.html" class="external-link">ps::ps_handle</a></code> with the <code>as_ps_handle()</code> method.</p></li>
 <li><p>The <a href="https://callr.r-lib.org/" class="external-link"><code>callr</code> package</a> uses processx to start another R process, and run R code in it, in the foreground or background.</p></li>
 </ul>
 </div>
@@ -583,7 +571,7 @@
 
 <div class="pkgdown-footer-right">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
 </div>
 
   </div></footer>
