@@ -30,7 +30,7 @@ test_that("new_error", {
   c <- new_error("foo", "bar")
   expect_identical(
     class(c),
-    c("rlib_error_3_0", "rlib_error", "rlang_error", "error", "condition")
+    c("rlib_error_3_0", "rlib_error", "error", "condition")
   )
   expect_identical(c$message, "foobar")
 })
