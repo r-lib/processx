@@ -1,5 +1,5 @@
 
-# processx development version
+# processx 3.6.1
 
 * processx now closes file unneeded file descriptors when redirecting
   the standard output and error, in the client file.
