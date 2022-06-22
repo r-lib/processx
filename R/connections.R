@@ -27,11 +27,133 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 }
 
 #' @details
+#' `conn_create_pipe()` creates one end of a pipe. If `read` is `TRUE`, then
+#' this end will be readable, if `write` is `TRUE` then it will be writeable.
+#' On Unix a pipe is a fifo on the file system, in the R temporary
+#' directory. On Windows it is a named pipe.
+#'
+#' Use `conn_file_name()` to query the name of the pipe, and
+#' `conn_connect_pipe()` to connect to the other end.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_create_pipe <- function(read = NULL, write = NULL, encoding = "",
+                             nonblocking = TRUE) {
+  if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
+  if (is.null(read)) read <- !write
+  if (is.null(write)) write <- !read
+
+  if (read && write) {
+    throw(new_error("Bi-directional pipes are not supported currently"))
+  }
+
+  assert_that(
+    is_string(encoding),
+    is_flag(read),
+    is_flag(write),
+    read || write,
+    ! (read && write),
+    is_flag(nonblocking)
+  )
+
+  chain_call(
+    c_processx_connection_create_pipe,
+    read,
+    write,
+    if (!is_windows()) tempfile(),
+    encoding,
+    nonblocking
+  )
+}
+
+#' @details
+#' `conn_connect_pipe()` connects to a pipe created with
+#' `conn_create_pipe()`, typically in another process. `filename` refers
+#' to the name of the pipe on Windows.
+#'
+#' @rdname processx_connections
+#' @export
+#' @examples
+#' # -- Example for a non-blocking pipe -----------------------------------
+#' # Need to open the reading end first, otherwise Unix fails
+#' reader <- conn_create_pipe(read = TRUE)
+#'
+#' # Always use poll() before you read, with a timeout if you like.
+#' # If you read before the other end of the pipe is connected, then
+#' # the OS (or processx?) assumes that the pipe is done, and you cannot
+#' # read anything.
+#' # Now poll() tells us that there is no data yet.
+#' poll(list(reader), 0)
+#'
+#' writer <- conn_connect_pipe(conn_file_name(reader), write = TRUE)
+#' conn_write(writer, "hello\nthere!\n")
+#'
+#' poll(list(reader), 1000)
+#' conn_read_lines(reader, 1)
+#' conn_read_chars(reader)
+#'
+#' conn_is_incomplete(reader)
+#'
+#' close(writer)
+#' conn_read_chars(reader)
+#' conn_is_incomplete(reader)
+#'
+#' close(reader)
+#' # ----------------------------------------------------------------------
+
+conn_connect_pipe <- function(filename, read = NULL, write = NULL,
+                              encoding = "", nonblocking = TRUE) {
+  if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
+  if (is.null(read)) read <- !write
+  if (is.null(write)) write <- !read
+
+  if (read && write) {
+    throw(new_error("Bi-directional pipes are not supported currently"))
+  }
+
+  assert_that(
+    is_string(filename),
+    is_flag(read),
+    is_flag(write),
+    read || write,
+    ! (read && write),
+    is_string(encoding),
+    is_flag(nonblocking)
+  )
+
+  chain_call(
+    c_processx_connection_connect_pipe,
+    filename,
+    read,
+    write,
+    encoding,
+    nonblocking
+  )
+}
+
+#' @details
+#' `conn_file_name()` returns the name of the file associated with the
+#' connection. For connections that do not refer to a file in the file
+#' system it returns `NA_character()`. Except for named pipes on Windows,
+#' where it returns the full name of the pipe.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_file_name <- function(con) {
+  assert_that(is_connection(con))
+
+  chain_call(c_processx_connection_file_name, con)
+}
+
+#' @details
 #' `conn_create_pipepair()` creates a pair of connected connections, the
 #' first one is writeable, the second one is readable.
 #'
-#' @param nonblocking Whether the writeable and the readable ends of
-#'   the pipe should be non-blocking connections.
+#' @param nonblocking Whether the pipe should be non-blocking.
+#' For `conn_create_pipepair()` it must be a logical vector of length two,
+#' for both ends of the pipe.
 #'
 #' @rdname processx_connections
 #' @export

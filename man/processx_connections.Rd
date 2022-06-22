@@ -2,6 +2,9 @@
 % Please edit documentation in R/connections.R
 \name{conn_create_fd}
 \alias{conn_create_fd}
+\alias{conn_create_pipe}
+\alias{conn_connect_pipe}
+\alias{conn_file_name}
 \alias{conn_create_pipepair}
 \alias{conn_read_chars}
 \alias{conn_read_chars.processx_connection}
@@ -26,6 +29,18 @@
 \title{Processx connections}
 \usage{
 conn_create_fd(fd, encoding = "", close = TRUE)
+
+conn_create_pipe(read = NULL, write = NULL, encoding = "", nonblocking = TRUE)
+
+conn_connect_pipe(
+  filename,
+  read = NULL,
+  write = NULL,
+  encoding = "",
+  nonblocking = TRUE
+)
+
+conn_file_name(con)
 
 conn_create_pipepair(encoding = "", nonblocking = c(TRUE, FALSE))
 
@@ -79,8 +94,15 @@ the connection. Sometimes you want to leave it open, and use it again
 in a \code{conn_create_fd} call.
 Encoding to re-encode \code{str} into when writing.}
 
-\item{nonblocking}{Whether the writeable and the readable ends of
-the pipe should be non-blocking connections.}
+\item{read}{Whether the connection is readable.}
+
+\item{write}{Whethe the connection is writeable.}
+
+\item{nonblocking}{Whether the pipe should be non-blocking.
+For \code{conn_create_pipepair()} it must be a logical vector of length two,
+for both ends of the pipe.}
+
+\item{filename}{File name.}
 
 \item{con}{Processx connection object.}
 
@@ -91,12 +113,6 @@ characters or lines.}
 
 \item{sep}{Separator to use if \code{str} is a character vector. Ignored if
 \code{str} is a raw vector.}
-
-\item{filename}{File name.}
-
-\item{read}{Whether the connection is readable.}
-
-\item{write}{Whethe the connection is writeable.}
 
 \item{drop}{Whether to close the original stdout/stderr, or keep it
 open and return a connection to it.}
@@ -111,6 +127,23 @@ compatible with R's built-in connection system.
 }
 \details{
 \code{conn_create_fd()} creates a connection from a file descriptor.
+
+\code{conn_create_pipe()} creates one end of a pipe. If \code{read} is \code{TRUE}, then
+this end will be readable, if \code{write} is \code{TRUE} then it will be writeable.
+On Unix a pipe is a fifo on the file system, in the R temporary
+directory. On Windows it is a named pipe.
+
+Use \code{conn_file_name()} to query the name of the pipe, and
+\code{conn_connect_pipe()} to connect to the other end.
+
+\code{conn_connect_pipe()} connects to a pipe created with
+\code{conn_create_pipe()}, typically in another process. \code{filename} refers
+to the name of the pipe on Windows.
+
+\code{conn_file_name()} returns the name of the file associated with the
+connection. For connections that do not refer to a file in the file
+system it returns \code{NA_character()}. Except for named pipes on Windows,
+where it returns the full name of the pipe.
 
 \code{conn_create_pipepair()} creates a pair of connected connections, the
 first one is writeable, the second one is readable.
@@ -155,6 +188,32 @@ If a stream is redirected to the null device (e.g. in a callr
 subprocess), that is is still a valid file descriptor.
 }
 \examples{
+# -- Example for a non-blocking pipe -----------------------------------
+# Need to open the reading end first, otherwise Unix fails
+reader <- conn_create_pipe(read = TRUE)
+
+# Always use poll() before you read, with a timeout if you like.
+# If you read before the other end of the pipe is connected, then
+# the OS (or processx?) assumes that the pipe is done, and you cannot
+# read anything.
+# Now poll() tells us that there is no data yet.
+poll(list(reader), 0)
+
+writer <- conn_connect_pipe(conn_file_name(reader), write = TRUE)
+conn_write(writer, "hello\nthere!\n")
+
+poll(list(reader), 1000)
+conn_read_lines(reader, 1)
+conn_read_chars(reader)
+
+conn_is_incomplete(reader)
+
+close(writer)
+conn_read_chars(reader)
+conn_is_incomplete(reader)
+
+close(reader)
+# ----------------------------------------------------------------------
 is_valid_fd(0L)      # stdin
 is_valid_fd(1L)      # stdout
 is_valid_fd(2L)      # stderr

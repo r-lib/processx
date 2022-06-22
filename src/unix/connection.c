@@ -15,7 +15,7 @@ processx_connection_t* processx__create_connection(
   SEXP res;
 
   con = processx_c_connection_create(fd, PROCESSX_FILE_TYPE_ASYNCPIPE,
-				     encoding, &res);
+				     encoding, NULL, &res);
 
   defineVar(install(membername), res, private);
 

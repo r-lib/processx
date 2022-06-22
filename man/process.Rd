@@ -16,7 +16,9 @@ Running Windows batch files (\code{.bat} or \code{.cmd} files) may be complicate
 because of the \code{cmd.exe} command line parsing rules. For example you
 cannot easily have whitespace in both the command (path) and one of the
 arguments. To work around these limitations you need to start a
-\code{cmd.exe} shell explicitly and use its \code{call} command. For example:\if{html}{\out{<div class="sourceCode r">}}\preformatted{process$new("cmd.exe", c("/c", "call", bat_file, "arg 1", "arg 2"))
+\code{cmd.exe} shell explicitly and use its \code{call} command. For example:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{process$new("cmd.exe", c("/c", "call", bat_file, "arg 1", "arg 2"))
 }\if{html}{\out{</div>}}
 
 This works even if \code{bat_file} contains whitespace characters.
@@ -51,7 +53,9 @@ also set to \code{TRUE}).
 The cleanup happens when the references of the processes object are
 garbage collected. To clean up earlier, you can call the \code{kill()} or
 \code{kill_tree()} method of the process(es), from an \code{on.exit()} expression,
-or an error handler:\if{html}{\out{<div class="sourceCode r">}}\preformatted{process_manager <- function() \{
+or an error handler:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{process_manager <- function() \{
   on.exit(\{
     try(p1$kill(), silent = TRUE)
     try(p2$kill(), silent = TRUE)
@@ -86,61 +90,61 @@ p$is_alive()
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{process$new()}}
-\item \href{#method-finalize}{\code{process$finalize()}}
-\item \href{#method-kill}{\code{process$kill()}}
-\item \href{#method-kill_tree}{\code{process$kill_tree()}}
-\item \href{#method-signal}{\code{process$signal()}}
-\item \href{#method-interrupt}{\code{process$interrupt()}}
-\item \href{#method-get_pid}{\code{process$get_pid()}}
-\item \href{#method-is_alive}{\code{process$is_alive()}}
-\item \href{#method-wait}{\code{process$wait()}}
-\item \href{#method-get_exit_status}{\code{process$get_exit_status()}}
-\item \href{#method-format}{\code{process$format()}}
-\item \href{#method-print}{\code{process$print()}}
-\item \href{#method-get_start_time}{\code{process$get_start_time()}}
-\item \href{#method-is_supervised}{\code{process$is_supervised()}}
-\item \href{#method-supervise}{\code{process$supervise()}}
-\item \href{#method-read_output}{\code{process$read_output()}}
-\item \href{#method-read_error}{\code{process$read_error()}}
-\item \href{#method-read_output_lines}{\code{process$read_output_lines()}}
-\item \href{#method-read_error_lines}{\code{process$read_error_lines()}}
-\item \href{#method-is_incomplete_output}{\code{process$is_incomplete_output()}}
-\item \href{#method-is_incomplete_error}{\code{process$is_incomplete_error()}}
-\item \href{#method-has_input_connection}{\code{process$has_input_connection()}}
-\item \href{#method-has_output_connection}{\code{process$has_output_connection()}}
-\item \href{#method-has_error_connection}{\code{process$has_error_connection()}}
-\item \href{#method-has_poll_connection}{\code{process$has_poll_connection()}}
-\item \href{#method-get_input_connection}{\code{process$get_input_connection()}}
-\item \href{#method-get_output_connection}{\code{process$get_output_connection()}}
-\item \href{#method-get_error_connection}{\code{process$get_error_connection()}}
-\item \href{#method-read_all_output}{\code{process$read_all_output()}}
-\item \href{#method-read_all_error}{\code{process$read_all_error()}}
-\item \href{#method-read_all_output_lines}{\code{process$read_all_output_lines()}}
-\item \href{#method-read_all_error_lines}{\code{process$read_all_error_lines()}}
-\item \href{#method-write_input}{\code{process$write_input()}}
-\item \href{#method-get_input_file}{\code{process$get_input_file()}}
-\item \href{#method-get_output_file}{\code{process$get_output_file()}}
-\item \href{#method-get_error_file}{\code{process$get_error_file()}}
-\item \href{#method-poll_io}{\code{process$poll_io()}}
-\item \href{#method-get_poll_connection}{\code{process$get_poll_connection()}}
-\item \href{#method-get_result}{\code{process$get_result()}}
-\item \href{#method-as_ps_handle}{\code{process$as_ps_handle()}}
-\item \href{#method-get_name}{\code{process$get_name()}}
-\item \href{#method-get_exe}{\code{process$get_exe()}}
-\item \href{#method-get_cmdline}{\code{process$get_cmdline()}}
-\item \href{#method-get_status}{\code{process$get_status()}}
-\item \href{#method-get_username}{\code{process$get_username()}}
-\item \href{#method-get_wd}{\code{process$get_wd()}}
-\item \href{#method-get_cpu_times}{\code{process$get_cpu_times()}}
-\item \href{#method-get_memory_info}{\code{process$get_memory_info()}}
-\item \href{#method-suspend}{\code{process$suspend()}}
-\item \href{#method-resume}{\code{process$resume()}}
+\item \href{#method-process-new}{\code{process$new()}}
+\item \href{#method-process-finalize}{\code{process$finalize()}}
+\item \href{#method-process-kill}{\code{process$kill()}}
+\item \href{#method-process-kill_tree}{\code{process$kill_tree()}}
+\item \href{#method-process-signal}{\code{process$signal()}}
+\item \href{#method-process-interrupt}{\code{process$interrupt()}}
+\item \href{#method-process-get_pid}{\code{process$get_pid()}}
+\item \href{#method-process-is_alive}{\code{process$is_alive()}}
+\item \href{#method-process-wait}{\code{process$wait()}}
+\item \href{#method-process-get_exit_status}{\code{process$get_exit_status()}}
+\item \href{#method-process-format}{\code{process$format()}}
+\item \href{#method-process-print}{\code{process$print()}}
+\item \href{#method-process-get_start_time}{\code{process$get_start_time()}}
+\item \href{#method-process-is_supervised}{\code{process$is_supervised()}}
+\item \href{#method-process-supervise}{\code{process$supervise()}}
+\item \href{#method-process-read_output}{\code{process$read_output()}}
+\item \href{#method-process-read_error}{\code{process$read_error()}}
+\item \href{#method-process-read_output_lines}{\code{process$read_output_lines()}}
+\item \href{#method-process-read_error_lines}{\code{process$read_error_lines()}}
+\item \href{#method-process-is_incomplete_output}{\code{process$is_incomplete_output()}}
+\item \href{#method-process-is_incomplete_error}{\code{process$is_incomplete_error()}}
+\item \href{#method-process-has_input_connection}{\code{process$has_input_connection()}}
+\item \href{#method-process-has_output_connection}{\code{process$has_output_connection()}}
+\item \href{#method-process-has_error_connection}{\code{process$has_error_connection()}}
+\item \href{#method-process-has_poll_connection}{\code{process$has_poll_connection()}}
+\item \href{#method-process-get_input_connection}{\code{process$get_input_connection()}}
+\item \href{#method-process-get_output_connection}{\code{process$get_output_connection()}}
+\item \href{#method-process-get_error_connection}{\code{process$get_error_connection()}}
+\item \href{#method-process-read_all_output}{\code{process$read_all_output()}}
+\item \href{#method-process-read_all_error}{\code{process$read_all_error()}}
+\item \href{#method-process-read_all_output_lines}{\code{process$read_all_output_lines()}}
+\item \href{#method-process-read_all_error_lines}{\code{process$read_all_error_lines()}}
+\item \href{#method-process-write_input}{\code{process$write_input()}}
+\item \href{#method-process-get_input_file}{\code{process$get_input_file()}}
+\item \href{#method-process-get_output_file}{\code{process$get_output_file()}}
+\item \href{#method-process-get_error_file}{\code{process$get_error_file()}}
+\item \href{#method-process-poll_io}{\code{process$poll_io()}}
+\item \href{#method-process-get_poll_connection}{\code{process$get_poll_connection()}}
+\item \href{#method-process-get_result}{\code{process$get_result()}}
+\item \href{#method-process-as_ps_handle}{\code{process$as_ps_handle()}}
+\item \href{#method-process-get_name}{\code{process$get_name()}}
+\item \href{#method-process-get_exe}{\code{process$get_exe()}}
+\item \href{#method-process-get_cmdline}{\code{process$get_cmdline()}}
+\item \href{#method-process-get_status}{\code{process$get_status()}}
+\item \href{#method-process-get_username}{\code{process$get_username()}}
+\item \href{#method-process-get_wd}{\code{process$get_wd()}}
+\item \href{#method-process-get_cpu_times}{\code{process$get_cpu_times()}}
+\item \href{#method-process-get_memory_info}{\code{process$get_memory_info()}}
+\item \href{#method-process-suspend}{\code{process$suspend()}}
+\item \href{#method-process-resume}{\code{process$resume()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-process-new"></a>}}
+\if{latex}{\out{\hypertarget{method-process-new}{}}}
 \subsection{Method \code{new()}}{
 Start a new process in the background, and then return immediately.
 \subsection{Usage}{
@@ -310,8 +314,8 @@ R6 object representing the process.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-finalize"></a>}}
-\if{latex}{\out{\hypertarget{method-finalize}{}}}
+\if{html}{\out{<a id="method-process-finalize"></a>}}
+\if{latex}{\out{\hypertarget{method-process-finalize}{}}}
 \subsection{Method \code{finalize()}}{
 Cleanup method that is called when the \code{process} object is garbage
 collected. If requested so in the process constructor, then it
@@ -322,8 +326,8 @@ eliminates all processes in the process's subprocess tree.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-kill"></a>}}
-\if{latex}{\out{\hypertarget{method-kill}{}}}
+\if{html}{\out{<a id="method-process-kill"></a>}}
+\if{latex}{\out{\hypertarget{method-process-kill}{}}}
 \subsection{Method \code{kill()}}{
 Terminate the process. It also terminate all of its child
 processes, except if they have created a new process group (on Unix),
@@ -347,8 +351,8 @@ killing the process.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-kill_tree"></a>}}
-\if{latex}{\out{\hypertarget{method-kill_tree}{}}}
+\if{html}{\out{<a id="method-process-kill_tree"></a>}}
+\if{latex}{\out{\hypertarget{method-process-kill_tree}{}}}
 \subsection{Method \code{kill_tree()}}{
 Process tree cleanup. It terminates the process
 (if still alive), together with any child (or grandchild, etc.)
@@ -378,8 +382,8 @@ killing the process.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-signal"></a>}}
-\if{latex}{\out{\hypertarget{method-signal}{}}}
+\if{html}{\out{<a id="method-process-signal"></a>}}
+\if{latex}{\out{\hypertarget{method-process-signal}{}}}
 \subsection{Method \code{signal()}}{
 Send a signal to the process. On Windows only the
 \code{SIGINT}, \code{SIGTERM} and \code{SIGKILL} signals are interpreted,
@@ -401,8 +405,8 @@ the process. See \code{\link[tools:pskill]{tools::pskill()}} for the list of sig
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-interrupt"></a>}}
-\if{latex}{\out{\hypertarget{method-interrupt}{}}}
+\if{html}{\out{<a id="method-process-interrupt"></a>}}
+\if{latex}{\out{\hypertarget{method-process-interrupt}{}}}
 \subsection{Method \code{interrupt()}}{
 Send an interrupt to the process. On Unix this is a
 \code{SIGINT} signal, and it is usually equivalent to pressing CTRL+C at
@@ -414,8 +418,8 @@ Applications may catch these events. By default they will quit.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_pid"></a>}}
-\if{latex}{\out{\hypertarget{method-get_pid}{}}}
+\if{html}{\out{<a id="method-process-get_pid"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_pid}{}}}
 \subsection{Method \code{get_pid()}}{
 Query the process id.
 \subsection{Usage}{
@@ -427,8 +431,8 @@ Integer scalar, the process id of the process.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-is_alive"></a>}}
-\if{latex}{\out{\hypertarget{method-is_alive}{}}}
+\if{html}{\out{<a id="method-process-is_alive"></a>}}
+\if{latex}{\out{\hypertarget{method-process-is_alive}{}}}
 \subsection{Method \code{is_alive()}}{
 Check if the process is alive.
 \subsection{Usage}{
@@ -440,8 +444,8 @@ Logical scalar.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-wait"></a>}}
-\if{latex}{\out{\hypertarget{method-wait}{}}}
+\if{html}{\out{<a id="method-process-wait"></a>}}
+\if{latex}{\out{\hypertarget{method-process-wait}{}}}
 \subsection{Method \code{wait()}}{
 Wait until the process finishes, or a timeout happens.
 Note that if the process never finishes, and the timeout is infinite
@@ -468,8 +472,8 @@ It returns the process itself, invisibly.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_exit_status"></a>}}
-\if{latex}{\out{\hypertarget{method-get_exit_status}{}}}
+\if{html}{\out{<a id="method-process-get_exit_status"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_exit_status}{}}}
 \subsection{Method \code{get_exit_status()}}{
 \verb{$get_exit_status} returns the exit code of the process if it has
 finished and \code{NULL} otherwise. On Unix, in some rare cases, the exit
@@ -484,8 +488,8 @@ fork clusters, e.g. through the \code{parallel::mcparallel()} function.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-format"></a>}}
-\if{latex}{\out{\hypertarget{method-format}{}}}
+\if{html}{\out{<a id="method-process-format"></a>}}
+\if{latex}{\out{\hypertarget{method-process-format}{}}}
 \subsection{Method \code{format()}}{
 \code{format(p)} or \code{p$format()} creates a string representation of the
 process, usually for printing.
@@ -495,8 +499,8 @@ process, usually for printing.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-print"></a>}}
-\if{latex}{\out{\hypertarget{method-print}{}}}
+\if{html}{\out{<a id="method-process-print"></a>}}
+\if{latex}{\out{\hypertarget{method-process-print}{}}}
 \subsection{Method \code{print()}}{
 \code{print(p)} or \code{p$print()} shows some information about the
 process on the screen, whether it is running and it's process id, etc.
@@ -506,8 +510,8 @@ process on the screen, whether it is running and it's process id, etc.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_start_time"></a>}}
-\if{latex}{\out{\hypertarget{method-get_start_time}{}}}
+\if{html}{\out{<a id="method-process-get_start_time"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_start_time}{}}}
 \subsection{Method \code{get_start_time()}}{
 \verb{$get_start_time()} returns the time when the process was
 started.
@@ -517,8 +521,8 @@ started.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-is_supervised"></a>}}
-\if{latex}{\out{\hypertarget{method-is_supervised}{}}}
+\if{html}{\out{<a id="method-process-is_supervised"></a>}}
+\if{latex}{\out{\hypertarget{method-process-is_supervised}{}}}
 \subsection{Method \code{is_supervised()}}{
 \verb{$is_supervised()} returns whether the process is being tracked by
 supervisor process.
@@ -528,8 +532,8 @@ supervisor process.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-supervise"></a>}}
-\if{latex}{\out{\hypertarget{method-supervise}{}}}
+\if{html}{\out{<a id="method-process-supervise"></a>}}
+\if{latex}{\out{\hypertarget{method-process-supervise}{}}}
 \subsection{Method \code{supervise()}}{
 \verb{$supervise()} if passed \code{TRUE}, tells the supervisor to start
 tracking the process. If \code{FALSE}, tells the supervisor to stop
@@ -550,8 +554,8 @@ process.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-read_output"></a>}}
-\if{latex}{\out{\hypertarget{method-read_output}{}}}
+\if{html}{\out{<a id="method-process-read_output"></a>}}
+\if{latex}{\out{\hypertarget{method-process-read_output}{}}}
 \subsection{Method \code{read_output()}}{
 \verb{$read_output()} reads from the standard output connection of the
 process. If the standard output connection was not requested, then
@@ -571,8 +575,8 @@ error.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-read_error"></a>}}
-\if{latex}{\out{\hypertarget{method-read_error}{}}}
+\if{html}{\out{<a id="method-process-read_error"></a>}}
+\if{latex}{\out{\hypertarget{method-process-read_error}{}}}
 \subsection{Method \code{read_error()}}{
 \verb{$read_error()} is similar to \verb{$read_output}, but it reads
 from the standard error stream.
@@ -589,8 +593,8 @@ from the standard error stream.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-read_output_lines"></a>}}
-\if{latex}{\out{\hypertarget{method-read_output_lines}{}}}
+\if{html}{\out{<a id="method-process-read_output_lines"></a>}}
+\if{latex}{\out{\hypertarget{method-process-read_output_lines}{}}}
 \subsection{Method \code{read_output_lines()}}{
 \verb{$read_output_lines()} reads lines from standard output connection
 of the process. If the standard output connection was not requested,
@@ -610,8 +614,8 @@ throw an error.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-read_error_lines"></a>}}
-\if{latex}{\out{\hypertarget{method-read_error_lines}{}}}
+\if{html}{\out{<a id="method-process-read_error_lines"></a>}}
+\if{latex}{\out{\hypertarget{method-process-read_error_lines}{}}}
 \subsection{Method \code{read_error_lines()}}{
 \verb{$read_error_lines()} is similar to \verb{$read_output_lines}, but
 it reads from the standard error stream.
@@ -628,8 +632,8 @@ it reads from the standard error stream.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-is_incomplete_output"></a>}}
-\if{latex}{\out{\hypertarget{method-is_incomplete_output}{}}}
+\if{html}{\out{<a id="method-process-is_incomplete_output"></a>}}
+\if{latex}{\out{\hypertarget{method-process-is_incomplete_output}{}}}
 \subsection{Method \code{is_incomplete_output()}}{
 \verb{$is_incomplete_output()} return \code{FALSE} if the other end of
 the standard output connection was closed (most probably because the
@@ -640,8 +644,8 @@ process exited). It return \code{TRUE} otherwise.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-is_incomplete_error"></a>}}
-\if{latex}{\out{\hypertarget{method-is_incomplete_error}{}}}
+\if{html}{\out{<a id="method-process-is_incomplete_error"></a>}}
+\if{latex}{\out{\hypertarget{method-process-is_incomplete_error}{}}}
 \subsection{Method \code{is_incomplete_error()}}{
 \verb{$is_incomplete_error()} return \code{FALSE} if the other end of
 the standard error connection was closed (most probably because the
@@ -652,8 +656,8 @@ process exited). It return \code{TRUE} otherwise.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-has_input_connection"></a>}}
-\if{latex}{\out{\hypertarget{method-has_input_connection}{}}}
+\if{html}{\out{<a id="method-process-has_input_connection"></a>}}
+\if{latex}{\out{\hypertarget{method-process-has_input_connection}{}}}
 \subsection{Method \code{has_input_connection()}}{
 \verb{$has_input_connection()} return \code{TRUE} if there is a connection
 object for standard input; in other words, if \code{stdout="|"}. It returns
@@ -664,8 +668,8 @@ object for standard input; in other words, if \code{stdout="|"}. It returns
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-has_output_connection"></a>}}
-\if{latex}{\out{\hypertarget{method-has_output_connection}{}}}
+\if{html}{\out{<a id="method-process-has_output_connection"></a>}}
+\if{latex}{\out{\hypertarget{method-process-has_output_connection}{}}}
 \subsection{Method \code{has_output_connection()}}{
 \verb{$has_output_connection()} returns \code{TRUE} if there is a connection
 object for standard output; in other words, if \code{stdout="|"}. It returns
@@ -676,8 +680,8 @@ object for standard output; in other words, if \code{stdout="|"}. It returns
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-has_error_connection"></a>}}
-\if{latex}{\out{\hypertarget{method-has_error_connection}{}}}
+\if{html}{\out{<a id="method-process-has_error_connection"></a>}}
+\if{latex}{\out{\hypertarget{method-process-has_error_connection}{}}}
 \subsection{Method \code{has_error_connection()}}{
 \verb{$has_error_connection()} returns \code{TRUE} if there is a connection
 object for standard error; in other words, if \code{stderr="|"}. It returns
@@ -688,8 +692,8 @@ object for standard error; in other words, if \code{stderr="|"}. It returns
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-has_poll_connection"></a>}}
-\if{latex}{\out{\hypertarget{method-has_poll_connection}{}}}
+\if{html}{\out{<a id="method-process-has_poll_connection"></a>}}
+\if{latex}{\out{\hypertarget{method-process-has_poll_connection}{}}}
 \subsection{Method \code{has_poll_connection()}}{
 \verb{$has_poll_connection()} return \code{TRUE} if there is a poll connection,
 \code{FALSE} otherwise.
@@ -699,8 +703,8 @@ object for standard error; in other words, if \code{stderr="|"}. It returns
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_input_connection"></a>}}
-\if{latex}{\out{\hypertarget{method-get_input_connection}{}}}
+\if{html}{\out{<a id="method-process-get_input_connection"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_input_connection}{}}}
 \subsection{Method \code{get_input_connection()}}{
 \verb{$get_input_connection()} returns a connection object, to the
 standard input stream of the process.
@@ -710,8 +714,8 @@ standard input stream of the process.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_output_connection"></a>}}
-\if{latex}{\out{\hypertarget{method-get_output_connection}{}}}
+\if{html}{\out{<a id="method-process-get_output_connection"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_output_connection}{}}}
 \subsection{Method \code{get_output_connection()}}{
 \verb{$get_output_connection()} returns a connection object, to the
 standard output stream of the process.
@@ -721,8 +725,8 @@ standard output stream of the process.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_error_connection"></a>}}
-\if{latex}{\out{\hypertarget{method-get_error_connection}{}}}
+\if{html}{\out{<a id="method-process-get_error_connection"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_error_connection}{}}}
 \subsection{Method \code{get_error_connection()}}{
 \verb{$get_error_conneciton()} returns a connection object, to the
 standard error stream of the process.
@@ -732,8 +736,8 @@ standard error stream of the process.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-read_all_output"></a>}}
-\if{latex}{\out{\hypertarget{method-read_all_output}{}}}
+\if{html}{\out{<a id="method-process-read_all_output"></a>}}
+\if{latex}{\out{\hypertarget{method-process-read_all_output}{}}}
 \subsection{Method \code{read_all_output()}}{
 \verb{$read_all_output()} waits for all standard output from the process.
 It does not return until the process has finished.
@@ -747,8 +751,8 @@ It returns a character scalar. This will return content only if
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-read_all_error"></a>}}
-\if{latex}{\out{\hypertarget{method-read_all_error}{}}}
+\if{html}{\out{<a id="method-process-read_all_error"></a>}}
+\if{latex}{\out{\hypertarget{method-process-read_all_error}{}}}
 \subsection{Method \code{read_all_error()}}{
 \verb{$read_all_error()} waits for all standard error from the process.
 It does not return until the process has finished.
@@ -762,8 +766,8 @@ It returns a character scalar. This will return content only if
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-read_all_output_lines"></a>}}
-\if{latex}{\out{\hypertarget{method-read_all_output_lines}{}}}
+\if{html}{\out{<a id="method-process-read_all_output_lines"></a>}}
+\if{latex}{\out{\hypertarget{method-process-read_all_output_lines}{}}}
 \subsection{Method \code{read_all_output_lines()}}{
 \verb{$read_all_output_lines()} waits for all standard output lines
 from a process. It does not return until the process has finished.
@@ -777,8 +781,8 @@ It returns a character vector. This will return content only if
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-read_all_error_lines"></a>}}
-\if{latex}{\out{\hypertarget{method-read_all_error_lines}{}}}
+\if{html}{\out{<a id="method-process-read_all_error_lines"></a>}}
+\if{latex}{\out{\hypertarget{method-process-read_all_error_lines}{}}}
 \subsection{Method \code{read_all_error_lines()}}{
 \verb{$read_all_error_lines()} waits for all standard error lines from
 a process. It does not return until the process has finished.
@@ -792,8 +796,8 @@ It returns a character vector. This will return content only if
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-write_input"></a>}}
-\if{latex}{\out{\hypertarget{method-write_input}{}}}
+\if{html}{\out{<a id="method-process-write_input"></a>}}
+\if{latex}{\out{\hypertarget{method-process-write_input}{}}}
 \subsection{Method \code{write_input()}}{
 \verb{$write_input()} writes the character vector (separated by \code{sep}) to
 the standard input of the process. It will be converted to the specified
@@ -824,8 +828,8 @@ Leftover text (as a raw vector), that was not written.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_input_file"></a>}}
-\if{latex}{\out{\hypertarget{method-get_input_file}{}}}
+\if{html}{\out{<a id="method-process-get_input_file"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_input_file}{}}}
 \subsection{Method \code{get_input_file()}}{
 \verb{$get_input_file()} if the \code{stdin} argument was a filename,
 this returns the absolute path to the file. If \code{stdin} was \code{"|"} or
@@ -836,8 +840,8 @@ this returns the absolute path to the file. If \code{stdin} was \code{"|"} or
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_output_file"></a>}}
-\if{latex}{\out{\hypertarget{method-get_output_file}{}}}
+\if{html}{\out{<a id="method-process-get_output_file"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_output_file}{}}}
 \subsection{Method \code{get_output_file()}}{
 \verb{$get_output_file()} if the \code{stdout} argument was a filename,
 this returns the absolute path to the file. If \code{stdout} was \code{"|"} or
@@ -848,8 +852,8 @@ this returns the absolute path to the file. If \code{stdout} was \code{"|"} or
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_error_file"></a>}}
-\if{latex}{\out{\hypertarget{method-get_error_file}{}}}
+\if{html}{\out{<a id="method-process-get_error_file"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_error_file}{}}}
 \subsection{Method \code{get_error_file()}}{
 \verb{$get_error_file()} if the \code{stderr} argument was a filename,
 this returns the absolute path to the file. If \code{stderr} was \code{"|"} or
@@ -860,8 +864,8 @@ this returns the absolute path to the file. If \code{stderr} was \code{"|"} or
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-poll_io"></a>}}
-\if{latex}{\out{\hypertarget{method-poll_io}{}}}
+\if{html}{\out{<a id="method-process-poll_io"></a>}}
+\if{latex}{\out{\hypertarget{method-process-poll_io}{}}}
 \subsection{Method \code{poll_io()}}{
 \verb{$poll_io()} polls the process's connections for I/O. See more in
 the \emph{Polling} section, and see also the \code{\link[=poll]{poll()}} function
@@ -880,8 +884,8 @@ polling.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_poll_connection"></a>}}
-\if{latex}{\out{\hypertarget{method-get_poll_connection}{}}}
+\if{html}{\out{<a id="method-process-get_poll_connection"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_poll_connection}{}}}
 \subsection{Method \code{get_poll_connection()}}{
 \verb{$get_poll_connetion()} returns the poll connection, if the process has
 one.
@@ -891,8 +895,8 @@ one.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_result"></a>}}
-\if{latex}{\out{\hypertarget{method-get_result}{}}}
+\if{html}{\out{<a id="method-process-get_result"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_result}{}}}
 \subsection{Method \code{get_result()}}{
 \verb{$get_result()} returns the result of the post processesing function.
 It can only be called once the process has finished. If the process has
@@ -903,8 +907,8 @@ no post-processing function, then \code{NULL} is returned.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-as_ps_handle"></a>}}
-\if{latex}{\out{\hypertarget{method-as_ps_handle}{}}}
+\if{html}{\out{<a id="method-process-as_ps_handle"></a>}}
+\if{latex}{\out{\hypertarget{method-process-as_ps_handle}{}}}
 \subsection{Method \code{as_ps_handle()}}{
 \verb{$as_ps_handle()} returns a \link[ps:ps_handle]{ps::ps_handle} object, corresponding to
 the process.
@@ -914,8 +918,8 @@ the process.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_name"></a>}}
-\if{latex}{\out{\hypertarget{method-get_name}{}}}
+\if{html}{\out{<a id="method-process-get_name"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_name}{}}}
 \subsection{Method \code{get_name()}}{
 Calls \code{\link[ps:ps_name]{ps::ps_name()}} to get the process name.
 \subsection{Usage}{
@@ -924,8 +928,8 @@ Calls \code{\link[ps:ps_name]{ps::ps_name()}} to get the process name.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_exe"></a>}}
-\if{latex}{\out{\hypertarget{method-get_exe}{}}}
+\if{html}{\out{<a id="method-process-get_exe"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_exe}{}}}
 \subsection{Method \code{get_exe()}}{
 Calls \code{\link[ps:ps_exe]{ps::ps_exe()}} to get the path of the executable.
 \subsection{Usage}{
@@ -934,8 +938,8 @@ Calls \code{\link[ps:ps_exe]{ps::ps_exe()}} to get the path of the executable.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_cmdline"></a>}}
-\if{latex}{\out{\hypertarget{method-get_cmdline}{}}}
+\if{html}{\out{<a id="method-process-get_cmdline"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_cmdline}{}}}
 \subsection{Method \code{get_cmdline()}}{
 Calls \code{\link[ps:ps_cmdline]{ps::ps_cmdline()}} to get the command line.
 \subsection{Usage}{
@@ -944,8 +948,8 @@ Calls \code{\link[ps:ps_cmdline]{ps::ps_cmdline()}} to get the command line.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_status"></a>}}
-\if{latex}{\out{\hypertarget{method-get_status}{}}}
+\if{html}{\out{<a id="method-process-get_status"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_status}{}}}
 \subsection{Method \code{get_status()}}{
 Calls \code{\link[ps:ps_status]{ps::ps_status()}} to get the process status.
 \subsection{Usage}{
@@ -954,8 +958,8 @@ Calls \code{\link[ps:ps_status]{ps::ps_status()}} to get the process status.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_username"></a>}}
-\if{latex}{\out{\hypertarget{method-get_username}{}}}
+\if{html}{\out{<a id="method-process-get_username"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_username}{}}}
 \subsection{Method \code{get_username()}}{
 calls \code{\link[ps:ps_username]{ps::ps_username()}} to get the username.
 \subsection{Usage}{
@@ -964,8 +968,8 @@ calls \code{\link[ps:ps_username]{ps::ps_username()}} to get the username.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_wd"></a>}}
-\if{latex}{\out{\hypertarget{method-get_wd}{}}}
+\if{html}{\out{<a id="method-process-get_wd"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_wd}{}}}
 \subsection{Method \code{get_wd()}}{
 Calls \code{\link[ps:ps_cwd]{ps::ps_cwd()}} to get the current working directory.
 \subsection{Usage}{
@@ -974,8 +978,8 @@ Calls \code{\link[ps:ps_cwd]{ps::ps_cwd()}} to get the current working directory
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_cpu_times"></a>}}
-\if{latex}{\out{\hypertarget{method-get_cpu_times}{}}}
+\if{html}{\out{<a id="method-process-get_cpu_times"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_cpu_times}{}}}
 \subsection{Method \code{get_cpu_times()}}{
 Calls \code{\link[ps:ps_cpu_times]{ps::ps_cpu_times()}} to get CPU usage data.
 \subsection{Usage}{
@@ -984,8 +988,8 @@ Calls \code{\link[ps:ps_cpu_times]{ps::ps_cpu_times()}} to get CPU usage data.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_memory_info"></a>}}
-\if{latex}{\out{\hypertarget{method-get_memory_info}{}}}
+\if{html}{\out{<a id="method-process-get_memory_info"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_memory_info}{}}}
 \subsection{Method \code{get_memory_info()}}{
 Calls \code{\link[ps:ps_memory_info]{ps::ps_memory_info()}} to get memory data.
 \subsection{Usage}{
@@ -994,8 +998,8 @@ Calls \code{\link[ps:ps_memory_info]{ps::ps_memory_info()}} to get memory data.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-suspend"></a>}}
-\if{latex}{\out{\hypertarget{method-suspend}{}}}
+\if{html}{\out{<a id="method-process-suspend"></a>}}
+\if{latex}{\out{\hypertarget{method-process-suspend}{}}}
 \subsection{Method \code{suspend()}}{
 Calls \code{\link[ps:ps_suspend]{ps::ps_suspend()}} to suspend the process.
 \subsection{Usage}{
@@ -1004,8 +1008,8 @@ Calls \code{\link[ps:ps_suspend]{ps::ps_suspend()}} to suspend the process.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-resume"></a>}}
-\if{latex}{\out{\hypertarget{method-resume}{}}}
+\if{html}{\out{<a id="method-process-resume"></a>}}
+\if{latex}{\out{\hypertarget{method-process-resume}{}}}
 \subsection{Method \code{resume()}}{
 Calls \code{\link[ps:ps_resume]{ps::ps_resume()}} to resume a suspended process.
 \subsection{Usage}{

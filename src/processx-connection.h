@@ -75,6 +75,7 @@ typedef struct processx_connection_s {
   size_t utf8_data_size;
 
   int poll_idx;
+  char *filename;
 } processx_connection_t;
 
 struct processx_pollable_s;
@@ -134,6 +135,11 @@ SEXP processx_connection_create_fd(SEXP handle, SEXP encoding, SEXP close);
 
 /* Create file connection */
 SEXP processx_connection_create_file(SEXP filename, SEXP read, SEXP write);
+SEXP processx_connection_create_pipe(SEXP read, SEXP write,
+                                     SEXP filename, SEXP encoding,
+                                     SEXP nonblocking);
+SEXP processx_connection_connect_pipe(SEXP filename, SEXP read, SEXP write,
+                                      SEXP encoding, SEXP nonblocking);
 
 /* Read characters in a given encoding from the connection. */
 SEXP processx_connection_read_chars(SEXP con, SEXP nchars);
@@ -146,6 +152,9 @@ SEXP processx_connection_write_bytes(SEXP con, SEXP chars);
 
 /* Check if the connection has ended. */
 SEXP processx_connection_is_eof(SEXP con);
+
+/* Query file name, if any */
+SEXP processx_connection_file_name(SEXP con);
 
 /* Close the connection. */
 SEXP processx_connection_close(SEXP con);
@@ -176,6 +185,7 @@ processx_connection_t *processx_c_connection_create(
   processx_file_handle_t os_handle,
   processx_file_type_t type,
   const char *encoding,
+  const char *filename,
   SEXP *r_connection);
 
 /* Destroy connection object. We need this for the C API */

@@ -10,6 +10,7 @@
 #ifndef _WIN32
 #include <sys/uio.h>
 #include <poll.h>
+#include <sys/stat.h>
 #else
 #include <io.h>
 #endif
@@ -78,7 +79,7 @@ SEXP processx_connection_create(SEXP handle, SEXP encoding) {
   if (!os_handle) R_THROW_ERROR("Cannot create connection, invalid handle");
 
   processx_c_connection_create(*os_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
-			       c_encoding, &result);
+			       c_encoding, NULL, &result);
   return result;
 }
 
@@ -96,7 +97,7 @@ SEXP processx_connection_create_fd(SEXP handle, SEXP encoding, SEXP close) {
 #endif
 
   con = processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
-				     c_encoding, &result);
+				     c_encoding, NULL, &result);
 
   if (! LOGICAL(close)[0]) con->close_on_destroy = 0;
 
@@ -140,7 +141,7 @@ SEXP processx_connection_create_file(SEXP filename, SEXP read, SEXP write) {
 #endif
 
   processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_FILE,
-			       "", &result);
+			       "", c_filename, &result);
 
   return result;
 }
@@ -226,6 +227,19 @@ SEXP processx_connection_is_eof(SEXP con) {
   return ScalarLogical(ccon->is_eof_);
 }
 
+SEXP processx_connection_file_name(SEXP con) {
+  processx_connection_t *ccon = R_ExternalPtrAddr(con);
+  if (!ccon) R_THROW_ERROR("Invalid connection object");
+  if (ccon->filename) {
+    SEXP fn = PROTECT(allocVector(STRSXP, 1));
+    SET_STRING_ELT(fn, 0, Rf_mkCharCE(ccon->filename, CE_UTF8));
+    UNPROTECT(1);
+    return fn;
+  } else {
+    return(NA_STRING);
+  }
+}
+
 SEXP processx_connection_close(SEXP con) {
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
   if (!ccon) R_THROW_ERROR("Invalid connection object");
@@ -244,6 +258,71 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout) {
   /* TODO: this is not used currently */
   R_THROW_ERROR("Not implemented");
   return R_NilValue;
+}
+
+SEXP processx_connection_create_pipe(SEXP read, SEXP write,
+                                     SEXP filename, SEXP encoding,
+                                     SEXP nonblocking) {
+  const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
+  int c_read = LOGICAL(read)[0];
+  int c_write = LOGICAL(write)[0];
+  int c_nonblocking = LOGICAL(nonblocking)[0];
+  SEXP result;
+  processx_file_handle_t os_handle;
+
+#ifdef _WIN32
+
+#else
+  const char *c_filename = CHAR(STRING_ELT(filename, 0));
+  int ret = mkfifo(c_filename, 0600);
+  if (ret < 0) {
+    R_THROW_SYSTEM_ERROR("Cannot create fifo at %s", c_filename);
+  }
+  int flags = 0;
+  if ( c_read && !c_write) flags |= O_RDONLY;
+  if (!c_read &&  c_write) flags |= O_WRONLY;
+  if (c_nonblocking) flags |= O_NONBLOCK;
+  os_handle = open(c_filename, flags);
+  if (os_handle == -1) {
+    R_THROW_SYSTEM_ERROR("Cannot open fifo `%s`", c_filename);
+  }
+  processx__nonblock_fcntl(os_handle, c_nonblocking);
+#endif
+
+  processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
+			       c_encoding, c_filename, &result);
+
+  return result;
+}
+
+SEXP processx_connection_connect_pipe(SEXP filename, SEXP read, SEXP write,
+                                      SEXP encoding, SEXP nonblocking) {
+  const char *c_filename = CHAR(STRING_ELT(filename, 0));
+  int c_read = LOGICAL(read)[0];
+  int c_write = LOGICAL(write)[0];
+  const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
+  int c_nonblocking = LOGICAL(nonblocking)[0];
+  SEXP result;
+  processx_file_handle_t os_handle;
+
+#ifdef _WIN32
+
+#else
+  int flags = 0;
+  if ( c_read && !c_write) flags |= O_RDONLY;
+  if (!c_read &&  c_write) flags |= O_WRONLY;
+  if (c_nonblocking) flags |= O_NONBLOCK;
+  os_handle = open(c_filename, flags);
+  if (os_handle == -1) {
+    R_THROW_SYSTEM_ERROR("Cannot open fifo `%s`", c_filename);
+  }
+  processx__nonblock_fcntl(os_handle, c_nonblocking);
+#endif
+
+  processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
+			       c_encoding, c_filename, &result);
+
+  return result;
 }
 
 SEXP processx_connection_create_pipepair(SEXP encoding, SEXP nonblocking) {
@@ -266,11 +345,11 @@ SEXP processx_connection_create_pipepair(SEXP encoding, SEXP nonblocking) {
 
   processx_c_connection_create(h1, c_nonblocking[0] ?
     PROCESSX_FILE_TYPE_ASYNCPIPE : PROCESSX_FILE_TYPE_PIPE, c_encoding,
-    &con1);
+    NULL, &con1);
   PROTECT(con1);
   processx_c_connection_create(h2, c_nonblocking[1] ?
     PROCESSX_FILE_TYPE_ASYNCPIPE : PROCESSX_FILE_TYPE_PIPE, c_encoding,
-    &con2);
+    NULL, &con2);
   PROTECT(con2);
 
   result = PROTECT(allocVector(VECSXP, 2));
@@ -296,7 +375,7 @@ SEXP processx__connection_set_std(SEXP con, int which, int drop) {
     }
     os_handle = (HANDLE) _get_osfhandle(saved) ;
     processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_PIPE,
-				 "", &result);
+				 "", NULL, &result);
   }
 
   fd = _open_osfhandle((intptr_t) ccon->handle.handle, 0);
@@ -312,7 +391,7 @@ SEXP processx__connection_set_std(SEXP con, int which, int drop) {
       R_THROW_SYSTEM_ERROR("Cannot save %s for rerouting", what[which]);
     }
     processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_PIPE,
-				 "", &result);
+				 "", NULL, &result);
   }
   ret = dup2(ccon->handle, which);
   if (ret == -1) {
@@ -406,6 +485,7 @@ processx_connection_t *processx_c_connection_create(
   processx_file_handle_t os_handle,
   processx_file_type_t type,
   const char *encoding,
+  const char *filename,
   SEXP *r_connection) {
 
   processx_connection_t *con;
@@ -433,6 +513,17 @@ processx_connection_t *processx_c_connection_create(
   if (encoding && encoding[0]) {
     con->encoding = strdup(encoding);
     if (!con->encoding) {
+      free(con);
+      R_THROW_ERROR("cannot create connection, out of memory");
+      return 0;			/* never reached */
+    }
+  }
+
+  con->filename = 0;
+  if (filename) {
+    con->filename = strdup(filename);
+    if (!con->filename) {
+      if (con->encoding) free(con->encoding);
       free(con);
       R_THROW_ERROR("cannot create connection, out of memory");
       return 0;			/* never reached */
@@ -485,6 +576,7 @@ void processx_c_connection_destroy(processx_connection_t *ccon) {
   if (ccon->buffer) { free(ccon->buffer); ccon->buffer = NULL; }
   if (ccon->utf8) { free(ccon->utf8); ccon->utf8 = NULL; }
   if (ccon->encoding) { free(ccon->encoding); ccon->encoding = NULL; }
+  if (ccon->filename) { free(ccon->filename); ccon->filename = NULL; }
 
  #ifdef _WIN32
   if (ccon->handle.overlapped.hEvent) {
