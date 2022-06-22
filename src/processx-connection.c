@@ -264,6 +264,7 @@ SEXP processx_connection_create_pipe(SEXP read, SEXP write,
                                      SEXP filename, SEXP encoding,
                                      SEXP nonblocking) {
   const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
+  const char *c_filename = CHAR(STRING_ELT(filename, 0));
   int c_read = LOGICAL(read)[0];
   int c_write = LOGICAL(write)[0];
   int c_nonblocking = LOGICAL(nonblocking)[0];
@@ -271,7 +272,6 @@ SEXP processx_connection_create_pipe(SEXP read, SEXP write,
   processx_file_handle_t os_handle;
 
 #ifdef _WIN32
-  char pipe_name = CHAR(STRING_ELT(filename, 0));
   SECURITY_ATTRIBUTES sa;
   DWORD err;
   DWORD openmode = FILE_FLAG_FIRST_PIPE_INSTANCE;
@@ -283,31 +283,21 @@ SEXP processx_connection_create_pipe(SEXP read, SEXP write,
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
 
-  for (;;) {
-    processx__unique_pipe_name("pxpipe", pipe_name, sizeof(pipe_name));
+  os_handle = CreateNamedPipeA(
+    c_filename,
+    openmode,
+    PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+    1,
+    65536,
+    65536,
+    0,
+    NULL);
 
-    os_handle = CreateNamedPipeA(
-      pipe_name,
-      openmode,
-      PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
-      1,
-      65536,
-      65536,
-      0,
-      NULL);
-
-    if (os_handle != INVALID_HANDLE_VALUE) {
-      break;
-    }
-
-    err = GetLastError();
-    if (err != ERROR_PIPE_BUSY && err != ERROR_ACCESS_DENIED) {
-      R_THROW_SYSTEM_ERROR_CODE(err, "could not create pipe");
-    }
+  if (os_handle == INVALID_HANDLE_VALUE) {
+    R_THROW_SYSTEM_ERROR("could not create pipe");
   }
 
 #else
-  const char *c_filename = CHAR(STRING_ELT(filename, 0));
   int ret = mkfifo(c_filename, 0600);
   if (ret < 0) {
     R_THROW_SYSTEM_ERROR("Cannot create fifo at %s", c_filename);
