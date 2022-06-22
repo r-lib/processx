@@ -23,8 +23,6 @@
 #include "unix/processx-unix.h"
 #endif
 
-#include <R.h>
-
 /* Internal functions in this file */
 
 static void processx__connection_find_chars(processx_connection_t *ccon,
@@ -262,16 +260,6 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout) {
   return R_NilValue;
 }
 
-#ifdef _WIN32
-static void processx__unique_pipe_name(char* ptr, char* name, size_t size) {
-  int r;
-  GetRNGstate();
-  r = (int)(unif_rand() * 65000);
-  snprintf(name, size, "\\\\?\\pipe\\px\\%p-%lu", ptr + r, GetCurrentProcessId());
-  PutRNGstate();
-}
-#endif
-
 SEXP processx_connection_create_pipe(SEXP read, SEXP write,
                                      SEXP filename, SEXP encoding,
                                      SEXP nonblocking) {
@@ -283,8 +271,7 @@ SEXP processx_connection_create_pipe(SEXP read, SEXP write,
   processx_file_handle_t os_handle;
 
 #ifdef _WIN32
-  char pipe_name[40];
-  char *c_filename = pipe_name;
+  char pipe_name = CHAR(STRING_ELT(filename, 0));
   SECURITY_ATTRIBUTES sa;
   DWORD err;
   DWORD openmode = FILE_FLAG_FIRST_PIPE_INSTANCE;

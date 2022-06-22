@@ -286,3 +286,7 @@ process_env <- function(env) {
   if (any(current)) env <- update_vector(Sys.getenv(), env[!current])
   enc2path(paste(names(env), sep = "=", env))
 }
+
+starts_with <- function(x, pre) {
+  substr(x, 1, nchar(pre)) == pre
+}

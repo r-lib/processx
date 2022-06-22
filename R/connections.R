@@ -38,8 +38,8 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 #' @rdname processx_connections
 #' @export
 
-conn_create_pipe <- function(read = NULL, write = NULL, encoding = "",
-                             nonblocking = TRUE) {
+conn_create_pipe <- function(filename = NULL, read = NULL, write = NULL,
+                             encoding = "", nonblocking = TRUE) {
   if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
   if (is.null(read)) read <- !write
   if (is.null(write)) write <- !read
@@ -49,6 +49,7 @@ conn_create_pipe <- function(read = NULL, write = NULL, encoding = "",
   }
 
   assert_that(
+    is_string_or_null(filename),
     is_string(encoding),
     is_flag(read),
     is_flag(write),
@@ -57,11 +58,21 @@ conn_create_pipe <- function(read = NULL, write = NULL, encoding = "",
     is_flag(nonblocking)
   )
 
+  if (is_windows()) {
+    filename <- filename %||% basename(tempfile())
+    winpipeprefix <- "\\\\?\\pipe\\"
+    if (!starts_with(filename, winpipeprefix)) {
+      filename <- paste0(winpipeprefix, filename)
+    }
+  } else {
+    filename <- filename %||% tempfile()
+  }
+
   chain_call(
     c_processx_connection_create_pipe,
     read,
     write,
-    if (!is_windows()) tempfile(),
+    filename,
     encoding,
     nonblocking
   )
@@ -289,7 +300,10 @@ processx_conn_write <- function(con, str, sep = "\n", encoding = "") {
 #' @details
 #' `conn_create_file()` creates a connection to a file.
 #'
-#' @param filename File name.
+#' @param filename File name. For `conn_create_pipe()` on Windows, a
+#' `\\?\pipe` prefix is added to this, if it does not have such a prefix.
+#' For `conn_create_pipe()` it can also be `NULL`, in which case a random
+#' file name is used via `tempfile()`.
 #' @param read Whether the connection is readable.
 #' @param write Whethe the connection is writeable.
 #'
