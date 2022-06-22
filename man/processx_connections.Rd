@@ -30,13 +30,7 @@
 \usage{
 conn_create_fd(fd, encoding = "", close = TRUE)
 
-conn_create_pipe(
-  filename = NULL,
-  read = NULL,
-  write = NULL,
-  encoding = "",
-  nonblocking = TRUE
-)
+conn_create_pipe(filename = NULL, encoding = "", nonblocking = TRUE)
 
 conn_connect_pipe(
   filename,
@@ -105,13 +99,13 @@ Encoding to re-encode \code{str} into when writing.}
 For \code{conn_create_pipe()} it can also be \code{NULL}, in which case a random
 file name is used via \code{tempfile()}.}
 
-\item{read}{Whether the connection is readable.}
-
-\item{write}{Whethe the connection is writeable.}
-
 \item{nonblocking}{Whether the pipe should be non-blocking.
 For \code{conn_create_pipepair()} it must be a logical vector of length two,
 for both ends of the pipe.}
+
+\item{read}{Whether the connection is readable.}
+
+\item{write}{Whethe the connection is writeable.}
 
 \item{con}{Processx connection object.}
 
@@ -137,8 +131,7 @@ compatible with R's built-in connection system.
 \details{
 \code{conn_create_fd()} creates a connection from a file descriptor.
 
-\code{conn_create_pipe()} creates one end of a pipe. If \code{read} is \code{TRUE}, then
-this end will be readable, if \code{write} is \code{TRUE} then it will be writeable.
+\code{conn_create_pipe()} creates the reading end of the pipe.
 On Unix a pipe is a fifo on the file system, in the R temporary
 directory. On Windows it is a named pipe.
 
@@ -199,7 +192,7 @@ subprocess), that is is still a valid file descriptor.
 \examples{
 # -- Example for a non-blocking pipe -----------------------------------
 # Need to open the reading end first, otherwise Unix fails
-reader <- conn_create_pipe(read = TRUE)
+reader <- conn_create_pipe()
 
 # Always use poll() before you read, with a timeout if you like.
 # If you read before the other end of the pipe is connected, then

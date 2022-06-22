@@ -27,8 +27,7 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 }
 
 #' @details
-#' `conn_create_pipe()` creates one end of a pipe. If `read` is `TRUE`, then
-#' this end will be readable, if `write` is `TRUE` then it will be writeable.
+#' `conn_create_pipe()` creates the reading end of the pipe.
 #' On Unix a pipe is a fifo on the file system, in the R temporary
 #' directory. On Windows it is a named pipe.
 #'
@@ -38,23 +37,12 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 #' @rdname processx_connections
 #' @export
 
-conn_create_pipe <- function(filename = NULL, read = NULL, write = NULL,
-                             encoding = "", nonblocking = TRUE) {
-  if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
-  if (is.null(read)) read <- !write
-  if (is.null(write)) write <- !read
-
-  if (read && write) {
-    throw(new_error("Bi-directional pipes are not supported currently"))
-  }
+conn_create_pipe <- function(filename = NULL, encoding = "",
+                             nonblocking = TRUE) {
 
   assert_that(
     is_string_or_null(filename),
     is_string(encoding),
-    is_flag(read),
-    is_flag(write),
-    read || write,
-    ! (read && write),
     is_flag(nonblocking)
   )
 
@@ -70,8 +58,8 @@ conn_create_pipe <- function(filename = NULL, read = NULL, write = NULL,
 
   chain_call(
     c_processx_connection_create_pipe,
-    read,
-    write,
+    TRUE, # read
+    FALSE, # write
     filename,
     encoding,
     nonblocking
@@ -88,7 +76,7 @@ conn_create_pipe <- function(filename = NULL, read = NULL, write = NULL,
 #' @examples
 #' # -- Example for a non-blocking pipe -----------------------------------
 #' # Need to open the reading end first, otherwise Unix fails
-#' reader <- conn_create_pipe(read = TRUE)
+#' reader <- conn_create_pipe()
 #'
 #' # Always use poll() before you read, with a timeout if you like.
 #' # If you read before the other end of the pipe is connected, then
