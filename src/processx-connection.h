@@ -39,6 +39,7 @@ typedef struct {
   OVERLAPPED overlapped;
   BOOLEAN async;
   BOOLEAN read_pending;
+  BOOLEAN connecting;
   BOOLEAN freelist;
 } processx_i_connection_t;
 #else
@@ -262,11 +263,13 @@ extern int processx__thread_cmd;
 #define PROCESSX__THREAD_CMD_IDLE 1
 #define PROCESSX__THREAD_CMD_READFILE 2
 #define PROCESSX__THREAD_CMD_GETSTATUS 3
+#define PROCESSX__THREAD_CMD_CONNECTPIPE 4
 
 BOOL processx__thread_readfile(processx_connection_t *ccon,
 			       LPVOID lpBuffer,
 			       DWORD nNumberOfBytesToRead,
 			       LPDWORD lpNumberOfBytesRead);
+BOOL processx__thread_connectpipe(processx_connection_t *ccon);
 BOOL processx__thread_getstatus(LPDWORD lpNumberOfBytes,
 				PULONG_PTR lpCompletionKey,
 				LPOVERLAPPED *lpOverlapped,

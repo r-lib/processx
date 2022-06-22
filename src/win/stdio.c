@@ -240,7 +240,7 @@ processx_connection_t * processx__create_connection(
   con = processx_c_connection_create(
     pipe_handle,
     async ? PROCESSX_FILE_TYPE_ASYNCPIPE : PROCESSX_FILE_TYPE_PIPE,
-    encoding, &res);
+    encoding, NULL, &res);
 
   defineVar(install(membername), res, private);
 

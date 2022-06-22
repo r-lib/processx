@@ -23,6 +23,8 @@
 #include "unix/processx-unix.h"
 #endif
 
+#include <R.h>
+
 /* Internal functions in this file */
 
 static void processx__connection_find_chars(processx_connection_t *ccon,
@@ -260,6 +262,16 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout) {
   return R_NilValue;
 }
 
+#ifdef _WIN32
+static void processx__unique_pipe_name(char* ptr, char* name, size_t size) {
+  int r;
+  GetRNGstate();
+  r = (int)(unif_rand() * 65000);
+  snprintf(name, size, "\\\\?\\pipe\\px\\%p-%lu", ptr + r, GetCurrentProcessId());
+  PutRNGstate();
+}
+#endif
+
 SEXP processx_connection_create_pipe(SEXP read, SEXP write,
                                      SEXP filename, SEXP encoding,
                                      SEXP nonblocking) {
@@ -271,6 +283,41 @@ SEXP processx_connection_create_pipe(SEXP read, SEXP write,
   processx_file_handle_t os_handle;
 
 #ifdef _WIN32
+  char pipe_name[40];
+  char *c_filename = pipe_name;
+  SECURITY_ATTRIBUTES sa;
+  DWORD err;
+  DWORD openmode = FILE_FLAG_FIRST_PIPE_INSTANCE;
+  if (c_read) openmode |= PIPE_ACCESS_INBOUND;
+  if (c_write) openmode |= PIPE_ACCESS_OUTBOUND;
+  if (c_nonblocking) openmode |= FILE_FLAG_OVERLAPPED;
+
+  sa.nLength = sizeof(sa);
+  sa.lpSecurityDescriptor = NULL;
+  sa.bInheritHandle = TRUE;
+
+  for (;;) {
+    processx__unique_pipe_name("pxpipe", pipe_name, sizeof(pipe_name));
+
+    os_handle = CreateNamedPipeA(
+      pipe_name,
+      openmode,
+      PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+      1,
+      65536,
+      65536,
+      0,
+      NULL);
+
+    if (os_handle != INVALID_HANDLE_VALUE) {
+      break;
+    }
+
+    err = GetLastError();
+    if (err != ERROR_PIPE_BUSY && err != ERROR_ACCESS_DENIED) {
+      R_THROW_SYSTEM_ERROR_CODE(err, "could not create pipe");
+    }
+  }
 
 #else
   const char *c_filename = CHAR(STRING_ELT(filename, 0));
@@ -289,8 +336,13 @@ SEXP processx_connection_create_pipe(SEXP read, SEXP write,
   processx__nonblock_fcntl(os_handle, c_nonblocking);
 #endif
 
-  processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
-			       c_encoding, c_filename, &result);
+  processx_c_connection_create(
+    os_handle,
+    c_nonblocking ? PROCESSX_FILE_TYPE_ASYNCPIPE : PROCESSX_FILE_TYPE_PIPE,
+    c_encoding,
+    c_filename,
+    &result
+  );
 
   return result;
 }
@@ -306,6 +358,32 @@ SEXP processx_connection_connect_pipe(SEXP filename, SEXP read, SEXP write,
   processx_file_handle_t os_handle;
 
 #ifdef _WIN32
+  SECURITY_ATTRIBUTES sa;
+  DWORD access = 0;
+  DWORD attr = 0;
+
+  sa.nLength = sizeof(sa);
+  sa.lpSecurityDescriptor = NULL;
+  sa.bInheritHandle = TRUE;
+
+  if (c_read) access |= GENERIC_READ;
+  if (c_write) access |= GENERIC_WRITE;
+
+  if (c_nonblocking) {
+    attr |= FILE_FLAG_OVERLAPPED;
+  } else {
+    attr |= FILE_ATTRIBUTE_NORMAL;
+  }
+
+  os_handle = CreateFileA(
+    c_filename,
+    access,
+    0,
+    &sa,
+    OPEN_EXISTING,
+     attr,
+    NULL
+  );
 
 #else
   int flags = 0;
@@ -319,8 +397,13 @@ SEXP processx_connection_connect_pipe(SEXP filename, SEXP read, SEXP write,
   processx__nonblock_fcntl(os_handle, c_nonblocking);
 #endif
 
-  processx_c_connection_create(os_handle, PROCESSX_FILE_TYPE_ASYNCPIPE,
-			       c_encoding, c_filename, &result);
+  processx_c_connection_create(
+    os_handle,
+    c_nonblocking ? PROCESSX_FILE_TYPE_ASYNCPIPE : PROCESSX_FILE_TYPE_PIPE,
+    c_encoding,
+    c_filename,
+    &result
+  );
 
   return result;
 }
@@ -534,6 +617,7 @@ processx_connection_t *processx_c_connection_create(
   con->handle.handle = os_handle;
   memset(&con->handle.overlapped, 0, sizeof(OVERLAPPED));
   con->handle.read_pending = FALSE;
+  con->handle.connecting = FALSE;
   con->handle.freelist = FALSE;
 #else
   con->handle = os_handle;
@@ -928,7 +1012,7 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 	con->handle.overlapped.Offset += bytes;
       }
 
-      if (!bytes) {
+      if (!bytes && !con->handle.connecting) {
 	con->is_eof_raw_ = 1;
 	if (con->utf8_data_size == 0 && con->buffer_data_size == 0) {
 	  con->is_eof_ = 1;
@@ -942,6 +1026,7 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 	pollables[poll_idx].event = PXREADY;
 	hasdata++;
       }
+      con->handle.connecting = FALSE;
     } else if (err != WAIT_TIMEOUT && err != ERROR_SUCCESS) {
       R_THROW_SYSTEM_ERROR_CODE(err, "Cannot poll");
     }
@@ -1122,6 +1207,11 @@ void processx__connection_start_read(processx_connection_t *ccon) {
       if (ccon->buffer_data_size) processx__connection_to_utf8(ccon);
     } else if (err == ERROR_IO_PENDING) {
       ccon->handle.read_pending = TRUE;
+    } else if (err == ERROR_PIPE_LISTENING &&
+	       ccon->type == PROCESSX_FILE_TYPE_ASYNCPIPE) {
+      ccon->handle.read_pending = TRUE;
+      ccon->handle.connecting = TRUE;
+      processx__thread_connectpipe(ccon);
     } else {
       ccon->handle.read_pending = FALSE;
       R_THROW_SYSTEM_ERROR_CODE(err, "reading from connection");
