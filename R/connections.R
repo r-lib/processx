@@ -14,6 +14,7 @@
 #'   in a `conn_create_fd` call.
 #' Encoding to re-encode `str` into when writing.
 #'
+#' @family processx connections
 #' @rdname processx_connections
 #' @export
 
@@ -26,15 +27,60 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
   chain_call(c_processx_connection_create_fd, fd, encoding, close)
 }
 
+#' Processx FIFOs
+#'
+#' Create a FIFO for inter-process communication
+#' Note that these functions are currently experimental.
+#' 
 #' @details
-#' `conn_create_fifo()` creates the reading end of the FIFO
+#' `conn_create_fifo()` creates a FIFO and connects to it.
 #' On Unix this is a proper FIFO in the file system, in the R temporary
 #' directory. On Windows it is a named pipe.
 #'
-#' Use `conn_file_name()` to query the name of the FIFO, and
+#' Use [conn_file_name()] to query the name of the FIFO, and
 #' `conn_connect_fifo()` to connect to the other end.
 #'
-#' @rdname processx_connections
+#' # Notes
+#' 
+#' ## Creating the read end of the FIFO
+#'
+#' This case is simpler. To wait for a writer to connect to the FIFO
+#' you can use [poll()] as usual. Then use [conn_read_chars()] or
+#' [conn_read_lines()] to read from the FIFO, as usual. Use
+#' [conn_is_incomplete()] *after* a read to check if there is more data,
+#' or the writer is done.
+#'
+#' ## Creating the write end of the FIFO
+#'
+#' This is somewhat trickier. Creating the (non-blocking) FIFO does not
+#' block. However, there is no easy way to tell if a reader is connected
+#' to the other end of the FIFO or not. On Unix you can start using
+#' [conn_write()] to try to write to it, and this will succeed, until the
+#' buffer gets full, even if there is no reader. (When the buffer is full
+#' it will return the data that was not written, as usual.)
+#'
+#' On Windows, using [conn_write()] to write to a FIFO without a reader
+#' fails with an error. This is not great, we are planning to improve it
+#' later.
+#'
+#' Right now, one workaround for this behavior is for the reader to
+#' connunicate to the writer process independenctly that it has connected
+#' to the FIFO. (E.g. another FIFO in the opposite direction can do that.)
+#' 
+#' @param filename File name of the FIFO. On Windows it the name of the
+#' pipe within the `\\?\pipe\` namespace. If `NULL`, then a random name
+#' is used, on Unix in the R temporary directory: [base::tempdir()].
+#' @param read If `TRUE` then connect to the read end of the FIFO.
+#'   Exactly one of `read` and `write` must be set to `TRUE`.
+#' @param write If `TRUE` then connect to the write end of the FIFO.
+#'   Exactly one of `read` and `write` must be set to `TRUE`.
+#' @param encoding Encoding to assume.
+#' @param nonblocking Whether this should be a non-blocking FIFO.
+#' Note that blocking FIFOs are not well tested and might not work well with
+#' [poll()], especially on Windows. We might remove this option in the
+#' future and make all FIFOs non-blocking.
+#' 
+#' @rdname processx_fifos
 #' @export
 
 conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
@@ -82,10 +128,11 @@ conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
 #' `conn_create_fifo()`, typically in another process. `filename` refers
 #' to the name of the pipe on Windows.
 #'
-#' @rdname processx_connections
+#' @rdname processx_fifos
 #' @export
 #' @examples
-#' # -- Example for a non-blocking FIFO -----------------------------------
+#' # Example for a non-blocking FIFO
+#' 
 #' # Need to open the reading end first, otherwise Unix fails
 #' reader <- conn_create_fifo()
 #'
@@ -110,7 +157,6 @@ conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
 #' conn_is_incomplete(reader)
 #'
 #' close(reader)
-#' # ----------------------------------------------------------------------
 
 conn_connect_fifo <- function(filename, read = NULL, write = NULL,
                               encoding = "", nonblocking = TRUE) {
