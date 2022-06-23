@@ -260,7 +260,7 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout) {
   return R_NilValue;
 }
 
-SEXP processx_connection_create_pipe(SEXP read, SEXP write,
+SEXP processx_connection_create_fifo(SEXP read, SEXP write,
                                      SEXP filename, SEXP encoding,
                                      SEXP nonblocking) {
   const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
@@ -327,7 +327,7 @@ SEXP processx_connection_create_pipe(SEXP read, SEXP write,
   return result;
 }
 
-SEXP processx_connection_connect_pipe(SEXP filename, SEXP read, SEXP write,
+SEXP processx_connection_connect_fifo(SEXP filename, SEXP read, SEXP write,
                                       SEXP encoding, SEXP nonblocking) {
   const char *c_filename = CHAR(STRING_ELT(filename, 0));
   int c_read = LOGICAL(read)[0];

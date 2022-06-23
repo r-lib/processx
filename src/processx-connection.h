@@ -136,10 +136,10 @@ SEXP processx_connection_create_fd(SEXP handle, SEXP encoding, SEXP close);
 
 /* Create file connection */
 SEXP processx_connection_create_file(SEXP filename, SEXP read, SEXP write);
-SEXP processx_connection_create_pipe(SEXP read, SEXP write,
+SEXP processx_connection_create_fifo(SEXP read, SEXP write,
                                      SEXP filename, SEXP encoding,
                                      SEXP nonblocking);
-SEXP processx_connection_connect_pipe(SEXP filename, SEXP read, SEXP write,
+SEXP processx_connection_connect_fifo(SEXP filename, SEXP read, SEXP write,
                                       SEXP encoding, SEXP nonblocking);
 
 /* Read characters in a given encoding from the connection. */

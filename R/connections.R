@@ -27,24 +27,24 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 }
 
 #' @details
-#' `conn_create_pipe()` creates the reading end of the pipe.
-#' On Unix a pipe is a fifo on the file system, in the R temporary
+#' `conn_create_fifo()` creates the reading end of the FIFO
+#' On Unix this is a proper FIFO in the file system, in the R temporary
 #' directory. On Windows it is a named pipe.
 #'
-#' Use `conn_file_name()` to query the name of the pipe, and
-#' `conn_connect_pipe()` to connect to the other end.
+#' Use `conn_file_name()` to query the name of the FIFO, and
+#' `conn_connect_fifo()` to connect to the other end.
 #'
 #' @rdname processx_connections
 #' @export
 
-conn_create_pipe <- function(filename = NULL, read = NULL, write = NULL,
+conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
                              encoding = "", nonblocking = TRUE) {
   if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
   if (is.null(read)) read <- !write
   if (is.null(write)) write <- !read
 
   if (read && write) {
-    throw(new_error("Bi-directional pipes are not supported currently"))
+    throw(new_error("Bi-directional FIFOs are not supported currently"))
   }
 
   assert_that(
@@ -68,7 +68,7 @@ conn_create_pipe <- function(filename = NULL, read = NULL, write = NULL,
   }
 
   chain_call(
-    c_processx_connection_create_pipe,
+    c_processx_connection_create_fifo,
     read,
     write,
     filename,
@@ -78,25 +78,25 @@ conn_create_pipe <- function(filename = NULL, read = NULL, write = NULL,
 }
 
 #' @details
-#' `conn_connect_pipe()` connects to a pipe created with
-#' `conn_create_pipe()`, typically in another process. `filename` refers
+#' `conn_connect_fifo()` connects to a FIFO created with
+#' `conn_create_fifo()`, typically in another process. `filename` refers
 #' to the name of the pipe on Windows.
 #'
 #' @rdname processx_connections
 #' @export
 #' @examples
-#' # -- Example for a non-blocking pipe -----------------------------------
+#' # -- Example for a non-blocking FIFO -----------------------------------
 #' # Need to open the reading end first, otherwise Unix fails
-#' reader <- conn_create_pipe()
+#' reader <- conn_create_fifo()
 #'
 #' # Always use poll() before you read, with a timeout if you like.
-#' # If you read before the other end of the pipe is connected, then
-#' # the OS (or processx?) assumes that the pipe is done, and you cannot
+#' # If you read before the other end of the FIFO is connected, then
+#' # the OS (or processx?) assumes that the FIFO is done, and you cannot
 #' # read anything.
 #' # Now poll() tells us that there is no data yet.
 #' poll(list(reader), 0)
 #'
-#' writer <- conn_connect_pipe(conn_file_name(reader), write = TRUE)
+#' writer <- conn_connect_fifo(conn_file_name(reader), write = TRUE)
 #' conn_write(writer, "hello\nthere!\n")
 #'
 #' poll(list(reader), 1000)
@@ -112,14 +112,14 @@ conn_create_pipe <- function(filename = NULL, read = NULL, write = NULL,
 #' close(reader)
 #' # ----------------------------------------------------------------------
 
-conn_connect_pipe <- function(filename, read = NULL, write = NULL,
+conn_connect_fifo <- function(filename, read = NULL, write = NULL,
                               encoding = "", nonblocking = TRUE) {
   if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
   if (is.null(read)) read <- !write
   if (is.null(write)) write <- !read
 
   if (read && write) {
-    throw(new_error("Bi-directional pipes are not supported currently"))
+    throw(new_error("Bi-directional FIFOs are not supported currently"))
   }
 
   assert_that(
@@ -133,7 +133,7 @@ conn_connect_pipe <- function(filename, read = NULL, write = NULL,
   )
 
   chain_call(
-    c_processx_connection_connect_pipe,
+    c_processx_connection_connect_fifo,
     filename,
     read,
     write,

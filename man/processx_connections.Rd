@@ -2,8 +2,8 @@
 % Please edit documentation in R/connections.R
 \name{conn_create_fd}
 \alias{conn_create_fd}
-\alias{conn_create_pipe}
-\alias{conn_connect_pipe}
+\alias{conn_create_fifo}
+\alias{conn_connect_fifo}
 \alias{conn_file_name}
 \alias{conn_create_pipepair}
 \alias{conn_read_chars}
@@ -30,7 +30,7 @@
 \usage{
 conn_create_fd(fd, encoding = "", close = TRUE)
 
-conn_create_pipe(
+conn_create_fifo(
   filename = NULL,
   read = NULL,
   write = NULL,
@@ -38,7 +38,7 @@ conn_create_pipe(
   nonblocking = TRUE
 )
 
-conn_connect_pipe(
+conn_connect_fifo(
   filename,
   read = NULL,
   write = NULL,
@@ -137,15 +137,15 @@ compatible with R's built-in connection system.
 \details{
 \code{conn_create_fd()} creates a connection from a file descriptor.
 
-\code{conn_create_pipe()} creates the reading end of the pipe.
-On Unix a pipe is a fifo on the file system, in the R temporary
+\code{conn_create_fifo()} creates the reading end of the FIFO
+On Unix this is a proper FIFO in the file system, in the R temporary
 directory. On Windows it is a named pipe.
 
-Use \code{conn_file_name()} to query the name of the pipe, and
-\code{conn_connect_pipe()} to connect to the other end.
+Use \code{conn_file_name()} to query the name of the FIFO, and
+\code{conn_connect_fifo()} to connect to the other end.
 
-\code{conn_connect_pipe()} connects to a pipe created with
-\code{conn_create_pipe()}, typically in another process. \code{filename} refers
+\code{conn_connect_fifo()} connects to a FIFO created with
+\code{conn_create_fifo()}, typically in another process. \code{filename} refers
 to the name of the pipe on Windows.
 
 \code{conn_file_name()} returns the name of the file associated with the
@@ -196,18 +196,18 @@ If a stream is redirected to the null device (e.g. in a callr
 subprocess), that is is still a valid file descriptor.
 }
 \examples{
-# -- Example for a non-blocking pipe -----------------------------------
+# -- Example for a non-blocking FIFO -----------------------------------
 # Need to open the reading end first, otherwise Unix fails
-reader <- conn_create_pipe()
+reader <- conn_create_fifo()
 
 # Always use poll() before you read, with a timeout if you like.
-# If you read before the other end of the pipe is connected, then
-# the OS (or processx?) assumes that the pipe is done, and you cannot
+# If you read before the other end of the FIFO is connected, then
+# the OS (or processx?) assumes that the FIFO is done, and you cannot
 # read anything.
 # Now poll() tells us that there is no data yet.
 poll(list(reader), 0)
 
-writer <- conn_connect_pipe(conn_file_name(reader), write = TRUE)
+writer <- conn_connect_fifo(conn_file_name(reader), write = TRUE)
 conn_write(writer, "hello\nthere!\n")
 
 poll(list(reader), 1000)
