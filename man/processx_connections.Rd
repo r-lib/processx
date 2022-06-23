@@ -30,7 +30,13 @@
 \usage{
 conn_create_fd(fd, encoding = "", close = TRUE)
 
-conn_create_pipe(filename = NULL, encoding = "", nonblocking = TRUE)
+conn_create_pipe(
+  filename = NULL,
+  read = NULL,
+  write = NULL,
+  encoding = "",
+  nonblocking = TRUE
+)
 
 conn_connect_pipe(
   filename,
@@ -99,13 +105,13 @@ Encoding to re-encode \code{str} into when writing.}
 For \code{conn_create_pipe()} it can also be \code{NULL}, in which case a random
 file name is used via \code{tempfile()}.}
 
-\item{nonblocking}{Whether the pipe should be non-blocking.
-For \code{conn_create_pipepair()} it must be a logical vector of length two,
-for both ends of the pipe.}
-
 \item{read}{Whether the connection is readable.}
 
 \item{write}{Whethe the connection is writeable.}
+
+\item{nonblocking}{Whether the pipe should be non-blocking.
+For \code{conn_create_pipepair()} it must be a logical vector of length two,
+for both ends of the pipe.}
 
 \item{con}{Processx connection object.}
 

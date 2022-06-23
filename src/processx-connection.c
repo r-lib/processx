@@ -304,7 +304,10 @@ SEXP processx_connection_create_pipe(SEXP read, SEXP write,
   }
   int flags = 0;
   if ( c_read && !c_write) flags |= O_RDONLY;
-  if (!c_read &&  c_write) flags |= O_WRONLY;
+  // This is undefined behavior according to the standard, but in practice
+  // it works on Linux and macOS, and probably all Unix systems. It lets us
+  // open the write end of the fifo without blocking.
+  if (!c_read &&  c_write) flags |= O_RDWR;
   if (c_nonblocking) flags |= O_NONBLOCK;
   os_handle = open(c_filename, flags);
   if (os_handle == -1) {

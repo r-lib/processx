@@ -37,11 +37,22 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 #' @rdname processx_connections
 #' @export
 
-conn_create_pipe <- function(filename = NULL, encoding = "",
-                             nonblocking = TRUE) {
+conn_create_pipe <- function(filename = NULL, read = NULL, write = NULL,
+                             encoding = "", nonblocking = TRUE) {
+  if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
+  if (is.null(read)) read <- !write
+  if (is.null(write)) write <- !read
+
+  if (read && write) {
+    throw(new_error("Bi-directional pipes are not supported currently"))
+  }
 
   assert_that(
     is_string_or_null(filename),
+    is_flag(read),
+    is_flag(write),
+    read || write,
+    ! (read && write),
     is_string(encoding),
     is_flag(nonblocking)
   )
@@ -58,8 +69,8 @@ conn_create_pipe <- function(filename = NULL, encoding = "",
 
   chain_call(
     c_processx_connection_create_pipe,
-    TRUE, # read
-    FALSE, # write
+    read,
+    write,
     filename,
     encoding,
     nonblocking
