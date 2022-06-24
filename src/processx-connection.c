@@ -361,7 +361,7 @@ SEXP processx_connection_connect_fifo(SEXP filename, SEXP read, SEXP write,
     0,
     &sa,
     OPEN_EXISTING,
-     attr,
+    attr,
     NULL
   );
 

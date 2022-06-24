@@ -31,7 +31,7 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 #'
 #' Create a FIFO for inter-process communication
 #' Note that these functions are currently experimental.
-#' 
+#'
 #' @details
 #' `conn_create_fifo()` creates a FIFO and connects to it.
 #' On Unix this is a proper FIFO in the file system, in the R temporary
@@ -41,7 +41,7 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 #' `conn_connect_fifo()` to connect to the other end.
 #'
 #' # Notes
-#' 
+#'
 #' ## Creating the read end of the FIFO
 #'
 #' This case is simpler. To wait for a writer to connect to the FIFO
@@ -66,9 +66,10 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 #' Right now, one workaround for this behavior is for the reader to
 #' connunicate to the writer process independenctly that it has connected
 #' to the FIFO. (E.g. another FIFO in the opposite direction can do that.)
-#' 
+#'
 #' @param filename File name of the FIFO. On Windows it the name of the
-#' pipe within the `\\?\pipe\` namespace. If `NULL`, then a random name
+#' pipe within the `\\?\pipe\` namespace, either the full name, or the
+#' part after that prefix. If `NULL`, then a random name
 #' is used, on Unix in the R temporary directory: [base::tempdir()].
 #' @param read If `TRUE` then connect to the read end of the FIFO.
 #'   Exactly one of `read` and `write` must be set to `TRUE`.
@@ -79,7 +80,7 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 #' Note that blocking FIFOs are not well tested and might not work well with
 #' [poll()], especially on Windows. We might remove this option in the
 #' future and make all FIFOs non-blocking.
-#' 
+#'
 #' @rdname processx_fifos
 #' @export
 
@@ -105,7 +106,6 @@ conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
 
   if (is_windows()) {
     filename <- filename %||% basename(tempfile())
-    winpipeprefix <- "\\\\?\\pipe\\"
     if (!starts_with(filename, winpipeprefix)) {
       filename <- paste0(winpipeprefix, filename)
     }
@@ -123,16 +123,23 @@ conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
   )
 }
 
+winpipeprefix <- "\\\\?\\pipe\\"
+
 #' @details
 #' `conn_connect_fifo()` connects to a FIFO created with
 #' `conn_create_fifo()`, typically in another process. `filename` refers
 #' to the name of the pipe on Windows.
 #'
+#' On Windows, `conn_connect_fifo()` may be successful even if the
+#' FIFO does not exist, but then later `poll()` or read/write operations
+#' will fail. We are planning on changing this behavior in the future,
+#' to make `conn_connect_fifo()` fail immediately, like on Unix.
+#'
 #' @rdname processx_fifos
 #' @export
 #' @examples
 #' # Example for a non-blocking FIFO
-#' 
+#'
 #' # Need to open the reading end first, otherwise Unix fails
 #' reader <- conn_create_fifo()
 #'
@@ -177,6 +184,12 @@ conn_connect_fifo <- function(filename, read = NULL, write = NULL,
     is_string(encoding),
     is_flag(nonblocking)
   )
+
+  if (is_windows()) {
+    if (!starts_with(filename, winpipeprefix)) {
+      filename <- paste0(winpipeprefix, filename)
+    }
+  }
 
   chain_call(
     c_processx_connection_connect_fifo,

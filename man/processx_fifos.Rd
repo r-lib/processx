@@ -23,7 +23,8 @@ conn_connect_fifo(
 }
 \arguments{
 \item{filename}{File name of the FIFO. On Windows it the name of the
-pipe within the \verb{\\\\?\\pipe\\} namespace. If \code{NULL}, then a random name
+pipe within the \verb{\\\\?\\pipe\\} namespace, either the full name, or the
+part after that prefix. If \code{NULL}, then a random name
 is used, on Unix in the R temporary directory: \code{\link[base:tempfile]{base::tempdir()}}.}
 
 \item{read}{If \code{TRUE} then connect to the read end of the FIFO.
@@ -54,6 +55,11 @@ Use \code{\link[=conn_file_name]{conn_file_name()}} to query the name of the FIF
 \code{conn_connect_fifo()} connects to a FIFO created with
 \code{conn_create_fifo()}, typically in another process. \code{filename} refers
 to the name of the pipe on Windows.
+
+On Windows, \code{conn_connect_fifo()} may be successful even if the
+FIFO does not exist, but then later \code{poll()} or read/write operations
+will fail. We are planning on changing this behavior in the future,
+to make \code{conn_connect_fifo()} fail immediately, like on Unix.
 }
 \section{Notes}{
 \subsection{Creating the read end of the FIFO}{

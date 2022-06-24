@@ -140,13 +140,14 @@ test_that("errors", {
     conn_connect_fifo(read = TRUE, write = TRUE)
   )
 
-  expect_error(
-    conn_create_fifo(tempdir(), read = TRUE)
-  )
+  if (!is_windows()) {
+    expect_error(
+      conn_create_fifo(tempdir(), read = TRUE)
+    )
 
-  fifo <- tempfile()
-  if (is_windows()) fifo <- basename(fifo)
-  expect_error(
-    conn_connect_fifo(fifo)
-  )
+    fifo <- tempfile()
+    expect_error(
+      conn_connect_fifo(fifo)
+    )
+  }
 })
