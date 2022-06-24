@@ -18,7 +18,7 @@ streams. The process id is then used to manage the process."><meta name="robots"
     
     <a class="navbar-brand me-2" href="../index.html">processx</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">3.6.1.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">3.6.1.9001</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,7 +70,8 @@ streams. The process id is then used to manage the process.</p>
 because of the <code>cmd.exe</code> command line parsing rules. For example you
 cannot easily have whitespace in both the command (path) and one of the
 arguments. To work around these limitations you need to start a
-<code>cmd.exe</code> shell explicitly and use its <code>call</code> command. For example:</p><div class="sourceCode r"><pre><code><span class="va"><a href="../reference/process.html">process</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"cmd.exe"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"/c"</span>, <span class="st">"call"</span>, <span class="va">bat_file</span>, <span class="st">"arg 1"</span>, <span class="st">"arg 2"</span><span class="op">)</span><span class="op">)</span></code></pre><p></p></div>
+<code>cmd.exe</code> shell explicitly and use its <code>call</code> command. For example:</p>
+<p></p><div class="sourceCode r"><pre><code><span class="va"><a href="../reference/process.html">process</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="st">"cmd.exe"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"/c"</span>, <span class="st">"call"</span>, <span class="va">bat_file</span>, <span class="st">"arg 1"</span>, <span class="st">"arg 2"</span><span class="op">)</span><span class="op">)</span></code></pre><p></p></div>
 <p>This works even if <code>bat_file</code> contains whitespace characters.
 For more information about this, see this processx issue:
 https://github.com/r-lib/processx/issues/301</p>
@@ -101,7 +102,8 @@ also set to <code>TRUE</code>).</p>
 <p>The cleanup happens when the references of the processes object are
 garbage collected. To clean up earlier, you can call the <code>kill()</code> or
 <code>kill_tree()</code> method of the process(es), from an <code><a href="https://rdrr.io/r/base/on.exit.html" class="external-link">on.exit()</a></code> expression,
-or an error handler:</p><div class="sourceCode r"><pre><code><span class="va">process_manager</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span>
+or an error handler:</p>
+<p></p><div class="sourceCode r"><pre><code><span class="va">process_manager</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span>
   <span class="fu"><a href="https://rdrr.io/r/base/on.exit.html" class="external-link">on.exit</a></span><span class="op">(</span><span class="op">{</span>
     <span class="kw"><a href="https://rdrr.io/r/base/try.html" class="external-link">try</a></span><span class="op">(</span><span class="va">p1</span><span class="op">$</span><span class="fu">kill</span><span class="op">(</span><span class="op">)</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
     <span class="kw"><a href="https://rdrr.io/r/base/try.html" class="external-link">try</a></span><span class="op">(</span><span class="va">p2</span><span class="op">$</span><span class="fu">kill</span><span class="op">(</span><span class="op">)</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>
@@ -122,57 +124,57 @@ closed. The same happens at a regular exit.</p>
 <div class="section">
 <h3 id="public-methods">Public methods<a class="anchor" aria-label="anchor" href="#public-methods"></a></h3>
 
-<ul><li><p><a href="#method-new"><code>process$new()</code></a></p></li>
-<li><p><a href="#method-finalize"><code>process$finalize()</code></a></p></li>
-<li><p><a href="#method-kill"><code>process$kill()</code></a></p></li>
-<li><p><a href="#method-kill_tree"><code>process$kill_tree()</code></a></p></li>
-<li><p><a href="#method-signal"><code>process$signal()</code></a></p></li>
-<li><p><a href="#method-interrupt"><code>process$interrupt()</code></a></p></li>
-<li><p><a href="#method-get_pid"><code>process$get_pid()</code></a></p></li>
-<li><p><a href="#method-is_alive"><code>process$is_alive()</code></a></p></li>
-<li><p><a href="#method-wait"><code>process$wait()</code></a></p></li>
-<li><p><a href="#method-get_exit_status"><code>process$get_exit_status()</code></a></p></li>
-<li><p><a href="#method-format"><code>process$format()</code></a></p></li>
-<li><p><a href="#method-print"><code>process$print()</code></a></p></li>
-<li><p><a href="#method-get_start_time"><code>process$get_start_time()</code></a></p></li>
-<li><p><a href="#method-is_supervised"><code>process$is_supervised()</code></a></p></li>
-<li><p><a href="#method-supervise"><code>process$supervise()</code></a></p></li>
-<li><p><a href="#method-read_output"><code>process$read_output()</code></a></p></li>
-<li><p><a href="#method-read_error"><code>process$read_error()</code></a></p></li>
-<li><p><a href="#method-read_output_lines"><code>process$read_output_lines()</code></a></p></li>
-<li><p><a href="#method-read_error_lines"><code>process$read_error_lines()</code></a></p></li>
-<li><p><a href="#method-is_incomplete_output"><code>process$is_incomplete_output()</code></a></p></li>
-<li><p><a href="#method-is_incomplete_error"><code>process$is_incomplete_error()</code></a></p></li>
-<li><p><a href="#method-has_input_connection"><code>process$has_input_connection()</code></a></p></li>
-<li><p><a href="#method-has_output_connection"><code>process$has_output_connection()</code></a></p></li>
-<li><p><a href="#method-has_error_connection"><code>process$has_error_connection()</code></a></p></li>
-<li><p><a href="#method-has_poll_connection"><code>process$has_poll_connection()</code></a></p></li>
-<li><p><a href="#method-get_input_connection"><code>process$get_input_connection()</code></a></p></li>
-<li><p><a href="#method-get_output_connection"><code>process$get_output_connection()</code></a></p></li>
-<li><p><a href="#method-get_error_connection"><code>process$get_error_connection()</code></a></p></li>
-<li><p><a href="#method-read_all_output"><code>process$read_all_output()</code></a></p></li>
-<li><p><a href="#method-read_all_error"><code>process$read_all_error()</code></a></p></li>
-<li><p><a href="#method-read_all_output_lines"><code>process$read_all_output_lines()</code></a></p></li>
-<li><p><a href="#method-read_all_error_lines"><code>process$read_all_error_lines()</code></a></p></li>
-<li><p><a href="#method-write_input"><code>process$write_input()</code></a></p></li>
-<li><p><a href="#method-get_input_file"><code>process$get_input_file()</code></a></p></li>
-<li><p><a href="#method-get_output_file"><code>process$get_output_file()</code></a></p></li>
-<li><p><a href="#method-get_error_file"><code>process$get_error_file()</code></a></p></li>
-<li><p><a href="#method-poll_io"><code>process$poll_io()</code></a></p></li>
-<li><p><a href="#method-get_poll_connection"><code>process$get_poll_connection()</code></a></p></li>
-<li><p><a href="#method-get_result"><code>process$get_result()</code></a></p></li>
-<li><p><a href="#method-as_ps_handle"><code>process$as_ps_handle()</code></a></p></li>
-<li><p><a href="#method-get_name"><code>process$get_name()</code></a></p></li>
-<li><p><a href="#method-get_exe"><code>process$get_exe()</code></a></p></li>
-<li><p><a href="#method-get_cmdline"><code>process$get_cmdline()</code></a></p></li>
-<li><p><a href="#method-get_status"><code>process$get_status()</code></a></p></li>
-<li><p><a href="#method-get_username"><code>process$get_username()</code></a></p></li>
-<li><p><a href="#method-get_wd"><code>process$get_wd()</code></a></p></li>
-<li><p><a href="#method-get_cpu_times"><code>process$get_cpu_times()</code></a></p></li>
-<li><p><a href="#method-get_memory_info"><code>process$get_memory_info()</code></a></p></li>
-<li><p><a href="#method-suspend"><code>process$suspend()</code></a></p></li>
-<li><p><a href="#method-resume"><code>process$resume()</code></a></p></li>
-</ul></div><p></p><hr><a id="method-new"></a><div class="section">
+<ul><li><p><a href="#method-process-new"><code>process$new()</code></a></p></li>
+<li><p><a href="#method-process-finalize"><code>process$finalize()</code></a></p></li>
+<li><p><a href="#method-process-kill"><code>process$kill()</code></a></p></li>
+<li><p><a href="#method-process-kill_tree"><code>process$kill_tree()</code></a></p></li>
+<li><p><a href="#method-process-signal"><code>process$signal()</code></a></p></li>
+<li><p><a href="#method-process-interrupt"><code>process$interrupt()</code></a></p></li>
+<li><p><a href="#method-process-get_pid"><code>process$get_pid()</code></a></p></li>
+<li><p><a href="#method-process-is_alive"><code>process$is_alive()</code></a></p></li>
+<li><p><a href="#method-process-wait"><code>process$wait()</code></a></p></li>
+<li><p><a href="#method-process-get_exit_status"><code>process$get_exit_status()</code></a></p></li>
+<li><p><a href="#method-process-format"><code>process$format()</code></a></p></li>
+<li><p><a href="#method-process-print"><code>process$print()</code></a></p></li>
+<li><p><a href="#method-process-get_start_time"><code>process$get_start_time()</code></a></p></li>
+<li><p><a href="#method-process-is_supervised"><code>process$is_supervised()</code></a></p></li>
+<li><p><a href="#method-process-supervise"><code>process$supervise()</code></a></p></li>
+<li><p><a href="#method-process-read_output"><code>process$read_output()</code></a></p></li>
+<li><p><a href="#method-process-read_error"><code>process$read_error()</code></a></p></li>
+<li><p><a href="#method-process-read_output_lines"><code>process$read_output_lines()</code></a></p></li>
+<li><p><a href="#method-process-read_error_lines"><code>process$read_error_lines()</code></a></p></li>
+<li><p><a href="#method-process-is_incomplete_output"><code>process$is_incomplete_output()</code></a></p></li>
+<li><p><a href="#method-process-is_incomplete_error"><code>process$is_incomplete_error()</code></a></p></li>
+<li><p><a href="#method-process-has_input_connection"><code>process$has_input_connection()</code></a></p></li>
+<li><p><a href="#method-process-has_output_connection"><code>process$has_output_connection()</code></a></p></li>
+<li><p><a href="#method-process-has_error_connection"><code>process$has_error_connection()</code></a></p></li>
+<li><p><a href="#method-process-has_poll_connection"><code>process$has_poll_connection()</code></a></p></li>
+<li><p><a href="#method-process-get_input_connection"><code>process$get_input_connection()</code></a></p></li>
+<li><p><a href="#method-process-get_output_connection"><code>process$get_output_connection()</code></a></p></li>
+<li><p><a href="#method-process-get_error_connection"><code>process$get_error_connection()</code></a></p></li>
+<li><p><a href="#method-process-read_all_output"><code>process$read_all_output()</code></a></p></li>
+<li><p><a href="#method-process-read_all_error"><code>process$read_all_error()</code></a></p></li>
+<li><p><a href="#method-process-read_all_output_lines"><code>process$read_all_output_lines()</code></a></p></li>
+<li><p><a href="#method-process-read_all_error_lines"><code>process$read_all_error_lines()</code></a></p></li>
+<li><p><a href="#method-process-write_input"><code>process$write_input()</code></a></p></li>
+<li><p><a href="#method-process-get_input_file"><code>process$get_input_file()</code></a></p></li>
+<li><p><a href="#method-process-get_output_file"><code>process$get_output_file()</code></a></p></li>
+<li><p><a href="#method-process-get_error_file"><code>process$get_error_file()</code></a></p></li>
+<li><p><a href="#method-process-poll_io"><code>process$poll_io()</code></a></p></li>
+<li><p><a href="#method-process-get_poll_connection"><code>process$get_poll_connection()</code></a></p></li>
+<li><p><a href="#method-process-get_result"><code>process$get_result()</code></a></p></li>
+<li><p><a href="#method-process-as_ps_handle"><code>process$as_ps_handle()</code></a></p></li>
+<li><p><a href="#method-process-get_name"><code>process$get_name()</code></a></p></li>
+<li><p><a href="#method-process-get_exe"><code>process$get_exe()</code></a></p></li>
+<li><p><a href="#method-process-get_cmdline"><code>process$get_cmdline()</code></a></p></li>
+<li><p><a href="#method-process-get_status"><code>process$get_status()</code></a></p></li>
+<li><p><a href="#method-process-get_username"><code>process$get_username()</code></a></p></li>
+<li><p><a href="#method-process-get_wd"><code>process$get_wd()</code></a></p></li>
+<li><p><a href="#method-process-get_cpu_times"><code>process$get_cpu_times()</code></a></p></li>
+<li><p><a href="#method-process-get_memory_info"><code>process$get_memory_info()</code></a></p></li>
+<li><p><a href="#method-process-suspend"><code>process$suspend()</code></a></p></li>
+<li><p><a href="#method-process-resume"><code>process$resume()</code></a></p></li>
+</ul></div><p></p><hr><a id="method-process-new"></a><div class="section">
 <h3 id="method-new-">Method <code>new()</code><a class="anchor" aria-label="anchor" href="#method-new-"></a></h3>
 <p>Start a new process in the background, and then return immediately.</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
@@ -375,7 +377,7 @@ It is only run once.</p></dd>
 <p>R6 object representing the process.</p>
 </div>
 
-</div><p></p><hr><a id="method-finalize"></a><div class="section">
+</div><p></p><hr><a id="method-process-finalize"></a><div class="section">
 <h3 id="method-finalize-">Method <code>finalize()</code><a class="anchor" aria-label="anchor" href="#method-finalize-"></a></h3>
 <p>Cleanup method that is called when the <code>process</code> object is garbage
 collected. If requested so in the process constructor, then it
@@ -385,7 +387,7 @@ eliminates all processes in the process's subprocess tree.</p><div class="sectio
 </div>
 
 
-</div><p></p><hr><a id="method-kill"></a><div class="section">
+</div><p></p><hr><a id="method-process-kill"></a><div class="section">
 <h3 id="method-kill-">Method <code>kill()</code><a class="anchor" aria-label="anchor" href="#method-kill-"></a></h3>
 <p>Terminate the process. It also terminate all of its child
 processes, except if they have created a new process group (on Unix),
@@ -411,7 +413,7 @@ killing the process.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-kill_tree"></a><div class="section">
+</div><p></p><hr><a id="method-process-kill_tree"></a><div class="section">
 <h3 id="method-kill-tree-">Method <code>kill_tree()</code><a class="anchor" aria-label="anchor" href="#method-kill-tree-"></a></h3>
 <p>Process tree cleanup. It terminates the process
 (if still alive), together with any child (or grandchild, etc.)
@@ -443,7 +445,7 @@ killing the process.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-signal"></a><div class="section">
+</div><p></p><hr><a id="method-process-signal"></a><div class="section">
 <h3 id="method-signal-">Method <code>signal()</code><a class="anchor" aria-label="anchor" href="#method-signal-"></a></h3>
 <p>Send a signal to the process. On Windows only the
 <code>SIGINT</code>, <code>SIGTERM</code> and <code>SIGKILL</code> signals are interpreted,
@@ -465,7 +467,7 @@ the process. See <code><a href="https://rdrr.io/r/tools/pskill.html" class="exte
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-interrupt"></a><div class="section">
+</div><p></p><hr><a id="method-process-interrupt"></a><div class="section">
 <h3 id="method-interrupt-">Method <code>interrupt()</code><a class="anchor" aria-label="anchor" href="#method-interrupt-"></a></h3>
 <p>Send an interrupt to the process. On Unix this is a
 <code>SIGINT</code> signal, and it is usually equivalent to pressing CTRL+C at
@@ -476,7 +478,7 @@ Applications may catch these events. By default they will quit.</p><div class="s
 </div>
 
 
-</div><p></p><hr><a id="method-get_pid"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_pid"></a><div class="section">
 <h3 id="method-get-pid-">Method <code>get_pid()</code><a class="anchor" aria-label="anchor" href="#method-get-pid-"></a></h3>
 <p>Query the process id.</p><div class="section">
 <h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
@@ -488,7 +490,7 @@ Applications may catch these events. By default they will quit.</p><div class="s
 <p>Integer scalar, the process id of the process.</p>
 </div>
 
-</div><p></p><hr><a id="method-is_alive"></a><div class="section">
+</div><p></p><hr><a id="method-process-is_alive"></a><div class="section">
 <h3 id="method-is-alive-">Method <code>is_alive()</code><a class="anchor" aria-label="anchor" href="#method-is-alive-"></a></h3>
 <p>Check if the process is alive.</p><div class="section">
 <h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
@@ -500,7 +502,7 @@ Applications may catch these events. By default they will quit.</p><div class="s
 <p>Logical scalar.</p>
 </div>
 
-</div><p></p><hr><a id="method-wait"></a><div class="section">
+</div><p></p><hr><a id="method-process-wait"></a><div class="section">
 <h3 id="method-wait-">Method <code>wait()</code><a class="anchor" aria-label="anchor" href="#method-wait-"></a></h3>
 <p>Wait until the process finishes, or a timeout happens.
 Note that if the process never finishes, and the timeout is infinite
@@ -528,7 +530,7 @@ polling.</p></dd>
 <p>It returns the process itself, invisibly.</p>
 </div>
 
-</div><p></p><hr><a id="method-get_exit_status"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_exit_status"></a><div class="section">
 <h3 id="method-get-exit-status-">Method <code>get_exit_status()</code><a class="anchor" aria-label="anchor" href="#method-get-exit-status-"></a></h3>
 <p><code>$get_exit_status</code> returns the exit code of the process if it has
 finished and <code>NULL</code> otherwise. On Unix, in some rare cases, the exit
@@ -542,7 +544,7 @@ fork clusters, e.g. through the <code><a href="https://rdrr.io/r/parallel/mcpara
 </div>
 
 
-</div><p></p><hr><a id="method-format"></a><div class="section">
+</div><p></p><hr><a id="method-process-format"></a><div class="section">
 <h3 id="method-format-">Method <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code><a class="anchor" aria-label="anchor" href="#method-format-"></a></h3>
 <p><code>format(p)</code> or <code>p$format()</code> creates a string representation of the
 process, usually for printing.</p><div class="section">
@@ -551,7 +553,7 @@ process, usually for printing.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-print"></a><div class="section">
+</div><p></p><hr><a id="method-process-print"></a><div class="section">
 <h3 id="method-print-">Method <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code><a class="anchor" aria-label="anchor" href="#method-print-"></a></h3>
 <p><code>print(p)</code> or <code>p$print()</code> shows some information about the
 process on the screen, whether it is running and it's process id, etc.</p><div class="section">
@@ -560,7 +562,7 @@ process on the screen, whether it is running and it's process id, etc.</p><div c
 </div>
 
 
-</div><p></p><hr><a id="method-get_start_time"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_start_time"></a><div class="section">
 <h3 id="method-get-start-time-">Method <code>get_start_time()</code><a class="anchor" aria-label="anchor" href="#method-get-start-time-"></a></h3>
 <p><code>$get_start_time()</code> returns the time when the process was
 started.</p><div class="section">
@@ -569,7 +571,7 @@ started.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-is_supervised"></a><div class="section">
+</div><p></p><hr><a id="method-process-is_supervised"></a><div class="section">
 <h3 id="method-is-supervised-">Method <code>is_supervised()</code><a class="anchor" aria-label="anchor" href="#method-is-supervised-"></a></h3>
 <p><code>$is_supervised()</code> returns whether the process is being tracked by
 supervisor process.</p><div class="section">
@@ -578,7 +580,7 @@ supervisor process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-supervise"></a><div class="section">
+</div><p></p><hr><a id="method-process-supervise"></a><div class="section">
 <h3 id="method-supervise-">Method <code>supervise()</code><a class="anchor" aria-label="anchor" href="#method-supervise-"></a></h3>
 <p><code>$supervise()</code> if passed <code>TRUE</code>, tells the supervisor to start
 tracking the process. If <code>FALSE</code>, tells the supervisor to stop
@@ -599,7 +601,7 @@ process.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-read_output"></a><div class="section">
+</div><p></p><hr><a id="method-process-read_output"></a><div class="section">
 <h3 id="method-read-output-">Method <code>read_output()</code><a class="anchor" aria-label="anchor" href="#method-read-output-"></a></h3>
 <p><code>$read_output()</code> reads from the standard output connection of the
 process. If the standard output connection was not requested, then
@@ -619,7 +621,7 @@ error.</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-read_error"></a><div class="section">
+</div><p></p><hr><a id="method-process-read_error"></a><div class="section">
 <h3 id="method-read-error-">Method <code>read_error()</code><a class="anchor" aria-label="anchor" href="#method-read-error-"></a></h3>
 <p><code>$read_error()</code> is similar to <code>$read_output</code>, but it reads
 from the standard error stream.</p><div class="section">
@@ -636,7 +638,7 @@ from the standard error stream.</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-read_output_lines"></a><div class="section">
+</div><p></p><hr><a id="method-process-read_output_lines"></a><div class="section">
 <h3 id="method-read-output-lines-">Method <code>read_output_lines()</code><a class="anchor" aria-label="anchor" href="#method-read-output-lines-"></a></h3>
 <p><code>$read_output_lines()</code> reads lines from standard output connection
 of the process. If the standard output connection was not requested,
@@ -656,7 +658,7 @@ throw an error.</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-read_error_lines"></a><div class="section">
+</div><p></p><hr><a id="method-process-read_error_lines"></a><div class="section">
 <h3 id="method-read-error-lines-">Method <code>read_error_lines()</code><a class="anchor" aria-label="anchor" href="#method-read-error-lines-"></a></h3>
 <p><code>$read_error_lines()</code> is similar to <code>$read_output_lines</code>, but
 it reads from the standard error stream.</p><div class="section">
@@ -673,7 +675,7 @@ it reads from the standard error stream.</p><div class="section">
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-is_incomplete_output"></a><div class="section">
+</div><p></p><hr><a id="method-process-is_incomplete_output"></a><div class="section">
 <h3 id="method-is-incomplete-output-">Method <code>is_incomplete_output()</code><a class="anchor" aria-label="anchor" href="#method-is-incomplete-output-"></a></h3>
 <p><code>$is_incomplete_output()</code> return <code>FALSE</code> if the other end of
 the standard output connection was closed (most probably because the
@@ -683,7 +685,7 @@ process exited). It return <code>TRUE</code> otherwise.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-is_incomplete_error"></a><div class="section">
+</div><p></p><hr><a id="method-process-is_incomplete_error"></a><div class="section">
 <h3 id="method-is-incomplete-error-">Method <code>is_incomplete_error()</code><a class="anchor" aria-label="anchor" href="#method-is-incomplete-error-"></a></h3>
 <p><code>$is_incomplete_error()</code> return <code>FALSE</code> if the other end of
 the standard error connection was closed (most probably because the
@@ -693,7 +695,7 @@ process exited). It return <code>TRUE</code> otherwise.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-has_input_connection"></a><div class="section">
+</div><p></p><hr><a id="method-process-has_input_connection"></a><div class="section">
 <h3 id="method-has-input-connection-">Method <code>has_input_connection()</code><a class="anchor" aria-label="anchor" href="#method-has-input-connection-"></a></h3>
 <p><code>$has_input_connection()</code> return <code>TRUE</code> if there is a connection
 object for standard input; in other words, if <code>stdout="|"</code>. It returns
@@ -703,7 +705,7 @@ object for standard input; in other words, if <code>stdout="|"</code>. It return
 </div>
 
 
-</div><p></p><hr><a id="method-has_output_connection"></a><div class="section">
+</div><p></p><hr><a id="method-process-has_output_connection"></a><div class="section">
 <h3 id="method-has-output-connection-">Method <code>has_output_connection()</code><a class="anchor" aria-label="anchor" href="#method-has-output-connection-"></a></h3>
 <p><code>$has_output_connection()</code> returns <code>TRUE</code> if there is a connection
 object for standard output; in other words, if <code>stdout="|"</code>. It returns
@@ -713,7 +715,7 @@ object for standard output; in other words, if <code>stdout="|"</code>. It retur
 </div>
 
 
-</div><p></p><hr><a id="method-has_error_connection"></a><div class="section">
+</div><p></p><hr><a id="method-process-has_error_connection"></a><div class="section">
 <h3 id="method-has-error-connection-">Method <code>has_error_connection()</code><a class="anchor" aria-label="anchor" href="#method-has-error-connection-"></a></h3>
 <p><code>$has_error_connection()</code> returns <code>TRUE</code> if there is a connection
 object for standard error; in other words, if <code>stderr="|"</code>. It returns
@@ -723,7 +725,7 @@ object for standard error; in other words, if <code>stderr="|"</code>. It return
 </div>
 
 
-</div><p></p><hr><a id="method-has_poll_connection"></a><div class="section">
+</div><p></p><hr><a id="method-process-has_poll_connection"></a><div class="section">
 <h3 id="method-has-poll-connection-">Method <code>has_poll_connection()</code><a class="anchor" aria-label="anchor" href="#method-has-poll-connection-"></a></h3>
 <p><code>$has_poll_connection()</code> return <code>TRUE</code> if there is a poll connection,
 <code>FALSE</code> otherwise.</p><div class="section">
@@ -732,7 +734,7 @@ object for standard error; in other words, if <code>stderr="|"</code>. It return
 </div>
 
 
-</div><p></p><hr><a id="method-get_input_connection"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_input_connection"></a><div class="section">
 <h3 id="method-get-input-connection-">Method <code>get_input_connection()</code><a class="anchor" aria-label="anchor" href="#method-get-input-connection-"></a></h3>
 <p><code>$get_input_connection()</code> returns a connection object, to the
 standard input stream of the process.</p><div class="section">
@@ -741,7 +743,7 @@ standard input stream of the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-get_output_connection"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_output_connection"></a><div class="section">
 <h3 id="method-get-output-connection-">Method <code>get_output_connection()</code><a class="anchor" aria-label="anchor" href="#method-get-output-connection-"></a></h3>
 <p><code>$get_output_connection()</code> returns a connection object, to the
 standard output stream of the process.</p><div class="section">
@@ -750,7 +752,7 @@ standard output stream of the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-get_error_connection"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_error_connection"></a><div class="section">
 <h3 id="method-get-error-connection-">Method <code>get_error_connection()</code><a class="anchor" aria-label="anchor" href="#method-get-error-connection-"></a></h3>
 <p><code>$get_error_conneciton()</code> returns a connection object, to the
 standard error stream of the process.</p><div class="section">
@@ -759,7 +761,7 @@ standard error stream of the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-read_all_output"></a><div class="section">
+</div><p></p><hr><a id="method-process-read_all_output"></a><div class="section">
 <h3 id="method-read-all-output-">Method <code>read_all_output()</code><a class="anchor" aria-label="anchor" href="#method-read-all-output-"></a></h3>
 <p><code>$read_all_output()</code> waits for all standard output from the process.
 It does not return until the process has finished.
@@ -772,7 +774,7 @@ It returns a character scalar. This will return content only if
 </div>
 
 
-</div><p></p><hr><a id="method-read_all_error"></a><div class="section">
+</div><p></p><hr><a id="method-process-read_all_error"></a><div class="section">
 <h3 id="method-read-all-error-">Method <code>read_all_error()</code><a class="anchor" aria-label="anchor" href="#method-read-all-error-"></a></h3>
 <p><code>$read_all_error()</code> waits for all standard error from the process.
 It does not return until the process has finished.
@@ -785,7 +787,7 @@ It returns a character scalar. This will return content only if
 </div>
 
 
-</div><p></p><hr><a id="method-read_all_output_lines"></a><div class="section">
+</div><p></p><hr><a id="method-process-read_all_output_lines"></a><div class="section">
 <h3 id="method-read-all-output-lines-">Method <code>read_all_output_lines()</code><a class="anchor" aria-label="anchor" href="#method-read-all-output-lines-"></a></h3>
 <p><code>$read_all_output_lines()</code> waits for all standard output lines
 from a process. It does not return until the process has finished.
@@ -798,7 +800,7 @@ It returns a character vector. This will return content only if
 </div>
 
 
-</div><p></p><hr><a id="method-read_all_error_lines"></a><div class="section">
+</div><p></p><hr><a id="method-process-read_all_error_lines"></a><div class="section">
 <h3 id="method-read-all-error-lines-">Method <code>read_all_error_lines()</code><a class="anchor" aria-label="anchor" href="#method-read-all-error-lines-"></a></h3>
 <p><code>$read_all_error_lines()</code> waits for all standard error lines from
 a process. It does not return until the process has finished.
@@ -811,7 +813,7 @@ It returns a character vector. This will return content only if
 </div>
 
 
-</div><p></p><hr><a id="method-write_input"></a><div class="section">
+</div><p></p><hr><a id="method-process-write_input"></a><div class="section">
 <h3 id="method-write-input-">Method <code>write_input()</code><a class="anchor" aria-label="anchor" href="#method-write-input-"></a></h3>
 <p><code>$write_input()</code> writes the character vector (separated by <code>sep</code>) to
 the standard input of the process. It will be converted to the specified
@@ -845,7 +847,7 @@ character vector. It is ignored if <code>str</code> is a raw vector.</p></dd>
 <p>Leftover text (as a raw vector), that was not written.</p>
 </div>
 
-</div><p></p><hr><a id="method-get_input_file"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_input_file"></a><div class="section">
 <h3 id="method-get-input-file-">Method <code>get_input_file()</code><a class="anchor" aria-label="anchor" href="#method-get-input-file-"></a></h3>
 <p><code>$get_input_file()</code> if the <code>stdin</code> argument was a filename,
 this returns the absolute path to the file. If <code>stdin</code> was <code>"|"</code> or
@@ -855,7 +857,7 @@ this returns the absolute path to the file. If <code>stdin</code> was <code>"|"<
 </div>
 
 
-</div><p></p><hr><a id="method-get_output_file"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_output_file"></a><div class="section">
 <h3 id="method-get-output-file-">Method <code>get_output_file()</code><a class="anchor" aria-label="anchor" href="#method-get-output-file-"></a></h3>
 <p><code>$get_output_file()</code> if the <code>stdout</code> argument was a filename,
 this returns the absolute path to the file. If <code>stdout</code> was <code>"|"</code> or
@@ -865,7 +867,7 @@ this returns the absolute path to the file. If <code>stdout</code> was <code>"|"
 </div>
 
 
-</div><p></p><hr><a id="method-get_error_file"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_error_file"></a><div class="section">
 <h3 id="method-get-error-file-">Method <code>get_error_file()</code><a class="anchor" aria-label="anchor" href="#method-get-error-file-"></a></h3>
 <p><code>$get_error_file()</code> if the <code>stderr</code> argument was a filename,
 this returns the absolute path to the file. If <code>stderr</code> was <code>"|"</code> or
@@ -875,7 +877,7 @@ this returns the absolute path to the file. If <code>stderr</code> was <code>"|"
 </div>
 
 
-</div><p></p><hr><a id="method-poll_io"></a><div class="section">
+</div><p></p><hr><a id="method-process-poll_io"></a><div class="section">
 <h3 id="method-poll-io-">Method <code>poll_io()</code><a class="anchor" aria-label="anchor" href="#method-poll-io-"></a></h3>
 <p><code>$poll_io()</code> polls the process's connections for I/O. See more in
 the <em>Polling</em> section, and see also the <code><a href="poll.html">poll()</a></code> function
@@ -894,7 +896,7 @@ polling.</p></dd>
 </dl><p></p></div>
 </div>
 
-</div><p></p><hr><a id="method-get_poll_connection"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_poll_connection"></a><div class="section">
 <h3 id="method-get-poll-connection-">Method <code>get_poll_connection()</code><a class="anchor" aria-label="anchor" href="#method-get-poll-connection-"></a></h3>
 <p><code>$get_poll_connetion()</code> returns the poll connection, if the process has
 one.</p><div class="section">
@@ -903,7 +905,7 @@ one.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-get_result"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_result"></a><div class="section">
 <h3 id="method-get-result-">Method <code>get_result()</code><a class="anchor" aria-label="anchor" href="#method-get-result-"></a></h3>
 <p><code>$get_result()</code> returns the result of the post processesing function.
 It can only be called once the process has finished. If the process has
@@ -913,7 +915,7 @@ no post-processing function, then <code>NULL</code> is returned.</p><div class="
 </div>
 
 
-</div><p></p><hr><a id="method-as_ps_handle"></a><div class="section">
+</div><p></p><hr><a id="method-process-as_ps_handle"></a><div class="section">
 <h3 id="method-as-ps-handle-">Method <code>as_ps_handle()</code><a class="anchor" aria-label="anchor" href="#method-as-ps-handle-"></a></h3>
 <p><code>$as_ps_handle()</code> returns a <a href="https://ps.r-lib.org/reference/ps_handle.html" class="external-link">ps::ps_handle</a> object, corresponding to
 the process.</p><div class="section">
@@ -922,7 +924,7 @@ the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-get_name"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_name"></a><div class="section">
 <h3 id="method-get-name-">Method <code>get_name()</code><a class="anchor" aria-label="anchor" href="#method-get-name-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_name.html" class="external-link">ps::ps_name()</a></code> to get the process name.</p><div class="section">
 <h4 id="usage-40">Usage<a class="anchor" aria-label="anchor" href="#usage-40"></a></h4>
@@ -930,7 +932,7 @@ the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-get_exe"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_exe"></a><div class="section">
 <h3 id="method-get-exe-">Method <code>get_exe()</code><a class="anchor" aria-label="anchor" href="#method-get-exe-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_exe.html" class="external-link">ps::ps_exe()</a></code> to get the path of the executable.</p><div class="section">
 <h4 id="usage-41">Usage<a class="anchor" aria-label="anchor" href="#usage-41"></a></h4>
@@ -938,7 +940,7 @@ the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-get_cmdline"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_cmdline"></a><div class="section">
 <h3 id="method-get-cmdline-">Method <code>get_cmdline()</code><a class="anchor" aria-label="anchor" href="#method-get-cmdline-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_cmdline.html" class="external-link">ps::ps_cmdline()</a></code> to get the command line.</p><div class="section">
 <h4 id="usage-42">Usage<a class="anchor" aria-label="anchor" href="#usage-42"></a></h4>
@@ -946,7 +948,7 @@ the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-get_status"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_status"></a><div class="section">
 <h3 id="method-get-status-">Method <code>get_status()</code><a class="anchor" aria-label="anchor" href="#method-get-status-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_status.html" class="external-link">ps::ps_status()</a></code> to get the process status.</p><div class="section">
 <h4 id="usage-43">Usage<a class="anchor" aria-label="anchor" href="#usage-43"></a></h4>
@@ -954,7 +956,7 @@ the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-get_username"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_username"></a><div class="section">
 <h3 id="method-get-username-">Method <code>get_username()</code><a class="anchor" aria-label="anchor" href="#method-get-username-"></a></h3>
 <p>calls <code><a href="https://ps.r-lib.org/reference/ps_username.html" class="external-link">ps::ps_username()</a></code> to get the username.</p><div class="section">
 <h4 id="usage-44">Usage<a class="anchor" aria-label="anchor" href="#usage-44"></a></h4>
@@ -962,7 +964,7 @@ the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-get_wd"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_wd"></a><div class="section">
 <h3 id="method-get-wd-">Method <code>get_wd()</code><a class="anchor" aria-label="anchor" href="#method-get-wd-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_cwd.html" class="external-link">ps::ps_cwd()</a></code> to get the current working directory.</p><div class="section">
 <h4 id="usage-45">Usage<a class="anchor" aria-label="anchor" href="#usage-45"></a></h4>
@@ -970,7 +972,7 @@ the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-get_cpu_times"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_cpu_times"></a><div class="section">
 <h3 id="method-get-cpu-times-">Method <code>get_cpu_times()</code><a class="anchor" aria-label="anchor" href="#method-get-cpu-times-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_cpu_times.html" class="external-link">ps::ps_cpu_times()</a></code> to get CPU usage data.</p><div class="section">
 <h4 id="usage-46">Usage<a class="anchor" aria-label="anchor" href="#usage-46"></a></h4>
@@ -978,7 +980,7 @@ the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-get_memory_info"></a><div class="section">
+</div><p></p><hr><a id="method-process-get_memory_info"></a><div class="section">
 <h3 id="method-get-memory-info-">Method <code>get_memory_info()</code><a class="anchor" aria-label="anchor" href="#method-get-memory-info-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_memory_info.html" class="external-link">ps::ps_memory_info()</a></code> to get memory data.</p><div class="section">
 <h4 id="usage-47">Usage<a class="anchor" aria-label="anchor" href="#usage-47"></a></h4>
@@ -986,7 +988,7 @@ the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-suspend"></a><div class="section">
+</div><p></p><hr><a id="method-process-suspend"></a><div class="section">
 <h3 id="method-suspend-">Method <code>suspend()</code><a class="anchor" aria-label="anchor" href="#method-suspend-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_suspend.html" class="external-link">ps::ps_suspend()</a></code> to suspend the process.</p><div class="section">
 <h4 id="usage-48">Usage<a class="anchor" aria-label="anchor" href="#usage-48"></a></h4>
@@ -994,7 +996,7 @@ the process.</p><div class="section">
 </div>
 
 
-</div><p></p><hr><a id="method-resume"></a><div class="section">
+</div><p></p><hr><a id="method-process-resume"></a><div class="section">
 <h3 id="method-resume-">Method <code>resume()</code><a class="anchor" aria-label="anchor" href="#method-resume-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_resume.html" class="external-link">ps::ps_resume()</a></code> to resume a suspended process.</p><div class="section">
 <h4 id="usage-49">Usage<a class="anchor" aria-label="anchor" href="#usage-49"></a></h4>
@@ -1012,7 +1014,7 @@ the process.</p><div class="section">
 <span class="r-in"><span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span class="va">p</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> PROCESS 'sleep', running, pid 10623.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> PROCESS 'sleep', running, pid 10684.</span>
 <span class="r-in"><span class="va">p</span><span class="op">$</span><span class="fu">kill</span><span class="op">(</span><span class="op">)</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></span>
