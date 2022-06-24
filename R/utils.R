@@ -290,3 +290,8 @@ process_env <- function(env) {
 starts_with <- function(x, pre) {
   substr(x, 1, nchar(pre)) == pre
 }
+
+ends_with <- function(x, post) {
+  l <- nchar(post)
+  substr(x, nchar(x) - l + 1, nchar(x)) == post
+}

@@ -17,3 +17,6 @@
 /revdep
 /r-packages
 /README.html
+*.gcda
+*.gcno
+/dev-lib
