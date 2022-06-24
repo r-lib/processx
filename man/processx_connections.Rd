@@ -2,6 +2,7 @@
 % Please edit documentation in R/connections.R
 \name{conn_create_fd}
 \alias{conn_create_fd}
+\alias{conn_file_name}
 \alias{conn_create_pipepair}
 \alias{conn_read_chars}
 \alias{conn_read_chars.processx_connection}
@@ -26,6 +27,8 @@
 \title{Processx connections}
 \usage{
 conn_create_fd(fd, encoding = "", close = TRUE)
+
+conn_file_name(con)
 
 conn_create_pipepair(encoding = "", nonblocking = c(TRUE, FALSE))
 
@@ -79,10 +82,11 @@ the connection. Sometimes you want to leave it open, and use it again
 in a \code{conn_create_fd} call.
 Encoding to re-encode \code{str} into when writing.}
 
-\item{nonblocking}{Whether the writeable and the readable ends of
-the pipe should be non-blocking connections.}
-
 \item{con}{Processx connection object.}
+
+\item{nonblocking}{Whether the pipe should be non-blocking.
+For \code{conn_create_pipepair()} it must be a logical vector of length two,
+for both ends of the pipe.}
 
 \item{n}{Number of characters or lines to read. -1 means all available
 characters or lines.}
@@ -92,7 +96,10 @@ characters or lines.}
 \item{sep}{Separator to use if \code{str} is a character vector. Ignored if
 \code{str} is a raw vector.}
 
-\item{filename}{File name.}
+\item{filename}{File name. For \code{conn_create_pipe()} on Windows, a
+\verb{\\\\?\\pipe} prefix is added to this, if it does not have such a prefix.
+For \code{conn_create_pipe()} it can also be \code{NULL}, in which case a random
+file name is used via \code{tempfile()}.}
 
 \item{read}{Whether the connection is readable.}
 
@@ -111,6 +118,11 @@ compatible with R's built-in connection system.
 }
 \details{
 \code{conn_create_fd()} creates a connection from a file descriptor.
+
+\code{conn_file_name()} returns the name of the file associated with the
+connection. For connections that do not refer to a file in the file
+system it returns \code{NA_character()}. Except for named pipes on Windows,
+where it returns the full name of the pipe.
 
 \code{conn_create_pipepair()} creates a pair of connected connections, the
 first one is writeable, the second one is readable.
@@ -159,3 +171,4 @@ is_valid_fd(0L)      # stdin
 is_valid_fd(1L)      # stdout
 is_valid_fd(2L)      # stderr
 }
+\concept{processx connections}

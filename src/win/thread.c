@@ -85,6 +85,44 @@ DWORD processx_i_thread_readfile() {
   return res;
 }
 
+DWORD processx_i_thread_connectpipe() {
+
+  processx_connection_t *ccon = processx__thread_readfile_data.ccon;
+
+  if (! ccon->handle.overlapped.hEvent &&
+      (ccon->type == PROCESSX_FILE_TYPE_ASYNCFILE ||
+       ccon->type == PROCESSX_FILE_TYPE_ASYNCPIPE)) {
+    ccon->handle.overlapped.hEvent = CreateEvent(
+      /* lpEventAttributes = */ NULL,
+      /* bManualReset = */      FALSE,
+      /* bInitialState = */     FALSE,
+      /* lpName = */            NULL);
+
+    if (ccon->handle.overlapped.hEvent == NULL) return FALSE;
+
+    HANDLE iocp = processx__get_default_iocp();
+    if (!iocp) return FALSE;
+
+    HANDLE res = CreateIoCompletionPort(
+      /* FileHandle =  */                ccon->handle.handle,
+      /* ExistingCompletionPort = */     iocp,
+      /* CompletionKey = */              (ULONG_PTR) ccon,
+      /* NumberOfConcurrentThreads = */  0);
+
+    if (!res) return FALSE;
+  }
+
+  /* These need to be set to zero for non-file handles */
+  if (ccon->type != PROCESSX_FILE_TYPE_ASYNCFILE) {
+    ccon->handle.overlapped.Offset = 0;
+    ccon->handle.overlapped.OffsetHigh = 0;
+  }
+
+  DWORD res = ConnectNamedPipe(ccon->handle.handle,
+			       &ccon->handle.overlapped);
+  return res;
+}
+
 DWORD processx_i_thread_getstatus() {
   static const char *ok_buf = "OK";
   HANDLE iocp = processx__get_default_iocp();
@@ -123,6 +161,10 @@ DWORD processx__thread_callback(void *data) {
 
     case PROCESSX__THREAD_CMD_GETSTATUS:
       processx__thread_success = processx_i_thread_getstatus();
+      break;
+
+    case PROCESSX__THREAD_CMD_CONNECTPIPE:
+      processx__thread_success = processx_i_thread_connectpipe();
       break;
 
     default:
@@ -195,6 +237,18 @@ BOOL processx__thread_readfile(processx_connection_t *ccon,
   processx__thread_readfile_data.lpBuffer = lpBuffer;
   processx__thread_readfile_data.nNumberOfBytesToRead = nNumberOfBytesToRead;
   processx__thread_readfile_data.lpNumberOfBytesRead = lpNumberOfBytesRead;
+
+  SetEvent(processx__thread_start);
+  WaitForSingleObject(processx__thread_done, INFINITE);
+
+  return processx__thread_success;
+}
+
+BOOL processx__thread_connectpipe(processx_connection_t *ccon) {
+  processx__start_thread();
+  processx__thread_cmd = PROCESSX__THREAD_CMD_CONNECTPIPE;
+
+  processx__thread_readfile_data.ccon = ccon;
 
   SetEvent(processx__thread_start);
   WaitForSingleObject(processx__thread_done, INFINITE);

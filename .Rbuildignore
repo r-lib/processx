@@ -24,3 +24,6 @@
 ^r-packages$
 ^\.github$
 ^codecov\.yml$
+^src/.*[.]gcda$
+^src/.*[.]gcno$
+^dev-lib$

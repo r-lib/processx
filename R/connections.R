@@ -14,6 +14,7 @@
 #'   in a `conn_create_fd` call.
 #' Encoding to re-encode `str` into when writing.
 #'
+#' @family processx connections
 #' @rdname processx_connections
 #' @export
 
@@ -26,12 +27,202 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
   chain_call(c_processx_connection_create_fd, fd, encoding, close)
 }
 
+#' Processx FIFOs
+#'
+#' Create a FIFO for inter-process communication
+#' Note that these functions are currently experimental.
+#'
+#' @details
+#' `conn_create_fifo()` creates a FIFO and connects to it.
+#' On Unix this is a proper FIFO in the file system, in the R temporary
+#' directory. On Windows it is a named pipe.
+#'
+#' Use [conn_file_name()] to query the name of the FIFO, and
+#' `conn_connect_fifo()` to connect to the other end.
+#'
+#' # Notes
+#'
+#' ## Creating the read end of the FIFO
+#'
+#' This case is simpler. To wait for a writer to connect to the FIFO
+#' you can use [poll()] as usual. Then use [conn_read_chars()] or
+#' [conn_read_lines()] to read from the FIFO, as usual. Use
+#' [conn_is_incomplete()] *after* a read to check if there is more data,
+#' or the writer is done.
+#'
+#' ## Creating the write end of the FIFO
+#'
+#' This is somewhat trickier. Creating the (non-blocking) FIFO does not
+#' block. However, there is no easy way to tell if a reader is connected
+#' to the other end of the FIFO or not. On Unix you can start using
+#' [conn_write()] to try to write to it, and this will succeed, until the
+#' buffer gets full, even if there is no reader. (When the buffer is full
+#' it will return the data that was not written, as usual.)
+#'
+#' On Windows, using [conn_write()] to write to a FIFO without a reader
+#' fails with an error. This is not great, we are planning to improve it
+#' later.
+#'
+#' Right now, one workaround for this behavior is for the reader to
+#' connunicate to the writer process independenctly that it has connected
+#' to the FIFO. (E.g. another FIFO in the opposite direction can do that.)
+#'
+#' @param filename File name of the FIFO. On Windows it the name of the
+#' pipe within the `\\?\pipe\` namespace, either the full name, or the
+#' part after that prefix. If `NULL`, then a random name
+#' is used, on Unix in the R temporary directory: [base::tempdir()].
+#' @param read If `TRUE` then connect to the read end of the FIFO.
+#'   Exactly one of `read` and `write` must be set to `TRUE`.
+#' @param write If `TRUE` then connect to the write end of the FIFO.
+#'   Exactly one of `read` and `write` must be set to `TRUE`.
+#' @param encoding Encoding to assume.
+#' @param nonblocking Whether this should be a non-blocking FIFO.
+#' Note that blocking FIFOs are not well tested and might not work well with
+#' [poll()], especially on Windows. We might remove this option in the
+#' future and make all FIFOs non-blocking.
+#'
+#' @rdname processx_fifos
+#' @export
+
+conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
+                             encoding = "", nonblocking = TRUE) {
+  if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
+  if (is.null(read)) read <- !write
+  if (is.null(write)) write <- !read
+
+  if (read && write) {
+    throw(new_error("Bi-directional FIFOs are not supported currently"))
+  }
+
+  assert_that(
+    is_string_or_null(filename),
+    is_flag(read),
+    is_flag(write),
+    read || write,
+    ! (read && write),
+    is_string(encoding),
+    is_flag(nonblocking)
+  )
+
+  if (is_windows()) {
+    filename <- filename %||% basename(tempfile())
+    if (!starts_with(filename, winpipeprefix)) {
+      filename <- paste0(winpipeprefix, filename)
+    }
+  } else {
+    filename <- filename %||% tempfile()
+  }
+
+  chain_call(
+    c_processx_connection_create_fifo,
+    read,
+    write,
+    filename,
+    encoding,
+    nonblocking
+  )
+}
+
+winpipeprefix <- "\\\\?\\pipe\\"
+
+#' @details
+#' `conn_connect_fifo()` connects to a FIFO created with
+#' `conn_create_fifo()`, typically in another process. `filename` refers
+#' to the name of the pipe on Windows.
+#'
+#' On Windows, `conn_connect_fifo()` may be successful even if the
+#' FIFO does not exist, but then later `poll()` or read/write operations
+#' will fail. We are planning on changing this behavior in the future,
+#' to make `conn_connect_fifo()` fail immediately, like on Unix.
+#'
+#' @rdname processx_fifos
+#' @export
+#' @examples
+#' # Example for a non-blocking FIFO
+#'
+#' # Need to open the reading end first, otherwise Unix fails
+#' reader <- conn_create_fifo()
+#'
+#' # Always use poll() before you read, with a timeout if you like.
+#' # If you read before the other end of the FIFO is connected, then
+#' # the OS (or processx?) assumes that the FIFO is done, and you cannot
+#' # read anything.
+#' # Now poll() tells us that there is no data yet.
+#' poll(list(reader), 0)
+#'
+#' writer <- conn_connect_fifo(conn_file_name(reader), write = TRUE)
+#' conn_write(writer, "hello\nthere!\n")
+#'
+#' poll(list(reader), 1000)
+#' conn_read_lines(reader, 1)
+#' conn_read_chars(reader)
+#'
+#' conn_is_incomplete(reader)
+#'
+#' close(writer)
+#' conn_read_chars(reader)
+#' conn_is_incomplete(reader)
+#'
+#' close(reader)
+
+conn_connect_fifo <- function(filename, read = NULL, write = NULL,
+                              encoding = "", nonblocking = TRUE) {
+  if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
+  if (is.null(read)) read <- !write
+  if (is.null(write)) write <- !read
+
+  if (read && write) {
+    throw(new_error("Bi-directional FIFOs are not supported currently"))
+  }
+
+  assert_that(
+    is_string(filename),
+    is_flag(read),
+    is_flag(write),
+    read || write,
+    ! (read && write),
+    is_string(encoding),
+    is_flag(nonblocking)
+  )
+
+  if (is_windows()) {
+    if (!starts_with(filename, winpipeprefix)) {
+      filename <- paste0(winpipeprefix, filename)
+    }
+  }
+
+  chain_call(
+    c_processx_connection_connect_fifo,
+    filename,
+    read,
+    write,
+    encoding,
+    nonblocking
+  )
+}
+
+#' @details
+#' `conn_file_name()` returns the name of the file associated with the
+#' connection. For connections that do not refer to a file in the file
+#' system it returns `NA_character()`. Except for named pipes on Windows,
+#' where it returns the full name of the pipe.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_file_name <- function(con) {
+  assert_that(is_connection(con))
+
+  chain_call(c_processx_connection_file_name, con)
+}
+
 #' @details
 #' `conn_create_pipepair()` creates a pair of connected connections, the
 #' first one is writeable, the second one is readable.
 #'
-#' @param nonblocking Whether the writeable and the readable ends of
-#'   the pipe should be non-blocking connections.
+#' @param nonblocking Whether the pipe should be non-blocking.
+#' For `conn_create_pipepair()` it must be a logical vector of length two,
+#' for both ends of the pipe.
 #'
 #' @rdname processx_connections
 #' @export
@@ -167,7 +358,10 @@ processx_conn_write <- function(con, str, sep = "\n", encoding = "") {
 #' @details
 #' `conn_create_file()` creates a connection to a file.
 #'
-#' @param filename File name.
+#' @param filename File name. For `conn_create_pipe()` on Windows, a
+#' `\\?\pipe` prefix is added to this, if it does not have such a prefix.
+#' For `conn_create_pipe()` it can also be `NULL`, in which case a random
+#' file name is used via `tempfile()`.
 #' @param read Whether the connection is readable.
 #' @param write Whethe the connection is writeable.
 #'
