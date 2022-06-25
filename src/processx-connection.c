@@ -307,7 +307,7 @@ SEXP processx_connection_create_fifo(SEXP read, SEXP write,
   // This is undefined behavior according to the standard, but in practice
   // it works on Linux and macOS, and probably all Unix systems. It lets us
   // open the write end of the fifo without blocking.
-  if (!c_read &&  c_write) flags |= O_RDWR;
+  if (!c_read &&  c_write) flags |= c_nonblocking ? O_RDWR : O_WRONLY;
   if (c_nonblocking) flags |= O_NONBLOCK;
   os_handle = open(c_filename, flags);
   if (os_handle == -1) {
@@ -368,7 +368,7 @@ SEXP processx_connection_connect_fifo(SEXP filename, SEXP read, SEXP write,
 #else
   int flags = 0;
   if ( c_read && !c_write) flags |= O_RDONLY;
-  if (!c_read &&  c_write) flags |= O_WRONLY;
+  if (!c_read &&  c_write) flags |= c_nonblocking ? O_RDWR : O_WRONLY;
   if (c_nonblocking) flags |= O_NONBLOCK;
   os_handle = open(c_filename, flags);
   if (os_handle == -1) {
@@ -1006,6 +1006,9 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 	pollables[poll_idx].event = PXREADY;
 	hasdata++;
       }
+      // TODO: if we just connected a FIFO asynchronously, then we could
+      // start a new read here, to avoid returning "ready" without data.
+      // NOTE: when updating this, also update internals.Rmd!
       con->handle.connecting = FALSE;
     } else if (err != WAIT_TIMEOUT && err != ERROR_SUCCESS) {
       R_THROW_SYSTEM_ERROR_CODE(err, "Cannot poll");
