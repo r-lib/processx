@@ -27,3 +27,4 @@
 ^src/.*[.]gcda$
 ^src/.*[.]gcno$
 ^dev-lib$
+^vignettes$
