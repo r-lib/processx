@@ -128,6 +128,10 @@ If you need bidirectional communication, then use two FIFOs.
     This is because at the first `poll()` (on Windows) we need to start an asynchronous operation for waiting for the other end of the pipe to connect.
     Once this returns, `poll()` will signal `ready`, but there might be no data to read just yet.
 
+-   A `poll()` on a FIFO might not return if the writer on the other end (all the writers) close the FIFO.
+    At least this is what I see on macOS, and this is really bad.
+    The `poll()` will only return `ready` after a read operation, once the writer have closed their end.
+
 ## Known issues
 
 -   Non-ASCII file names or pipe name are currently an issue.
