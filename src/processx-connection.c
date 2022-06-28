@@ -11,6 +11,8 @@
 #include <sys/uio.h>
 #include <poll.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #else
 #include <io.h>
 #endif
@@ -384,6 +386,103 @@ SEXP processx_connection_connect_fifo(SEXP filename, SEXP read, SEXP write,
     c_filename,
     &result
   );
+
+  return result;
+}
+
+SEXP processx_connection_create_socket(SEXP filename, SEXP encoding) {
+  const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
+  const char *c_filename = CHAR(STRING_ELT(filename, 0));
+  SEXP result;
+  processx_file_handle_t os_handle;
+
+#ifdef _WIN32
+  TODO;
+
+#else
+  struct sockaddr_un addr;
+  if (strlen(c_filename) > sizeof(addr.sun_path) - 1) {
+    R_THROW_ERROR("Server socket path too long: %s", c_filename);
+  }
+  os_handle = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (os_handle == -1) {
+    R_THROW_SYSTEM_ERROR("Cannot create socket");
+  }
+  memset(&addr, 0, sizeof(struct sockaddr_un));
+  addr.sun_family = AF_UNIX;
+  strncpy(addr.sun_path, c_filename, sizeof(addr.sun_path) - 1);
+
+  int ret = bind(
+    os_handle,
+    (struct sockaddr *) &addr,
+    sizeof(struct sockaddr_un)
+  );
+  if (ret == -1) {
+    R_THROW_SYSTEM_ERROR("Cannot bind to socket");
+  }
+  ret = listen(os_handle, 1);
+  if (ret == -1) {
+    R_THROW_SYSTEM_ERROR("Cannot listen on socket");
+  }
+  processx__nonblock_fcntl(os_handle, 1);
+
+#endif
+
+  processx_c_connection_create(
+    os_handle,
+    PROCESSX_FILE_TYPE_SOCKET,
+    c_encoding,
+    c_filename,
+    &result
+  );
+
+  processx_connection_t *ccon = R_ExternalPtrAddr(result);
+  ccon->state = PROCESSX_SOCKET_LISTEN;
+
+  return result;
+
+}
+
+SEXP processx_connection_connect_socket(SEXP filename, SEXP encoding) {
+  const char *c_filename = CHAR(STRING_ELT(filename, 0));
+  const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
+  SEXP result;
+  processx_file_handle_t os_handle;
+
+#ifdef _WIN32
+  TODO;
+
+#else
+  struct sockaddr_un addr;
+  os_handle = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (os_handle == -1) {
+    R_THROW_SYSTEM_ERROR("Cannot create socket");
+  }
+  memset(&addr, 0, sizeof(struct sockaddr_un));
+  addr.sun_family = AF_UNIX;
+  strncpy(addr.sun_path, c_filename, sizeof(addr.sun_path) - 1);
+
+  int ret = connect(
+    os_handle,
+    (struct sockaddr *) &addr,
+    sizeof(struct sockaddr_un)
+  );
+  if (ret == -1) {
+    R_THROW_SYSTEM_ERROR("Cannot connect to socket");
+  }
+
+#endif
+
+  processx_c_connection_create(
+    os_handle,
+    PROCESSX_FILE_TYPE_SOCKET,
+    c_encoding,
+    c_filename,
+    &result
+  );
+
+  processx_connection_t *ccon = R_ExternalPtrAddr(result);
+  ccon->state = PROCESSX_SOCKET_CONNECTED_CLIENT;
 
   return result;
 }

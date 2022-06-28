@@ -104,14 +104,7 @@ conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
     is_flag(nonblocking)
   )
 
-  if (is_windows()) {
-    filename <- filename %||% basename(tempfile())
-    if (!starts_with(filename, winpipeprefix)) {
-      filename <- paste0(winpipeprefix, filename)
-    }
-  } else {
-    filename <- filename %||% tempfile()
-  }
+  filename <- make_pipe_file_name(filename)
 
   chain_call(
     c_processx_connection_create_fifo,
@@ -124,6 +117,18 @@ conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
 }
 
 winpipeprefix <- "\\\\?\\pipe\\"
+
+make_pipe_file_name <- function(filename) {
+  if (is_windows()) {
+    filename <- filename %||% basename(tempfile())
+    if (!starts_with(filename, winpipeprefix)) {
+      filename <- paste0(winpipeprefix, filename)
+    }
+  } else {
+    filename <- filename %||% tempfile()
+  }
+  filename
+}
 
 #' @details
 #' `conn_connect_fifo()` connects to a FIFO created with
@@ -479,4 +484,46 @@ is_valid_fd <- function(fd) {
   assert_that(is_integerish_scalar(fd))
   fd <- as.integer(fd)
   chain_call(c_processx_is_valid_fd, fd)
+}
+
+#' @rdname processx_sockets
+#' @export
+
+conn_create_socket <- function(filename = NULL, encoding = "") {
+
+  assert_that(
+    is_string_or_null(filename),
+    is_string(encoding)
+  )
+
+  filename <- make_pipe_file_name(filename)
+
+  chain_call(
+    c_processx_connection_create_socket,
+    filename,
+    encoding
+  )
+}
+
+#' @rdname processx_sockets
+#' @export
+
+conn_connect_socket <- function(filename, encoding = "") {
+
+  assert_that(
+    is_string_or_null(filename),
+    is_string(encoding)
+  )
+
+  if (is_windows()) {
+    if (!starts_with(filename, winpipeprefix)) {
+      filename <- paste0(winpipeprefix, filename)
+    }
+  }
+
+  chain_call(
+    c_processx_connection_connect_socket,
+    filename,
+    encoding
+  )
 }
