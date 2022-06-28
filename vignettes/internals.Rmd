@@ -109,6 +109,8 @@ If you need bidirectional communication, then use two FIFOs.
 
 ## Platform differences and portable code
 
+See also the "Known issues" below.
+
 -   Do not connect more than one reader or more than one writer to a FIFO.
     While this is fine on Unix, and it is pretty cool, actually, it will fail on Windows.
 
@@ -128,16 +130,19 @@ If you need bidirectional communication, then use two FIFOs.
     This is because at the first `poll()` (on Windows) we need to start an asynchronous operation for waiting for the other end of the pipe to connect.
     Once this returns, `poll()` will signal `ready`, but there might be no data to read just yet.
 
--   A `poll()` on a FIFO might not return if the writer on the other end (all the writers) close the FIFO.
-    At least this is what I see on macOS, and this is really bad.
-    The `poll()` will only return `ready` after a read operation, once the writer have closed their end.
-
 ## Known issues
+
+-   A `poll()` on a FIFO might not return if the writer on the other end (all the writers) close the FIFO.
+    The `poll()` will only return `ready` after a read operation, once the writer have closed their end.
+    This seems to be a macOS bug, and it is really bad.
+    It happens at least on macOS 12.3.1, and it does not happen on Ubuntu 20.04.
 
 -   Non-ASCII file names or pipe name are currently an issue.
     (Just like non-ASCII file name in `conn_create_file()` are!)
+    We will fix this.
 
 -   Encodings of the pipe traffic are very little tested.
+    We will also fix this.
 
 ## Links
 
