@@ -151,6 +151,8 @@ SEXP processx_connection_connect_fifo(SEXP filename, SEXP read, SEXP write,
                                       SEXP encoding, SEXP nonblocking);
 SEXP processx_connection_create_socket(SEXP filename, SEXP encoding);
 SEXP processx_connection_connect_socket(SEXP filename, SEXP encoding);
+SEXP processx_connection_accept_socket(SEXP con);
+SEXP processx_connection_socket_state(SEXP con);
 
 /* Read characters in a given encoding from the connection. */
 SEXP processx_connection_read_chars(SEXP con, SEXP nchars);

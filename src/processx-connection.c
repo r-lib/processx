@@ -397,7 +397,29 @@ SEXP processx_connection_create_socket(SEXP filename, SEXP encoding) {
   processx_file_handle_t os_handle;
 
 #ifdef _WIN32
-  TODO;
+  SECURITY_ATTRIBUTES sa;
+  DWORD err;
+  DWORD openmode = FILE_FLAG_FIRST_PIPE_INSTANCE |
+    PIPE_ACCESS_INBOUND | PIPE_ACCESS_OUTBOUND |
+    FILE_FLAG_OVERLAPPED;
+
+  sa.nLength = sizeof(sa);
+  sa.lpSecurityDescriptor = NULL;
+  sa.bInheritHandle = TRUE;
+
+  os_handle = CreateNamedPipeA(
+    c_filename,
+    openmode,
+    PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
+    1,
+    65536,
+    65536,
+    0,
+    NULL);
+
+  if (os_handle == INVALID_HANDLE_VALUE) {
+    R_THROW_SYSTEM_ERROR("could not create pipe");
+  }
 
 #else
   struct sockaddr_un addr;
@@ -450,7 +472,23 @@ SEXP processx_connection_connect_socket(SEXP filename, SEXP encoding) {
   processx_file_handle_t os_handle;
 
 #ifdef _WIN32
-  TODO;
+  SECURITY_ATTRIBUTES sa;
+  DWORD access = GENERIC_READ | GENERIC_WRITE;
+  DWORD attr = FILE_FLAG_OVERLAPPED;
+
+  sa.nLength = sizeof(sa);
+  sa.lpSecurityDescriptor = NULL;
+  sa.bInheritHandle = TRUE;
+
+  os_handle = CreateFileA(
+    c_filename,
+    access,
+    0,
+    &sa,
+    OPEN_EXISTING,
+    attr,
+    NULL
+  );
 
 #else
   struct sockaddr_un addr;
@@ -485,6 +523,46 @@ SEXP processx_connection_connect_socket(SEXP filename, SEXP encoding) {
   ccon->state = PROCESSX_SOCKET_CONNECTED_CLIENT;
 
   return result;
+}
+
+SEXP processx_connection_accept_socket(SEXP con) {
+  processx_connection_t *ccon = R_ExternalPtrAddr(con);
+  if (!ccon) R_THROW_ERROR("Invalid connection object");
+  if (ccon->type != PROCESSX_FILE_TYPE_SOCKET) {
+    R_THROW_ERROR("Not a socket connection");
+  }
+  if (ccon->state != PROCESSX_SOCKET_LISTEN) {
+    R_THROW_ERROR("Socket is not listening");
+  }
+
+#ifdef _WIN32
+  // We can probably use GetNamedPipeHandleStateA to get the current
+  // state of the pipe, and if it is connected, then OK, otherwise we
+  // return an error. This simulates the Unix behavior.
+  TODO;
+
+#else
+  int newfd = accept(ccon->handle, NULL, NULL);
+  if (newfd == -1) {
+    R_THROW_SYSTEM_ERROR("Could not accept socket connection");
+  }
+
+  close(ccon->handle);
+  ccon->handle = newfd;
+  ccon->state = PROCESSX_SOCKET_CONNECTED_SERVER;
+#endif
+
+  return R_NilValue;
+}
+
+SEXP processx_connection_socket_state(SEXP con) {
+  processx_connection_t *ccon = R_ExternalPtrAddr(con);
+  if (!ccon) R_THROW_ERROR("Invalid connection object");
+  if (ccon->type != PROCESSX_FILE_TYPE_SOCKET) {
+    R_THROW_ERROR("Not a socket connection");
+  }
+
+  return ScalarInteger(ccon->state);
 }
 
 SEXP processx_connection_create_pipepair(SEXP encoding, SEXP nonblocking) {
@@ -1248,7 +1326,14 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
         }
       } else {
         pollables[ptr[i]].event = processx__poll_decode(fds[i].revents);
-        hasdata += (pollables[ptr[i]].event == PXREADY);
+        if (pollables[ptr[i]].event == PXREADY) {
+          hasdata ++;
+          processx_connection_t *ccon = pollables[ptr[i]].object;
+          if (ccon -> type == PROCESSX_FILE_TYPE_SOCKET &&
+              ccon -> state == PROCESSX_SOCKET_LISTEN) {
+            pollables[ptr[i]].event = PXCONNECT;
+          }
+        }
       }
     }
   }
@@ -1290,7 +1375,8 @@ void processx__connection_start_read(processx_connection_t *ccon) {
     } else if (err == ERROR_IO_PENDING) {
       ccon->handle.read_pending = TRUE;
     } else if (err == ERROR_PIPE_LISTENING &&
-	       ccon->type == PROCESSX_FILE_TYPE_ASYNCPIPE) {
+	       (ccon->type == PROCESSX_FILE_TYPE_ASYNCPIPE ||
+                ccon->type == PROCESSX_FILE_TYPE_SOCKET)) {
       ccon->handle.read_pending = TRUE;
       ccon->handle.connecting = TRUE;
       processx__thread_connectpipe(ccon);
