@@ -275,7 +275,6 @@ SEXP processx_connection_create_fifo(SEXP read, SEXP write,
 
 #ifdef _WIN32
   SECURITY_ATTRIBUTES sa;
-  DWORD err;
   DWORD openmode = FILE_FLAG_FIRST_PIPE_INSTANCE;
   if (c_read) openmode |= PIPE_ACCESS_INBOUND;
   if (c_write) openmode |= PIPE_ACCESS_OUTBOUND;
@@ -398,7 +397,6 @@ SEXP processx_connection_create_socket(SEXP filename, SEXP encoding) {
 
 #ifdef _WIN32
   SECURITY_ATTRIBUTES sa;
-  DWORD err;
   DWORD openmode = FILE_FLAG_FIRST_PIPE_INSTANCE |
     PIPE_ACCESS_INBOUND | PIPE_ACCESS_OUTBOUND |
     FILE_FLAG_OVERLAPPED;
@@ -531,7 +529,8 @@ SEXP processx_connection_accept_socket(SEXP con) {
   if (ccon->type != PROCESSX_FILE_TYPE_SOCKET) {
     R_THROW_ERROR("Not a socket connection");
   }
-  if (ccon->state != PROCESSX_SOCKET_LISTEN) {
+  if (ccon->state != PROCESSX_SOCKET_LISTEN &&
+      ccon->state != PROCESSX_SOCKET_LISTEN_PIPE_READY) {
     R_THROW_ERROR("Socket is not listening");
   }
 
@@ -539,7 +538,22 @@ SEXP processx_connection_accept_socket(SEXP con) {
   // We can probably use GetNamedPipeHandleStateA to get the current
   // state of the pipe, and if it is connected, then OK, otherwise we
   // return an error. This simulates the Unix behavior.
-  TODO;
+  DWORD instances = -1;
+  BOOL ret = GetNamedPipeHandleStateA(
+    /* hNamedPipe=           */ ccon->handle.handle,
+    /* lpState=              */ NULL,
+    /* lpInstances=          */ &instances,
+    /* lpMaxCollectionCount= */ NULL,
+    /* lpCollectDataTimeout= */ NULL,
+    /* lpUserName=           */ NULL,
+    /* nMaxUserNameSize=     */ 0
+  );
+  if (!ret) {
+    R_THROW_SYSTEM_ERROR("Cannot query state of Unix socket (server named pipe)");
+  }
+  if (instances == 1) {
+    ccon->state = PROCESSX_SOCKET_CONNECTED_SERVER;
+  }
 
 #else
   int newfd = accept(ccon->handle, NULL, NULL);
@@ -1065,6 +1079,11 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
       el->event = events[i];
       break;
 
+    case PXCONNECT:
+      hasdata++;
+      el->event = events[i];
+      break;
+
     case PXHANDLE:
       el->event = PXSILENT;
       ptr[j] = i;
@@ -1180,7 +1199,12 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
 
       if (poll_idx < npollables &&
 	  pollables[poll_idx].object == con) {
-	pollables[poll_idx].event = PXREADY;
+	if (con->handle.connecting && con->type == PROCESSX_FILE_TYPE_SOCKET) {
+	  pollables[poll_idx].event = PXCONNECT;
+	  con->state = PROCESSX_SOCKET_LISTEN_PIPE_READY;
+	} else {
+	  pollables[poll_idx].event = PXREADY;
+	}
 	hasdata++;
       }
       // TODO: if we just connected a FIFO asynchronously, then we could
@@ -1358,11 +1382,18 @@ void processx__connection_start_read(processx_connection_t *ccon) {
 
   todo = ccon->buffer_allocated_size - ccon->buffer_data_size;
 
-  res = processx__thread_readfile(
-    ccon,
-    ccon->buffer + ccon->buffer_data_size,
-    todo,
-    &bytes_read);
+  if (ccon->type == PROCESSX_FILE_TYPE_SOCKET &&
+      ccon->state == PROCESSX_SOCKET_LISTEN) {
+    ccon->handle.connecting = TRUE;
+    res = processx__thread_connectpipe(ccon);
+
+  } else {
+    res = processx__thread_readfile(
+      ccon,
+      ccon->buffer + ccon->buffer_data_size,
+      todo,
+      &bytes_read);
+  }
 
   if (!res) {
     DWORD err = processx__thread_get_last_error();
@@ -1427,10 +1458,15 @@ int processx_i_pre_poll_func_connection(processx_pollable_t *pollable) {
   PROCESSX__I_PRE_POLL_FUNC_CONNECTION_READY;
 
 #ifdef _WIN32
-  processx__connection_start_read(ccon);
-  /* Starting to read may actually get some data, or an EOF, so check again */
-  PROCESSX__I_PRE_POLL_FUNC_CONNECTION_READY;
-  pollable->handle = ccon->handle.overlapped.hEvent;
+  if (ccon->type == PROCESSX_FILE_TYPE_SOCKET &&
+      ccon->state == PROCESSX_SOCKET_LISTEN_PIPE_READY) {
+    return PXCONNECT;
+  } else {
+    processx__connection_start_read(ccon);
+    /* Starting to read may actually get some data, or an EOF, so check again */
+    PROCESSX__I_PRE_POLL_FUNC_CONNECTION_READY;
+    pollable->handle = ccon->handle.overlapped.hEvent;
+  }
 #else
   pollable->handle = ccon->handle;
 #endif

@@ -589,5 +589,5 @@ conn_unix_socket_state <- function(con) {
     con
   )
 
-  c("listening", "connected_server", "connected_client")[code]
+  c("listening", "listening", "connected_server", "connected_client")[code]
 }
