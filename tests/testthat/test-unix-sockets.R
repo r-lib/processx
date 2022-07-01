@@ -13,6 +13,12 @@ test_that("CRUD", {
   )
   expect_equal(conn_unix_socket_state(sock1), "listening")
 
+  if (is_windows()) {
+    expect_equal(conn_file_name(sock1), make_pipe_file_name(sock))
+  } else {
+    expect_equal(conn_file_name(sock1), sock)
+  }
+
   pr <- poll(list(sock1), 1)
   expect_equal(pr, list("timeout"))
 
