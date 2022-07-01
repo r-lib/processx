@@ -77,7 +77,7 @@
       <img src="" class="logo" alt=""><h1>processx internals</h1>
                         <h4 data-toc-skip class="author">Gábor Csárdi</h4>
             
-            <h4 data-toc-skip class="date">2022-06-25</h4>
+            <h4 data-toc-skip class="date">2022-07-01</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/r-lib/processx/blob/HEAD/vignettes/internals.Rmd" class="external-link"><code>vignettes/internals.Rmd</code></a></small>
       <div class="d-none name"><code>internals.Rmd</code></div>
@@ -150,6 +150,7 @@
 <div class="section level3">
 <h3 id="platform-differences-and-portable-code">Platform differences and portable code<a class="anchor" aria-label="anchor" href="#platform-differences-and-portable-code"></a>
 </h3>
+<p>See also the “Known issues” below.</p>
 <ul>
 <li><p>Do not connect more than one reader or more than one writer to a FIFO. While this is fine on Unix, and it is pretty cool, actually, it will fail on Windows.</p></li>
 <li><p>Remember that once there are zero readers or writers on a FIFO, the other end will signal EOF at the next read (or poll!) operation.</p></li>
@@ -163,8 +164,9 @@
 <h3 id="known-issues">Known issues<a class="anchor" aria-label="anchor" href="#known-issues"></a>
 </h3>
 <ul>
-<li><p>Non-ASCII file names or pipe name are currently an issue. (Just like non-ASCII file name in <code><a href="../reference/processx_connections.html">conn_create_file()</a></code> are!)</p></li>
-<li><p>Encodings of the pipe traffic are very little tested.</p></li>
+<li><p>A <code><a href="../reference/poll.html">poll()</a></code> on a FIFO might not return if the writer on the other end (all the writers) close the FIFO. The <code><a href="../reference/poll.html">poll()</a></code> will only return <code>ready</code> after a read operation, once the writer have closed their end. This seems to be a macOS bug, and it is really bad. It happens at least on macOS 12.3.1, and it does not happen on Ubuntu 20.04.</p></li>
+<li><p>Non-ASCII file names or pipe name are currently an issue. (Just like non-ASCII file name in <code><a href="../reference/processx_connections.html">conn_create_file()</a></code> are!) We will fix this.</p></li>
+<li><p>Encodings of the pipe traffic are very little tested. We will also fix this.</p></li>
 </ul>
 </div>
 <div class="section level3">
@@ -172,6 +174,76 @@
 </h3>
 <p><a href="https://man7.org/linux/man-pages/man7/fifo.7.html" class="external-link">Linux <code>fifo(7)</code> manual page</a></p>
 <p><a href="https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createnamedpipea" class="external-link">Windows <code>CreateNamedPipeA()</code> manual page</a></p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="unix-domain-sockets">Unix Domain Sockets<a class="anchor" aria-label="anchor" href="#unix-domain-sockets"></a>
+</h2>
+<div class="section level3">
+<h3 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
+</h3>
+<p>processx has a few functions to perform IPC (inter process communication) between processes running on the same machine, using Unix domain sockets. On Windows it uses named pipes to emulate Unix domain sockets, as much as possible.</p>
+<p>Unix domain sockets solve many issues that FIFOs (processx FIFOs and FIFOs in general) have, so we suggest that you use sockets instead of FIFOs if you can.</p>
+</div>
+<div class="section level3">
+<h3 id="api">API<a class="anchor" aria-label="anchor" href="#api"></a>
+</h3>
+<ul>
+<li><p>processx Unix sockets are always bi-directional.</p></li>
+<li><p><code><a href="../reference/processx_sockets.html">conn_create_unix_socket()</a></code> creates the server side of the socket.</p></li>
+<li><p><code><a href="../reference/processx_sockets.html">conn_connect_unix_socket()</a></code> creates the client side and connects to a server socket. This call does not block, so when it returns, the server side has not accepted the connection yet, probably. You can still use the client socket for reading and writing, see below.</p></li>
+<li><p>You can use <code><a href="../reference/poll.html">poll()</a></code> to wait for a client to connect to the server. If a client is available, <code><a href="../reference/poll.html">poll()</a></code> returns <code>"connect"</code> .</p></li>
+<li><p>Once a client is available, call <code><a href="../reference/processx_sockets.html">conn_accept_unix_socket()</a></code> to accept it.</p></li>
+<li><p>After accepting the client, you can send messages to it with <code><a href="../reference/processx_connections.html">conn_write()</a></code> and read messages from it with <code><a href="../reference/processx_connections.html">conn_read_chars()</a></code> and <code><a href="../reference/processx_connections.html">conn_read_lines()</a></code> and in general use the server socket as a read-write processx connection.</p></li>
+<li><p>The server cannot call <code>conn_read_*()</code> or <code><a href="../reference/processx_connections.html">conn_write()</a></code> before accepting a connection, these calls will error.</p></li>
+<li><p>The client can call <code>conn_read_*()</code> and <code><a href="../reference/processx_connections.html">conn_write()</a></code> as soon as it is connected. Reading functions will return no data, and <code><a href="../reference/processx_connections.html">conn_write()</a></code> will succeed, until the internal buffer gets full. (Or the server accepts the connection and starts reading the data from the buffer). You can also use <code><a href="../reference/poll.html">poll()</a></code> to wait for incoming data.</p></li>
+<li><p><code><a href="../reference/poll.html">poll()</a></code> only uses the read-side of the connections, both for the server and the client. There is currently no way to poll the write-sides.</p></li>
+<li><p>All processx Unix socket connections are non-blocking. <code><a href="../reference/processx_sockets.html">conn_create_unix_socket()</a></code>, <code><a href="../reference/processx_sockets.html">conn_connect_unix_socket()</a></code>, <code><a href="../reference/processx_sockets.html">conn_accept_unix_socket()</a></code> are non-blocking as well.</p></li>
+<li>
+<p><code><a href="../reference/processx_sockets.html">conn_unix_socket_state()</a></code> will return the current state of the socket:</p>
+<ul>
+<li><p><code>listen</code> is a server socket before calling <code><a href="../reference/processx_sockets.html">conn_accept_unix_socket()</a></code></p></li>
+<li><p><code>connected_server</code> is a server socket with an accepted client</p></li>
+<li><p><code>connected_client</code> is a connected client</p></li>
+</ul>
+</li>
+<li><p><code><a href="https://rdrr.io/r/base/connections.html" class="external-link">close()</a></code> closes the socket. (Both the read-end and the write-end.)</p></li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="file-names">File names<a class="anchor" aria-label="anchor" href="#file-names"></a>
+</h3>
+<p>On Unix, the socket has entry in the file system. By default it will be created in the R temporary directory.</p>
+<p>On Windows, we use a named pipe to emulate the socket. The user can specify the name of the pipe, if they do not then a random name is used in the <code>\\?\pipe\</code> namespace. If you specify a pipe name on Windows, that starts with this string then processx uses it as is.</p>
+<p>You can use <code><a href="../reference/processx_connections.html">conn_file_name()</a></code> to query the full path of the socket on Unix, or the full name of the pipe on Windows.</p>
+</div>
+<div class="section level3">
+<h3 id="how-to-1">How-to<a class="anchor" aria-label="anchor" href="#how-to-1"></a>
+</h3>
+<div class="section level5">
+<h5 id="how-to-check-if-the-other-end-of-the-socket-is-connected">How to check if the other end of the socket is connected?<a class="anchor" aria-label="anchor" href="#how-to-check-if-the-other-end-of-the-socket-is-connected"></a>
+</h5>
+<p>The server socket can <code><a href="../reference/poll.html">poll()</a></code> for a client connection. The client can assume that it is connected, but it needs to handle the case when <code><a href="../reference/processx_connections.html">conn_write()</a></code> cannot write all the data. (As usual for every non-blocking processx connection.)</p>
+</div>
+<div class="section level5">
+<h5 id="how-to-check-for-the-end-of-the-connection">How to check for the end of the connection?<a class="anchor" aria-label="anchor" href="#how-to-check-for-the-end-of-the-connection"></a>
+</h5>
+<p>This is as usual. <code><a href="../reference/poll.html">poll()</a></code> will return with <code>ready</code> if the other end closes the connection. You can call <code><a href="../reference/processx_connections.html">conn_is_incomplete()</a></code> right after a <code>read()</code> to see if the other end has closed the connection.</p>
+<p><code><a href="../reference/processx_connections.html">conn_write()</a></code> will error if the other side has closed the connection.</p>
+</div>
+<div class="section level5">
+<h5 id="how-to-communicate-with-another-process-1">How to communicate with another process?<a class="anchor" aria-label="anchor" href="#how-to-communicate-with-another-process-1"></a>
+</h5>
+<p>Pass the socket (or pipe) name to it. E.g. you can pass it as a command line argument.</p>
+</div>
+</div>
+<div class="section level3">
+<h3 id="known-issues-1">Known issues<a class="anchor" aria-label="anchor" href="#known-issues-1"></a>
+</h3>
+<ul>
+<li><p>Non-ASCII socket file names or pipe name are currently an issue. (Just like non-ASCII file name in <code><a href="../reference/processx_connections.html">conn_create_file()</a></code> are!)</p></li>
+<li><p>Encodings of the traffic are very little tested.</p></li>
+</ul>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>

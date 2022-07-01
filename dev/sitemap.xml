@@ -55,6 +55,9 @@
     <loc>http://processx.r-lib.org/dev/reference/processx_fifos.html</loc>
   </url>
   <url>
+    <loc>http://processx.r-lib.org/dev/reference/processx_sockets.html</loc>
+  </url>
+  <url>
     <loc>http://processx.r-lib.org/dev/reference/run.html</loc>
   </url>
   <url>
