@@ -144,3 +144,92 @@ If you need bidirectional communication, then use two FIFOs.
 [Linux `fifo(7)` manual page](https://man7.org/linux/man-pages/man7/fifo.7.html)
 
 [Windows `CreateNamedPipeA()` manual page](https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createnamedpipea)
+
+# Unix Domain Sockets
+
+## Introduction
+
+processx has a few functions to perform IPC (inter process communication) between processes running on the same machine, using Unix domain sockets.
+On Windows it uses named pipes to emulate Unix domain sockets, as much as possible.
+
+Unix domain sockets solve many issues that FIFOs (processx FIFOs and FIFOs in general) have, so we suggest that you use sockets instead of FIFOs if you can.
+
+## API
+
+-   processx Unix sockets are always bi-directional.
+
+-   `conn_create_unix_socket()` creates the server side of the socket.
+
+-   `conn_connect_unix_socket()` creates the client side and connects to a server socket.
+    This call does not block, so when it returns, the server side has not accepted the connection yet, probably.
+    You can still use the client socket for reading and writing, see below.
+
+-   You can use `poll()` to wait for a client to connect to the server.
+    If a client is available, `poll()` returns `"connect"` .
+
+-   Once a client is available, call `conn_accept_unix_socket()` to accept it.
+
+-   After accepting the client, you can send messages to it with `conn_write()` and read messages from it with `conn_read_chars()` and `conn_read_lines()` and in general use the server socket as a read-write processx connection.
+
+-   The server cannot call `conn_read_*()` or `conn_write()` before accepting a connection, these calls will error.
+
+-   The client can call `conn_read_*()` and `conn_write()` as soon as it is connected.
+    Reading functions will return no data, and `conn_write()` will succeed, until the internal buffer gets full.
+    (Or the server accepts the connection and starts reading the data from the buffer).
+    You can also use `poll()` to wait for incoming data.
+
+-   `poll()` only uses the read-side of the connections, both for the server and the client.
+    There is currently no way to poll the write-sides.
+
+-   All processx Unix socket connections are non-blocking.
+    `conn_create_unix_socket()`, `conn_connect_unix_socket()`, `conn_accept_unix_socket()` are non-blocking as well.
+
+-   `conn_unix_socket_state()` will return the current state of the socket:
+
+    -   `listen` is a server socket before calling `conn_accept_unix_socket()`
+
+    -   `connected_server` is a server socket with an accepted client
+
+    -   `connected_client` is a connected client
+
+-   `close()` closes the socket.
+    (Both the read-end and the write-end.)
+
+## File names
+
+On Unix, the socket has entry in the file system.
+By default it will be created in the R temporary directory.
+
+On Windows, we use a named pipe to emulate the socket.
+The user can specify the name of the pipe, if they do not then a random name is used in the `\\?\pipe\` namespace.
+If you specify a pipe name on Windows, that starts with this string then processx uses it as is.
+
+You can use `conn_file_name()` to query the full path of the socket on Unix, or the full name of the pipe on Windows.
+
+## How-to
+
+#### How to check if the other end of the socket is connected?
+
+The server socket can `poll()` for a client connection.
+The client can assume that it is connected, but it needs to handle the case when `conn_write()` cannot write all the data.
+(As usual for every non-blocking processx connection.)
+
+#### How to check for the end of the connection?
+
+This is as usual.
+`poll()` will return with `ready` if the other end closes the connection.
+You can call `conn_is_incomplete()` right after a `read()` to see if the other end has closed the connection.
+
+`conn_write()` will error if the other side has closed the connection.
+
+#### How to communicate with another process?
+
+Pass the socket (or pipe) name to it.
+E.g. you can pass it as a command line argument.
+
+## Known issues
+
+-   Non-ASCII socket file names or pipe name are currently an issue.
+    (Just like non-ASCII file name in `conn_create_file()` are!)
+
+-   Encodings of the traffic are very little tested.
