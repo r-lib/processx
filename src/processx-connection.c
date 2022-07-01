@@ -426,8 +426,8 @@ SEXP processx_connection_create_socket(SEXP filename, SEXP encoding) {
   }
   os_handle = socket(AF_UNIX, SOCK_STREAM, 0);
   if (os_handle == -1) {
-    R_THROW_SYSTEM_ERROR("Cannot create socket");
-  }
+    R_THROW_SYSTEM_ERROR("Cannot create socket");        // __NO_COVERAGE__
+  }                                                      // __NO_COVERAGE__
   memset(&addr, 0, sizeof(struct sockaddr_un));
   addr.sun_family = AF_UNIX;
   strncpy(addr.sun_path, c_filename, sizeof(addr.sun_path) - 1);
@@ -442,8 +442,8 @@ SEXP processx_connection_create_socket(SEXP filename, SEXP encoding) {
   }
   ret = listen(os_handle, 1);
   if (ret == -1) {
-    R_THROW_SYSTEM_ERROR("Cannot listen on socket");
-  }
+    R_THROW_SYSTEM_ERROR("Cannot listen on socket");     // __NO_COVERAGE__
+  }                                                      // __NO_COVERAGE__
   processx__nonblock_fcntl(os_handle, 1);
 
 #endif
@@ -492,8 +492,8 @@ SEXP processx_connection_connect_socket(SEXP filename, SEXP encoding) {
   struct sockaddr_un addr;
   os_handle = socket(AF_UNIX, SOCK_STREAM, 0);
   if (os_handle == -1) {
-    R_THROW_SYSTEM_ERROR("Cannot create socket");
-  }
+    R_THROW_SYSTEM_ERROR("Cannot create socket");        // __NO_COVERAGE__
+  }                                                      // __NO_COVERAGE__
   memset(&addr, 0, sizeof(struct sockaddr_un));
   addr.sun_family = AF_UNIX;
   strncpy(addr.sun_path, c_filename, sizeof(addr.sun_path) - 1);
@@ -558,8 +558,8 @@ SEXP processx_connection_accept_socket(SEXP con) {
 #else
   int newfd = accept(ccon->handle, NULL, NULL);
   if (newfd == -1) {
-    R_THROW_SYSTEM_ERROR("Could not accept socket connection");
-  }
+    R_THROW_SYSTEM_ERROR("Could not accept socket connection"); // __NO_COVERAGE__
+  }                                                             // __NO_COVERAGE__
 
   close(ccon->handle);
   ccon->handle = newfd;
