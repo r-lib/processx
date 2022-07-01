@@ -946,6 +946,13 @@ ssize_t processx_c_connection_write_bytes(
 
   PROCESSX_CHECK_VALID_CONN(ccon);
 
+  /* Do not allow writing to an un-accepted server socket */
+  if (ccon->type == PROCESSX_FILE_TYPE_SOCKET &&
+      (ccon->state == PROCESSX_SOCKET_LISTEN ||
+       ccon->state == PROCESSX_SOCKET_LISTEN_PIPE_READY)) {
+    R_THROW_ERROR("Cannot write to an un-accepted socket connection");
+  }
+
 #ifdef _WIN32
   DWORD written;
   BOOL ret = WriteFile(
@@ -1412,6 +1419,11 @@ void processx__connection_start_read(processx_connection_t *ccon) {
       ccon->handle.read_pending = TRUE;
       ccon->handle.connecting = TRUE;
       processx__thread_connectpipe(ccon);
+    } else if (err == ERROR_PIPE_CONNECTED &&
+	       ccon->type == PROCESSX_FILE_TYPE_SOCKET) {
+      ccon->handle.read_pending = FALSE;
+      ccon->handle.connecting = FALSE;
+      ccon->state = PROCESSX_SOCKET_LISTEN_PIPE_READY;
     } else {
       ccon->handle.read_pending = FALSE;
       R_THROW_SYSTEM_ERROR_CODE(err, "reading from connection");
@@ -1466,6 +1478,10 @@ int processx_i_pre_poll_func_connection(processx_pollable_t *pollable) {
     processx__connection_start_read(ccon);
     /* Starting to read may actually get some data, or an EOF, so check again */
     PROCESSX__I_PRE_POLL_FUNC_CONNECTION_READY;
+    if (ccon->type == PROCESSX_FILE_TYPE_SOCKET &&
+	ccon->state == PROCESSX_SOCKET_LISTEN_PIPE_READY) {
+      return PXCONNECT;
+    }
     pollable->handle = ccon->handle.overlapped.hEvent;
   }
 #else
@@ -1694,6 +1710,13 @@ static void processx__connection_realloc(processx_connection_t *ccon) {
 
 ssize_t processx__connection_read(processx_connection_t *ccon) {
   DWORD todo, bytes_read = 0;
+
+  /* Do not allow reading on an un-accepted server socket */
+  if (ccon->type == PROCESSX_FILE_TYPE_SOCKET &&
+      (ccon->state == PROCESSX_SOCKET_LISTEN ||
+       ccon->state == PROCESSX_SOCKET_LISTEN_PIPE_READY)) {
+    R_THROW_ERROR("Cannot read from an un-accepted socket connection");
+  }
 
   /* Nothing to read, nothing to convert to UTF8 */
   if (ccon->is_eof_raw_ && ccon->buffer_data_size == 0) {
