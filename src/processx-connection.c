@@ -494,6 +494,7 @@ SEXP processx_connection_connect_socket(SEXP filename, SEXP encoding) {
   if (os_handle == -1) {
     R_THROW_SYSTEM_ERROR("Cannot create socket");        // __NO_COVERAGE__
   }                                                      // __NO_COVERAGE__
+  processx__nonblock_fcntl(os_handle, 1);
   memset(&addr, 0, sizeof(struct sockaddr_un));
   addr.sun_family = AF_UNIX;
   strncpy(addr.sun_path, c_filename, sizeof(addr.sun_path) - 1);
