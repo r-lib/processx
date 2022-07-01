@@ -51,8 +51,16 @@ typedef enum {
   PROCESSX_FILE_TYPE_FILE = 1,	/* regular file, blocking IO */
   PROCESSX_FILE_TYPE_ASYNCFILE,	/* regular file, async IO (well, win only) */
   PROCESSX_FILE_TYPE_PIPE,	/* pipe, blocking IO */
-  PROCESSX_FILE_TYPE_ASYNCPIPE	/* pipe, async IO */
+  PROCESSX_FILE_TYPE_ASYNCPIPE, /* pipe, async IO */
+  PROCESSX_FILE_TYPE_SOCKET
 } processx_file_type_t;
+
+typedef enum {
+  PROCESSX_SOCKET_LISTEN = 1,
+  PROCESSX_SOCKET_LISTEN_PIPE_READY,
+  PROCESSX_SOCKET_CONNECTED_SERVER,
+  PROCESSX_SOCKET_CONNECTED_CLIENT
+} processx_socket_state_t;
 
 typedef struct processx_connection_s {
   processx_file_type_t type;
@@ -77,6 +85,7 @@ typedef struct processx_connection_s {
 
   int poll_idx;
   char *filename;
+  int state;
 } processx_connection_t;
 
 struct processx_pollable_s;
@@ -141,6 +150,10 @@ SEXP processx_connection_create_fifo(SEXP read, SEXP write,
                                      SEXP nonblocking);
 SEXP processx_connection_connect_fifo(SEXP filename, SEXP read, SEXP write,
                                       SEXP encoding, SEXP nonblocking);
+SEXP processx_connection_create_socket(SEXP filename, SEXP encoding);
+SEXP processx_connection_connect_socket(SEXP filename, SEXP encoding);
+SEXP processx_connection_accept_socket(SEXP con);
+SEXP processx_connection_socket_state(SEXP con);
 
 /* Read characters in a given encoding from the connection. */
 SEXP processx_connection_read_chars(SEXP con, SEXP nchars);
