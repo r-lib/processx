@@ -143,7 +143,16 @@ process_get_error_file <- function(self, private) {
   private$stderr
 }
 
-poll_codes <- c("nopipe", "ready", "timeout", "closed", "silent", "event")
+# Corresponds to processx.h, update there as well
+poll_codes <- c(
+  "nopipe",      # PXNOPIPE
+  "ready",       # PXREADY
+  "timeout",     # PXTIMEOUT
+  "closed",      # PXCLOSED
+  "silent",      # PXSILENT
+  "event",       # PXEVENT
+  "connect"      # PXCONNECT
+)
 
 process_poll_io <- function(self, private, ms) {
   poll(list(self), ms)[[1]]

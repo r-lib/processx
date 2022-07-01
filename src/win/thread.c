@@ -50,7 +50,8 @@ DWORD processx_i_thread_readfile() {
 
   if (! ccon->handle.overlapped.hEvent &&
       (ccon->type == PROCESSX_FILE_TYPE_ASYNCFILE ||
-       ccon->type == PROCESSX_FILE_TYPE_ASYNCPIPE)) {
+       ccon->type == PROCESSX_FILE_TYPE_ASYNCPIPE ||
+       ccon->type == PROCESSX_FILE_TYPE_SOCKET)) {
     ccon->handle.overlapped.hEvent = CreateEvent(
       /* lpEventAttributes = */ NULL,
       /* bManualReset = */      FALSE,
@@ -91,7 +92,8 @@ DWORD processx_i_thread_connectpipe() {
 
   if (! ccon->handle.overlapped.hEvent &&
       (ccon->type == PROCESSX_FILE_TYPE_ASYNCFILE ||
-       ccon->type == PROCESSX_FILE_TYPE_ASYNCPIPE)) {
+       ccon->type == PROCESSX_FILE_TYPE_ASYNCPIPE ||
+       ccon->type == PROCESSX_FILE_TYPE_SOCKET)) {
     ccon->handle.overlapped.hEvent = CreateEvent(
       /* lpEventAttributes = */ NULL,
       /* bManualReset = */      FALSE,
@@ -284,7 +286,6 @@ BOOL processx__thread_getstatus_select(LPDWORD lpNumberOfBytes,
   TIMEVAL timeout;
   char buf[10];
   HANDLE iocp = processx__get_default_iocp();
-  int ret;
 
   processx__start_thread();
 
@@ -300,8 +301,8 @@ BOOL processx__thread_getstatus_select(LPDWORD lpNumberOfBytes,
   processx__thread_getstatus_data.dwMilliseconds = dwMilliseconds;
 
   SetEvent(processx__thread_start);
-  ret = select(/* (ignored) */ 0, &processx__readfds, &processx__writefds,
-	 &processx__exceptionfds, &timeout);
+  select(/* (ignored) */ 0, &processx__readfds, &processx__writefds,
+    &processx__exceptionfds, &timeout);
   if (FD_ISSET(processx__notify_socket[0], &processx__readfds)) {
     /* TODO: error */
     recv(processx__notify_socket[0], buf, 10, 0);

@@ -104,14 +104,7 @@ conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
     is_flag(nonblocking)
   )
 
-  if (is_windows()) {
-    filename <- filename %||% basename(tempfile())
-    if (!starts_with(filename, winpipeprefix)) {
-      filename <- paste0(winpipeprefix, filename)
-    }
-  } else {
-    filename <- filename %||% tempfile()
-  }
+  filename <- make_pipe_file_name(filename)
 
   chain_call(
     c_processx_connection_create_fifo,
@@ -124,6 +117,18 @@ conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
 }
 
 winpipeprefix <- "\\\\?\\pipe\\"
+
+make_pipe_file_name <- function(filename) {
+  if (is_windows()) {
+    filename <- filename %||% basename(tempfile())
+    if (!starts_with(filename, winpipeprefix)) {
+      filename <- paste0(winpipeprefix, filename)
+    }
+  } else {
+    filename <- filename %||% tempfile()
+  }
+  filename
+}
 
 #' @details
 #' `conn_connect_fifo()` connects to a FIFO created with
@@ -479,4 +484,110 @@ is_valid_fd <- function(fd) {
   assert_that(is_integerish_scalar(fd))
   fd <- as.integer(fd)
   chain_call(c_processx_is_valid_fd, fd)
+}
+
+#' Unix domain sockets
+#'
+#' Cross platform point-to-point inter-process communication with
+#' Unix=domain sockets, implemented via named pipes on Windows.
+#' These connection are always bidirectional, i.e. you can read from them
+#' and also write to them.
+#'
+#' `conn_create_unix_socket()` creates a server socket. The new socket
+#' is listening at `filename`. See `filename` above.
+#'
+#' `conn_connect_unix_socket()` creates a client socket and connects it to
+#' a server socket.
+#'
+#' `conn_accept_unix_socket()` accepts a client connection at a server
+#' socket.
+#'
+#' `conn_unix_socket_state()` returns the state of the socket. Currently it
+#' can return: `"listening"`, `"connected_server"`, `"connected_client"`.
+#' It is possible that other states (e.g. for a closed socket) will be added
+#' in the future.
+#'
+#' ## Notes
+#'
+#' * [poll()] works on sockets, but only polls for data to read, and
+#'   currently ignores the write-end of the socket.
+#' * [poll()] also works for accepting client connections. It will return
+#'   `"connect"`is a client connection is available for a server socket.
+#'   After this you can call `conn_accept_unix_socket()` to accept the
+#'   client connection.
+#'
+#' @param filename File name of the socket. On Windows it the name of the
+#' pipe within the `\\?\pipe\` namespace, either the full name, or the
+#' part after that prefix. If `NULL`, then a random name
+#' is used, on Unix in the R temporary directory: [base::tempdir()].
+#' @param encoding Encoding to assume when reading from the socket.
+#' @param con Connection. An error is thrown if not a socket connection.
+#' @return A new socket connection.
+#'
+#' @rdname processx_sockets
+#' @export
+
+conn_create_unix_socket <- function(filename = NULL, encoding = "") {
+
+  assert_that(
+    is_string_or_null(filename),
+    is_string(encoding)
+  )
+
+  filename <- make_pipe_file_name(filename)
+
+  chain_call(
+    c_processx_connection_create_socket,
+    filename,
+    encoding
+  )
+}
+
+#' @rdname processx_sockets
+#' @export
+
+conn_connect_unix_socket <- function(filename, encoding = "") {
+
+  assert_that(
+    is_string_or_null(filename),
+    is_string(encoding)
+  )
+
+  if (is_windows()) {
+    if (!starts_with(filename, winpipeprefix)) {
+      filename <- paste0(winpipeprefix, filename)
+    }
+  }
+
+  chain_call(
+    c_processx_connection_connect_socket,
+    filename,
+    encoding
+  )
+}
+
+#' @rdname processx_sockets
+#' @export
+
+conn_accept_unix_socket <- function(con) {
+  assert_that(is_connection(con))
+
+  invisible(chain_call(
+    c_processx_connection_accept_socket,
+    con
+  ))
+}
+
+#' @rdname processx_sockets
+#' @export
+
+conn_unix_socket_state <- function(con) {
+  assert_that(is_connection(con))
+
+  code <- chain_call(
+    c_processx_connection_socket_state,
+    con
+  )
+
+  c("listening", "listening", "connected_server", "connected_client")[code]
 }

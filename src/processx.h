@@ -77,6 +77,8 @@ SEXP processx_base64_decode(SEXP array);
 /* Interruption interval in ms */
 #define PROCESSX_INTERRUPT_INTERVAL 200
 
+/* These correspond to io.R, update there as well! */
+
 /* Various OSes and OS versions return various poll codes when the
    child's end of the pipe is closed, so we cannot provide a more
    elaborate API. See e.g. http://www.greenend.org.uk/rjk/tech/poll.html
@@ -95,11 +97,12 @@ SEXP processx_base64_decode(SEXP array);
 #define PXSILENT  5		/* still open, but no data or EOF for now. No timeout, either */
                                 /* but there were events on other fds */
 #define PXEVENT   6             /* some event, this is used for curl fds */
+#define PXCONNECT 7             /* a connection is available for a server socket */
 
 /* These statuses can be only returned by the pre-poll functions */
 
-#define PXHANDLE  7             /* need to poll the set handle */
-#define PXSELECT  8             /* need to poll/select the set fd */
+#define PXHANDLE  8             /* need to poll the set handle */
+#define PXSELECT  9             /* need to poll/select the set fd */
 
 typedef struct {
   int windows_verbatim_args;
