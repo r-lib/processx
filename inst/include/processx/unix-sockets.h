@@ -16,6 +16,7 @@ typedef HANDLE processx_socket_t;
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <errno.h>
 typedef int processx_socket_t;
 #endif
 
