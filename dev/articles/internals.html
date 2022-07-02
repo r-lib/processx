@@ -77,7 +77,7 @@
       <img src="" class="logo" alt=""><h1>processx internals</h1>
                         <h4 data-toc-skip class="author">Gábor Csárdi</h4>
             
-            <h4 data-toc-skip class="date">2022-07-01</h4>
+            <h4 data-toc-skip class="date">2022-07-02</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/r-lib/processx/blob/HEAD/vignettes/internals.Rmd" class="external-link"><code>vignettes/internals.Rmd</code></a></small>
       <div class="d-none name"><code>internals.Rmd</code></div>
@@ -234,7 +234,21 @@
 <div class="section level5">
 <h5 id="how-to-communicate-with-another-process-1">How to communicate with another process?<a class="anchor" aria-label="anchor" href="#how-to-communicate-with-another-process-1"></a>
 </h5>
-<p>Pass the socket (or pipe) name to it. E.g. you can pass it as a command line argument.</p>
+<p>Pass the socket (or pipe) name to it. E.g. you can pass it as a command line argument. Note, however that passing the special file name of the named pipe might not work on older Windows systems, and you might want to only pass the last component of that path, and then append it to <code>\\?\pipe\</code> in the other process. See <code>sock.c</code> in <code>src/tools</code> for an example.</p>
+<p>If the other process is an R process that can load processx, then you can use the processx socket functions to connect to the socket and communicate.</p>
+<p>If the other process is not an R process, or it cannot load processx, then you can include the <code>include/processx/unix-socket.{c,h}</code> files in your project to connect to the socket and communicate. (Or write your own C/C++ code based on these.)</p>
+<p>Include the <code>.c</code> file in exactly one compilation unit of your program, and include the <code>.h</code> file in others. These files have a portable, blocking Unix socket implementation, with a simple API:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> processx_socket_connect<span class="op">(</span><span class="dt">const</span> <span class="dt">char</span> <span class="op">*</span>filename<span class="op">,</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>                            processx_socket_t <span class="op">*</span>pxsocket<span class="op">);</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">ssize_t</span> processx_socket_read<span class="op">(</span>processx_socket_t <span class="op">*</span>pxsocket<span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                             <span class="dt">void</span> <span class="op">*</span>buf<span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                             <span class="dt">size_t</span> nbyte<span class="op">);</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="dt">ssize_t</span> processx_socket_write<span class="op">(</span>processx_socket_t <span class="op">*</span>pxsocket<span class="op">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>                              <span class="dt">void</span> <span class="op">*</span>buf<span class="op">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>                              <span class="dt">size_t</span> nbyte<span class="op">);</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="dt">int</span> processx_socket_close<span class="op">(</span>processx_socket_t <span class="op">*</span>pxsocket<span class="op">);</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="dt">const</span> <span class="dt">char</span><span class="op">*</span> processx_socket_error_message<span class="op">();</span></span></code></pre></div>
+<p>All these functions are blocking, and except for the last one, they return -1 on error, and set errno on Unix, or you can use <code>GetLastError()</code> on Windows. You can also use <code>processx_socket_error_message()</code> to query the system error message in a portable way. This function returns a pointer to the error message in a static buffer, so copy that if you need to. Note that this is also not thread-safe.</p>
 </div>
 </div>
 <div class="section level3">
