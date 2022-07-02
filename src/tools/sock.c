@@ -3,7 +3,6 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#define PROCESSX_STATIC
 #include <processx/unix-sockets.c>
 
 int main(int argc, char **argv) {

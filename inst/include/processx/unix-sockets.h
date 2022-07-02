@@ -20,7 +20,7 @@ typedef int processx_socket_t;
 #endif
 
 #ifndef PROCESSX_STATIC
-#define PROCESSX_STATIC static
+#define PROCESSX_STATIC
 #endif
 
 PROCESSX_STATIC int processx_socket_connect(const char *filename,
