@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #define PROCESSX_STATIC
-#include <processx/unix-sockets.h>
+#include <processx/unix-sockets.c>
 
 int main(int argc, char **argv) {
   if (argc != 2) {
