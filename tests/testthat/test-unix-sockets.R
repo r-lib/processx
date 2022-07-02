@@ -244,7 +244,11 @@ test_that("unix-sockets.h", {
   on.exit(close(server), add = TRUE)
   on.exit(unlink(conn_file_name(server)), add = TRUE)
 
-  client <- process$new(sock, conn_file_name(server))
+  args <- conn_file_name(server)
+  if (is_windows()) {
+    args <- basename(args)
+  }
+  client <- process$new(sock, args, stdout = "|", stderr = "|")
   pr <- poll(list(server), 3000)
   expect_equal(pr, list("connect"))
 

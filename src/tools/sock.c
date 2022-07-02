@@ -12,7 +12,15 @@ int main(int argc, char **argv) {
   }
 
   processx_socket_t sock;
-  int ret = processx_socket_connect(argv[1], &sock);
+#ifdef _WIN32
+  const char *prefix = "\\\\?\\pipe\\";
+  char name[1024];
+  strncpy(name, prefix, 1024);
+  strncat(name, argv[1], 1024);
+#else
+  const char *name = argv[1];
+#endif
+  int ret = processx_socket_connect(name, &sock);
   if (ret == -1) {
     fprintf(
       stderr,
@@ -22,6 +30,7 @@ int main(int argc, char **argv) {
     );
     exit(1);
   }
+  fprintf(stderr, "Connected\n");
 
   char buffer[1024];
   ssize_t nbytes = processx_socket_read(&sock, buffer, sizeof(buffer));
