@@ -246,6 +246,7 @@ test_that("unix-sockets.h", {
 
   client <- process$new(sock, conn_file_name(server))
   pr <- poll(list(server), 3000)
+  expect_true(client$is_alive())
   expect_equal(pr, list("connect"))
 
   conn_accept_unix_socket(server)
@@ -271,4 +272,6 @@ test_that("unix-sockets.h", {
   expect_false(
     conn_is_incomplete(server)
   )
+
+  expect_false(client$is_alive())
 })
