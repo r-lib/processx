@@ -237,6 +237,7 @@ test_that("errors", {
 })
 
 test_that("unix-sockets.h", {
+  skip_on_cran()
 
   sock <- get_tool("sock")
   server <- conn_create_unix_socket()
