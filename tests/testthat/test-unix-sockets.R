@@ -235,3 +235,39 @@ test_that("errors", {
 
   expect_error(conn_unix_socket_state(ff))
 })
+
+test_that("unix-sockets.h", {
+
+  sock <- get_tool("sock")
+  server <- conn_create_unix_socket()
+  on.exit(close(server), add = TRUE)
+  on.exit(unlink(conn_file_name(server)), add = TRUE)
+
+  client <- process$new(sock, conn_file_name(server))
+  pr <- poll(list(server), 3000)
+  expect_equal(pr, list("connect"))
+
+  conn_accept_unix_socket(server)
+  expect_equal(
+    conn_write(server, "hello brother"),
+    raw(0)
+  )
+
+  pr <- poll(list(server), 3000)
+  expect_equal(pr, list("ready"))
+  expect_equal(
+    conn_read_chars(server),
+    "hello there!"
+  )
+
+  poll(list(server), 3000)
+  expect_equal(pr, list("ready"))
+
+  expect_equal(
+    conn_read_chars(server),
+    ""
+  )
+  expect_false(
+    conn_is_incomplete(server)
+  )
+})
