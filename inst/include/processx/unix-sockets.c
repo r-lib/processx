@@ -29,7 +29,7 @@ PROCESSX_STATIC int processx_socket_connect(const char *filename,
     *pxsocket = hnd;
     return 0;
   }
-  
+
 #else
   struct sockaddr_un addr;
   int fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -52,7 +52,7 @@ PROCESSX_STATIC int processx_socket_connect(const char *filename,
 
   *pxsocket = fd;
   return 0;
-  
+
 #endif
 }
 
@@ -112,5 +112,40 @@ PROCESSX_STATIC int processx_socket_close(processx_socket_t *pxsocket) {
   }
 #else
   return close(*pxsocket);
+#endif
+}
+
+PROCESSX_STATIC const char* processx_socket_error_message() {
+#ifdef _WIN32
+#define ERRORBUF_SIZE 4096
+  static char errorbuf[ERRORBUF_SIZE];
+  LPVOID lpMsgBuf;
+  char *failmsg = "Formatting the system message failed :(";
+  char *realsysmsg = failmsg;
+  DWORD errorcode = GetLastError();
+
+  DWORD ret = FormatMessage(
+    FORMAT_MESSAGE_ALLOCATE_BUFFER |
+    FORMAT_MESSAGE_FROM_SYSTEM |
+    FORMAT_MESSAGE_IGNORE_INSERTS,
+    NULL,
+    errorcode,
+    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+    (LPTSTR) &lpMsgBuf,
+    0,
+    NULL
+  );
+
+  if (ret != 0) {
+    memset(errorbuf, 0, sizeof(errorbuf));
+    strncpy(errorbuf, lpMsgBuf, sizeof(errorbuf) - 1);
+    realsysmsg = errorbuf;
+    LocalFree(lpMsgBuf);
+  }
+
+  return realsysmsg;
+
+#else
+  return strerror(errno);
 #endif
 }

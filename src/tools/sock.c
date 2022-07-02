@@ -1,6 +1,5 @@
 
 #include <stdio.h>
-#include <errno.h>
 #include <stdlib.h>
 
 #include <processx/unix-sockets.c>
@@ -25,7 +24,7 @@ int main(int argc, char **argv) {
       stderr,
       "Failed to connect to socket at '%s': %s\n",
       argv[1],
-      strerror(errno)
+      processx_socket_error_message()
     );
     exit(1);
   }
@@ -37,7 +36,7 @@ int main(int argc, char **argv) {
     fprintf(
       stderr,
       "Failed to read from server socket: %s\n",
-      strerror(errno)
+      processx_socket_error_message()
     );
     exit(2);
   }
@@ -51,7 +50,7 @@ int main(int argc, char **argv) {
     fprintf(
       stderr,
       "Failed to write to server socket: %s\n",
-      strerror(errno)
+      processx_socket_error_message()
     );
     exit(3);
   }
@@ -61,7 +60,7 @@ int main(int argc, char **argv) {
     fprintf(
       stderr,
       "Failed to close client socket: %s\n",
-      strerror(errno)
+      processx_socket_error_message()
     );
     exit(4);
   }
