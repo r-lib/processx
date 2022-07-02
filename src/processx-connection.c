@@ -488,6 +488,10 @@ SEXP processx_connection_connect_socket(SEXP filename, SEXP encoding) {
     NULL
   );
 
+  if (os_handle == INVALID_HANDLE_VALUE) {
+    R_THROW_SYSTEM_ERROR("Cannot connect to Unix(-like) socket");
+  }
+
 #else
   struct sockaddr_un addr;
   os_handle = socket(AF_UNIX, SOCK_STREAM, 0);

@@ -11,7 +11,7 @@ PKG_CFLAGS = -DSTRICT_R_HEADERS
 
 PKG_LIBS = -lws2_32
 
-all: tools/px.exe tools/pxu.exe tools/interrupt.exe \
+all: tools/px.exe tools/pxu.exe tools/sock.exe tools/interrupt.exe \
 	supervisor/supervisor.exe $(SHLIB) client$(SHLIB_EXT)
 
 tools/px.exe: tools/px.c
@@ -19,6 +19,9 @@ tools/px.exe: tools/px.c
 
 tools/pxu.exe: tools/pxu.c
 	$(CC) $(CFLAGS) -Wall -municode $< -o $@
+
+tools/sock.exe: tools/sock.c
+	$(CC) $(CFLAGS) -I../inst/include -Wall $< -o $@
 
 tools/interrupt.exe: tools/interrupt.c
 	$(CC) $(CFLAGS) -Wall $< -o $@
@@ -37,4 +40,5 @@ clean:
 	rm -rf $(SHLIB) $(OBJECTS) $(CLIENT_OBJECTS)			\
 	    supervisor/supervisor supervisor/supervisor.dSYM 		\
 	    supervisor/supervisor.exe tools/px.exe tools/interrupt.exe  \
+	    tools/sock.exe						\
 	    client$(SHLIB_EXT)

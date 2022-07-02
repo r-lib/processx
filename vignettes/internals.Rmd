@@ -231,6 +231,34 @@ You can call `conn_is_incomplete()` right after a `read()` to see if the other e
 
 Pass the socket (or pipe) name to it.
 E.g. you can pass it as a command line argument.
+Note, however that passing the special file name of the named pipe might not work on older Windows systems, and you might want to only pass the last component of that path, and then append it to `\\?\pipe\` in the other process.
+See `sock.c` in `src/tools` for an example.
+
+If the other process is an R process that can load processx, then you can use the processx socket functions to connect to the socket and communicate.
+
+If the other process is not an R process, or it cannot load processx, then you can include the `include/processx/unix-socket.{c,h}` files in your project to connect to the socket and communicate.
+(Or write your own C/C++ code based on these.)
+
+Include the `.c` file in exactly one compilation unit of your program, and include the `.h` file in others.
+These files have a portable, blocking Unix socket implementation, with a simple API:
+
+``` c
+int processx_socket_connect(const char *filename,
+                            processx_socket_t *pxsocket);
+ssize_t processx_socket_read(processx_socket_t *pxsocket,
+                             void *buf,
+                             size_t nbyte);
+ssize_t processx_socket_write(processx_socket_t *pxsocket,
+                              void *buf,
+                              size_t nbyte);
+int processx_socket_close(processx_socket_t *pxsocket);
+const char* processx_socket_error_message();
+```
+
+All these functions are blocking, and except for the last one, they return -1 on error, and set errno on Unix, or you can use `GetLastError()` on Windows.
+You can also use `processx_socket_error_message()` to query the system error message in a portable way.
+This function returns a pointer to the error message in a static buffer, so copy that if you need to.
+Note that this is also not thread-safe.
 
 ## Known issues
 
