@@ -12,9 +12,9 @@ int main(int argc, char **argv) {
   processx_socket_t sock;
 #ifdef _WIN32
   const char *prefix = "\\\\?\\pipe\\";
-  char name[1024];
-  strncpy(name, prefix, 1024);
-  strncat(name, argv[1], 1024);
+  char name[1024] = {0};
+  strncpy(name, prefix, sizeof(name) - 1);
+  strncat(name, argv[1], sizeof(name) - 1);
 #else
   const char *name = argv[1];
 #endif
