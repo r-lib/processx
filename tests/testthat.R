@@ -1,4 +1,4 @@
 library(testthat)
 library(processx)
 
-test_check("processx", reporter = "summary")
+test_check("processx")
