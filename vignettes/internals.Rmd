@@ -260,6 +260,22 @@ You can also use `processx_socket_error_message()` to query the system error mes
 This function returns a pointer to the error message in a static buffer, so copy that if you need to.
 Note that this is also not thread-safe.
 
+In an R package you can use `unix-socket.{c,h}` via the `LinkingTo` entry in `DESCRIPTION`, you need to specify
+
+    LinkingTo: processx
+
+and then write
+
+``` c
+#include <processx/unix-sockets.h>
+```
+
+similarly for the `.c` file:
+
+``` c
+#include <processx/unix-sockets.c>
+```
+
 ## Known issues
 
 -   Non-ASCII socket file names or pipe name are currently an issue.
