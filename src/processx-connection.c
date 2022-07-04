@@ -565,6 +565,9 @@ SEXP processx_connection_accept_socket(SEXP con) {
   if (newfd == -1) {
     R_THROW_SYSTEM_ERROR("Could not accept socket connection"); // __NO_COVERAGE__
   }                                                             // __NO_COVERAGE__
+  /* Need to set the new fd to non-blocking as well, otherwise it */
+  /* is blocking on some OSes, e.g. Linux */
+  processx__nonblock_fcntl(newfd, 1);
 
   close(ccon->handle);
   ccon->handle = newfd;
