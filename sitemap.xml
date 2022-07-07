@@ -13,6 +13,12 @@
     <loc>http://processx.r-lib.org/LICENSE.html</loc>
   </url>
   <url>
+    <loc>http://processx.r-lib.org/articles/index.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/articles/internals.html</loc>
+  </url>
+  <url>
     <loc>http://processx.r-lib.org/authors.html</loc>
   </url>
   <url>
@@ -47,6 +53,12 @@
   </url>
   <url>
     <loc>http://processx.r-lib.org/reference/processx_connections.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/reference/processx_fifos.html</loc>
+  </url>
+  <url>
+    <loc>http://processx.r-lib.org/reference/processx_sockets.html</loc>
   </url>
   <url>
     <loc>http://processx.r-lib.org/reference/run.html</loc>

@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">processx</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">3.6.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">3.7.0</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,12 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item">
   <a class="nav-link" href="../reference/index.html">Reference</a>
+</li>
+<li class="nav-item dropdown">
+  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-articles">Articles</a>
+  <div class="dropdown-menu" aria-labelledby="dropdown-articles">
+    <a class="dropdown-item" href="../articles/internals.html">processx internals</a>
+  </div>
 </li>
 <li class="nav-item">
   <a class="nav-link" href="../news/index.html">Changelog</a>
@@ -51,30 +57,30 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">process_initialize</span><span class="op">(</span>
-  <span class="va">self</span>,
-  <span class="va">private</span>,
-  <span class="va">command</span>,
-  <span class="va">args</span>,
-  <span class="va">stdin</span>,
-  <span class="va">stdout</span>,
-  <span class="va">stderr</span>,
-  <span class="va">pty</span>,
-  <span class="va">pty_options</span>,
-  <span class="va">connections</span>,
-  <span class="va">poll_connection</span>,
-  <span class="va">env</span>,
-  <span class="va">cleanup</span>,
-  <span class="va">cleanup_tree</span>,
-  <span class="va">wd</span>,
-  <span class="va">echo_cmd</span>,
-  <span class="va">supervise</span>,
-  <span class="va">windows_verbatim_args</span>,
-  <span class="va">windows_hide_window</span>,
-  <span class="va">windows_detached_process</span>,
-  <span class="va">encoding</span>,
-  <span class="va">post_process</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">process_initialize</span><span class="op">(</span></span>
+<span>  <span class="va">self</span>,</span>
+<span>  <span class="va">private</span>,</span>
+<span>  <span class="va">command</span>,</span>
+<span>  <span class="va">args</span>,</span>
+<span>  <span class="va">stdin</span>,</span>
+<span>  <span class="va">stdout</span>,</span>
+<span>  <span class="va">stderr</span>,</span>
+<span>  <span class="va">pty</span>,</span>
+<span>  <span class="va">pty_options</span>,</span>
+<span>  <span class="va">connections</span>,</span>
+<span>  <span class="va">poll_connection</span>,</span>
+<span>  <span class="va">env</span>,</span>
+<span>  <span class="va">cleanup</span>,</span>
+<span>  <span class="va">cleanup_tree</span>,</span>
+<span>  <span class="va">wd</span>,</span>
+<span>  <span class="va">echo_cmd</span>,</span>
+<span>  <span class="va">supervise</span>,</span>
+<span>  <span class="va">windows_verbatim_args</span>,</span>
+<span>  <span class="va">windows_hide_window</span>,</span>
+<span>  <span class="va">windows_detached_process</span>,</span>
+<span>  <span class="va">encoding</span>,</span>
+<span>  <span class="va">post_process</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -163,7 +169,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.4.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
   </div></footer></body></html>
