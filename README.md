@@ -605,9 +605,8 @@ started running.
 p <- process$new("nonexistant-command-for-sure")
 ```
 
-    #> Error:
-    #> ! Native call to `processx_exec` failed
-    #> Caused by error:
+    #> Error in c("process_initialize(self, private, command, args, stdin, stdout, ", : ! Native call to `processx_exec` failed
+    #> Caused by error in `chain_call(c_processx_exec, command, c(command, args), pty, pty_options, …` at initialize.R:138:3:
     #> ! cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:613 (processx_exec)
 
 ``` r
