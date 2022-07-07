@@ -41,6 +41,8 @@ Note that blocking FIFOs are not well tested and might not work well with
 future and make all FIFOs non-blocking.}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 Create a FIFO for inter-process communication
 Note that these functions are currently experimental.
 }
@@ -62,6 +64,11 @@ will fail. We are planning on changing this behavior in the future,
 to make \code{conn_connect_fifo()} fail immediately, like on Unix.
 }
 \section{Notes}{
+\subsection{In general Unix domain sockets work better than FIFOs, so we suggest}{
+
+you use sockets if you can. See \code{\link[=conn_create_unix_socket]{conn_create_unix_socket()}}.
+}
+
 \subsection{Creating the read end of the FIFO}{
 
 This case is simpler. To wait for a writer to connect to the FIFO
@@ -117,4 +124,7 @@ conn_read_chars(reader)
 conn_is_incomplete(reader)
 
 close(reader)
+}
+\seealso{
+\href{https://processx.r-lib.org/dev/articles/internals.html}{processx internals}
 }

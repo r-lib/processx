@@ -29,6 +29,9 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 
 #' Processx FIFOs
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
 #' Create a FIFO for inter-process communication
 #' Note that these functions are currently experimental.
 #'
@@ -41,6 +44,9 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 #' `conn_connect_fifo()` to connect to the other end.
 #'
 #' # Notes
+#'
+#' ## In general Unix domain sockets work better than FIFOs, so we suggest
+#' you use sockets if you can. See [conn_create_unix_socket()].
 #'
 #' ## Creating the read end of the FIFO
 #'
@@ -80,6 +86,8 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 #' Note that blocking FIFOs are not well tested and might not work well with
 #' [poll()], especially on Windows. We might remove this option in the
 #' future and make all FIFOs non-blocking.
+#'
+#' @seealso [processx internals](https://processx.r-lib.org/dev/articles/internals.html)
 #'
 #' @rdname processx_fifos
 #' @export
@@ -488,11 +496,15 @@ is_valid_fd <- function(fd) {
 
 #' Unix domain sockets
 #'
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
 #' Cross platform point-to-point inter-process communication with
 #' Unix=domain sockets, implemented via named pipes on Windows.
 #' These connection are always bidirectional, i.e. you can read from them
 #' and also write to them.
 #'
+#' @details
 #' `conn_create_unix_socket()` creates a server socket. The new socket
 #' is listening at `filename`. See `filename` above.
 #'
@@ -523,6 +535,8 @@ is_valid_fd <- function(fd) {
 #' @param encoding Encoding to assume when reading from the socket.
 #' @param con Connection. An error is thrown if not a socket connection.
 #' @return A new socket connection.
+#'
+#' @seealso [processx internals](https://processx.r-lib.org/dev/articles/internals.html)
 #'
 #' @rdname processx_sockets
 #' @export

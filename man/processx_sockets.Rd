@@ -29,6 +29,8 @@ is used, on Unix in the R temporary directory: \code{\link[base:tempfile]{base::
 A new socket connection.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 Cross platform point-to-point inter-process communication with
 Unix=domain sockets, implemented via named pipes on Windows.
 These connection are always bidirectional, i.e. you can read from them
@@ -58,4 +60,7 @@ After this you can call \code{conn_accept_unix_socket()} to accept the
 client connection.
 }
 }
+}
+\seealso{
+\href{https://processx.r-lib.org/dev/articles/internals.html}{processx internals}
 }
