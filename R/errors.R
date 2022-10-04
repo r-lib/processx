@@ -139,6 +139,11 @@
 # * Use a `procsrcref` column for processed source references.
 #   Otherwise testthat (and probably other rlang based packages), will
 #   pick up the `srcref` column, and they expect an `srcref` object there.
+#
+# ### 3.1.0 -- 2022-10-04
+#
+# * Add ANSI hyperlinks to stack traces, if we have a recent enough
+#   cli package that supports this.
 
 err <- local({
 
@@ -816,12 +821,18 @@ err <- local({
     if (is.null(ref)) return("")
 
     link <- if (ref$file != "") {
-      cli::style_hyperlink(
-        cli::format_inline("{basename(ref$file)}:{ref$line}:{ref$col}"),
-        paste0("file://", ref$file),
-        params = c(line = ref$line, col = ref$col)
-      )
-
+      if (Sys.getenv("R_CLI_HYPERLINK_STYLE") == "iterm") {
+        cli::style_hyperlink(
+          cli::format_inline("{basename(ref$file)}:{ref$line}:{ref$col}"),
+          paste0("file://", ref$file, "#", ref$line, ":", ref$col)
+        )
+      } else {
+        cli::style_hyperlink(
+          cli::format_inline("{basename(ref$file)}:{ref$line}:{ref$col}"),
+          paste0("file://", ref$file),
+          params = c(line = ref$line, col = ref$col)
+        )
+      }
     } else {
       paste0("line ", ref$line)
     }
