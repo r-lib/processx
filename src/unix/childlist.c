@@ -14,7 +14,7 @@ void processx__freelist_add(processx__child_list_t *ptr) {
 /* This is not a race condition with the SIGCHLD handler, because this
    function is only called with the handler blocked, from processx.c */
 
-void processx__freelist_free() {
+void processx__freelist_free(void) {
   processx__child_list_t *ptr = child_free_list->next;
   while (ptr) {
     processx__child_list_t *next = ptr->next;
@@ -77,7 +77,7 @@ processx__child_list_t *processx__child_find(pid_t pid) {
 
 /* LCOV_EXCL_STOP */
 
-SEXP processx__unload_cleanup() {
+SEXP processx__unload_cleanup(void) {
   processx__child_list_t *ptr = child_list->next;
   int killed = 0;
 

@@ -5,12 +5,12 @@
 #include <R_ext/Rdynload.h>
 #include <R.h>
 
-void R_init_processx_win();
-void R_init_processx_unix();
-SEXP processx__unload_cleanup();
-SEXP run_testthat_tests();
-SEXP processx__echo_on();
-SEXP processx__echo_off();
+void R_init_processx_win(void);
+void R_init_processx_unix(void);
+SEXP processx__unload_cleanup(void);
+SEXP run_testthat_tests(void);
+SEXP processx__echo_on(void);
+SEXP processx__echo_off(void);
 SEXP processx__set_boot_time(SEXP);
 
 static const R_CallMethodDef callMethods[]  = {

@@ -108,7 +108,7 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx) {
   errno = saved_errno;
 }
 
-void processx__setup_sigchld() {
+void processx__setup_sigchld(void) {
   struct sigaction action;
   struct sigaction old;
   memset(&action, 0, sizeof(action));
@@ -120,7 +120,7 @@ void processx__setup_sigchld() {
   }
 }
 
-void processx__remove_sigchld() {
+void processx__remove_sigchld(void) {
   struct sigaction action;
   memset(&action, 0, sizeof(action));
   action.sa_handler = SIG_DFL;
@@ -128,7 +128,7 @@ void processx__remove_sigchld() {
   memset(&old_sig_handler, 0, sizeof(old_sig_handler));
 }
 
-void processx__block_sigchld() {
+void processx__block_sigchld(void) {
   sigset_t blockMask;
   sigemptyset(&blockMask);
   sigaddset(&blockMask, SIGCHLD);
@@ -137,7 +137,7 @@ void processx__block_sigchld() {
   }
 }
 
-void processx__unblock_sigchld() {
+void processx__unblock_sigchld(void) {
   sigset_t unblockMask;
   sigemptyset(&unblockMask);
   sigaddset(&unblockMask, SIGCHLD);

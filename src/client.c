@@ -126,7 +126,7 @@ static int processx__cloexec_fcntl(int fd, int set) {
   return 0;
 }
 
-SEXP processx_disable_inheritance() {
+SEXP processx_disable_inheritance(void) {
   int fd;
 
   /* Set the CLOEXEC flag on all open descriptors. Unconditionally try the

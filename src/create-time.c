@@ -169,7 +169,7 @@ void *processx__memmem(const void *haystack, size_t n1,
   return NULL;
 }
 
-double processx__boot_time() {
+double processx__boot_time(void) {
   return processx__linux_boot_time;
 }
 

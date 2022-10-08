@@ -57,7 +57,7 @@ int processx__cloexec_fcntl(int fd, int set) {
   return 0;
 }
 
-SEXP processx_disable_crash_dialog() {
+SEXP processx_disable_crash_dialog(void) {
   struct sigaction action;
   memset(&action, 0, sizeof(action));
   action.sa_handler = SIG_DFL;
@@ -69,7 +69,7 @@ SEXP processx_disable_crash_dialog() {
   return R_NilValue;
 }
 
-SEXP processx__echo_on() {
+SEXP processx__echo_on(void) {
   struct termios tp;
 
   if (tcgetattr(STDOUT_FILENO, &tp) == -1) {
@@ -85,7 +85,7 @@ SEXP processx__echo_on() {
   return R_NilValue;
 }
 
-SEXP processx__echo_off() {
+SEXP processx__echo_off(void) {
   struct termios tp;
 
   if (tcgetattr(STDOUT_FILENO, &tp) == -1) {

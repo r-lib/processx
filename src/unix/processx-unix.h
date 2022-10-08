@@ -33,10 +33,10 @@ char **processx__tmp_character(SEXP chr);
 
 extern pthread_t processx__main_thread;
 void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx);
-void processx__setup_sigchld();
-void processx__remove_sigchld();
-void processx__block_sigchld();
-void processx__unblock_sigchld();
+void processx__setup_sigchld(void);
+void processx__remove_sigchld(void);
+void processx__block_sigchld(void);
+void processx__unblock_sigchld(void);
 
 void processx__finalizer(SEXP status);
 
@@ -52,7 +52,7 @@ int processx__child_add(pid_t pid, SEXP status);
 void processx__child_remove(pid_t pid);
 processx__child_list_t *processx__child_find(pid_t pid);
 void processx__freelist_add(processx__child_list_t *ptr);
-void processx__freelist_free();
+void processx__freelist_free(void);
 
 void processx__collect_exit_status(SEXP status, int retval, int wstat);
 

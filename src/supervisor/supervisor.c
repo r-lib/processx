@@ -141,7 +141,7 @@ bool pid_is_running(pid_t pid) {
 
 // Send a soft kill signal to all children, wait 5 seconds, then hard kill any
 // remaining processes.
-void kill_children() {
+void kill_children(void) {
     if (n_children == 0)
         return;
 

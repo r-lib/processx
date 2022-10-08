@@ -727,7 +727,7 @@ SEXP processx_connection_disable_inheritance() {
 
 #else
 
-SEXP processx_connection_disable_inheritance() {
+SEXP processx_connection_disable_inheritance(void) {
   int fd;
 
   /* Set the CLOEXEC flag on all open descriptors. Unconditionally try the

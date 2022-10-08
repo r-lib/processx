@@ -178,7 +178,7 @@ SEXP processx_is_closed(SEXP con);
 SEXP processx_connection_poll(SEXP pollables, SEXP timeout);
 
 /* Functions for connection inheritance */
-SEXP processx_connection_create_pipepair();
+SEXP processx_connection_create_pipepair(SEXP encoding, SEXP nonblocking);
 
 SEXP processx_connection_set_stdout(SEXP con, SEXP drop);
 
@@ -186,7 +186,7 @@ SEXP processx_connection_set_stderr(SEXP con, SEXP drop);
 
 SEXP processx_connection_get_fileno(SEXP con);
 
-SEXP processx_connection_disable_inheritance();
+SEXP processx_connection_disable_inheritance(void);
 
 SEXP processx_is_valid_fd(SEXP fd);
 

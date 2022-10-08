@@ -115,7 +115,7 @@ PROCESSX_STATIC int processx_socket_close(processx_socket_t *pxsocket) {
 #endif
 }
 
-PROCESSX_STATIC const char* processx_socket_error_message() {
+PROCESSX_STATIC const char* processx_socket_error_message(void) {
 #ifdef _WIN32
 #define ERRORBUF_SIZE 4096
   static char errorbuf[ERRORBUF_SIZE];

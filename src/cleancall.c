@@ -35,7 +35,7 @@ void cleancall_SetExternalPtrAddrFn(SEXP s, DL_FUNC p) {
 // Initialised at load time with the `.Call` primitive
 SEXP cleancall_fns_dot_call = NULL;
 
-void cleancall_init() {
+void cleancall_init(void) {
   cleancall_fns_dot_call = Rf_findVar(Rf_install(".Call"), R_BaseEnv);
 }
 

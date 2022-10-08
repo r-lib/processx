@@ -60,14 +60,14 @@ SEXP processx_poll(SEXP statuses, SEXP conn, SEXP ms);
 
 SEXP processx__process_exists(SEXP pid);
 SEXP processx__proc_start_time(SEXP status);
-SEXP processx__unload_cleanup();
+SEXP processx__unload_cleanup(void);
 
 SEXP processx_is_named_pipe_open(SEXP pipe_ext);
 SEXP processx_close_named_pipe(SEXP pipe_ext);
 SEXP processx_create_named_pipe(SEXP name, SEXP mode);
 SEXP processx_write_named_pipe(SEXP pipe_ext, SEXP text);
 
-SEXP processx_disable_crash_dialog();
+SEXP processx_disable_crash_dialog(void);
 
 SEXP processx_base64_encode(SEXP array);
 SEXP processx_base64_decode(SEXP array);

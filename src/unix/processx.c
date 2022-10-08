@@ -63,7 +63,7 @@ extern int processx__notify_old_sigchld_handler;
    properly set to their initial values after a library (re)load.
    This function is called from `R_init_processx`. */
 
-void R_init_processx_unix() {
+void R_init_processx_unix(void) {
   processx__main_thread = pthread_self();
 
   child_list_head.pid = 0;
