@@ -102,6 +102,7 @@ SEXP processx_write(SEXP fd, SEXP data) {
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 #include <R_ext/Rdynload.h>
 #include <Rinternals.h>
@@ -130,8 +131,13 @@ SEXP processx_disable_inheritance() {
 
   /* Set the CLOEXEC flag on all open descriptors. Unconditionally try the
    * first 16 file descriptors. After that, bail out after the first error.
-   */
-  for (fd = 0; ; fd++) {
+   * We skip the standard streams, because R and `system()` is not prepared
+   * to not inheriting stdin and eg. an R subprocess does not even start in
+   * system(). See https://github.com/r-lib/callr/issues/236. */
+
+  int firstfd = 3;
+  if (getenv("PROCESSX_CLOEXEC_STDIO")) firstfd = 0;
+  for (fd = firstfd; ; fd++) {
     if (processx__cloexec_fcntl(fd, 1) && fd > 15) break;
   }
 
