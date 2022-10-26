@@ -1,5 +1,4 @@
-
-# processx development version
+# processx 3.8.0
 
 * processx error stacks are better now. They have ANSI hyperlinks for
   function calls to their manual pages, and they also print operators
