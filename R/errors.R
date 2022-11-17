@@ -1045,7 +1045,8 @@ err <- local({
       } else {
         deparse(cond[["call"]], nlines = 2)
       },
-      srcref = get_srcref(cond[["call"]], cond$procsrcref %||% cond$srcref)
+      srcref = NULL,
+      procsrcref = get_srcref(cond[["call"]], cond$procsrcref %||% cond$srcref)
     )
     cond
   }
