@@ -3,7 +3,7 @@ pkgdown: 2.0.6
 pkgdown_sha: ~
 articles:
   internals: internals.html
-last_built: 2022-10-26T11:22Z
+last_built: 2022-11-17T10:41Z
 urls:
   reference: http://processx.r-lib.org/reference
   article: http://processx.r-lib.org/articles
