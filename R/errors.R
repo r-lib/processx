@@ -151,6 +151,10 @@
 # * Use fully qualified `base::stop()` to enable overriding `stop()`
 #   in a package. (Makes sense if compat files use `stop()`.
 # * The `is_interactive()` function is now exported.
+#
+# ### 3.1.2 -- 2022-11-18
+#
+# * The `parent` condition can now be an interrupt.
 
 err <- local({
 
@@ -703,12 +707,20 @@ err <- local({
 
   # -- condition message with cli ---------------------------------------
 
+  cnd_message_robust <- function(cond) {
+    class(cond) <- setdiff(class(cond), "rlib_error_3_0")
+    conditionMessage(cond) %||%
+      (if (inherits(cond, "interrupt")) "interrupt") %||%
+      ""
+  }
+
   cnd_message_cli <- function(cond, full = FALSE) {
     exp <- paste0(cli::col_yellow("!"), " ")
     add_exp <- is.null(names(cond$message))
+    msg <- cnd_message_robust(cond)
 
     c(
-      paste0(if (add_exp) exp, cond$message),
+      paste0(if (add_exp) exp, msg),
       if (inherits(cond$parent, "condition")) {
         msg <- if (full && inherits(cond$parent, "rlib_error_3_0")) {
           format(cond$parent,
@@ -718,6 +730,8 @@ err <- local({
                  header = FALSE,
                  advice = FALSE
           )
+        } else if (inherits(cond$parent, "interrupt")) {
+          "interrupt"
         } else {
           conditionMessage(cond$parent)
         }
@@ -736,7 +750,7 @@ err <- local({
     exp <- "! "
     add_exp <- is.null(names(cond$message))
     c(
-      paste0(if (add_exp) exp, cond$message),
+      paste0(if (add_exp) exp, cnd_message_robust(cond)),
       if (inherits(cond$parent, "condition")) {
         msg <- if (full && inherits(cond$parent, "rlib_error_3_0")) {
           format(cond$parent,
@@ -746,6 +760,8 @@ err <- local({
                  header = FALSE,
                  advice = FALSE
           )
+        } else if (inherits(cond$parent, "interrupt")) {
+          "interrupt"
         } else {
           conditionMessage(cond$parent)
         }
