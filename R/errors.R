@@ -155,6 +155,10 @@
 # ### 3.1.2 -- 2022-11-18
 #
 # * The `parent` condition can now be an interrupt.
+#
+# ### 3.1.3 -- 2023-01-15
+#
+# * Now we do not load packages when walking the trace.
 
 err <- local({
 
@@ -547,6 +551,7 @@ err <- local({
     if (ns == "base") return("::")
     if (! ns %in% loadedNamespaces()) return("")
     name <- call_name(call)
+    if (! ns %in% loadedNamespaces()) return("::")
     nsenv <- asNamespace(ns)$.__NAMESPACE__.
     if (is.null(nsenv)) return("::")
     if (is.null(nsenv$exports)) return(":::")
@@ -913,7 +918,10 @@ err <- local({
   }
 
   format_trace_call_cli <- function(call, ns = "") {
-    envir <- tryCatch(asNamespace(ns), error = function(e) .GlobalEnv)
+    envir <- tryCatch({
+      if (!ns %in% loadedNamespaces()) stop("no")
+      asNamespace(ns)
+    }, error = function(e) .GlobalEnv)
     cl <- trimws(format(call))
     if (length(cl) > 1) { cl <- paste0(cl[1], " ", cli::symbol$ellipsis) }
     # Older cli does not have 'envir'.
