@@ -25,6 +25,10 @@ CLIENT_OBJECTS = base64.o client.o errors.o
 client$(SHLIB_EXT): $(CLIENT_OBJECTS)
 	$(SHLIB_LINK) -o client$(SHLIB_EXT) $(CLIENT_OBJECTS) $(PKG_LIBS) \
 		$(SHLIB_LIBADD) $(LIBR)
+	if [ -n "${PROCESSX_UNLINK_R}" ]; then \
+	    echo Removing libR.so dependency from client.so; \
+	    patchelf --remove-needed libR.so client$(SHLIB_EXT); \
+	fi
 
 clean:
 	rm -rf $(SHLIB) $(OBJECTS) $(CLIENT_OBJECTS)		\
