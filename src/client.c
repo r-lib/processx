@@ -234,6 +234,64 @@ SEXP processx_set_stderr_to_file(SEXP file) {
 SEXP processx_base64_encode(SEXP array);
 SEXP processx_base64_decode(SEXP array);
 
+
+#ifndef _WIN32
+
+#include <string.h>
+#include <signal.h>
+
+const char* rimraf_tmpdir_cmd = NULL;
+
+void term_handler(int n) {
+  R_system(rimraf_tmpdir_cmd);
+
+  // We don't run finalization handlers because running R code from a
+  // signal handler is not safe. To properly clean up a process, we'd
+  // need R to handle SIGTERM and clean up at check-interrupt
+  // time. We do run `atexit()` handlers though.
+  exit(EXIT_FAILURE);
+}
+
+void install_term_handler(void) {
+  if (getenv("PROCESSX_NO_R_SIGTERM_CLEANUP")) {
+    return;
+  }
+
+  const char* tmp_dir = getenv("R_SESSION_TMPDIR");
+
+  // Should not happen but just in case
+  if (!tmp_dir) {
+    return;
+  }
+
+  // Only install the handler if the tempdir doesn't have special
+  // characters because we clean it through a `rm -rf` call in a
+  // subprocess to avoid calling async-signal-unsafe functions like
+  // `R_unlink(). Also it's faster with some filesystems, see notes in
+  // the `R_CleanTempDir()` implementation.
+  char *special = "'\\`$\"\n";
+
+  for (int i = 0; special[i] != '\0'; ++i) {
+    if (strchr(tmp_dir, special[i])) {
+      return;
+    }
+  }
+
+  // To make the handler as simple as we can we ignore the possibility
+  // of the temp directory changing during the session, and create the
+  // command string upfront. It is protected via the symbol table.
+  SEXP rimraf_tmpdir_sym = R_ParseEvalString("as.symbol(paste0('rm -rf ', tempdir()))",
+                                             R_BaseNamespace);
+  rimraf_tmpdir_cmd = CHAR(PRINTNAME(rimraf_tmpdir_sym));
+
+  struct sigaction sig = {{ 0 }};
+  sig.sa_handler = term_handler;
+  sigaction(SIGTERM, &sig, NULL);
+}
+
+#endif // not _WIN32
+
+
 static const R_CallMethodDef callMethods[]  = {
   { "processx_base64_encode", (DL_FUNC) &processx_base64_encode, 1 },
   { "processx_base64_decode", (DL_FUNC) &processx_base64_decode, 1 },
@@ -250,4 +308,8 @@ void R_init_client(DllInfo *dll) {
   R_registerRoutines(dll, NULL, callMethods, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
   R_forceSymbols(dll, TRUE);
+
+#ifndef _WIN32
+  install_term_handler();
+#endif
 }
