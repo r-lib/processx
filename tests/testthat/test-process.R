@@ -69,6 +69,9 @@ test_that("working directory does not exist", {
 })
 
 test_that("R process is installed with a SIGTERM cleanup handler", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_if_not_installed("callr", "3.7.3.9001")
+
   # Needs POSIX signal handling
   skip_on_os("windows")
 
