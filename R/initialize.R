@@ -25,10 +25,10 @@
 process_initialize <- function(self, private, command, args,
                                stdin, stdout, stderr, pty, pty_options,
                                connections, poll_connection, env, cleanup,
-                               cleanup_tree, wd, echo_cmd, supervise,
-                               windows_verbatim_args, windows_hide_window,
-                               windows_detached_process, encoding,
-                               post_process) {
+                               cleanup_tree, cleanup_signal, wd, echo_cmd,
+                               supervise, windows_verbatim_args,
+                               windows_hide_window, windows_detached_process,
+                               encoding, post_process) {
 
   "!DEBUG process_initialize `command`"
 
@@ -45,6 +45,7 @@ process_initialize <- function(self, private, command, args,
     is.null(env) || is_env_vector(env),
     is_flag(cleanup),
     is_flag(cleanup_tree),
+    is_integer_scalar(cleanup_signal),
     is_string_or_null(wd),
     is_flag(echo_cmd),
     is_flag(windows_verbatim_args),
@@ -99,6 +100,7 @@ process_initialize <- function(self, private, command, args,
   private$args <- args
   private$cleanup <- cleanup
   private$cleanup_tree <- cleanup_tree
+  private$cleanup_signal <- cleanup_signal
   private$wd <- wd
   private$pstdin <- stdin
   private$pstdout <- stdout
@@ -139,8 +141,8 @@ process_initialize <- function(self, private, command, args,
     c_processx_exec,
     command, c(command, args), pty, pty_options,
     connections, env, windows_verbatim_args, windows_hide_window,
-    windows_detached_process, private, cleanup, wd, encoding,
-    paste0("PROCESSX_", private$tree_id, "=YES")
+    windows_detached_process, private, cleanup, cleanup_signal,
+    wd, encoding, paste0("PROCESSX_", private$tree_id, "=YES")
   )
 
   ## We try the query the start time according to the OS, because we can

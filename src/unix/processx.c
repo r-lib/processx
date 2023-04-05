@@ -21,7 +21,7 @@ static void processx__child_init(processx_handle_t *handle, SEXP connections,
                                  processx_options_t *options,
 				 const char *tree_id);
 
-static SEXP processx__make_handle(SEXP private, int cleanup);
+static SEXP processx__make_handle(SEXP private, int cleanup, int cleanup_signal);
 static void processx__handle_destroy(processx_handle_t *handle);
 void processx__create_connections(processx_handle_t *handle, SEXP private,
 				  const char *encoding);
@@ -350,7 +350,7 @@ void processx__finalizer(SEXP status) {
 
     /* If it is running, we need to kill it, and wait for the exit status */
     if (wp == 0) {
-      kill(-pid, SIGKILL);
+      kill(-pid, handle->cleanup_signal);
       do {
 	wp = waitpid(pid, &wstat, 0);
       } while (wp == -1 && errno == EINTR);
@@ -370,7 +370,7 @@ void processx__finalizer(SEXP status) {
   processx__unblock_sigchld();
 }
 
-static SEXP processx__make_handle(SEXP private, int cleanup) {
+static SEXP processx__make_handle(SEXP private, int cleanup, int cleanup_signal) {
   processx_handle_t * handle;
   SEXP result;
 
@@ -382,6 +382,7 @@ static SEXP processx__make_handle(SEXP private, int cleanup) {
   result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
   R_RegisterCFinalizerEx(result, processx__finalizer, 1);
   handle->cleanup = cleanup;
+  handle->cleanup_signal = cleanup_signal;
 
   UNPROTECT(1);
   return result;
@@ -428,13 +429,14 @@ skip:
 SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
                    SEXP connections, SEXP env, SEXP windows_verbatim_args,
                    SEXP windows_hide_window, SEXP windows_detached_process,
-                   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding,
-                   SEXP tree_id) {
+                   SEXP private, SEXP cleanup, SEXP cleanup_signal, SEXP wd,
+                   SEXP encoding, SEXP tree_id) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
   char **cenv = isNull(env) ? 0 : processx__tmp_character(env);
   int ccleanup = INTEGER(cleanup)[0];
+  int ccleanup_signal = INTEGER(cleanup_signal)[0];
 
   const int cpty = LOGICAL(pty)[0];
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
@@ -469,7 +471,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 
   processx__setup_sigchld();
 
-  result = PROTECT(processx__make_handle(private, ccleanup));
+  result = PROTECT(processx__make_handle(private, ccleanup, ccleanup_signal));
   handle = R_ExternalPtrAddr(result);
 
   if (cpty) {

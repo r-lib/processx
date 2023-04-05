@@ -173,3 +173,32 @@ test_that("can SIGTERM process tree", {
 
   expect_false(any(vapply(dirs, dir.exists, NA)))
 })
+
+test_that("can use custom `cleanup_signal`", {
+  # Should become the default in callr
+  opts <- callr::r_process_options(extra = list(
+    cleanup_signal = ps::signals()$SIGTERM
+  ))
+  p <- callr::r_session$new(opts)
+
+  out <- tempfile()
+  defer(rimraf(out))
+
+  fn <- function(file) {
+    file.create(tempfile())
+    writeLines(tempdir(), file)
+  }
+  p$run(fn, list(file = out))
+  dir <- readLines(out)
+
+  # GC `p` to trigger finalizer
+  rm(p)
+  gc()
+
+  # Needs POSIX signals
+  skip_on_os("windows")
+
+  # As usual we verify the delivery of SIGTERM by checking that the
+  # callr cleanup handler kicked in and deleted the tempdir
+  expect_false(dir.exists(dir))
+})

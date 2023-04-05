@@ -161,6 +161,7 @@ Start a new process in the background, and then return immediately.
   env = NULL,
   cleanup = TRUE,
   cleanup_tree = FALSE,
+  cleanup_signal = ps::signals()$SIGKILL,
   wd = NULL,
   echo_cmd = FALSE,
   supervise = FALSE,
@@ -274,6 +275,10 @@ object is garbage collected.}
 
 \item{\code{cleanup_tree}}{Whether to kill the process and its child
 process tree when the \code{process} object is garbage collected.}
+
+\item{\code{cleanup_signal}}{Which signal to use in case of cleanup.
+Defaults to \code{SIGKILL} but can be set to \code{tools::SIGTERM}.
+Has no effect on Windows.}
 
 \item{\code{wd}}{Working directory of the process. It must exist.
 If \code{NULL}, then the current working directory is used.}
