@@ -335,7 +335,11 @@ or job object (on Windows). It returns \code{TRUE} if the process
 was terminated, and \code{FALSE} if it was not (because it was
 already finished/dead when \code{processx} tried to terminate it).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{process$kill(grace = 0.1, close_connections = TRUE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{process$kill(
+  grace = 0.1,
+  close_connections = TRUE,
+  signal = ps::signals()$SIGKILL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -346,6 +350,9 @@ already finished/dead when \code{processx} tried to terminate it).
 \item{\code{close_connections}}{Whether to close standard input, standard
 output, standard error connections and the poll connection, after
 killing the process.}
+
+\item{\code{signal}}{An integer scalar, the id of the signal to send to
+the process. See \code{\link[tools:pskill]{tools::pskill()}} for the list of signals.}
 }
 \if{html}{\out{</div>}}
 }
@@ -369,7 +376,7 @@ were killed, the names are the names of the processes (e.g. \code{"sleep"},
 \if{html}{\out{<div class="r">}}\preformatted{process$kill_tree(
   grace = 0.1,
   close_connections = TRUE,
-  signal = tools::SIGKILL
+  signal = ps::signals()$SIGKILL
 )}\if{html}{\out{</div>}}
 }
 

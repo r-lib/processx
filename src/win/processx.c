@@ -1234,8 +1234,8 @@ SEXP processx_interrupt(SEXP status, SEXP name) {
   return R_NilValue;
 }
 
-SEXP processx_kill(SEXP status, SEXP grace, SEXP name) {
-  return processx_signal(status, ScalarInteger(9), name);
+SEXP processx_kill(SEXP status, SEXP grace, SEXP name, SEXP signal) {
+  return processx_signal(status, signal, name);
 }
 
 SEXP processx_get_pid(SEXP status) {

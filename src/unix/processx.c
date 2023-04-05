@@ -962,7 +962,7 @@ SEXP processx_interrupt(SEXP status, SEXP name) {
  * still alive or not.
  */
 
-SEXP processx_kill(SEXP status, SEXP grace, SEXP name) {
+SEXP processx_kill(SEXP status, SEXP grace, SEXP name, SEXP signal) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   const char *cname = isNull(name) ? "???" : CHAR(STRING_ELT(name, 0));
   pid_t pid;
@@ -997,8 +997,8 @@ SEXP processx_kill(SEXP status, SEXP grace, SEXP name) {
   /* If the process is not running, return (FALSE) */
   if (wp != 0) { goto cleanup; }
 
-  /* It is still running, so a SIGKILL */
-  int ret = kill(-pid, SIGKILL);
+  /* It is still running, so send the signal */
+  int ret = kill(-pid, INTEGER(signal)[0]);
   if (ret == -1 && (errno == ESRCH || errno == EPERM)) { goto cleanup; }
   if (ret == -1) {
     processx__unblock_sigchld();

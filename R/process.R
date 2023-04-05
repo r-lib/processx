@@ -240,9 +240,11 @@ process <- R6::R6Class(
     #' or job object (on Windows). It returns `TRUE` if the process
     #' was terminated, and `FALSE` if it was not (because it was
     #' already finished/dead when `processx` tried to terminate it).
+    #' @param signal An integer scalar, the id of the signal to send to
+    #'   the process. See [tools::pskill()] for the list of signals.
 
-    kill = function(grace = 0.1, close_connections = TRUE)
-      process_kill(self, private, grace, close_connections),
+    kill = function(grace = 0.1, close_connections = TRUE, signal = ps::signals()$SIGKILL)
+      process_kill(self, private, grace, close_connections, signal),
 
     #' @description
     #' Process tree cleanup. It terminates the process
@@ -737,10 +739,12 @@ process_interrupt <- function(self, private) {
   }
 }
 
-process_kill <- function(self, private, grace, close_connections) {
+process_kill <- function(self, private, grace, close_connections, signal) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `self$get_pid()`"
+  assert_that(is_integer_scalar(signal))
+
   ret <- chain_call(c_processx_kill, private$status, as.numeric(grace),
-                      private$get_short_name())
+                      private$get_short_name(), signal)
   if (close_connections) private$close_connections()
   ret
 }

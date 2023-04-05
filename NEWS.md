@@ -1,7 +1,8 @@
 # processx (development version)
 
-* The `kill_tree()` method gains a `signal` argument. This is useful
-  e.g. to gracefully terminate the process tree with `SIGTERM`.
+* The `kill()` and `kill_tree()` methods gain a `signal` argument.
+  This is useful to gracefully terminate processes, e.g. with
+  `SIGTERM`.
 
 * On Unixes, R processes created by callr now feature a `SIGTERM`
   cleanup handler that cleans up the temporary directory before

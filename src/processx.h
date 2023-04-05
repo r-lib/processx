@@ -52,7 +52,7 @@ SEXP processx_is_alive(SEXP status, SEXP name);
 SEXP processx_get_exit_status(SEXP status, SEXP name);
 SEXP processx_signal(SEXP status, SEXP signal, SEXP name);
 SEXP processx_interrupt(SEXP status, SEXP name);
-SEXP processx_kill(SEXP status, SEXP grace, SEXP name);
+SEXP processx_kill(SEXP status, SEXP grace, SEXP name, SEXP signal);
 SEXP processx_get_pid(SEXP status);
 SEXP processx_create_time(SEXP r_pid);
 
