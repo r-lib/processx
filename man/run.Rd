@@ -25,6 +25,7 @@ run(
   windows_hide_window = FALSE,
   encoding = "",
   cleanup_tree = FALSE,
+  cleanup_signal = ps::signals()$SIGKILL,
   ...
 )
 }
@@ -127,6 +128,10 @@ both streams in UTF-8 currently.}
 
 \item{cleanup_tree}{Whether to clean up the child process tree after
 the process has finished.}
+
+\item{cleanup_signal}{Signal to cleanup the process (and its
+children if \code{cleanup_tree} is \code{TRUE}). Defaults to \code{SIGKILL}. On
+Windows, only \code{SIGTERM} and \code{SIGKILL} are supported.}
 
 \item{...}{Extra arguments are passed to \code{process$new()}, see
 \link{process}. Note that you cannot pass \code{stout} or \code{stderr} here,

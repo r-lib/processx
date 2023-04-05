@@ -123,6 +123,9 @@
 #'   both streams in UTF-8 currently.
 #' @param cleanup_tree Whether to clean up the child process tree after
 #'   the process has finished.
+#' @param cleanup_signal Signal to cleanup the process (and its
+#'   children if `cleanup_tree` is `TRUE`). Defaults to `SIGKILL`. On
+#'   Windows, only `SIGTERM` and `SIGKILL` are supported.
 #' @param ... Extra arguments are passed to `process$new()`, see
 #'   [process]. Note that you cannot pass `stout` or `stderr` here,
 #'   because they are used internally by `run()`. You can use the
@@ -162,7 +165,8 @@ run <- function(
   stderr_line_callback = NULL, stderr_callback = NULL,
   stderr_to_stdout = FALSE, env = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = FALSE,
-  encoding = "", cleanup_tree = FALSE, ...) {
+  encoding = "", cleanup_tree = FALSE,
+  cleanup_signal = ps::signals()$SIGKILL, ...) {
 
   assert_that(is_flag(error_on_status))
   assert_that(is_time_interval(timeout))
@@ -176,6 +180,7 @@ run <- function(
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
   assert_that(is.null(stderr_callback) || is.function(stderr_callback))
   assert_that(is_flag(cleanup_tree))
+  assert_that(is_integer_scalar(cleanup_signal))
   assert_that(is_flag(stderr_to_stdout))
   ## The rest is checked by process$new()
   "!DEBUG run() Checked arguments"
@@ -195,9 +200,9 @@ run <- function(
 
   ## We make sure that the process is eliminated
   if (cleanup_tree) {
-    on.exit(pr$kill_tree(), add = TRUE)
+    defer(pr$kill_tree(signal = cleanup_signal))
   } else {
-    on.exit(pr$kill(), add = TRUE)
+    defer(pr$kill(signal = cleanup_signal))
   }
 
   ## If echo, then we need to create our own callbacks.
