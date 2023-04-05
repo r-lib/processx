@@ -112,6 +112,9 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
 })
 
 test_that("can SIGTERM process", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_if_not_installed("callr", "3.7.3.9001")
+
   # Write subprocess `tempdir()` to this file
   out <- tempfile()
   defer(rimraf(out))
@@ -136,6 +139,9 @@ test_that("can SIGTERM process", {
 })
 
 test_that("can SIGTERM process tree", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_if_not_installed("callr", "3.7.3.9001")
+
   # Needs POSIX signals
   skip_on_os("windows")
 
@@ -175,6 +181,9 @@ test_that("can SIGTERM process tree", {
 })
 
 test_that("can use custom `cleanup_signal`", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_if_not_installed("callr", "3.7.3.9001")
+
   # Should become the default in callr
   opts <- callr::r_process_options(extra = list(
     cleanup_signal = ps::signals()$SIGTERM
