@@ -256,9 +256,11 @@ process <- R6::R6Class(
     #' `$kill_tree()` returns a named integer vector of the process ids that
     #' were killed, the names are the names of the processes (e.g. `"sleep"`,
     #' `"notepad.exe"`, `"Rterm.exe"`, etc.).
+    #' @param signal An integer scalar, the id of the signal to send to
+    #'   the process. See [tools::pskill()] for the list of signals.
 
-    kill_tree = function(grace = 0.1, close_connections = TRUE)
-      process_kill_tree(self, private, grace, close_connections),
+    kill_tree = function(grace = 0.1, close_connections = TRUE, signal = ps::signals()$SIGKILL)
+      process_kill_tree(self, private, grace, close_connections, signal),
 
     #' @description
     #' Send a signal to the process. On Windows only the
@@ -743,14 +745,15 @@ process_kill <- function(self, private, grace, close_connections) {
   ret
 }
 
-process_kill_tree <- function(self, private, grace, close_connections) {
-  "!DEBUG process_kill_tree '`private$get_short_name()`', pid `self$get_pid()`"
+process_kill_tree <- function(self, private, grace, close_connections, signal) {
+  "!DEBUG process_kill_tree '`private$get_short_name()`', pid `self$get_pid()`, signal `signal`"
   if (!ps::ps_is_supported()) {
     throw(new_not_implemented_error(
       "kill_tree is not supported on this platform"))
   }
+  assert_that(is_integer_scalar(signal))
 
-  ret <- get("ps_kill_tree", asNamespace("ps"))(private$tree_id)
+  ret <- get("ps_kill_tree", asNamespace("ps"))(private$tree_id, sig = signal)
   if (close_connections) private$close_connections()
   ret
 }

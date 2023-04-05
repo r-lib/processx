@@ -64,7 +64,7 @@ test_that("is_integerish_scalar", {
     expect_false(is_integerish_scalar(n))
     expect_error(
       assert_that(is_integerish_scalar(n)),
-      "is not a length 1 integer"
+      "is not a length 1 round number"
     )
   }
 })

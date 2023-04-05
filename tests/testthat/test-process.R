@@ -110,3 +110,42 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   # Was not cleaned up
   expect_true(dir.exists(p_temp_dir))
 })
+
+test_that("can SIGTERM process tree", {
+  # Needs POSIX signals
+  skip_on_os("windows")
+
+  # Might be a little undeterministic, e.g. need to wait a sufficient
+  # time before checking processes were sent SIGTERM and cleaned up
+  skip_on_cran()
+
+  # Write subprocess `tempdir()` to this file
+  out <- tempfile()
+  defer(rimraf(out))
+
+  fn <- function(file, recurse) {
+    file.create(tempfile())
+    cat(paste0(tempdir(), "\n"), file = file, append = TRUE)
+
+    if (recurse) {
+      p <- callr::r_session$new()
+      p$run(
+        sys.function(),
+        list(file = file, recurse = recurse - 1L)
+      )
+    }
+  }
+
+  p <- callr::r_session$new()
+  p$run(fn, list(file = out, recurse = 2))
+
+  # Check that SIGTERM was called on all subprocesses by examining
+  # side effects of tempdir cleanup
+  dirs <- readLines(out)
+  expect_length(dirs, 3)
+
+  p$kill_tree(signal = ps::signals()$SIGTERM)
+  Sys.sleep(0.2)
+
+  expect_false(any(vapply(dirs, dir.exists, NA)))
+})

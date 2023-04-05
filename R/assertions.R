@@ -27,12 +27,20 @@ on_failure(is_flag) <- function(call, env) {
   paste0(deparse(call$x), " is not a flag (length 1 logical)")
 }
 
+is_integer_scalar <- function(x) {
+  is.integer(x) && length(x) == 1 && !is.na(x) && round(x) == x
+}
+
+on_failure(is_integer_scalar) <- function(call, env) {
+  paste0(deparse(call$x), " is not a length 1 integer")
+}
+
 is_integerish_scalar <- function(x) {
   is.numeric(x) && length(x) == 1 && !is.na(x) && round(x) == x
 }
 
 on_failure(is_integerish_scalar) <- function(call, env) {
-  paste0(deparse(call$x), " is not a length 1 integer")
+  paste0(deparse(call$x), " is not a length 1 round number")
 }
 
 is_pid <- function(x) {
