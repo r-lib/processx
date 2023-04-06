@@ -249,7 +249,7 @@ void term_handler(int n) {
   // signal handler is not safe. To properly clean up a process, we'd
   // need R to handle SIGTERM and clean up at check-interrupt
   // time. We do run `atexit()` handlers though.
-  exit(EXIT_FAILURE);
+  exit(-SIGTERM);
 }
 
 void install_term_handler(void) {
