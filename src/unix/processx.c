@@ -1019,18 +1019,9 @@ SEXP processx_kill(SEXP status, SEXP grace, SEXP name, SEXP signal) {
     R_THROW_SYSTEM_ERROR("process_kill for '%s'", cname);
   }
 
-  /* Do a waitpid to collect the status and reap the zombie */
-  do {
-    wp = waitpid(pid, &wstat, 0);
-  } while (wp == -1 && errno == EINTR);
-
-  /* Collect exit status, and check if it was killed by a SIGKILL (or
-     the user-provided signal) If yes, this was most probably us
-     (although we cannot be sure in general...)
-     If the status was collected by another SIGCHLD, then the exit
-     status will be set to NA */
-  processx__collect_exit_status(status, wp, wstat);
-  result = handle->exitcode == -sig_num;
+  if (c_processx_wait(handle, 200, cname)) {
+    result = handle->exitcode == -sig_num;
+  }
 
  cleanup:
   processx__unblock_sigchld();

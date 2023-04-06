@@ -223,3 +223,13 @@ test_that("can load sigtermignore", {
 
   expect_true(p$is_alive())
 })
+
+test_that("can kill with SIGTERM when ignored", {
+  p <- callr::r_session$new()
+  defer(p$kill())
+
+  p$run(load_sigtermignore)
+
+  expect_false(p$kill(close_connections = FALSE, signal = tools::SIGTERM))
+  expect_true(p$is_alive())
+})

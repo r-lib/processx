@@ -748,7 +748,7 @@ process_kill <- function(self, private, grace, close_connections, signal) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `self$get_pid()`"
   assert_that(is_integer_scalar(signal))
 
-  ret <- chain_call(c_processx_kill, private$status, as.numeric(grace),
+  ret <- chain_clean_call(c_processx_kill, private$status, as.numeric(grace),
                       private$get_short_name(), signal)
   if (close_connections) private$close_connections()
   ret
