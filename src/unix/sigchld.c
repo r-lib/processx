@@ -128,13 +128,24 @@ void processx__remove_sigchld(void) {
   memset(&old_sig_handler, 0, sizeof(old_sig_handler));
 }
 
-void processx__block_sigchld(void) {
+void processx__block_sigchld_save(sigset_t *old) {
   sigset_t blockMask;
   sigemptyset(&blockMask);
   sigaddset(&blockMask, SIGCHLD);
-  if (sigprocmask(SIG_BLOCK, &blockMask, NULL) == -1) {
+
+  if (sigprocmask(SIG_BLOCK, &blockMask, old) == -1) {
     R_THROW_ERROR("processx error setting up signal handlers");
   }
+}
+
+void processx__procmask_set(sigset_t *set) {
+  if (sigprocmask(SIG_SETMASK, set, NULL) == -1) {
+    R_THROW_ERROR("processx error setting up signal handlers");
+  }
+}
+
+void processx__block_sigchld(void) {
+  processx__block_sigchld_save(NULL);
 }
 
 void processx__unblock_sigchld(void) {
