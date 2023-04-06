@@ -31,6 +31,7 @@ Suggests:
     curl,
     debugme,
     parallel,
+    pkgload,
     rlang (>= 1.0.2),
     testthat (>= 3.0.0),
     withr

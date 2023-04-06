@@ -18,3 +18,8 @@ file.copy(files, dest, overwrite = TRUE)
 if (file.exists("symbols.rds")) {
   file.copy("symbols.rds", dest, overwrite = TRUE)
 }
+
+test_files <- Sys.glob(paste0("test/*", SHLIB_EXT))
+test_dest <- file.path(dest, "test")
+dir.create(test_dest, recursive = TRUE, showWarnings = FALSE)
+file.copy(test_files, test_dest, overwrite = TRUE)

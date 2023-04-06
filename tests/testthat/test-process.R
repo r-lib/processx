@@ -211,3 +211,15 @@ test_that("can use custom `cleanup_signal`", {
   # callr cleanup handler kicked in and deleted the tempdir
   expect_false(dir.exists(dir))
 })
+
+test_that("can load sigtermignore", {
+  p <- callr::r_session$new()
+  defer(p$kill())
+
+  p$run(load_sigtermignore)
+
+  tools::pskill(p$get_pid(), tools::SIGTERM)
+  tools::pskill(p$get_pid(), tools::SIGTERM)
+
+  expect_true(p$is_alive())
+})

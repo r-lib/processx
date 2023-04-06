@@ -151,3 +151,8 @@ scrub_srcref <- function(x) {
   x <- sub("\033[90m\033[39m", "", x, fixed = TRUE)
   x
 }
+
+load_sigtermignore <- function() {
+  lib <- asNamespace("processx")$get_test_lib("sigtermignore")
+  dyn.load(lib)
+}

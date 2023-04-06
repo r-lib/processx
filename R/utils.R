@@ -306,3 +306,18 @@ rimraf <- function(...) {
   if ("~" %in% x) stop("Cowardly refusing to delete `~`")
   unlink(x, recursive = TRUE, force = TRUE)
 }
+
+get_test_lib <- function(lib) {
+  if (pkgload::is_dev_package("processx")) {
+    path <- "src"
+  } else {
+    path <- paste0('libs', .Platform$r_arch)
+  }
+
+  system.file(
+    package = "processx",
+    path,
+    "test",
+    paste0(lib, .Platform$dynlib.ext)
+  )
+}
