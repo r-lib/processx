@@ -999,8 +999,10 @@ SEXP processx_kill(SEXP status, SEXP grace, SEXP name, SEXP signal) {
   /* If the process is not running, return (FALSE) */
   if (wp != 0) { goto cleanup; }
 
+  int sig_num = INTEGER(signal)[0];
+
   /* It is still running, so send the signal */
-  int ret = kill(-pid, INTEGER(signal)[0]);
+  int ret = kill(-pid, sig_num);
   if (ret == -1 && (errno == ESRCH || errno == EPERM)) { goto cleanup; }
   if (ret == -1) {
     processx__unblock_sigchld();
@@ -1012,13 +1014,13 @@ SEXP processx_kill(SEXP status, SEXP grace, SEXP name, SEXP signal) {
     wp = waitpid(pid, &wstat, 0);
   } while (wp == -1 && errno == EINTR);
 
-  /* Collect exit status, and check if it was killed by a SIGKILL
-     If yes, this was most probably us (although we cannot be sure in
-     general...
+  /* Collect exit status, and check if it was killed by a SIGKILL (or
+     the user-provided signal) If yes, this was most probably us
+     (although we cannot be sure in general...)
      If the status was collected by another SIGCHLD, then the exit
      status will be set to NA */
   processx__collect_exit_status(status, wp, wstat);
-  result = handle->exitcode == - SIGKILL;
+  result = handle->exitcode == -sig_num;
 
  cleanup:
   processx__unblock_sigchld();
