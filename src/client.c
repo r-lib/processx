@@ -245,11 +245,8 @@ const char* rimraf_tmpdir_cmd = NULL;
 void term_handler(int n) {
   R_system(rimraf_tmpdir_cmd);
 
-  // We don't run finalization handlers because running R code from a
-  // signal handler is not safe. To properly clean up a process, we'd
-  // need R to handle SIGTERM and clean up at check-interrupt
-  // time. We do run `atexit()` handlers though.
-  exit(-SIGTERM);
+  // Continue signal
+  raise(SIGTERM);
 }
 
 void install_term_handler(void) {
@@ -286,6 +283,7 @@ void install_term_handler(void) {
 
   struct sigaction sig = {{ 0 }};
   sig.sa_handler = term_handler;
+  sig.sa_flags = SA_RESETHAND;
   sigaction(SIGTERM, &sig, NULL);
 }
 
