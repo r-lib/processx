@@ -231,7 +231,10 @@ err <- local({
   #' @param frame The throwing context. Can be used to hide frames from
   #'   the backtrace.
 
-  throw <- throw_error <- function(cond, parent = NULL, frame = environment()) {
+  throw <- throw_error <- function(cond,
+                                   parent = NULL,
+                                   call = parent.frame(),
+                                   frame = environment()) {
     if (!inherits(cond, "condition")) {
       cond <- new_error(cond)
     }
@@ -240,7 +243,7 @@ err <- local({
     }
 
     if (isTRUE(cond[["call"]])) {
-      cond[["call"]] <- sys.call(-1) %||% sys.call()
+      cond[["call"]] <- frame_call(call)
     } else if (identical(cond[["call"]], FALSE)) {
       cond[["call"]] <- NULL
     } else if (is.environment(cond[["call"]])) {
