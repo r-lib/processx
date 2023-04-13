@@ -151,3 +151,5 @@ scrub_srcref <- function(x) {
   x <- sub("\033[90m\033[39m", "", x, fixed = TRUE)
   x
 }
+
+err$register_testthat_print()
