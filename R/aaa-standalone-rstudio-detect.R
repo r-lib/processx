@@ -1,3 +1,9 @@
+# ---
+# repo: r-lib/processx
+# file: aaa-standalone-rstudio-detect.R
+# last-updated: 2022-05-31
+# license: https://unlicense.org
+# ---
 
 rstudio <- local({
 

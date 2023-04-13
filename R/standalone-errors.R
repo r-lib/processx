@@ -1,14 +1,14 @@
-
-# # Standalone file for better error handling ----------------------------
+# ---
+# repo: r-lib/processx
+# file: standalone-errors.R
+# last-updated: 2023-01-15
+# license: https://unlicense.org
+# dependencies: aaa-standalone-rstudio-detect.R
+# ---
 #
-# If can allow package dependencies, then you are probably better off
-# using rlang's functions for errors.
-#
-# The canonical location of this file is in the processx package:
-# https://github.com/r-lib/processx/blob/main/R/errors.R
-#
-# ## Dependencies
-# - rstudio-detect.R for better printing in RStudio
+# Standalone file for better error handling. If you can allow package
+# dependencies, then you are probably better off using rlang's
+# functions for errors.
 #
 # ## Features
 #
@@ -54,7 +54,7 @@
 # ## Roadmap:
 # - better printing of anonymous function in the trace
 #
-# ## NEWS:
+# ## Changelog
 #
 # ### 1.0.0 -- 2019-06-18
 #
