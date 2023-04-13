@@ -1,5 +1,9 @@
+# Standalone file: do not edit by hand
+# Source: <https://github.com/r-lib/cli/blob/main/R/aaa-standalone-rstudio-detect.R>
+# ----------------------------------------------------------------------
+#
 # ---
-# repo: r-lib/processx
+# repo: r-lib/cli
 # file: aaa-standalone-rstudio-detect.R
 # last-updated: 2022-05-31
 # license: https://unlicense.org

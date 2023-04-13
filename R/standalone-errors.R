@@ -3,12 +3,15 @@
 # file: standalone-errors.R
 # last-updated: 2023-01-15
 # license: https://unlicense.org
-# dependencies: aaa-standalone-rstudio-detect.R
 # ---
 #
 # Standalone file for better error handling. If you can allow package
 # dependencies, then you are probably better off using rlang's
 # functions for errors.
+#
+# ## Soft-dependency
+#
+# - aaa-standalone-rstudio-detect.R in r-lib/cli
 #
 # ## Features
 #
