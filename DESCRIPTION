@@ -24,7 +24,7 @@ Imports:
     R6,
     utils
 Suggests:
-    callr (>= 3.7.3),
+    callr (>= 3.7.3.9001),
     cli (>= 3.3.0),
     codetools,
     covr,
@@ -35,7 +35,7 @@ Suggests:
     testthat (>= 3.0.0),
     withr
 Remotes:
-    r-lib/callr@fix-client-so-name
+    r-lib/callr
 Encoding: UTF-8
 RoxygenNote: 7.2.0
 Roxygen: list(markdown = TRUE)
