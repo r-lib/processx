@@ -243,7 +243,7 @@ SEXP processx_base64_decode(SEXP array);
 const char* rimraf_tmpdir_cmd = NULL;
 
 void term_handler(int n) {
-  R_system(rimraf_tmpdir_cmd);
+  system(rimraf_tmpdir_cmd);
 
   // Continue signal
   raise(SIGTERM);
