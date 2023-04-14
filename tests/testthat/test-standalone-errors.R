@@ -350,3 +350,35 @@ test_that("trace is printed on error in non-interactive sessions", {
   )
   expect_true(any(grepl("Backtrace", selines)))
 })
+
+test_that("can pass frame as error call in `new_error()`", {
+  check_bar <- function(call = parent.frame()) {
+    check_foo(call = call)
+  }
+  check_foo <- function(call = parent.frame()) {
+    throw(new_error("my message", call. = call))
+  }
+  f <- function() check_bar()
+  g <- function() check_foo()
+
+  expect_snapshot({
+    (expect_error(f()))
+    (expect_error(g()))
+  })
+})
+
+test_that("can pass frame as error call in `throw()`", {
+  check_bar <- function(call = parent.frame()) {
+    check_foo(call = call)
+  }
+  check_foo <- function(call = parent.frame()) {
+    throw(new_error("my message"), call = call)
+  }
+  f <- function() check_bar()
+  g <- function() check_foo()
+
+  expect_snapshot({
+    (expect_error(f()))
+    (expect_error(g()))
+  })
+})
