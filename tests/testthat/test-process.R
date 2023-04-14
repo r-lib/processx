@@ -67,3 +67,46 @@ test_that("working directory does not exist", {
   ## This closes connections in finalizers
   gc()
 })
+
+test_that("R process is installed with a SIGTERM cleanup handler", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_if_not_installed("callr", "3.7.3.9001")
+
+  # Needs POSIX signal handling
+  skip_on_os("windows")
+
+  out <- tempfile()
+
+  fn <- function(file) {
+    file.create(tempfile())
+    writeLines(tempdir(), file)
+  }
+
+  p <- callr::r_session$new()
+  p$run(fn, list(file = out))
+
+  p_temp_dir <- readLines(out)
+  expect_true(dir.exists(p_temp_dir))
+
+  p$signal(ps::signals()$SIGTERM)
+  p$wait()
+  expect_false(dir.exists(p_temp_dir))
+
+  # Disabled case
+  withr::local_envvar(c(PROCESSX_NO_R_SIGTERM_CLEANUP = "true"))
+
+  # Just in case R adds tempdir cleanup on SIGTERM
+  skip_on_cran()
+
+  p <- callr::r_session$new()
+  p$run(fn, list(file = out))
+
+  p_temp_dir <- readLines(out)
+  expect_true(dir.exists(p_temp_dir))
+
+  p$signal(ps::signals()$SIGTERM)
+  p$wait()
+
+  # Was not cleaned up
+  expect_true(dir.exists(p_temp_dir))
+})
