@@ -240,11 +240,8 @@ SEXP processx_base64_decode(SEXP array);
 #include <string.h>
 #include <signal.h>
 
-const char* rimraf_tmpdir_cmd = NULL;
-
 void term_handler(int n) {
-  system(rimraf_tmpdir_cmd);
-
+  system("rm -rf \"$R_SESSION_TMPDIR\"");
   // Continue signal
   raise(SIGTERM);
 }
@@ -253,33 +250,6 @@ void install_term_handler(void) {
   if (getenv("PROCESSX_NO_R_SIGTERM_CLEANUP")) {
     return;
   }
-
-  const char* tmp_dir = getenv("R_SESSION_TMPDIR");
-
-  // Should not happen but just in case
-  if (!tmp_dir) {
-    return;
-  }
-
-  // Only install the handler if the tempdir doesn't have special
-  // characters because we clean it through a `rm -rf` call in a
-  // subprocess to avoid calling async-signal-unsafe functions like
-  // `R_unlink(). Also it's faster with some filesystems, see notes in
-  // the `R_CleanTempDir()` implementation.
-  char *special = "'\\`$\"\n";
-
-  for (int i = 0; special[i] != '\0'; ++i) {
-    if (strchr(tmp_dir, special[i])) {
-      return;
-    }
-  }
-
-  // To make the handler as simple as we can we ignore the possibility
-  // of the temp directory changing during the session, and create the
-  // command string upfront. It is protected via the symbol table.
-  SEXP rimraf_tmpdir_sym = R_ParseEvalString("as.symbol(paste0('rm -rf ', tempdir()))",
-                                             R_BaseNamespace);
-  rimraf_tmpdir_cmd = CHAR(PRINTNAME(rimraf_tmpdir_sym));
 
   struct sigaction sig = {{ 0 }};
   sig.sa_handler = term_handler;
