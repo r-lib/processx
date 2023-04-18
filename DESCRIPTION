@@ -35,8 +35,6 @@ Suggests:
     testthat (>= 3.0.0),
     webfakes,
     withr
-Remotes:
-    r-lib/callr
 Encoding: UTF-8
 RoxygenNote: 7.2.0
 Roxygen: list(markdown = TRUE)
