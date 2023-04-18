@@ -75,6 +75,9 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   # Needs POSIX signal handling
   skip_on_os("windows")
 
+  # Enabled case
+  withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
+
   out <- tempfile()
 
   fn <- function(file) {
@@ -93,7 +96,7 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   expect_false(dir.exists(p_temp_dir))
 
   # Disabled case
-  withr::local_envvar(c(PROCESSX_NO_R_SIGTERM_CLEANUP = "true"))
+  withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = NA_character_))
 
   # Just in case R adds tempdir cleanup on SIGTERM
   skip_on_cran()

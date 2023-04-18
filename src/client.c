@@ -249,7 +249,7 @@ void term_handler(int n) {
 }
 
 void install_term_handler(void) {
-  if (getenv("PROCESSX_NO_R_SIGTERM_CLEANUP")) {
+  if (! getenv("PROCESSX_R_SIGTERM_CLEANUP")) {
     return;
   }
 
