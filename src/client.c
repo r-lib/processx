@@ -241,7 +241,9 @@ SEXP processx_base64_decode(SEXP array);
 #include <signal.h>
 
 void term_handler(int n) {
-  system("rm -rf \"$R_SESSION_TMPDIR\"");
+  // Need the cast and the +1 to ignore compiler warning about unused
+  // return value.
+  (void) (system("rm -rf \"$R_SESSION_TMPDIR\"") + 1);
   // Continue signal
   raise(SIGTERM);
 }
