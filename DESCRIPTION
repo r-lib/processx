@@ -33,6 +33,7 @@ Suggests:
     parallel,
     rlang (>= 1.0.2),
     testthat (>= 3.0.0),
+    webfakes,
     withr
 Remotes:
     r-lib/callr

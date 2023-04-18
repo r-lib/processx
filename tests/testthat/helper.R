@@ -60,13 +60,10 @@ skip_in_covr <- function() {
   if (Sys.getenv("R_COVR", "") == "true") skip("in covr")
 }
 
-httpbin <- local({
-  cache <- NULL
-  function(url = "") {
-    if (is.null(cache)) cache <<- curl::nslookup("eu.httpbin.org")
-    paste0("http://", cache, url)
-  }
-})
+httpbin <- webfakes::new_app_process(
+  webfakes::httpbin_app(),
+  opts = webfakes::server_opts(num_threads = 6)
+)
 
 interrupt_me <- function(expr, after = 1) {
   tryCatch({

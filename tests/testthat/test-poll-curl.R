@@ -1,11 +1,6 @@
 
-## To resolve....
-online <- curl::has_internet()
-if (online) httpbin()
-
 test_that("curl fds", {
   skip_on_cran()
-  if (!online) skip("Offline")
 
   resp <- list()
   errm <- character()
@@ -13,8 +8,8 @@ test_that("curl fds", {
   fail <- function(x) errm <<- c(errm, x)
 
   pool <- curl::new_pool()
-  url1 <- httpbin("/status/200")
-  url2 <- httpbin("/delay/1")
+  url1 <- httpbin$url("/status/200")
+  url2 <- httpbin$url("/delay/1")
   curl::multi_add(pool = pool, curl::new_handle(url = url1),
                   done = done, fail = fail)
   curl::multi_add(pool = pool, curl::new_handle(url = url1),
@@ -55,10 +50,9 @@ test_that("curl fds", {
 
 test_that("curl fds before others", {
   skip_on_cran()
-  if (!online) skip("Offline")
 
   pool <- curl::new_pool()
-  url <- httpbin("/delay/1")
+  url <- httpbin$url("/delay/1")
   curl::multi_add(pool = pool, curl::new_handle(url = url))
 
   timeout <- Sys.time() + 5
@@ -87,10 +81,9 @@ test_that("curl fds before others", {
 
 test_that("process fd before curl fd", {
   skip_on_cran()
-  if (!online) skip("Offline")
 
   pool <- curl::new_pool()
-  url <- httpbin("/delay/1")
+  url <- httpbin$url("/delay/1")
   curl::multi_add(pool = pool, curl::new_handle(url = url))
 
   timeout <- Sys.time() + 5
