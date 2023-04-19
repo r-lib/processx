@@ -36,7 +36,11 @@ void processx__sigchld_callback(int sig, siginfo_t *info, void *ctx);
 void processx__setup_sigchld(void);
 void processx__remove_sigchld(void);
 void processx__block_sigchld(void);
+void processx__block_sigchld_save(sigset_t *old);
 void processx__unblock_sigchld(void);
+void processx__procmask_set(sigset_t *set);
+
+int c_processx_wait(processx_handle_t *handle, int timeout, const char *name);
 
 void processx__finalizer(SEXP status);
 

@@ -674,30 +674,38 @@ static void processx__wait_cleanup(void *ptr) {
 
 SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
+  int ctimeout = INTEGER(timeout)[0];
   const char *cname = isNull(name) ? "???" : CHAR(STRING_ELT(name, 0));
-  int ctimeout = INTEGER(timeout)[0], timeleft = ctimeout;
+
+  int ret = c_processx_wait(handle, ctimeout, cname);
+  return ScalarLogical(ret);
+}
+
+int c_processx_wait(processx_handle_t *handle, int timeout, const char *name) {
   struct pollfd fd;
   int ret = 0;
   pid_t pid;
+  int timeleft = timeout;
 
   int *fds = malloc(sizeof(int) * 2);
   if (!fds) R_THROW_SYSTEM_ERROR("Allocating memory when waiting");
   fds[0] = fds[1] = -1;
   r_call_on_exit(processx__wait_cleanup, fds);
 
-  processx__block_sigchld();
+  sigset_t old;
+  processx__block_sigchld_save(&old);
 
   if (!handle) {
-    processx__unblock_sigchld();
-    return ScalarLogical(1);
+    processx__procmask_set(&old);
+    return 1;
   }
 
   pid = handle->pid;
 
   /* If we already have the status, then return now. */
   if (handle->collected) {
-    processx__unblock_sigchld();
-    return ScalarLogical(1);
+    processx__procmask_set(&old);
+    return 1;
   }
 
   /* Make sure this is active, in case another package replaced it... */
@@ -706,8 +714,8 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
 
   /* Setup the self-pipe that we can poll */
   if (pipe(handle->waitpipe)) {
-    processx__unblock_sigchld();
-    R_THROW_SYSTEM_ERROR("processx error when waiting for '%s'", cname);
+    processx__procmask_set(&old);
+    R_THROW_SYSTEM_ERROR("processx error when waiting for '%s'", name);
   }
   fds[0] = handle->waitpipe[0];
   fds[1] = handle->waitpipe[1];
@@ -723,7 +731,7 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
 
 
 
-  while (ctimeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
+  while (timeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
     do {
       ret = poll(&fd, 1, PROCESSX_INTERRUPT_INTERVAL);
     } while (ret == -1 && errno == EINTR);
@@ -743,7 +751,7 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
       goto cleanup;
     }
 
-    if (ctimeout >= 0) timeleft -= PROCESSX_INTERRUPT_INTERVAL;
+    if (timeout >= 0) timeleft -= PROCESSX_INTERRUPT_INTERVAL;
   }
 
   /* Maybe we are not done, and there is a little left from the timeout */
@@ -755,7 +763,7 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
 
   if (ret == -1) {
     R_THROW_SYSTEM_ERROR("processx wait with timeout error while "
-                         "waiting for '%s'", cname);
+                         "waiting for '%s'", name);
   }
 
  cleanup:
@@ -763,7 +771,9 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
   handle->waitpipe[0] = -1;
   handle->waitpipe[1] = -1;
 
-  return ScalarLogical(ret != 0);
+  processx__procmask_set(&old);
+
+  return ret != 0;
 }
 
 /* This is similar to `processx_wait`, but a bit simpler, because we
