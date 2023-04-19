@@ -240,10 +240,18 @@ SEXP processx_base64_decode(SEXP array);
 #include <string.h>
 #include <signal.h>
 
+FILE *cleanup_file;
+int cleanup_fd;
+
 void term_handler(int n) {
-  // Need the cast and the +1 to ignore compiler warning about unused
-  // return value.
-  (void) (system("rm -rf \"$R_SESSION_TMPDIR\"") + 1);
+  // `fwrite()` is not async-safe
+  write(cleanup_fd, "\n", 1);
+
+  // `pclose()` is not async-safe. Just assume that the cleanup
+  // process is going to terminate naturally once it's finished the
+  // command. The file descriptors will be closed automatically on
+  // exit. This also allows us to exit faster.
+
   // Continue signal
   raise(SIGTERM);
 }
@@ -252,6 +260,10 @@ void install_term_handler(void) {
   if (! getenv("PROCESSX_R_SIGTERM_CLEANUP")) {
     return;
   }
+
+  // FIXME: Is it a bit dangerous to use an envvar here?
+  cleanup_file = popen("read input && [ \"$input\" = \"\" ] && rm -rf \"$R_SESSION_TMPDIR\"", "w");
+  cleanup_fd = fileno(cleanup_file);
 
   struct sigaction sig = {{ 0 }};
   sig.sa_handler = term_handler;

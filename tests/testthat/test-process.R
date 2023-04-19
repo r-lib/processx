@@ -93,6 +93,10 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
 
   p$signal(ps::signals()$SIGTERM)
   p$wait()
+
+  # We're no longer waiting for the cleanup process to finish so give
+  # some breathing room
+  Sys.sleep(0.2)
   expect_false(dir.exists(p_temp_dir))
 
   # Disabled case
