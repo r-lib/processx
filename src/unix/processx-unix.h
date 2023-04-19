@@ -23,6 +23,8 @@ typedef struct processx_handle_s {
   int fd2;			/* readable */
   int waitpipe[2];		/* use it for wait() with timeout */
   int cleanup;
+  int cleanup_signal;
+  double cleanup_grace;
   double create_time;
   processx_connection_t *pipes[3];
   int ptyfd;
@@ -41,6 +43,7 @@ void processx__unblock_sigchld(void);
 void processx__procmask_set(sigset_t *set);
 
 int c_processx_wait(processx_handle_t *handle, int timeout, const char *name);
+int c_processx_kill(SEXP status, double grace, SEXP name);
 
 void processx__finalizer(SEXP status);
 

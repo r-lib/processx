@@ -868,8 +868,8 @@ void processx__handle_destroy(processx_handle_t *handle) {
 SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 		               SEXP connections, SEXP env, SEXP windows_verbatim_args,
                    SEXP windows_hide, SEXP windows_detached_process,
-                   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding,
-                   SEXP tree_id) {
+                   SEXP private, SEXP cleanup, SEXP _cleanup_grace, SEXP wd,
+                   SEXP encoding, SEXP tree_id) {
 
   const char *ccommand = CHAR(STRING_ELT(command, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));

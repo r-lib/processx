@@ -266,6 +266,42 @@ test_that("can kill process with grace", {
   expect_true(dir.exists(dir))
 })
 
+test_that("can use custom `cleanup_signal`", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_if_not_installed("callr", "3.7.3.9001")
+
+  withr::local_envvar("PROCESSX_R_SIGTERM_CLEANUP" = "true")
+
+  # Should become the default in callr
+  opts <- callr::r_process_options(extra = list(
+    cleanup_grace = 0.1
+  ))
+  p <- callr::r_session$new(opts)
+
+  out <- tempfile()
+  defer(rimraf(out))
+
+  fn <- function(file) {
+    file.create(tempfile())
+    writeLines(tempdir(), file)
+  }
+  p$run(fn, list(file = out))
+
+  dir <- readLines(out)
+  defer(rimraf(dir))
+
+  # GC `p` to trigger finalizer
+  rm(p)
+  gc()
+
+  # Needs POSIX signals
+  skip_on_os("windows")
+
+  # As usual we verify the delivery of SIGTERM by checking that the
+  # callr cleanup handler kicked in and deleted the tempdir
+  expect_false(dir.exists(dir))
+})
+
 test_that("can load sigtermignore", {
   p <- callr::r_session$new()
   defer(p$kill())

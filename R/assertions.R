@@ -31,6 +31,10 @@ is_numeric_scalar <- function(x) {
   is.numeric(x) && length(x) == 1 && !is.na(x)
 }
 
+on_failure(is_numeric_scalar) <- function(call, env) {
+  paste0(deparse(call$x), " is not a length 1 number")
+}
+
 is_integerish_scalar <- function(x) {
   is.numeric(x) && length(x) == 1 && !is.na(x) && round(x) == x
 }

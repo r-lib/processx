@@ -184,6 +184,10 @@ process <- R6::R6Class(
     #'   object is garbage collected.
     #' @param cleanup_tree Whether to kill the process and its child
     #'   process tree when the `process` object is garbage collected.
+    #' @param cleanup_grace Grace period between `SIGTERM` and `SIGKILL`.
+    #'   Only has an effect on Unix platforms. Set to 0 to terminate abruptly
+    #'   with `SIGKILL` only. Currently defaults to 0 until we implement
+    #'   a better approach on session quit.
     #' @param wd Working directory of the process. It must exist.
     #'   If `NULL`, then the current working directory is used.
     #' @param echo_cmd Whether to print the command to the screen before
@@ -212,17 +216,17 @@ process <- R6::R6Class(
     initialize = function(command = NULL, args = character(),
       stdin = NULL, stdout = NULL, stderr = NULL, pty = FALSE,
       pty_options = list(), connections = list(), poll_connection = NULL,
-      env = NULL, cleanup = TRUE, cleanup_tree = FALSE, wd = NULL,
-      echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
-      windows_hide_window = FALSE, windows_detached_process = !cleanup,
-      encoding = "",  post_process = NULL)
+      env = NULL, cleanup = TRUE, cleanup_tree = FALSE, cleanup_grace = 0.0,
+      wd = NULL, echo_cmd = FALSE, supervise = FALSE,
+      windows_verbatim_args = FALSE, windows_hide_window = FALSE,
+      windows_detached_process = !cleanup, encoding = "",  post_process = NULL)
 
       process_initialize(self, private, command, args, stdin,
                          stdout, stderr, pty, pty_options, connections,
-                         poll_connection, env, cleanup, cleanup_tree, wd,
-                         echo_cmd, supervise, windows_verbatim_args,
-                         windows_hide_window, windows_detached_process,
-                         encoding, post_process),
+                         poll_connection, env, cleanup, cleanup_tree,
+                         cleanup_grace, wd, echo_cmd, supervise,
+                         windows_verbatim_args, windows_hide_window,
+                         windows_detached_process, encoding, post_process),
 
     #' @description
     #' Cleanup method that is called when the `process` object is garbage
@@ -650,6 +654,7 @@ process <- R6::R6Class(
     args = NULL,          # Save 'args' argument here
     cleanup = NULL,       # cleanup argument
     cleanup_tree = NULL,  # cleanup_tree argument
+    cleanup_grace = NULL, # cleanup_grace argument
     stdin = NULL,         # stdin argument or stream
     stdout = NULL,        # stdout argument or stream
     stderr = NULL,        # stderr argument or stream
