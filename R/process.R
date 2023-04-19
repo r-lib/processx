@@ -737,7 +737,8 @@ process_interrupt <- function(self, private) {
 
 process_kill <- function(self, private, grace, close_connections) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `self$get_pid()`"
-  ret <- chain_call(c_processx_kill, private$status, as.numeric(grace),
+
+  ret <- chain_clean_call(c_processx_kill, private$status, as.numeric(grace),
                       private$get_short_name())
   if (close_connections) private$close_connections()
   ret

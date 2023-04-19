@@ -228,3 +228,63 @@ test_that("can exit or sigkill parent of cleanup process", {
   tools::pskill(p$get_pid(), tools::SIGKILL)
   poll_until(function() !ps::ps_is_running(cleanup_p))
 })
+
+test_that("can kill process with grace", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_if_not_installed("callr", "3.7.3.9001")
+
+  withr::local_envvar("PROCESSX_R_SIGTERM_CLEANUP" = "true")
+
+  # Write subprocess `tempdir()` to this file
+  out <- tempfile()
+  defer(rimraf(out))
+
+  fn <- function(file) {
+    file.create(tempfile())
+    cat(paste0(tempdir(), "\n"), file = file)
+  }
+  get_temp_dir <- function(frame = parent.frame()) {
+    dir <- readLines(out)
+    expect_length(dir, 1)
+    defer(rimraf(dir), frame = frame)
+    dir
+  }
+
+  # Check that SIGTERM was called on subprocess by examining side
+  # effect of tempdir cleanup
+  p <- callr::r_session$new()
+  p$run(fn, list(file = out))
+  dir <- get_temp_dir()
+  p$kill(grace = 0.1)
+  expect_false(dir.exists(dir))
+
+  # When `grace` is 0, the tempdir isn't cleaned up
+  p <- callr::r_session$new()
+  p$run(fn, list(file = out))
+  dir <- get_temp_dir()
+  p$kill(grace = 0)
+  expect_true(dir.exists(dir))
+})
+
+test_that("can load sigtermignore", {
+  p <- callr::r_session$new()
+  defer(p$kill())
+
+  p$run(load_sigtermignore)
+
+  tools::pskill(p$get_pid(), tools::SIGTERM)
+  tools::pskill(p$get_pid(), tools::SIGTERM)
+
+  expect_true(p$is_alive())
+})
+
+test_that("can kill with SIGTERM when ignored", {
+  p <- callr::r_session$new()
+  defer(p$kill())
+
+  p$run(load_sigtermignore)
+
+  p$signal(tools::SIGTERM)
+  Sys.sleep(0.05)
+  expect_true(p$is_alive())
+})

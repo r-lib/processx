@@ -1,5 +1,10 @@
 # processx (development version)
 
+* The `grace` argument of the `kill()` method is now active on Unix
+  platforms. processx first tries to kill with `SIGTERM` with a
+  timeout of `grace` seconds. After the timeout, `SIGKILL` is sent as
+  before.
+
 # processx 3.8.1
 
 * On Unixes, R processes created by callr now feature a `SIGTERM`

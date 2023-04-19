@@ -166,3 +166,8 @@ poll_until <- function(fn, interrupt = 0.2, timeout = 5) {
   skip_on_cran()
   stop("timeout")
 }
+
+load_sigtermignore <- function() {
+  lib <- asNamespace("processx")$get_test_lib("sigtermignore")
+  dyn.load(lib)
+}

@@ -1007,13 +1007,28 @@ SEXP processx_kill(SEXP status, SEXP grace, SEXP name) {
   /* If the process is not running, return (FALSE) */
   if (wp != 0) { goto cleanup; }
 
-  /* It is still running, so a SIGKILL */
-  int ret = kill(-pid, SIGKILL);
-  if (ret == -1 && (errno == ESRCH || errno == EPERM)) { goto cleanup; }
-  if (ret == -1) {
-    processx__unblock_sigchld();
-    R_THROW_SYSTEM_ERROR("process_kill for '%s'", cname);
+  /* It is still running, send a SIGTERM if gracious */
+  double grace_ms = REAL(grace)[0] * 1000;
+
+#define KILL_WITH(SIG) do {                                              \
+  int ret = kill(-pid, SIG);                                             \
+  if (ret == -1 && (errno == ESRCH || errno == EPERM)) { goto cleanup; } \
+  if (ret == -1) {                                                       \
+    processx__unblock_sigchld();                                         \
+    R_THROW_SYSTEM_ERROR("process_kill for '%s'", cname);                \
+  }                                                                      \
+} while(0)
+
+  if (grace_ms) {
+    KILL_WITH(SIGTERM);
+    if (c_processx_wait(handle, grace_ms, cname)) {
+      result = handle->exitcode == -SIGTERM;
+      goto cleanup;
+    }
   }
+
+  /* It is still running, send a SIGKILL */
+  KILL_WITH(SIGKILL);
 
   /* Do a waitpid to collect the status and reap the zombie */
   do {
