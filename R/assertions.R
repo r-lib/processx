@@ -27,6 +27,10 @@ on_failure(is_flag) <- function(call, env) {
   paste0(deparse(call$x), " is not a flag (length 1 logical)")
 }
 
+is_numeric_scalar <- function(x) {
+  is.numeric(x) && length(x) == 1 && !is.na(x)
+}
+
 is_integerish_scalar <- function(x) {
   is.numeric(x) && length(x) == 1 && !is.na(x) && round(x) == x
 }
