@@ -75,6 +75,8 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   # Needs POSIX signal handling
   skip_on_os("windows")
 
+  n_children <- length(ps::ps_children())
+
   # Enabled case
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
 
@@ -86,10 +88,14 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   }
 
   p <- callr::r_session$new()
+  h <- ps::ps_handle(p$get_pid())
   p$run(fn, list(file = out))
 
   p_temp_dir <- readLines(out)
   expect_true(dir.exists(p_temp_dir))
+
+  # The cleanup process has been launched
+  expect_length(ps::ps_children(), n_children + 1)
 
   p$signal(ps::signals()$SIGTERM)
   p$wait()
@@ -98,6 +104,15 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   # some breathing room
   Sys.sleep(0.2)
   expect_false(dir.exists(p_temp_dir))
+  expect_length(ps::ps_children(), n_children)
+
+  # The cleanup process is terminated on quit
+  p <- callr::r_session$new()
+  h <- ps::ps_handle(p$get_pid())
+
+  expect_length(ps::ps_children(), n_children + 1)
+  p$run(function() quit("no"))
+  expect_length(ps::ps_children(), n_children)
 
   # Disabled case
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = NA_character_))
