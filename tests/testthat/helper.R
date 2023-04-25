@@ -150,3 +150,19 @@ scrub_srcref <- function(x) {
 }
 
 err$register_testthat_print()
+
+poll_until <- function(fn, interrupt = 0.2, timeout = 5) {
+  time <- Sys.time()
+  timeout <- time + timeout
+
+  while (Sys.time() < timeout) {
+    if (fn()) {
+      expect_true(TRUE)
+      return()
+    }
+    Sys.sleep(interrupt)
+  }
+
+  skip_on_cran()
+  stop("timeout")
+}

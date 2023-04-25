@@ -275,6 +275,14 @@ void install_term_handler(void) {
     return;
   }
 
+  // Ignore SIGTERM in cleanup process via inherited procmask
+  sigset_t mask;
+  sigemptyset(&mask);
+  sigaddset(&mask, SIGTERM);
+
+  sigset_t old;
+  sigprocmask(SIG_BLOCK, &mask, &old);
+
   // FIXME: Is it a bit dangerous to use an envvar here?
   cleanup_file = popen("read input && [ \"$input\" = \"\" ] && rm -rf \"$R_SESSION_TMPDIR\"", "w");
   cleanup_fd = fileno(cleanup_file);
@@ -284,6 +292,8 @@ void install_term_handler(void) {
   sig.sa_handler = term_handler;
   sig.sa_flags = SA_RESETHAND;
   sigaction(SIGTERM, &sig, NULL);
+
+  sigprocmask(SIG_SETMASK, &old, NULL);
 }
 
 void R_unload_client(DllInfo *_dll);
