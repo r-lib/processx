@@ -252,8 +252,9 @@ static int needs_handler_cleanup = 0;
 
 static
 void term_handler(int n) {
-  // `fwrite()` is not async-safe
-  write(cleanup_fd, "\n", 1);
+  // `fwrite()` is not async-safe. Need the cast to avoid
+  // `-Wunused-result` warning
+  (void) (write(cleanup_fd, "\n", 1) + 1);
 
   // `pclose()` is not async-safe. Just assume that the cleanup
   // process is going to terminate naturally once it's finished the
