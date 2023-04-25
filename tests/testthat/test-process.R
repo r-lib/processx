@@ -196,3 +196,24 @@ test_that("can kill process tree with SIGTERM", {
 
   expect_false(any(dir.exists(temp_dirs)))
 })
+
+test_that("can sigkill parent of cleanup process", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_if_not_installed("callr", "3.7.3.9001")
+
+  # Needs POSIX signal handling
+  skip_on_os("windows")
+
+  withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
+
+  p <- callr::r_session$new()
+  p_handle <- ps::ps_handle(p$get_pid())
+
+  ps <- ps::ps_children(p_handle)
+  expect_length(ps, 1)
+  cleanup_p <- ps[[1]]
+
+  # The cleanup process gets an EOF on its stdin and exits
+  tools::pskill(p$get_pid(), tools::SIGKILL)
+  poll_until(function() !ps::ps_is_running(cleanup_p))
+})
