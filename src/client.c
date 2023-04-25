@@ -249,12 +249,6 @@ static int needs_handler_cleanup = 0;
 // process ahead of time that is going to run `rm -rf tempdir` on
 // termination. The process is waiting for an empty line that we send
 // with the signal-async-safe function `write()`.
-//
-// On any other input, the process quits without removing the
-// tempdir. This is used from the normal-quit handler (the
-// `R_unload_client()` function that is called by `dyn.load()` which
-// callr set up to be called on quit) to terminate the process while
-// leaving the directory intact.
 
 static
 void term_handler(int n) {
@@ -296,8 +290,6 @@ void install_term_handler(void) {
   sigprocmask(SIG_SETMASK, &old, NULL);
 }
 
-void R_unload_client(DllInfo *_dll);
-
 #endif // not _WIN32
 
 
@@ -310,9 +302,6 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_set_stderr", (DL_FUNC) &processx_set_stderr, 2 },
   { "processx_set_stdout_to_file", (DL_FUNC) &processx_set_stdout_to_file, 1 },
   { "processx_set_stderr_to_file", (DL_FUNC) &processx_set_stderr_to_file, 1 },
-#ifndef _WIN32
-  { "R_unload_client", (DL_FUNC) &R_unload_client, 1 },
-#endif
   { NULL, NULL, 0 }
 };
 
@@ -325,16 +314,3 @@ void R_init_client(DllInfo *dll) {
   install_term_handler();
 #endif
 }
-
-#ifndef _WIN32
-// Also called on session quit by callr
-void R_unload_client(DllInfo *_dll) {
-  if (needs_handler_cleanup) {
-    // Close cleanup process without removing the tempdir in case it's
-    // still needed
-    const char* quit = "quit\n";
-    fwrite(quit, strlen(quit), 1, cleanup_file);
-    pclose(cleanup_file);
-  }
-}
-#endif
