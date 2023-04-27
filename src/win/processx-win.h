@@ -12,7 +12,7 @@ typedef struct processx_handle_s {
   BYTE *child_stdio_buffer;
   HANDLE waitObject;
   processx_connection_t *pipes[3];
-  int cleanup;
+  SEXP cleanup;
   double create_time;
 } processx_handle_t;
 

@@ -23,8 +23,7 @@ typedef struct processx_handle_s {
   int fd2;			/* readable */
   int waitpipe[2];		/* use it for wait() with timeout */
   int cleanup;
-  int cleanup_signal;
-  double cleanup_grace;
+  SEXP r6_private;
   double create_time;
   processx_connection_t *pipes[3];
   int ptyfd;

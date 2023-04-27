@@ -21,7 +21,7 @@ static void processx__child_init(processx_handle_t *handle, SEXP connections,
                                  processx_options_t *options,
 				 const char *tree_id);
 
-static SEXP processx__make_handle(SEXP private, int cleanup, double cleanup_grace);
+static SEXP processx__make_handle(SEXP private, int cleanup);
 static void processx__handle_destroy(processx_handle_t *handle);
 void processx__create_connections(processx_handle_t *handle, SEXP private,
 				  const char *encoding);
@@ -336,6 +336,19 @@ SEXP c_processx_kill_data(void *payload) {
   return R_NilValue;
 }
 
+static
+SEXP finalizer_call(SEXP private) {
+  static SEXP finalize_fn = NULL;
+  if (!finalize_fn) {
+    finalize_fn = lang3(install(":::"),
+                        install("processx"),
+                        install("process_finalize"));
+    R_PreserveObject(finalize_fn);
+  }
+
+  return lang2(finalize_fn, private);
+}
+
 void processx__finalizer(SEXP status) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
 
@@ -348,15 +361,9 @@ void processx__finalizer(SEXP status) {
   if (!handle)
     return;
 
-  // FIXME: Do we need cleancall here?
-  if (handle->cleanup) {
-    struct cleanup_kill_data data = {
-      .status = status,
-      .grace = handle->cleanup_grace,
-      .name = R_NilValue
-    };
-    r_with_cleanup_context(c_processx_kill_data, &data);
-  }
+  SEXP call = PROTECT(finalizer_call(handle->r6_private));
+  SEXP err = r_safe_eval(call, R_BaseEnv, NULL);
+  UNPROTECT(1);
 
   /* Note: if no cleanup is requested, then we still have a sigchld
      handler, to read out the exit code via waitpid, but no handle
@@ -365,21 +372,25 @@ void processx__finalizer(SEXP status) {
   /* Deallocate memory */
   R_ClearExternalPtr(status);
   processx__handle_destroy(handle);
+
+  if (err) {
+    r_unwind(err);
+  }
 }
 
-static SEXP processx__make_handle(SEXP private, int cleanup, double cleanup_grace) {
+static SEXP processx__make_handle(SEXP private, int cleanup) {
   processx_handle_t * handle;
   SEXP result;
 
   handle = (processx_handle_t*) malloc(sizeof(processx_handle_t));
   if (!handle) { R_THROW_ERROR("Cannot make processx handle, out of memory"); }
   memset(handle, 0, sizeof(processx_handle_t));
+
   handle->waitpipe[0] = handle->waitpipe[1] = -1;
+  handle->r6_private = private;
 
   result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
   R_RegisterCFinalizerEx(result, processx__finalizer, 1);
-  handle->cleanup = cleanup;
-  handle->cleanup_grace = cleanup_grace;
 
   UNPROTECT(1);
   return result;
@@ -426,14 +437,12 @@ skip:
 SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
                    SEXP connections, SEXP env, SEXP windows_verbatim_args,
                    SEXP windows_hide_window, SEXP windows_detached_process,
-                   SEXP private, SEXP cleanup, SEXP cleanup_grace, SEXP wd,
-                   SEXP encoding, SEXP tree_id) {
+                   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding,
+                   SEXP tree_id) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
   char **cenv = isNull(env) ? 0 : processx__tmp_character(env);
-  int ccleanup = INTEGER(cleanup)[0];
-  double ccleanup_grace = REAL(cleanup_grace)[0];
 
   const int cpty = LOGICAL(pty)[0];
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
@@ -468,7 +477,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 
   processx__setup_sigchld();
 
-  result = PROTECT(processx__make_handle(private, ccleanup, ccleanup_grace));
+  int ccleanup = LOGICAL(cleanup)[0];
+  result = PROTECT(processx__make_handle(private, ccleanup));
   handle = R_ExternalPtrAddr(result);
 
   if (cpty) {

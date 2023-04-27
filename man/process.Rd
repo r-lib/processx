@@ -91,7 +91,6 @@ p$is_alive()
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-process-new}{\code{process$new()}}
-\item \href{#method-process-finalize}{\code{process$finalize()}}
 \item \href{#method-process-kill}{\code{process$kill()}}
 \item \href{#method-process-kill_tree}{\code{process$kill_tree()}}
 \item \href{#method-process-signal}{\code{process$signal()}}
@@ -320,21 +319,14 @@ R6 object representing the process.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-process-finalize"></a>}}
-\if{latex}{\out{\hypertarget{method-process-finalize}{}}}
-\subsection{Method \code{finalize()}}{
-Cleanup method that is called when the \code{process} object is garbage
-collected. If requested so in the process constructor, then it
-eliminates all processes in the process's subprocess tree.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{process$finalize()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-process-kill"></a>}}
 \if{latex}{\out{\hypertarget{method-process-kill}{}}}
 \subsection{Method \code{kill()}}{
+Cleanup method that is called when the \code{process} object is garbage
+collected. If requested so in the process constructor, then it
+eliminates all processes in the process's subprocess tree.
+
+
 Terminate the process. It also terminate all of its child
 processes, except if they have created a new process group (on Unix),
 or job object (on Windows). It returns \code{TRUE} if the process

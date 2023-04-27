@@ -233,11 +233,6 @@ process <- R6::R6Class(
     #' collected. If requested so in the process constructor, then it
     #' eliminates all processes in the process's subprocess tree.
 
-    finalize = function() {
-      if (!is.null(private$tree_id) && private$cleanup_tree &&
-          ps::ps_is_supported()) self$kill_tree(grace = private$cleanup_grace)
-    },
-
     #' @description
     #' Terminate the process. It also terminate all of its child
     #' processes, except if they have created a new process group (on Unix),
@@ -671,6 +666,7 @@ process <- R6::R6Class(
     windows_hide_window = NULL,
 
     status = NULL,        # C file handle
+    pid = NULL,           # pid for cleanup
 
     supervised = FALSE,   # Whether process is tracked by supervisor
 

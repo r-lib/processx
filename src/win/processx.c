@@ -843,7 +843,7 @@ void processx__finalizer(SEXP status) {
   processx__handle_destroy(handle);
 }
 
-SEXP processx__make_handle(SEXP private, int cleanup) {
+SEXP processx__make_handle(SEXP private, SEXP cleanup) {
   processx_handle_t * handle;
   SEXP result;
 
@@ -851,7 +851,7 @@ SEXP processx__make_handle(SEXP private, int cleanup) {
   if (!handle) { R_THROW_ERROR("Out of memory when creating subprocess"); }
   memset(handle, 0, sizeof(processx_handle_t));
 
-  result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
+  result = PROTECT(R_MakeExternalPtr(handle, private, cleanup));
   R_RegisterCFinalizerEx(result, processx__finalizer, 1);
   handle->cleanup = cleanup;
 
@@ -868,8 +868,8 @@ void processx__handle_destroy(processx_handle_t *handle) {
 SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 		               SEXP connections, SEXP env, SEXP windows_verbatim_args,
                    SEXP windows_hide, SEXP windows_detached_process,
-                   SEXP private, SEXP cleanup, SEXP _cleanup_grace, SEXP wd,
-                   SEXP encoding, SEXP tree_id) {
+                   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding,
+                   SEXP tree_id) {
 
   const char *ccommand = CHAR(STRING_ELT(command, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
@@ -886,7 +886,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
   DWORD process_flags;
 
   processx_handle_t *handle;
-  int ccleanup = INTEGER(cleanup)[0];
   SEXP result;
   DWORD dwerr;
 
@@ -954,8 +953,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     }
   }
 
-  result = PROTECT(processx__make_handle(private, ccleanup));
+  result = PROTECT(processx__make_handle(private, cleanup));
   handle = R_ExternalPtrAddr(result);
+
+  int ccleanup = LOGICAL(result)[0];
 
   int inherit_std = 0;
   err = processx__stdio_create(handle, connections,
