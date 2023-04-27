@@ -193,7 +193,6 @@ process_initialize <- function(
     windows_detached_process,
     private,
     cleanup,
-    cleanup_grace,
     wd,
     encoding,
     paste0("PROCESSX_", private$tree_id, "=YES"),
@@ -212,6 +211,9 @@ process_initialize <- function(
     private$starttime_raw <- as.numeric(Sys.time())
   }
   private$starttime <- max(private$starttime_raw, before_start)
+
+  # Needed for cleaning up
+  private$pid <- self$get_pid()
 
   ## Need to close this, otherwise the child's end of the pipe
   ## will not be closed when the child exits, and then we cannot

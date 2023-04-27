@@ -795,6 +795,7 @@ process <- R6::R6Class(
     windows_hide_window = NULL,
 
     status = NULL, # C file handle
+    pid = NULL, # pid for cleanup
 
     supervised = FALSE, # Whether process is tracked by supervisor
 
@@ -816,8 +817,11 @@ process <- R6::R6Class(
     tree_id = NULL,
 
     finalize = function() {
+      # On Unix the C finalizer of the process handle calls
+      # `process_finalize()`, which also cleans up the process tree.
       if (
-        !is.null(private$tree_id) &&
+        os_type() == "windows" &&
+          !is.null(private$tree_id) &&
           private$cleanup_tree &&
           ps::ps_is_supported()
       ) {
