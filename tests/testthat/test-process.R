@@ -256,7 +256,7 @@ test_that("can kill process with grace", {
   p$run(fn, list(file = out))
   dir <- get_temp_dir()
   p$kill(grace = 0.1)
-  expect_false(dir.exists(dir))
+  poll_until(function() !dir.exists(dir))
 
   # When `grace` is 0, the tempdir isn't cleaned up
   p <- callr::r_session$new()
