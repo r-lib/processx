@@ -25,6 +25,7 @@ run(
   windows_hide_window = FALSE,
   encoding = "",
   cleanup_tree = FALSE,
+  cleanup_grace = 0.1,
   ...
 )
 }
@@ -127,6 +128,8 @@ both streams in UTF-8 currently.}
 
 \item{cleanup_tree}{Whether to clean up the child process tree after
 the process has finished.}
+
+\item{cleanup_grace}{Passed to \code{kill()} or \code{kill_tree()} on cleanup.}
 
 \item{...}{Extra arguments are passed to \code{process$new()}, see
 \link{process}. Note that you cannot pass \code{stout} or \code{stderr} here,

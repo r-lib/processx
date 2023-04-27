@@ -31,12 +31,13 @@ Suggests:
     curl,
     debugme,
     parallel,
+    pkgload,
     rlang (>= 1.0.2),
     testthat (>= 3.0.0),
     webfakes,
     withr
 Encoding: UTF-8
-RoxygenNote: 7.2.0
+RoxygenNote: 7.2.3
 Roxygen: list(markdown = TRUE)
 Config/testthat/edition: 3
 Config/Needs/website: tidyverse/tidytemplate

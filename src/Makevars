@@ -8,7 +8,8 @@ OBJECTS = init.o poll.o errors.o processx-connection.o   \
 
 .PHONY: all clean
 
-all: tools/px tools/sock supervisor/supervisor client$(SHLIB_EXT) $(SHLIB)
+all: tools/px tools/sock supervisor/supervisor client$(SHLIB_EXT) $(SHLIB) \
+     test/sigtermignore$(SHLIB_EXT)
 
 tools/px: tools/px.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -Wall tools/px.c -o tools/px
@@ -29,6 +30,9 @@ client$(SHLIB_EXT): $(CLIENT_OBJECTS)
 	    echo Removing libR.so dependency from client.so; \
 	    patchelf --remove-needed libR.so client$(SHLIB_EXT); \
 	fi
+
+test/sigtermignore$(SHLIB_EXT): test/sigtermignore.o
+	$(SHLIB_LINK) -o test/sigtermignore$(SHLIB_EXT) test/sigtermignore.o
 
 clean:
 	rm -rf $(SHLIB) $(OBJECTS) $(CLIENT_OBJECTS)		\

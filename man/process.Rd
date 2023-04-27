@@ -161,6 +161,7 @@ Start a new process in the background, and then return immediately.
   env = NULL,
   cleanup = TRUE,
   cleanup_tree = FALSE,
+  cleanup_grace = 0,
   wd = NULL,
   echo_cmd = FALSE,
   supervise = FALSE,
@@ -274,6 +275,11 @@ object is garbage collected.}
 
 \item{\code{cleanup_tree}}{Whether to kill the process and its child
 process tree when the \code{process} object is garbage collected.}
+
+\item{\code{cleanup_grace}}{Grace period between \code{SIGTERM} and \code{SIGKILL}.
+Only has an effect on Unix platforms. Set to 0 to terminate abruptly
+with \code{SIGKILL} only. Currently defaults to 0 until we implement
+a better approach on session quit.}
 
 \item{\code{wd}}{Working directory of the process. It must exist.
 If \code{NULL}, then the current working directory is used.}

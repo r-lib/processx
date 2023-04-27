@@ -123,6 +123,7 @@
 #'   both streams in UTF-8 currently.
 #' @param cleanup_tree Whether to clean up the child process tree after
 #'   the process has finished.
+#' @param cleanup_grace Passed to `kill()` or `kill_tree()` on cleanup.
 #' @param ... Extra arguments are passed to `process$new()`, see
 #'   [process]. Note that you cannot pass `stout` or `stderr` here,
 #'   because they are used internally by `run()`. You can use the
@@ -162,7 +163,7 @@ run <- function(
   stderr_line_callback = NULL, stderr_callback = NULL,
   stderr_to_stdout = FALSE, env = NULL,
   windows_verbatim_args = FALSE, windows_hide_window = FALSE,
-  encoding = "", cleanup_tree = FALSE, ...) {
+  encoding = "", cleanup_tree = FALSE, cleanup_grace = 0.1, ...) {
 
   assert_that(is_flag(error_on_status))
   assert_that(is_time_interval(timeout))
@@ -176,6 +177,7 @@ run <- function(
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
   assert_that(is.null(stderr_callback) || is.function(stderr_callback))
   assert_that(is_flag(cleanup_tree))
+  assert_that(is_numeric_scalar(cleanup_grace))
   assert_that(is_flag(stderr_to_stdout))
   ## The rest is checked by process$new()
   "!DEBUG run() Checked arguments"
@@ -195,9 +197,9 @@ run <- function(
 
   ## We make sure that the process is eliminated
   if (cleanup_tree) {
-    on.exit(pr$kill_tree(), add = TRUE)
+    defer(pr$kill_tree(grace = cleanup_grace))
   } else {
-    on.exit(pr$kill(), add = TRUE)
+    defer(pr$kill(grace = cleanup_grace))
   }
 
   ## If echo, then we need to create our own callbacks.
@@ -238,7 +240,7 @@ run <- function(
         resenv$errbuf$push(pr$read_error())
         resenv$errbuf$read()
       }
-      tryCatch(pr$kill(), error = function(e) NULL)
+      tryCatch(pr$kill(grace = cleanup_grace), error = function(e) NULL)
       signalCondition(new_process_interrupt_cond(
         list(
           interrupt = TRUE, stderr = err, stdout = out,
