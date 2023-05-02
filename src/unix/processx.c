@@ -349,6 +349,27 @@ SEXP finalizer_call(SEXP private) {
   return lang2(finalize_fn, private);
 }
 
+static SEXP session_finalizer_list = NULL;
+
+// These need to be macros to be considered protectors by rchk
+#define node_poke_prev(NODE, PREV) SET_VECTOR_ELT((NODE), 0, (PREV))
+#define node_poke_next(NODE, NEXT) SET_VECTOR_ELT((NODE), 1, (NEXT))
+#define node_poke_value(NODE, VALUE) SET_VECTOR_ELT((NODE), 2, (VALUE))
+
+static SEXP node_prev(SEXP node) { return VECTOR_ELT(node, 0); }
+static SEXP node_next(SEXP node) { return VECTOR_ELT(node, 1); }
+
+static
+SEXP new_node(SEXP prev, SEXP next, SEXP value) {
+  SEXP out = allocVector(VECSXP, 3);
+
+  node_poke_prev(out, prev);
+  node_poke_next(out, next);
+  node_poke_value(out, value);
+
+  return out;
+}
+
 void processx__finalizer(SEXP status) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
 
@@ -365,6 +386,19 @@ void processx__finalizer(SEXP status) {
   SEXP err = r_safe_eval(call, R_BaseEnv, NULL);
   UNPROTECT(1);
 
+  /* Remove node from session finalizer list */
+  SEXP node = handle->finalizer_node;
+  SEXP prev = node_prev(node);
+  SEXP next = node_next(node);
+
+  if (prev != R_NilValue) {
+    node_poke_next(prev, next);
+  }
+  node_poke_prev(next, prev);
+  if (node == session_finalizer_list) {
+    session_finalizer_list = next;
+  }
+
   /* Note: if no cleanup is requested, then we still have a sigchld
      handler, to read out the exit code via waitpid, but no handle
      any more. */
@@ -376,6 +410,45 @@ void processx__finalizer(SEXP status) {
   if (err) {
     r_unwind(err);
   }
+}
+
+static
+void processx__session_finalizer(SEXP _) {
+  static SEXP finalize_fn = NULL;
+  if (!finalize_fn) {
+    finalize_fn = lang3(install(":::"),
+                        install("processx"),
+                        install("session_finalize"));
+    R_PreserveObject(finalize_fn);
+  }
+
+  SEXP call = PROTECT(lang2(finalize_fn, session_finalizer_list));
+  eval(call, R_BaseEnv);
+  UNPROTECT(1);
+}
+
+static
+void processx__register_finalizer(SEXP status, processx_handle_t *handle) {
+  if (!session_finalizer_list) {
+    // This root node is never popped and protects the rest of the list
+    session_finalizer_list = new_node(R_NilValue, R_NilValue, R_NilValue);
+    R_PreserveObject(session_finalizer_list);
+    R_RegisterCFinalizerEx(R_BaseEnv, &processx__session_finalizer, 1);
+  }
+
+  // GC finalizer
+  R_RegisterCFinalizerEx(status, &processx__finalizer, 0);
+
+  // Session finalizer
+  SEXP private_weakref = R_MakeWeakRef(handle->r6_private, R_NilValue, R_NilValue, 0);
+  PROTECT(private_weakref);
+
+  SEXP node = new_node(R_NilValue, session_finalizer_list, private_weakref);
+  node_poke_prev(session_finalizer_list, node);
+  session_finalizer_list = node;
+  handle->finalizer_node = node;
+
+  UNPROTECT(1);
 }
 
 static SEXP processx__make_handle(SEXP private, int cleanup) {
@@ -390,7 +463,7 @@ static SEXP processx__make_handle(SEXP private, int cleanup) {
   handle->r6_private = private;
 
   result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
-  R_RegisterCFinalizerEx(result, processx__finalizer, 1);
+  processx__register_finalizer(result, handle);
 
   UNPROTECT(1);
   return result;

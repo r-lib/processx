@@ -25,6 +25,7 @@ typedef struct processx_handle_s {
   int cleanup;
   SEXP r6_private;
   double create_time;
+  SEXP finalizer_node;
   processx_connection_t *pipes[3];
   int ptyfd;
 } processx_handle_t;
