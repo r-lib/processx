@@ -76,3 +76,7 @@ SEXP r_safe_eval(SEXP expr, SEXP env, SEXP *out) {
   struct safe_eval data = { .expr = expr, .env = env, .out = out };
   return r_unwind_protect(&safe_eval_callback, &data);
 }
+
+SEXP processx__wref_key(SEXP x) {
+  return R_WeakRefKey(x);
+}

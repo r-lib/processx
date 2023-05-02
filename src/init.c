@@ -95,6 +95,7 @@ SEXP is_valgrind_(void)
 #endif
   return Rf_ScalarLogical(PROCESSX_RUNNING_ON_VALGRIND() != 0);
 }
+SEXP processx__wref_key(SEXP);
 
 static const R_CallMethodDef callMethods[]  = {
   CLEANCALL_METHOD_RECORD,
@@ -118,6 +119,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx__proc_start_time",   (DL_FUNC) &processx__proc_start_time,   1 },
   { "processx__proc_end_time",     (DL_FUNC) &processx__proc_end_time,     1 },
   { "processx__set_boot_time",     (DL_FUNC) &processx__set_boot_time,     1 },
+  { "processx__wref_key",          (DL_FUNC) &processx__wref_key,          1 },
 
   { "processx_connection_create",     (DL_FUNC) &processx_connection_create,     2 },
   { "processx_connection_read_chars", (DL_FUNC) &processx_connection_read_chars, 2 },

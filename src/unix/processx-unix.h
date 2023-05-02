@@ -26,6 +26,7 @@ typedef struct processx_handle_s {
   SEXP r6_private;
   double create_time;
   double end_time;          /* 0.0 until the process exits */
+  SEXP finalizer_node;
   processx_connection_t *pipes[3];
   int ptyfd;
   int pty_child_fd; /* parent holds child PTY fd open to prevent data loss on macOS */
