@@ -20,7 +20,7 @@ URL: https://processx.r-lib.org, https://github.com/r-lib/processx#readme
 BugReports: https://github.com/r-lib/processx/issues
 Depends: R (>= 3.4.0)
 Imports:
-    ps (>= 1.2.0),
+    ps (>= 1.7.5.9001),
     R6,
     utils
 Suggests:
@@ -36,6 +36,8 @@ Suggests:
     testthat (>= 3.0.0),
     webfakes,
     withr
+Remotes:
+    r-lib/ps@kill-tree-grace
 Encoding: UTF-8
 RoxygenNote: 7.2.3
 Roxygen: list(markdown = TRUE)

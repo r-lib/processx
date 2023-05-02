@@ -141,7 +141,7 @@ process_initialize <- function(self, private, command, args,
     c_processx_exec,
     command, c(command, args), pty, pty_options,
     connections, env, windows_verbatim_args, windows_hide_window,
-    windows_detached_process, private, cleanup, cleanup_grace, wd, encoding,
+    windows_detached_process, private, cleanup, wd, encoding,
     paste0("PROCESSX_", private$tree_id, "=YES")
   )
 
@@ -154,6 +154,9 @@ process_initialize <- function(self, private, command, args,
   private$starttime <-
     chain_call(c_processx__proc_start_time, private$status)
   if (private$starttime == 0) private$starttime <- Sys.time()
+
+  # Needed for cleaning up
+  private$pid <- self$get_pid()
 
   ## Need to close this, otherwise the child's end of the pipe
   ## will not be closed when the child exits, and then we cannot

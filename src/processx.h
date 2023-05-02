@@ -45,8 +45,8 @@ extern "C" {
 SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 		   SEXP connections, SEXP env, SEXP windows_verbatim_args,
 		   SEXP windows_hide_window, SEXP windows_detached_process,
-		   SEXP private_, SEXP cleanup, SEXP cleanup_signal,
-                   SEXP wd, SEXP encoding, SEXP tree_id);
+		   SEXP private_, SEXP cleanup, SEXP wd, SEXP encoding,
+                   SEXP tree_id);
 SEXP processx_wait(SEXP status, SEXP timeout, SEXP name);
 SEXP processx_is_alive(SEXP status, SEXP name);
 SEXP processx_get_exit_status(SEXP status, SEXP name);
@@ -116,5 +116,11 @@ typedef struct {
 #ifdef __cplusplus
 }
 #endif
+
+#define r_no_return __attribute__ ((noreturn))
+
+r_no_return void r_unwind(SEXP x);
+SEXP r_unwind_protect(void (*fn)(void *data), void *data);
+SEXP r_safe_eval(SEXP expr, SEXP env, SEXP *out);
 
 #endif

@@ -1,5 +1,10 @@
 # processx (development version)
 
+* Processes are now killed in parallel with a period of grace on
+  garbage collection (if `cleanup_tree` is `TRUE`) and on session
+  quit. The delay can be controlled with the new `cleanup_grace`
+  argument.
+
 * The `grace` argument of the `kill()` method is now active on Unix
   platforms. processx first tries to kill with `SIGTERM` with a
   timeout of `grace` seconds. After the timeout, `SIGKILL` is sent as

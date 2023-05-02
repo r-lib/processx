@@ -324,3 +324,53 @@ test_that("can kill with SIGTERM when ignored", {
   Sys.sleep(0.05)
   expect_true(p$is_alive())
 })
+
+test_that("clean up in parallel", {
+  opts <- callr::r_process_options(extra = list(
+    cleanup_tree = TRUE,
+    cleanup_grace = 0.2
+  ))
+
+  fn <- function(load_sigtermignore, cleanup) {
+    sub_opts <- callr::r_process_options(extra = list(
+      cleanup = cleanup
+    ))
+    s <- callr::r_session$new(sub_opts)
+
+    # Ensure grace delay kicks in
+    s$run(load_sigtermignore)
+
+    # Make sure sessions are not closed by stdin EOF
+    s$call(function() Sys.sleep(60))
+
+    # Keep alive through options
+    sessions <- c(getOption("sessions"), list(s))
+    options(sessions = sessions)
+  }
+
+  # On GC
+  s <- callr::r_session$new(opts)
+  for (i in 1:5) s$run(fn, list(load_sigtermignore, cleanup = FALSE))
+
+  tree <- ps::ps_find_tree(s$.__enclos_env__$private$tree_id)
+  expect_true(all(sapply(tree, ps::ps_is_running)))
+
+  rm(s)
+  gc()
+
+  # Why is this needed?
+  Sys.sleep(0.05)
+
+  expect_false(any(sapply(tree, ps::ps_is_running)))
+
+  # On session quit
+  s <- callr::r_session$new(opts)
+  for (i in 1:5) s$run(fn, list(load_sigtermignore, cleanup = TRUE))
+
+  tree <- ps::ps_find_tree(s$.__enclos_env__$private$tree_id)
+  expect_true(all(sapply(tree, ps::ps_is_running)))
+
+  s$run(function() q())
+
+  expect_false(any(sapply(tree, ps::ps_is_running)))
+})
