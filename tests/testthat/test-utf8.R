@@ -40,16 +40,6 @@ test_that("UTF-8 directory name", {
   expect_equal(out$status, 10)
 })
 
-test_that("UTF-8 argument", {
-  skip_other_platforms("windows")
-  local_temp_dir()
-  unc <- "\u00fa\u00e1\u00f6\u0151\u00e9\u0414\u041e\u0411\u0420\u041e"
-  out <- run(get_tool("pxu"), c("writefile", "of", unc))
-  outarg <- readBin("of", what = "raw", n = 200)
-  exp <- iconv(unc, from = "UTF-8", to = "UTF-16LE", toRaw = TRUE)[[1]]
-  expect_equal(exp, outarg)
-})
-
 test_that("native program name is converted to UTF-8", {
   skip_other_platforms("windows")
   if (!l10n_info()$`Latin-1`) skip("Needs latin1 locale")
@@ -58,25 +48,6 @@ test_that("native program name is converted to UTF-8", {
   file.copy(get_tool("px"), exe)
   out <- run(exe, c("return", 10), error_on_status = FALSE)
   expect_equal(out$status, 10)
-})
-
-test_that("native args are converted to UTF-8", {
-  skip_other_platforms("windows")
-  if (!l10n_info()$`Latin-1`) skip("Needs latin1 locale")
-  local_temp_dir()
-  name <- enc2native("\u00fa\u00e1\u00f6")
-
-  out <- run(get_tool("px"), c("writefile", "of", name))
-  expect_equal(
-    charToRaw(name),
-    readBin("of", what = "raw", n = 100)
-  )
-
-  out2 <- run(get_tool("pxu"), c("writefile", "of2", name))
-  expect_equal(
-    iconv(name, to = "UTF-16LE", toRaw = TRUE)[[1]],
-    readBin("of2", what = "raw", n = 100)
-  )
 })
 
 # TODO: more UTF-8 output

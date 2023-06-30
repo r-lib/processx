@@ -1,6 +1,6 @@
 
 progs <- if (WINDOWS) {
-  c(file.path("tools", c("px.exe", "pxu.exe", "interrupt.exe", "sock.exe")),
+  c(file.path("tools", c("px.exe", "interrupt.exe", "sock.exe")),
     file.path("supervisor", "supervisor.exe"))
 } else {
   c(file.path("tools", c("px", "sock")),
