@@ -1,4 +1,4 @@
-# processx (development version)
+# processx 3.8.2
 
 * The client library, used by callr, now ignores `SIGPIPE` when writing
   to a file descriptor, on unix. This avoid possible freezes when a
