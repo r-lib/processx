@@ -52,7 +52,9 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="processx-development-version">processx (development version)<a class="anchor" aria-label="anchor" href="#processx-development-version"></a></h2>
-</div>
+<ul><li>The client library, used by callr, now ignores <code>SIGPIPE</code> when writing to a file descriptor, on unix. This avoid possible freezes when a <code><a href="https://callr.r-lib.org/reference/r_session.html" class="external-link">callr::r_session</a></code> subprocess is trying to report its result after the main process was terminated. In particular, this happened with parallel testthat: <a href="https://github.com/r-lib/testthat/issues/1819" class="external-link uri">https://github.com/r-lib/testthat/issues/1819</a>
+</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="3.8.1" id="processx-381">processx 3.8.1<a class="anchor" aria-label="anchor" href="#processx-381"></a></h2><p class="text-muted">CRAN release: 2023-04-18</p>
 <ul><li>On Unixes, R processes created by callr now feature a <code>SIGTERM</code> cleanup handler that cleans up the temporary directory before shutting down. To enable it, set the <code>PROCESSX_R_SIGTERM_CLEANUP</code> envvar to a non-empty value.</li>
