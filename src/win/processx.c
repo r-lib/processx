@@ -51,11 +51,11 @@ static void processx__init_global_job_handle(void) {
   }
 }
 
-void R_init_processx_win() {
+void R_init_processx_win(void) {
   /* Nothing to do currently */
 }
 
-SEXP processx__unload_cleanup() {
+SEXP processx__unload_cleanup(void) {
 
   if (processx__connection_iocp) CloseHandle(processx__connection_iocp);
   if (processx__iocp_thread) TerminateThread(processx__iocp_thread, 0);

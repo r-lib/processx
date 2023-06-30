@@ -57,7 +57,7 @@ void processx__stdio_noinherit(BYTE* buffer) {
  * does a perfect job.
  */
 
-SEXP processx_disable_inheritance() {
+SEXP processx_disable_inheritance(void) {
   HANDLE handle;
   STARTUPINFOW si;
 

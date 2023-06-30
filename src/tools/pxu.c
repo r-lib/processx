@@ -14,7 +14,7 @@
 
 #include <io.h>
 
-void usage() {
+void usage(void) {
   fwprintf(stderr, L"Usage: px [command arg] [command arg] ...\n\n");
   fwprintf(stderr, L"Commands:\n");
   fwprintf(stderr, L"  sleep  <seconds>           -- "
