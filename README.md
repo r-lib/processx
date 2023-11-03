@@ -75,6 +75,12 @@ Install the stable version from CRAN:
 install.packages("processx")
 ```
 
+If you need the development version, install it from GitHub:
+
+``` r
+pak::pak("r-lib/processx")
+```
+
 ## Usage
 
 ``` r
