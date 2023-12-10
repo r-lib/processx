@@ -52,7 +52,9 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="processx-development-version">processx (development version)<a class="anchor" aria-label="anchor" href="#processx-development-version"></a></h2>
-</div>
+<ul><li>
+<code>*printf()</code> format strings are now safer (<a href="https://github.com/r-lib/processx/issues/379" class="external-link">#379</a>).</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="3.8.2" id="processx-382">processx 3.8.2<a class="anchor" aria-label="anchor" href="#processx-382"></a></h2><p class="text-muted">CRAN release: 2023-06-30</p>
 <ul><li>The client library, used by callr, now ignores <code>SIGPIPE</code> when writing to a file descriptor, on unix. This avoid possible freezes when a <code><a href="https://callr.r-lib.org/reference/r_session.html" class="external-link">callr::r_session</a></code> subprocess is trying to report its result after the main process was terminated. In particular, this happened with parallel testthat: <a href="https://github.com/r-lib/testthat/issues/1819" class="external-link uri">https://github.com/r-lib/testthat/issues/1819</a>
