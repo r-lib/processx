@@ -16,7 +16,7 @@ Description: Tools to run system processes in the background.  It can
     standard output or error, with a timeout. It can also poll several
     processes at once.
 License: MIT + file LICENSE
-URL: https://processx.r-lib.org, https://github.com/r-lib/processx#readme
+URL: https://processx.r-lib.org, https://github.com/r-lib/processx
 BugReports: https://github.com/r-lib/processx/issues
 Depends: 
     R (>= 3.4.0)
