@@ -1,4 +1,4 @@
-# processx (development version)
+# processx 3.8.3
 
 * `*printf()` format strings are now safer (#379).
 
