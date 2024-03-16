@@ -6,7 +6,7 @@ Authors@R: c(
            comment = c(ORCID = "0000-0001-7098-9676")),
     person("Winston", "Chang", role = "aut"),
     person("Posit Software, PBC", role = c("cph", "fnd")),
-    person("Mango Solutions", role = c("cph", "fnd"))
+    person("Ascent Digital Services", role = c("cph", "fnd"))
   )
 Description: Tools to run system processes in the background.  It can
     check if a background process is running; wait on a background process
@@ -18,7 +18,7 @@ Description: Tools to run system processes in the background.  It can
 License: MIT + file LICENSE
 URL: https://processx.r-lib.org, https://github.com/r-lib/processx
 BugReports: https://github.com/r-lib/processx/issues
-Depends: 
+Depends:
     R (>= 3.4.0)
 Imports:
     ps (>= 1.2.0),
