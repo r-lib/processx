@@ -643,4 +643,4 @@ contributing to this project, you agree to abide by its terms.
 
 ## License
 
-MIT © Mango Solutions, RStudio, Gábor Csárdi
+MIT © Ascent Digital Services, RStudio, Gábor Csárdi

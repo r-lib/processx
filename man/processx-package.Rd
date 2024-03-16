@@ -28,7 +28,7 @@ Authors:
 Other contributors:
 \itemize{
   \item Posit Software, PBC [copyright holder, funder]
-  \item Mango Solutions [copyright holder, funder]
+  \item Ascent Digital Services [copyright holder, funder]
 }
 
 }
