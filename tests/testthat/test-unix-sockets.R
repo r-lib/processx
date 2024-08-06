@@ -180,6 +180,8 @@ test_that("here is no extra ready for poll(), without data", {
 
 test_that("closing the other end finishes `poll()`, on macOS", {
   skip_on_cran()
+  # seems fragile in covr
+  skip_on_covr()
 
   sock <- tempfile()
   on.exit(unlink(sock), add = TRUE)
