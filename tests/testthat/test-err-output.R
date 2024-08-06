@@ -35,13 +35,14 @@ test_that("simple error with cli", {
 
 test_that("simple error with cli and colors", {
 
+  cli <- if (packageVersion("cli") >= "3.6.3") "newcli" else "oldcli"
   out <- run_script({
     library(cli)
     options(cli.num_colors = 256)
     f <- function() processx:::throw("This failed")
     f()
   })
-  expect_snapshot(cat(out$stderr))
+  expect_snapshot(cat(out$stderr), variant = cli)
 
   out <- run_script({
     library(cli)
@@ -50,7 +51,7 @@ test_that("simple error with cli and colors", {
     f <- function() processx:::throw("This failed")
     f()
   })
-  expect_snapshot(cat(out$stdout))
+  expect_snapshot(cat(out$stdout), variant = cli)
 })
 
 test_that("chain_error", {
@@ -96,7 +97,8 @@ test_that("chain_error", {
     list(o = quote({library(cli); options(cli.num_colors = 256)}), c = expr)
   )
   out <- run_script(quoted = expr2)
-  expect_snapshot(cat(out$stderr), transform = scrub_srcref)
+  cli <- if (packageVersion("cli") >= "3.6.3") "newcli" else "oldcli"  
+  expect_snapshot(cat(out$stderr), transform = scrub_srcref, variant = cli)
 })
 
 test_that("chain_error with stop()", {
@@ -205,8 +207,10 @@ test_that("full parent error is printed in non-interactive mode", {
     list(o = quote({library(cli); options(cli.num_colors = 256)}), c = expr)
   )
   out <- run_script(quoted = expr2)
+  cli <- if (packageVersion("cli") >= "3.6.3") "newcli" else "oldcli"  
   expect_snapshot(
     cat(out$stderr),
-    transform = function(x) scrub_px(scrub_srcref(x))
+    transform = function(x) scrub_px(scrub_srcref(x)),
+    variant = cli
   )
 })

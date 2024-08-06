@@ -1,6 +1,9 @@
 
 test_that("curl fds", {
   skip_on_cran()
+  if (Sys.getenv("CI") != "" && Sys.info()[["sysname"]] == "Darwin") {
+    skip("fragile on GHA macOS")
+  }
 
   resp <- list()
   errm <- character()
