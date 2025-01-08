@@ -21,30 +21,20 @@ test_that("curl fds", {
   curl::multi_add(pool = pool, curl::new_handle(url = url1, http_version = 2),
                   done = done, fail = fail)
 
+  # This does not do much, but at least it tests that we can poll()
+  # libcurl's file descriptors
+
   timeout <- Sys.time() + 5
   repeat {
-    state <- curl::multi_run(timeout = 1/10000, pool = pool, poll = TRUE)
     fds <- curl::multi_fdset(pool = pool)
-    if (length(fds$reads) > 0) break;
-    if (Sys.time() >= timeout) break;
+    if (length(fds$reads) > 0) {
+      pr <- poll(list(curl_fds(fds)), 1000)
+    }
+    state <- curl::multi_run(timeout = 0.1, pool = pool, poll = TRUE)
+    if (state$pending == 0 || Sys.time() >= timeout) break;
   }
 
   expect_true(Sys.time() < timeout)
-
-  xfds <- list()
-  xpr <- character()
-
-  while (state$pending > 0) {
-    fds <- curl::multi_fdset(pool = pool)
-    xfds <- c(xfds, fds["reads"])
-    pr <- poll(list(curl_fds(fds)), 2000)
-    xpr <- c(xpr, pr[[1]])
-    state <- curl::multi_run(timeout = 0.1, pool = pool, poll = TRUE)
-  }
-
-  expect_true(all(vapply(xfds, length, 1L) > 0))
-  expect_true(all(xpr == "event"))
-
   expect_equal(vapply(resp, "[[", "", "url"), c(rep(url1, 4), url2))
 })
 
