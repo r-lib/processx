@@ -1,9 +1,6 @@
 
 test_that("curl fds", {
   skip_on_cran()
-  if (Sys.getenv("CI") != "" && Sys.info()[["sysname"]] == "Darwin") {
-    skip("fragile on GHA macOS")
-  }
 
   resp <- list()
   errm <- character()
@@ -13,15 +10,15 @@ test_that("curl fds", {
   pool <- curl::new_pool()
   url1 <- httpbin$url("/status/200")
   url2 <- httpbin$url("/delay/1")
-  curl::multi_add(pool = pool, curl::new_handle(url = url1),
+  curl::multi_add(pool = pool, curl::new_handle(url = url1, http_version = 2),
                   done = done, fail = fail)
-  curl::multi_add(pool = pool, curl::new_handle(url = url1),
+  curl::multi_add(pool = pool, curl::new_handle(url = url1, http_version = 2),
                   done = done, fail = fail)
-  curl::multi_add(pool = pool, curl::new_handle(url = url2),
+  curl::multi_add(pool = pool, curl::new_handle(url = url2, http_version = 2),
                   done = done, fail = fail)
-  curl::multi_add(pool = pool, curl::new_handle(url = url1),
+  curl::multi_add(pool = pool, curl::new_handle(url = url1, http_version = 2),
                   done = done, fail = fail)
-  curl::multi_add(pool = pool, curl::new_handle(url = url1),
+  curl::multi_add(pool = pool, curl::new_handle(url = url1, http_version = 2),
                   done = done, fail = fail)
 
   timeout <- Sys.time() + 5
@@ -56,7 +53,7 @@ test_that("curl fds before others", {
 
   pool <- curl::new_pool()
   url <- httpbin$url("/delay/1")
-  curl::multi_add(pool = pool, curl::new_handle(url = url))
+  curl::multi_add(pool = pool, curl::new_handle(url = url, http_version = 2))
 
   timeout <- Sys.time() + 5
   repeat {
@@ -87,7 +84,7 @@ test_that("process fd before curl fd", {
 
   pool <- curl::new_pool()
   url <- httpbin$url("/delay/1")
-  curl::multi_add(pool = pool, curl::new_handle(url = url))
+  curl::multi_add(pool = pool, curl::new_handle(url = url, http_version = 2))
 
   timeout <- Sys.time() + 5
   repeat {
