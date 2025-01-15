@@ -6,6 +6,7 @@ test_that("throw() is standalone", {
   funobjs <- mget(funs, stenv)
   for (f in funobjs) expect_identical(environmentName(topenv(f)), "base")
 
+  skip_if_not_installed("codetools")
   expect_message(
     withCallingHandlers(
       res <- mapply(codetools::checkUsage, funobjs, funs,
