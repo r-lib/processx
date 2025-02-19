@@ -1,4 +1,4 @@
-# processx (development version)
+# processx 3.8.6
 
 * `processx::process` objects are cloneable again, temporarily,
   to avoid warning-like messages from R6 2.6.0 and later.
