@@ -224,16 +224,6 @@ process <- R6::R6Class(
                          encoding, post_process),
 
     #' @description
-    #' Cleanup method that is called when the `process` object is garbage
-    #' collected. If requested so in the process constructor, then it
-    #' eliminates all processes in the process's subprocess tree.
-
-    finalize = function() {
-      if (!is.null(private$tree_id) && private$cleanup_tree &&
-          ps::ps_is_supported()) self$kill_tree()
-    },
-
-    #' @description
     #' Terminate the process. It also terminate all of its child
     #' processes, except if they have created a new process group (on Unix),
     #' or job object (on Windows). It returns `TRUE` if the process
@@ -684,6 +674,11 @@ process <- R6::R6Class(
     post_process_done = FALSE,
 
     tree_id = NULL,
+
+    finalize = function() {
+      if (!is.null(private$tree_id) && private$cleanup_tree &&
+          ps::ps_is_supported()) self$kill_tree()
+    },
 
     get_short_name = function()
       process_get_short_name(self, private),
