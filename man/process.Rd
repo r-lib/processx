@@ -91,7 +91,6 @@ p$is_alive()
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-process-new}{\code{process$new()}}
-\item \href{#method-process-finalize}{\code{process$finalize()}}
 \item \href{#method-process-kill}{\code{process$kill()}}
 \item \href{#method-process-kill_tree}{\code{process$kill_tree()}}
 \item \href{#method-process-signal}{\code{process$signal()}}
@@ -140,6 +139,7 @@ p$is_alive()
 \item \href{#method-process-get_memory_info}{\code{process$get_memory_info()}}
 \item \href{#method-process-suspend}{\code{process$suspend()}}
 \item \href{#method-process-resume}{\code{process$resume()}}
+\item \href{#method-process-clone}{\code{process$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -312,18 +312,6 @@ It is only run once.}
 \subsection{Returns}{
 R6 object representing the process.
 }
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-process-finalize"></a>}}
-\if{latex}{\out{\hypertarget{method-process-finalize}{}}}
-\subsection{Method \code{finalize()}}{
-Cleanup method that is called when the \code{process} object is garbage
-collected. If requested so in the process constructor, then it
-eliminates all processes in the process's subprocess tree.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{process$finalize()}\if{html}{\out{</div>}}
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-process-kill"></a>}}
@@ -1016,5 +1004,22 @@ Calls \code{\link[ps:ps_resume]{ps::ps_resume()}} to resume a suspended process.
 \if{html}{\out{<div class="r">}}\preformatted{process$resume()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-process-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-process-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
 }
 }

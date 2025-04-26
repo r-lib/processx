@@ -1,4 +1,3 @@
-
 test_that("is_alive()", {
   skip_other_platforms("unix")
   skip_on_cran()
@@ -47,7 +46,14 @@ test_that("finalizer", {
     p <- mcparallel(Sys.sleep(1))
     q <- mcparallel(Sys.sleep(1))
     res <- mccollect(list(p, q))
-    tryCatch({ rm(px); gc(); "OK" }, error = function(x) x)
+    tryCatch(
+      {
+        rm(px)
+        gc()
+        "OK"
+      },
+      error = function(x) x
+    )
   })
 
   expect_identical(res$result, "OK")
@@ -100,7 +106,7 @@ test_that("signal", {
     q <- mcparallel(Sys.sleep(1))
     res <- mccollect(list(p, q))
 
-    signal <- px$signal(2)              # SIGINT
+    signal <- px$signal(2) # SIGINT
     status <- px$get_exit_status()
     list(signal = signal, status = status)
   })
@@ -163,11 +169,14 @@ test_that("SIGCHLD handler", {
     q <- mcparallel(Sys.sleep(1))
     res <- mccollect(list(p, q))
 
-    out <- tryCatch({
-      px2 <- process$new("true")
-      px2$wait(1)
-      "OK"
-    }, error = function(e) e)
+    out <- tryCatch(
+      {
+        px2 <- process$new("true")
+        px2$wait(1)
+        "OK"
+      },
+      error = function(e) e
+    )
 
     list(out = out, status = px$get_exit_status())
   })

@@ -1,4 +1,3 @@
-
 test_that("UTF-8 executable name", {
   skip_on_cran()
   local_temp_dir()

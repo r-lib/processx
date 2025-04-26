@@ -1,4 +1,3 @@
-
 enc2path <- function(x) {
   if (is_windows()) {
     enc2utf8(x)
@@ -48,27 +47,27 @@ full_path <- function(path) {
     if (grepl("^[a-zA-Z]:", path)) {
       drive <- substring(path, 1, 2)
       path <- substring(path, 3)
-
     } else if (substring(path, 1, 2) == "//") {
       # Extract server name, like "//server", and use as drive.
       pos <- regexec("^(//[^/]*)(.*)", path)[[1]]
-      drive <- substring(path, pos[2], attr(pos, "match.length", exact = TRUE)[2])
+      drive <- substring(
+        path,
+        pos[2],
+        attr(pos, "match.length", exact = TRUE)[2]
+      )
       path <- substring(path, pos[3])
 
       # Must have a name, like "//server"
       if (drive == "//")
         throw(new_error("Server name not found in network path."))
-
     } else {
       drive <- substring(getwd(), 1, 2)
 
       if (substr(path, 1, 1) != "/")
         path <- substring(file.path(getwd(), path), 3)
     }
-
   } else {
-    if (substr(path, 1, 1) != "/")
-      path <- file.path(getwd(), path)
+    if (substr(path, 1, 1) != "/") path <- file.path(getwd(), path)
   }
 
   parts <- strsplit(path, "/")[[1]]
@@ -78,30 +77,27 @@ full_path <- function(path) {
   while (i <= length(parts)) {
     if (parts[i] == "." || parts[i] == "") {
       parts <- parts[-i]
-
     } else if (parts[i] == "..") {
       if (i == 2) {
         parts <- parts[-i]
       } else {
-        parts <- parts[-c(i-1, i)]
-        i <- i-1
+        parts <- parts[-c(i - 1, i)]
+        i <- i - 1
       }
     } else {
-      i <- i+1
+      i <- i + 1
     }
   }
 
   new_path <- paste(parts, collapse = "/")
-  if (new_path == "")
-    new_path <- "/"
+  if (new_path == "") new_path <- "/"
 
-  if (is_windows())
-    new_path <- paste0(drive, new_path)
+  if (is_windows()) new_path <- paste0(drive, new_path)
 
   new_path
 }
 
-vcapply <- function (X, FUN, ..., USE.NAMES = TRUE) {
+vcapply <- function(X, FUN, ..., USE.NAMES = TRUE) {
   vapply(X, FUN, FUN.VALUE = character(1), ..., USE.NAMES = USE.NAMES)
 }
 
@@ -152,12 +148,10 @@ str_wrap_words <- function(words, width, indent = 0, exdent = 2) {
       current_line <- paste0(current_line, words[i])
       first_word <- FALSE
       i <- i + 1
-
     } else if (current_width + 1 + word_widths[i] <= width) {
       current_width <- current_width + word_widths[i] + 1
       current_line <- paste0(current_line, " ", words[i])
       i <- i + 1
-
     } else {
       out <- c(out, current_line)
       current_width <- exdent
@@ -194,9 +188,9 @@ get_tool <- function(prog) {
 
 get_id <- function() {
   paste0(
-    "PS",
-    paste(sample(c(LETTERS, 0:9), 10, replace = TRUE), collapse = ""),
-    "_", as.integer(asNamespace("base")$.Internal(Sys.time()))
+    basename(tempfile("PS")),
+    "_",
+    as.integer(asNamespace("base")$.Internal(Sys.time()))
   )
 }
 
@@ -233,8 +227,10 @@ str_trim <- function(x) {
 }
 
 new_not_implemented_error <- function(message, call) {
-  add_class(new_error(message, call. = call),
-            c("not_implemented_error", "not_implemented"))
+  add_class(
+    new_error(message, call. = call),
+    c("not_implemented_error", "not_implemented")
+  )
 }
 
 add_class <- function(obj, class) {
@@ -250,7 +246,9 @@ is_interactive <- function() {
     FALSE
   } else if (tolower(getOption("knitr.in.progress", "false")) == "true") {
     FALSE
-  } else if (tolower(getOption("rstudio.notebook.executing", "false")) == "true") {
+  } else if (
+    tolower(getOption("rstudio.notebook.executing", "false")) == "true"
+  ) {
     FALSE
   } else if (identical(Sys.getenv("TESTTHAT"), "true")) {
     FALSE

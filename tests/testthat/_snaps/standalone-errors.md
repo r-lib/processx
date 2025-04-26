@@ -1,30 +1,26 @@
 # can pass frame as error call in `new_error()`
 
     Code
-      (expect_error(f()))
-    Output
-      <rlib_error_3_0/rlib_error/error>
-      Error in `f()`:
+      f()
+    Condition
+      Error:
       ! my message
     Code
-      (expect_error(g()))
-    Output
-      <rlib_error_3_0/rlib_error/error>
-      Error in `g()`:
+      g()
+    Condition
+      Error:
       ! my message
 
 # can pass frame as error call in `throw()`
 
     Code
-      (expect_error(f()))
-    Output
-      <rlib_error_3_0/rlib_error/error>
-      Error in `f()`:
+      f()
+    Condition
+      Error:
       ! my message
     Code
-      (expect_error(g()))
-    Output
-      <rlib_error_3_0/rlib_error/error>
-      Error in `g()`:
+      g()
+    Condition
+      Error:
       ! my message
 

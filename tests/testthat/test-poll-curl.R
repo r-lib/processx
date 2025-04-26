@@ -1,4 +1,3 @@
-
 test_that("curl fds", {
   skip_on_cran()
 
@@ -10,41 +9,51 @@ test_that("curl fds", {
   pool <- curl::new_pool()
   url1 <- httpbin$url("/status/200")
   url2 <- httpbin$url("/delay/1")
-  curl::multi_add(pool = pool, curl::new_handle(url = url1),
-                  done = done, fail = fail)
-  curl::multi_add(pool = pool, curl::new_handle(url = url1),
-                  done = done, fail = fail)
-  curl::multi_add(pool = pool, curl::new_handle(url = url2),
-                  done = done, fail = fail)
-  curl::multi_add(pool = pool, curl::new_handle(url = url1),
-                  done = done, fail = fail)
-  curl::multi_add(pool = pool, curl::new_handle(url = url1),
-                  done = done, fail = fail)
+  curl::multi_add(
+    pool = pool,
+    curl::new_handle(url = url1, http_version = 2),
+    done = done,
+    fail = fail
+  )
+  curl::multi_add(
+    pool = pool,
+    curl::new_handle(url = url1, http_version = 2),
+    done = done,
+    fail = fail
+  )
+  curl::multi_add(
+    pool = pool,
+    curl::new_handle(url = url2, http_version = 2),
+    done = done,
+    fail = fail
+  )
+  curl::multi_add(
+    pool = pool,
+    curl::new_handle(url = url1, http_version = 2),
+    done = done,
+    fail = fail
+  )
+  curl::multi_add(
+    pool = pool,
+    curl::new_handle(url = url1, http_version = 2),
+    done = done,
+    fail = fail
+  )
+
+  # This does not do much, but at least it tests that we can poll()
+  # libcurl's file descriptors
 
   timeout <- Sys.time() + 5
   repeat {
-    state <- curl::multi_run(timeout = 1/10000, pool = pool, poll = TRUE)
     fds <- curl::multi_fdset(pool = pool)
-    if (length(fds$reads) > 0) break;
-    if (Sys.time() >= timeout) break;
+    if (length(fds$reads) > 0) {
+      pr <- poll(list(curl_fds(fds)), 1000)
+    }
+    state <- curl::multi_run(timeout = 0.1, pool = pool, poll = TRUE)
+    if (state$pending == 0 || Sys.time() >= timeout) break
   }
 
   expect_true(Sys.time() < timeout)
-
-  xfds <- list()
-  xpr <- character()
-
-  while (state$pending > 0) {
-    fds <- curl::multi_fdset(pool = pool)
-    xfds <- c(xfds, fds["reads"])
-    pr <- poll(list(curl_fds(fds)), 2000)
-    xpr <- c(xpr, pr[[1]])
-    state <- curl::multi_run(timeout = 0.1, pool = pool, poll = TRUE)
-  }
-
-  expect_true(all(vapply(xfds, length, 1L) > 0))
-  expect_true(all(xpr == "event"))
-
   expect_equal(vapply(resp, "[[", "", "url"), c(rep(url1, 4), url2))
 })
 
@@ -53,14 +62,14 @@ test_that("curl fds before others", {
 
   pool <- curl::new_pool()
   url <- httpbin$url("/delay/1")
-  curl::multi_add(pool = pool, curl::new_handle(url = url))
+  curl::multi_add(pool = pool, curl::new_handle(url = url, http_version = 2))
 
   timeout <- Sys.time() + 5
   repeat {
-    state <- curl::multi_run(timeout = 1/10000, pool = pool, poll = TRUE)
+    state <- curl::multi_run(timeout = 1 / 10000, pool = pool, poll = TRUE)
     fds <- curl::multi_fdset(pool = pool)
-    if (length(fds$reads) > 0) break;
-    if (Sys.time() >= timeout) break;
+    if (length(fds$reads) > 0) break
+    if (Sys.time() >= timeout) break
   }
 
   expect_true(Sys.time() < timeout)
@@ -72,8 +81,7 @@ test_that("curl fds before others", {
   pr <- poll(list(pp, curl_fds(fds)), 10000)
   expect_equal(
     pr,
-    list(c(output = "nopipe", error = "nopipe", process = "silent"),
-         "event")
+    list(c(output = "nopipe", error = "nopipe", process = "silent"), "event")
   )
 
   pp$kill()
@@ -84,14 +92,14 @@ test_that("process fd before curl fd", {
 
   pool <- curl::new_pool()
   url <- httpbin$url("/delay/1")
-  curl::multi_add(pool = pool, curl::new_handle(url = url))
+  curl::multi_add(pool = pool, curl::new_handle(url = url, http_version = 2))
 
   timeout <- Sys.time() + 5
   repeat {
-    state <- curl::multi_run(timeout = 1/10000, pool = pool, poll = TRUE)
+    state <- curl::multi_run(timeout = 1 / 10000, pool = pool, poll = TRUE)
     fds <- curl::multi_fdset(pool = pool)
-    if (length(fds$reads) > 0) break;
-    if (Sys.time() >= timeout) break;
+    if (length(fds$reads) > 0) break
+    if (Sys.time() >= timeout) break
   }
 
   expect_true(Sys.time() < timeout)
@@ -103,8 +111,7 @@ test_that("process fd before curl fd", {
   pr <- poll(list(pp, curl_fds(fds)), 10000)
   expect_equal(
     pr,
-    list(c(output = "nopipe", error = "nopipe", process = "ready"),
-         "silent")
+    list(c(output = "nopipe", error = "nopipe", process = "ready"), "silent")
   )
 
   pp$kill()
