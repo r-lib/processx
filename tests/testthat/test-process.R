@@ -288,9 +288,11 @@ test_that("can use custom `cleanup_signal`", {
   withr::local_envvar("PROCESSX_R_SIGTERM_CLEANUP" = "true")
 
   # Should become the default in callr
-  opts <- callr::r_process_options(extra = list(
-    cleanup_grace = 0.1
-  ))
+  opts <- callr::r_process_options(
+    extra = list(
+      cleanup_grace = 0.1
+    )
+  )
   p <- callr::r_session$new(opts)
 
   out <- tempfile()
