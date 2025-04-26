@@ -125,7 +125,7 @@ test_that("reading unaccepted server socket is error", {
     list("connect")
   )
 
-  expect_snapshot(error = TRUE, conn_read_chars(sock1))
+  expect_snapshot(error = TRUE, conn_read_chars(sock1), variant = sysname())
 
   close(sock1)
   close(sock2)
@@ -226,11 +226,16 @@ test_that("errors", {
 
   if (!is_windows()) {
     sock <- file.path(tempdir(), strrep(basename(tempfile()), 1000))
-    expect_snapshot(error = TRUE, {
-      conn_create_unix_socket(sock)
-      conn_create_unix_socket("/dev/null")
-      conn_connect_unix_socket("/dev/null")
-    }, transform = transform_tempdir)
+    expect_snapshot(
+      error = TRUE,
+      {
+        conn_create_unix_socket(sock)
+        conn_create_unix_socket("/dev/null")
+        conn_connect_unix_socket("/dev/null")
+      },
+      transform = transform_tempdir,
+      variant = sysname()
+    )
   }
 
   ff <- conn_create_fifo()

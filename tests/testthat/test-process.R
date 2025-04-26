@@ -17,7 +17,8 @@ test_that("non existing process", {
   expect_snapshot(
     error = TRUE,
     process$new(tempfile()),
-    transform = transform_tempdir
+    transform = transform_tempdir,
+    variant = sysname()
   )
   ## This closes connections in finalizers
   gc()
@@ -75,7 +76,8 @@ test_that("working directory does not exist", {
   expect_snapshot(
     error = TRUE,
     process$new(px, wd = tempfile()),
-    transform = transform_px
+    transform = transform_px,
+    variant = sysname()
   )
   ## This closes connections in finalizers
   gc()

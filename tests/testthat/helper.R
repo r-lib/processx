@@ -166,7 +166,8 @@ transform_tempdir <- function(x) {
   x <- sub(normalizePath(tempdir()), "<tempdir>", x, fixed = TRUE)
   x <- sub(
     normalizePath(tempdir(), winslash = "/"),
-    "<tempdir>", x,
+    "<tempdir>",
+    x,
     fixed = TRUE
   )
   x <- sub("\\R\\", "/R/", x, fixed = TRUE)
@@ -177,6 +178,10 @@ transform_tempdir <- function(x) {
 
 transform_px <- function(x) {
   sub("'.*/px'", "'<path>/px'", x)
+}
+
+sysname <- function() {
+  Sys.info()[["sysname"]]
 }
 
 err$register_testthat_print()
