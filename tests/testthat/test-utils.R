@@ -1,6 +1,4 @@
-
 test_that("full_path gives correct values", {
-
   skip_on_cran()
 
   if (is_windows()) {
@@ -20,12 +18,17 @@ test_that("full_path gives correct values", {
   expect_identical(full_path("a/../b/c"), file.path(getwd(), "b/c"))
   expect_identical(
     full_path(
-      "../../../../../../../../../../../../../../../../../../../../../../../a"),
-    file.path(drive, "a"))
+      "../../../../../../../../../../../../../../../../../../../../../../../a"
+    ),
+    file.path(drive, "a")
+  )
   expect_identical(full_path("/../.././a"), file.path(drive, "a"))
   expect_identical(full_path("/a/./b/../c"), file.path(drive, "a/c"))
 
-  expect_identical(full_path("~nonexistent_user"), file.path(getwd(), "~nonexistent_user"))
+  expect_identical(
+    full_path("~nonexistent_user"),
+    file.path(getwd(), "~nonexistent_user")
+  )
   expect_identical(
     full_path("~/a/../b"),
     # On Windows, path.expand() can return a path with backslashes
@@ -89,7 +92,6 @@ test_that("do_echo_cmd", {
 })
 
 test_that("sh_quote_smart", {
-
   cases <- list(
     list(c("foo", "bar")),
     list(character()),
@@ -114,7 +116,8 @@ test_that("base64", {
 
   for (i in 5:32) {
     mtcars2 <- unserialize(base64_decode(base64_encode(
-      serialize(mtcars[1:i, ], NULL))))
-    expect_identical(mtcars[1:i,], mtcars2)
+      serialize(mtcars[1:i, ], NULL)
+    )))
+    expect_identical(mtcars[1:i, ], mtcars2)
   }
 })

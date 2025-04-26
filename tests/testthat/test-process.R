@@ -1,6 +1,4 @@
-
 test_that("process works", {
-
   px <- get_tool("px")
   p <- process$new(px, c("sleep", "5"))
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
@@ -8,7 +6,6 @@ test_that("process works", {
 })
 
 test_that("get_exit_status", {
-
   px <- get_tool("px")
   p <- process$new(px, c("return", "1"))
   on.exit(p$kill(), add = TRUE)
@@ -23,16 +20,21 @@ test_that("non existing process", {
 })
 
 test_that("post processing", {
-
   px <- get_tool("px")
   p <- process$new(
-    px, c("return", "0"), post_process = function() "foobar")
+    px,
+    c("return", "0"),
+    post_process = function() "foobar"
+  )
   p$wait(5000)
   p$kill()
   expect_equal(p$get_result(), "foobar")
 
   p <- process$new(
-    px, c("sleep", "5"), post_process = function() "yep")
+    px,
+    c("sleep", "5"),
+    post_process = function() "yep"
+  )
   expect_error(p$get_result(), "alive")
   p$kill()
   expect_equal(p$get_result(), "yep")
@@ -40,7 +42,10 @@ test_that("post processing", {
   ## Only runs once
   xx <- 0
   p <- process$new(
-    px, c("return", "0"), post_process = function() xx <<- xx + 1)
+    px,
+    c("return", "0"),
+    post_process = function() xx <<- xx + 1
+  )
   p$wait(5000)
   p$kill()
   p$get_result()
@@ -50,7 +55,7 @@ test_that("post processing", {
 })
 
 test_that("working directory", {
-  px  <- get_tool("px")
+  px <- get_tool("px")
   dir.create(tmp <- tempfile())
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
   cat("foo\nbar\n", file = file.path(tmp, "file"))

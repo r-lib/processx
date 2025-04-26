@@ -1,6 +1,4 @@
-
 test_that("print", {
-
   px <- get_tool("px")
   p <- process$new(px, c("sleep", "5"))
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)

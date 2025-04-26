@@ -1,24 +1,25 @@
-
 test_that("Output and error are discarded by default", {
-
   px <- get_tool("px")
   p <- process$new(px, c("outln", "foobar"))
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
-  expect_error(p$read_output_lines(n=1),  "not a pipe")
+  expect_error(p$read_output_lines(n = 1), "not a pipe")
   expect_error(p$read_all_output_lines(), "not a pipe")
-  expect_error(p$read_all_output(),       "not a pipe")
-  expect_error(p$read_error_lines(n=1),   "not a pipe")
-  expect_error(p$read_all_error_lines(),  "not a pipe")
-  expect_error(p$read_all_error(),        "not a pipe")
+  expect_error(p$read_all_output(), "not a pipe")
+  expect_error(p$read_error_lines(n = 1), "not a pipe")
+  expect_error(p$read_all_error_lines(), "not a pipe")
+  expect_error(p$read_all_error(), "not a pipe")
 })
 
 test_that("We can get the output", {
-
   px <- get_tool("px")
 
-  p <- process$new(px, c("out", "foo\nbar\nfoobar\n"),
-                   stdout = "|", stderr = "|")
+  p <- process$new(
+    px,
+    c("out", "foo\nbar\nfoobar\n"),
+    stdout = "|",
+    stderr = "|"
+  )
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   out <- p$read_all_output_lines()
@@ -26,7 +27,6 @@ test_that("We can get the output", {
 })
 
 test_that("We can get the error stream", {
-
   tmp <- tempfile(fileext = ".bat")
   on.exit(unlink(tmp), add = TRUE)
 
@@ -41,7 +41,6 @@ test_that("We can get the error stream", {
 })
 
 test_that("Output & error at the same time", {
-
   tmp <- tempfile(fileext = ".bat")
   on.exit(unlink(tmp), add = TRUE)
 
@@ -51,7 +50,8 @@ test_that("Output & error at the same time", {
     "echo wow",
     ">&2 echo world",
     "echo wooow",
-    sep = "\n", file = tmp
+    sep = "\n",
+    file = tmp
   )
   Sys.chmod(tmp, "700")
 
@@ -66,7 +66,6 @@ test_that("Output & error at the same time", {
 })
 
 test_that("Output and error to specific files", {
-
   tmp <- tempfile(fileext = ".bat")
   on.exit(unlink(tmp), add = TRUE)
 
@@ -76,7 +75,8 @@ test_that("Output and error to specific files", {
     "echo wow",
     ">&2 echo world",
     "echo wooow",
-    sep = "\n", file = tmp
+    sep = "\n",
+    file = tmp
   )
   Sys.chmod(tmp, "700")
 
@@ -96,7 +96,6 @@ test_that("Output and error to specific files", {
 })
 
 test_that("is_incomplete", {
-
   px <- get_tool("px")
   p <- process$new(px, c("out", "foo\nbar\nfoobar\n"), stdout = "|")
   on.exit(p$kill(), add = TRUE)
@@ -111,7 +110,6 @@ test_that("is_incomplete", {
 })
 
 test_that("readChar on IO, unix", {
-
   ## Need to skip, because of the different EOL character
   skip_other_platforms("unix")
 
@@ -128,7 +126,6 @@ test_that("readChar on IO, unix", {
 })
 
 test_that("readChar on IO, windows", {
-
   ## Need to skip, because of the different EOL character
   skip_other_platforms("windows")
 

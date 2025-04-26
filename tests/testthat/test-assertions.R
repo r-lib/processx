@@ -1,7 +1,13 @@
-
 strings <- list("foo", "", "111", "1", "-", "NA")
-not_strings <- list(1, character(), NA_character_, NA,
-                    c("foo", NA), c("1", "2"), NULL)
+not_strings <- list(
+  1,
+  character(),
+  NA_character_,
+  NA,
+  c("foo", NA),
+  c("1", "2"),
+  NULL
+)
 
 test_that("is_string", {
   for (p in strings) {
@@ -35,8 +41,15 @@ test_that("is_string_or_null", {
 })
 
 flags <- list(TRUE, FALSE)
-not_flags <- list(1, character(), NA_character_, NA,
-                  c("foo", NA), c("1", "2"), NULL)
+not_flags <- list(
+  1,
+  character(),
+  NA_character_,
+  NA,
+  c("foo", NA),
+  c("1", "2"),
+  NULL
+)
 
 test_that("is_flag", {
   for (p in flags) {
@@ -51,8 +64,16 @@ test_that("is_flag", {
 })
 
 ints <- list(1, 0, -1, 1L, 0L, -1L, 1.0, 42.0)
-not_ints <- list(1.2, 0.1, "foo", numeric(), integer(), NULL,
-                 NA_integer_, NA_real_)
+not_ints <- list(
+  1.2,
+  0.1,
+  "foo",
+  numeric(),
+  integer(),
+  NULL,
+  NA_integer_,
+  NA_real_
+)
 
 test_that("is_integerish_scalar", {
   for (p in ints) {
@@ -94,7 +115,6 @@ test_that("is_flag_or_string", {
       "is not a flag or a string"
     )
   }
-  
 })
 
 test_that("is_existing_file", {

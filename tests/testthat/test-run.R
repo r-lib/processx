@@ -1,15 +1,15 @@
-
 test_that("run can run", {
-
   px <- get_tool("px")
-  expect_error({
-    run(px, c("sleep", "0"))
-  }, NA)
+  expect_error(
+    {
+      run(px, c("sleep", "0"))
+    },
+    NA
+  )
   gc()
 })
 
 test_that("timeout works", {
-
   px <- get_tool("px")
   tic <- Sys.time()
   x <- run(px, c("sleep", "5"), timeout = 0.00001, error_on_status = FALSE)
@@ -21,7 +21,6 @@ test_that("timeout works", {
 })
 
 test_that("timeout throws right error", {
-
   px <- get_tool("px")
   e <- tryCatch(
     run(px, c("sleep", "5"), timeout = 0.00001, error_on_status = TRUE),
@@ -33,14 +32,14 @@ test_that("timeout throws right error", {
 })
 
 test_that("callbacks work", {
-
   px <- get_tool("px")
   ## This typically freezes on Unix, if there is a malloc/free race
   ## condition in the SIGCHLD handler.
   for (i in 1:30) {
     out <- NULL
     run(
-      px, rbind("outln", 1:20),
+      px,
+      rbind("outln", 1:20),
       stdout_line_callback = function(x, ...) out <<- c(out, x)
     )
     expect_equal(out, as.character(1:20))
@@ -50,7 +49,8 @@ test_that("callbacks work", {
   for (i in 1:30) {
     out <- NULL
     run(
-      px, rbind("errln", 1:20),
+      px,
+      rbind("errln", 1:20),
       stderr_line_callback = function(x, ...) out <<- c(out, x),
       error_on_status = FALSE
     )
@@ -66,7 +66,7 @@ test_that("working directory", {
   cat("foo\nbar\n", file = file.path(tmp, "file"))
 
   x <- run(px, c("cat", "file"), wd = tmp)
-  if  (is_windows()) {
+  if (is_windows()) {
     expect_equal(x$stdout, "foo\r\nbar\r\n")
   } else {
     expect_equal(x$stdout, "foo\nbar\n")
@@ -84,12 +84,16 @@ test_that("stderr_to_stdout", {
   px <- get_tool("px")
 
   out <- run(
-    px, c("out", "o1", "err", "e1", "out", "o2", "err", "e2", "outln", ""),
-    stderr_to_stdout = TRUE)
+    px,
+    c("out", "o1", "err", "e1", "out", "o2", "err", "e2", "outln", ""),
+    stderr_to_stdout = TRUE
+  )
 
   expect_equal(out$status, 0L)
   expect_equal(
-    out$stdout, paste0("o1e1o2e2", if (is_windows()) "\r", "\n"))
+    out$stdout,
+    paste0("o1e1o2e2", if (is_windows()) "\r", "\n")
+  )
   expect_equal(out$stderr, NULL)
   expect_false(out$timeout)
 })
@@ -105,7 +109,8 @@ test_that("condition on interrupt", {
   cnd <- tryCatch(
     interrupt_me(run(px, c("errln", "oops", "errflush", "sleep", 3)), 0.5),
     error = function(c) c,
-    interrupt = function(c) c)
+    interrupt = function(c) c
+  )
 
   expect_s3_class(cnd, "system_command_interrupt")
   expect_equal(str_trim(cnd$stderr), "oops")
@@ -122,7 +127,8 @@ test_that("stdin", {
 
   expect_equal(
     strsplit(res$stdout, "\r?\n")[[1]],
-    c("foobar", "this is the input"))
+    c("foobar", "this is the input")
+  )
 })
 
 test_that("drop stdout", {
@@ -152,7 +158,12 @@ test_that("redirect stout", {
   on.exit(unlink(c(tmp1, tmp2)), add = TRUE)
 
   px <- get_tool("px")
-  res <- run(px, c("outln", "boo", "errln", "bah"), stdout = tmp1, stderr = tmp2)
+  res <- run(
+    px,
+    c("outln", "boo", "errln", "bah"),
+    stdout = tmp1,
+    stderr = tmp2
+  )
   expect_null(res$stdout)
   expect_null(res$stderr)
   expect_equal(readLines(tmp1), "boo")

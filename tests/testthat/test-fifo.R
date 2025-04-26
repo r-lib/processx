@@ -1,4 +1,3 @@
-
 test_that("read end first", {
   skip_on_cran()
 
@@ -130,7 +129,7 @@ test_that("errors", {
   skip_on_cran()
 
   expect_error(
-    conn_create_fifo(read = TRUE, write= TRUE)
+    conn_create_fifo(read = TRUE, write = TRUE)
   )
 
   reader <- conn_create_fifo(read = TRUE)
