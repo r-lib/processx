@@ -90,10 +90,13 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   # Needs POSIX signal handling
   skip_on_os("windows")
 
+  n_children <- length(ps::ps_children())
+
   # Enabled case
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
 
   out <- tempfile()
+  defer(unlink(out, TRUE, TRUE))
 
   fn <- function(file) {
     file.create(tempfile())
@@ -101,14 +104,30 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   }
 
   p <- callr::r_session$new()
+  h <- ps::ps_handle(p$get_pid())
   p$run(fn, list(file = out))
 
   p_temp_dir <- readLines(out)
   expect_true(dir.exists(p_temp_dir))
 
+  # The cleanup process has been launched
+  expect_length(ps::ps_children(), n_children + 1)
+
   p$signal(ps::signals()$SIGTERM)
   p$wait()
-  expect_false(dir.exists(p_temp_dir))
+
+  # We're no longer waiting for the cleanup process to finish so poll
+  # until finished
+  poll_until(function() !dir.exists(p_temp_dir))
+  expect_length(ps::ps_children(), n_children)
+
+  # The cleanup process is terminated on quit
+  p <- callr::r_session$new()
+  h <- ps::ps_handle(p$get_pid())
+
+  expect_length(ps::ps_children(), n_children + 1)
+  p$run(function() quit("no"))
+  expect_length(ps::ps_children(), n_children)
 
   # Disabled case
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = NA_character_))
@@ -127,4 +146,100 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
 
   # Was not cleaned up
   expect_true(dir.exists(p_temp_dir))
+})
+
+test_that("can kill process tree with SIGTERM", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_if_not_installed("callr", "3.7.3.9001")
+
+  # Needs POSIX signal handling
+  skip_on_os("windows")
+
+  withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
+
+  out <- tempfile()
+  defer(unlink(out, TRUE, TRUE))
+  file.create(out)
+
+  fn <- function(recurse, local, file) {
+    p <- NULL
+
+    if (recurse) {
+      p <- callr::r_session$new()
+      p$call(
+        sys.function(),
+        list(recurse - 1, local = FALSE, file = file)
+      )
+    }
+
+    if (!local) {
+      file.create(tempfile())
+      cat(paste0(tempdir(), "\n"), file = file, append = TRUE)
+
+      # Sleeping prevents the process to receive an EOF in
+      # `R_ReadConsole()` (which causes it to quit normally)
+      Sys.sleep(60)
+    }
+
+    p
+  }
+
+  N <- 5
+  p <- fn(N, local = TRUE, file = out)
+
+  pid <- p$get_pid()
+  id <- p$.__enclos_env__$private$tree_id
+
+  temp_dirs <- NULL
+
+  poll_until(function() {
+    temp_dirs <<- readLines(out)
+    length(temp_dirs) == N
+  })
+
+  ps <- ps::ps_find_tree(id)
+
+  # Kill all ps-marked subprocesses, including the cleanup
+  # processes. These ignore SIGTERM but should exit quickly when their
+  # parent process is terminated.
+  for (p in ps) {
+    tools::pskill(ps::ps_pid(p))
+  }
+  poll_until(function() {
+    !any(sapply(ps, function(p) ps::ps_is_running(p)))
+  })
+
+  expect_false(any(dir.exists(temp_dirs)))
+})
+
+test_that("can exit or sigkill parent of cleanup process", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_if_not_installed("callr", "3.7.3.9001")
+
+  # Needs POSIX signal handling
+  skip_on_os("windows")
+
+  withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
+
+  p <- callr::r_session$new()
+  p_handle <- ps::ps_handle(p$get_pid())
+
+  ps <- ps::ps_children(p_handle)
+  expect_length(ps, 1)
+  cleanup_p <- ps[[1]]
+
+  # Normal exit: The cleanup process gets an EOF on its stdin and exits
+  p$close()
+  poll_until(function() !ps::ps_is_running(cleanup_p))
+
+  p <- callr::r_session$new()
+  p_handle <- ps::ps_handle(p$get_pid())
+
+  ps <- ps::ps_children(p_handle)
+  expect_length(ps, 1)
+  cleanup_p <- ps[[1]]
+
+  # SIGKILL: Also gets an EOF
+  tools::pskill(p$get_pid(), tools::SIGKILL)
+  poll_until(function() !ps::ps_is_running(cleanup_p))
 })
