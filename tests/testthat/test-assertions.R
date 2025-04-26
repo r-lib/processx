@@ -17,7 +17,7 @@ test_that("is_string", {
 
   for (n in not_strings) {
     expect_false(is_string(n))
-    expect_error(assert_that(is_string(n)), "is not a string")
+    expect_snapshot(error = TRUE, assert_that(is_string(n)))
   }
 })
 
@@ -32,10 +32,7 @@ test_that("is_string_or_null", {
   for (n in not_strings) {
     if (!is.null(n)) {
       expect_false(is_string_or_null(n))
-      expect_error(
-        assert_that(is_string_or_null(n)),
-        "must be a string .* NULL"
-      )
+      expect_snapshot(error = TRUE, assert_that(is_string_or_null(n)))
     }
   }
 })
@@ -59,7 +56,7 @@ test_that("is_flag", {
 
   for (n in not_flags) {
     expect_false(is_flag(n))
-    expect_error(assert_that(is_flag(n)), "is not a flag")
+    expect_snapshot(error = TRUE, assert_that(is_flag(n)))
   }
 })
 
@@ -83,10 +80,7 @@ test_that("is_integerish_scalar", {
 
   for (n in not_ints) {
     expect_false(is_integerish_scalar(n))
-    expect_error(
-      assert_that(is_integerish_scalar(n)),
-      "is not a length 1 integer"
-    )
+    expect_snapshot(error = TRUE, assert_that(is_integerish_scalar(n)))
   }
 })
 
@@ -98,7 +92,7 @@ test_that("is_pid", {
 
   for (n in not_ints) {
     expect_false(is_pid(n))
-    expect_error(assert_that(is_pid(n)), "is not a process id")
+    expect_snapshot(error = TRUE, assert_that(is_pid(n)))
   }
 })
 
@@ -110,19 +104,13 @@ test_that("is_flag_or_string", {
 
   for (n in intersect(not_flags, not_strings)) {
     expect_false(is_flag_or_string(n))
-    expect_error(
-      assert_that(is_flag_or_string(n)),
-      "is not a flag or a string"
-    )
+    expect_snapshot(error = TRUE, assert_that(is_flag_or_string(n)))
   }
 })
 
 test_that("is_existing_file", {
   expect_false(is_existing_file(tempfile()))
-  expect_error(
-    assert_that(is_existing_file(tempfile())),
-    "File .* does not exist"
-  )
+  expect_snapshot(error = TRUE, assert_that(is_existing_file(tempfile())))
 
   cat("foo\n", file = tmp <- tempfile())
   on.exit(unlink(tmp), add = TRUE)

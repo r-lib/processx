@@ -65,9 +65,11 @@ test_that("full_path gives correct values, windows", {
   # Can't go .. to remove the server name
   expect_identical(full_path("//a/b/../.."), "//a/")
   expect_identical(full_path("//a/../b"), "//a/b")
-  expect_error(full_path("//"))
-  expect_error(full_path("///"))
-  expect_error(full_path("///a"))
+  expect_snapshot(error = TRUE, {
+    full_path("//")
+    full_path("///")
+    full_path("///a")
+  })
 })
 
 test_that("full_path gives correct values, unix", {

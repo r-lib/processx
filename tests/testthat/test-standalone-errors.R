@@ -383,9 +383,9 @@ test_that("can pass frame as error call in `new_error()`", {
   f <- function() check_bar()
   g <- function() check_foo()
 
-  expect_snapshot({
-    (expect_error(f()))
-    (expect_error(g()))
+  expect_snapshot(error = TRUE, {
+    f()
+    g()
   })
 })
 
@@ -399,8 +399,8 @@ test_that("can pass frame as error call in `throw()`", {
   f <- function() check_bar()
   g <- function() check_foo()
 
-  expect_snapshot({
-    (expect_error(f()))
-    (expect_error(g()))
+  expect_snapshot(error = TRUE, {
+    f()
+    g()
   })
 })

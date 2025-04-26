@@ -128,14 +128,13 @@ test_that("write end first 2", {
 test_that("errors", {
   skip_on_cran()
 
-  expect_error(
-    conn_create_fifo(read = TRUE, write = TRUE)
-  )
+  expect_snapshot(error = TRUE, conn_create_fifo(read = TRUE, write = TRUE))
 
   reader <- conn_create_fifo(read = TRUE)
   on.exit(close(reader), add = TRUE)
 
-  expect_error(
+  expect_snapshot(
+    error = TRUE,
     conn_connect_fifo(read = TRUE, write = TRUE)
   )
 

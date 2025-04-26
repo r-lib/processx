@@ -76,7 +76,11 @@ test_that("working directory", {
 
 test_that("working directory does not exist", {
   px <- get_tool("px")
-  expect_error(run(px, wd = tempfile()))
+  expect_snapshot(
+    error = TRUE,
+    run(px, wd = tempfile()),
+    transform = transform_px
+  )
   gc()
 })
 

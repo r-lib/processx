@@ -3,12 +3,14 @@ test_that("Output and error are discarded by default", {
   p <- process$new(px, c("outln", "foobar"))
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
-  expect_error(p$read_output_lines(n = 1), "not a pipe")
-  expect_error(p$read_all_output_lines(), "not a pipe")
-  expect_error(p$read_all_output(), "not a pipe")
-  expect_error(p$read_error_lines(n = 1), "not a pipe")
-  expect_error(p$read_all_error_lines(), "not a pipe")
-  expect_error(p$read_all_error(), "not a pipe")
+  expect_snapshot(error = TRUE, {
+    p$read_output_lines(n = 1)
+    p$read_all_output_lines()
+    p$read_all_output()
+    p$read_error_lines(n = 1)
+    p$read_all_error_lines()
+    p$read_all_error()
+  })
 })
 
 test_that("We can get the output", {
@@ -152,7 +154,7 @@ test_that("same pipe", {
 
   out <- p$read_all_output()
   expect_equal(out, "o1e1o2e2")
-  expect_error(p$read_all_error_lines(), "not a pipe")
+  expect_snapshot(error = TRUE, p$read_all_error_lines())
 })
 
 test_that("same file", {
@@ -166,8 +168,8 @@ test_that("same file", {
   expect_equal(p$get_exit_status(), 0L)
 
   expect_equal(readLines(tmp), "o1e1o2e2")
-  expect_error(p$read_all_output_lines(), "not a pipe")
-  expect_error(p$read_all_error_lines(), "not a pipe")
+  expect_snapshot(error = TRUE, p$read_all_output_lines())
+  expect_snapshot(error = TRUE, p$read_all_error_lines())
 })
 
 test_that("same NULL, for completeness", {
@@ -177,6 +179,6 @@ test_that("same NULL, for completeness", {
   p$wait(2000)
   p$kill()
   expect_equal(p$get_exit_status(), 0L)
-  expect_error(p$read_all_output_lines(), "not a pipe")
-  expect_error(p$read_all_error_lines(), "not a pipe")
+  expect_snapshot(error = TRUE, p$read_all_output_lines())
+  expect_snapshot(error = TRUE, p$read_all_error_lines())
 })

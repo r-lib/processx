@@ -31,7 +31,7 @@ test_that("CRUD", {
   conn_accept_unix_socket(sock1)
   expect_equal(conn_unix_socket_state(sock1), "connected_server")
 
-  expect_error(conn_accept_unix_socket(sock1), "Socket is not listening")
+  expect_snapshot(error = TRUE, conn_accept_unix_socket(sock1))
 
   pr <- poll(list(sock1, sock2), 1)
   expect_equal(pr, list("timeout", "timeout"))
@@ -125,7 +125,7 @@ test_that("reading unaccepted server socket is error", {
     list("connect")
   )
 
-  expect_error(conn_read_chars(sock1))
+  expect_snapshot(error = TRUE, conn_read_chars(sock1))
 
   close(sock1)
   close(sock2)
@@ -146,7 +146,7 @@ test_that("writing unaccepted server socket is error", {
     list("connect")
   )
 
-  expect_error(conn_write(sock1, "Hello\n"))
+  expect_snapshot(error = TRUE, conn_write(sock1, "Hello\n"))
 
   close(sock1)
   close(sock2)
@@ -226,15 +226,16 @@ test_that("errors", {
 
   if (!is_windows()) {
     sock <- file.path(tempdir(), strrep(basename(tempfile()), 1000))
-    expect_error(conn_create_unix_socket(sock))
-    expect_error(conn_create_unix_socket("/dev/null"))
-    expect_error(conn_connect_unix_socket("/dev/null"))
+    expect_snapshot(error = TRUE, {
+      conn_create_unix_socket(sock)
+      conn_create_unix_socket("/dev/null")
+      conn_connect_unix_socket("/dev/null")
+    }, transform = transform_tempdir)
   }
 
   ff <- conn_create_fifo()
-  expect_error(conn_accept_unix_socket(ff))
-
-  expect_error(conn_unix_socket_state(ff))
+  expect_snapshot(error = TRUE, conn_accept_unix_socket(ff))
+  expect_snapshot(error = TRUE, conn_unix_socket_state(ff))
 })
 
 test_that("unix-sockets.h", {

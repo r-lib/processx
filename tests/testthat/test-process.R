@@ -14,7 +14,11 @@ test_that("get_exit_status", {
 })
 
 test_that("non existing process", {
-  expect_error(process$new(tempfile()))
+  expect_snapshot(
+    error = TRUE,
+    process$new(tempfile()),
+    transform = transform_tempdir
+  )
   ## This closes connections in finalizers
   gc()
 })
@@ -35,7 +39,7 @@ test_that("post processing", {
     c("sleep", "5"),
     post_process = function() "yep"
   )
-  expect_error(p$get_result(), "alive")
+  expect_snapshot(error = TRUE, p$get_result())
   p$kill()
   expect_equal(p$get_result(), "yep")
 
@@ -68,7 +72,11 @@ test_that("working directory", {
 
 test_that("working directory does not exist", {
   px <- get_tool("px")
-  expect_error(process$new(px, wd = tempfile()))
+  expect_snapshot(
+    error = TRUE,
+    process$new(px, wd = tempfile()),
+    transform = transform_px
+  )
   ## This closes connections in finalizers
   gc()
 })
