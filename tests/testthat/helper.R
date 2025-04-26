@@ -177,7 +177,7 @@ transform_tempdir <- function(x) {
 }
 
 transform_px <- function(x) {
-  sub("'.*/px'", "'<path>/px'", x)
+  sub("'.*/px([.]exe)?'", "'<path>/px'", x)
 }
 
 sysname <- function() {
