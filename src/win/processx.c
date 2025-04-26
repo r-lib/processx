@@ -51,11 +51,11 @@ static void processx__init_global_job_handle(void) {
   }
 }
 
-void R_init_processx_win() {
+void R_init_processx_win(void) {
   /* Nothing to do currently */
 }
 
-SEXP processx__unload_cleanup() {
+SEXP processx__unload_cleanup(void) {
 
   if (processx__connection_iocp) CloseHandle(processx__connection_iocp);
   if (processx__iocp_thread) TerminateThread(processx__iocp_thread, 0);
@@ -868,8 +868,8 @@ void processx__handle_destroy(processx_handle_t *handle) {
 SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 		               SEXP connections, SEXP env, SEXP windows_verbatim_args,
                    SEXP windows_hide, SEXP windows_detached_process,
-                   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding,
-                   SEXP tree_id) {
+                   SEXP private, SEXP cleanup, SEXP _cleanup_grace, SEXP wd,
+                   SEXP encoding, SEXP tree_id) {
 
   const char *ccommand = CHAR(STRING_ELT(command, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));

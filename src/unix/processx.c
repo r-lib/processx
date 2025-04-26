@@ -21,7 +21,7 @@ static void processx__child_init(processx_handle_t *handle, SEXP connections,
                                  processx_options_t *options,
 				 const char *tree_id);
 
-static SEXP processx__make_handle(SEXP private, int cleanup);
+static SEXP processx__make_handle(SEXP private, int cleanup, double cleanup_grace);
 static void processx__handle_destroy(processx_handle_t *handle);
 void processx__create_connections(processx_handle_t *handle, SEXP private,
 				  const char *encoding);
@@ -324,38 +324,38 @@ static void processx__child_init(processx_handle_t *handle, SEXP connections,
 
 /* LCOV_EXCL_STOP */
 
+struct cleanup_kill_data {
+  SEXP status;
+  double grace;
+  SEXP name;
+};
+
+SEXP c_processx_kill_data(void *payload) {
+  struct cleanup_kill_data *data = (struct cleanup_kill_data *) payload;
+  c_processx_kill(data->status, data->grace, data->name);
+  return R_NilValue;
+}
+
 void processx__finalizer(SEXP status) {
   processx_handle_t *handle = (processx_handle_t*) R_ExternalPtrAddr(status);
-  pid_t pid;
-  int wp, wstat;
-
-  processx__block_sigchld();
 
   /* Free child list nodes that are not needed any more. */
+  processx__block_sigchld();
   processx__freelist_free();
+  processx__unblock_sigchld();
 
   /* Already freed? */
-  if (!handle) goto cleanup;
+  if (!handle)
+    return;
 
-  pid = handle->pid;
-
+  // FIXME: Do we need cleancall here?
   if (handle->cleanup) {
-    /* Do a non-blocking waitpid() to see if it is running */
-    do {
-      wp = waitpid(pid, &wstat, WNOHANG);
-    } while (wp == -1 && errno == EINTR);
-
-    /* Maybe just waited on it? Then collect status */
-    if (wp == pid) processx__collect_exit_status(status, wp, wstat);
-
-    /* If it is running, we need to kill it, and wait for the exit status */
-    if (wp == 0) {
-      kill(-pid, SIGKILL);
-      do {
-	wp = waitpid(pid, &wstat, 0);
-      } while (wp == -1 && errno == EINTR);
-      processx__collect_exit_status(status, wp, wstat);
-    }
+    struct cleanup_kill_data data = {
+      .status = status,
+      .grace = handle->cleanup_grace,
+      .name = R_NilValue
+    };
+    r_with_cleanup_context(c_processx_kill_data, &data);
   }
 
   /* Note: if no cleanup is requested, then we still have a sigchld
@@ -365,12 +365,9 @@ void processx__finalizer(SEXP status) {
   /* Deallocate memory */
   R_ClearExternalPtr(status);
   processx__handle_destroy(handle);
-
- cleanup:
-  processx__unblock_sigchld();
 }
 
-static SEXP processx__make_handle(SEXP private, int cleanup) {
+static SEXP processx__make_handle(SEXP private, int cleanup, double cleanup_grace) {
   processx_handle_t * handle;
   SEXP result;
 
@@ -382,6 +379,7 @@ static SEXP processx__make_handle(SEXP private, int cleanup) {
   result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
   R_RegisterCFinalizerEx(result, processx__finalizer, 1);
   handle->cleanup = cleanup;
+  handle->cleanup_grace = cleanup_grace;
 
   UNPROTECT(1);
   return result;
@@ -428,13 +426,14 @@ skip:
 SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
                    SEXP connections, SEXP env, SEXP windows_verbatim_args,
                    SEXP windows_hide_window, SEXP windows_detached_process,
-                   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding,
-                   SEXP tree_id) {
+                   SEXP private, SEXP cleanup, SEXP cleanup_grace, SEXP wd,
+                   SEXP encoding, SEXP tree_id) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
   char **cenv = isNull(env) ? 0 : processx__tmp_character(env);
   int ccleanup = INTEGER(cleanup)[0];
+  double ccleanup_grace = REAL(cleanup_grace)[0];
 
   const int cpty = LOGICAL(pty)[0];
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
@@ -469,7 +468,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 
   processx__setup_sigchld();
 
-  result = PROTECT(processx__make_handle(private, ccleanup));
+  result = PROTECT(processx__make_handle(private, ccleanup, ccleanup_grace));
   handle = R_ExternalPtrAddr(result);
 
   if (cpty) {
@@ -674,30 +673,38 @@ static void processx__wait_cleanup(void *ptr) {
 
 SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
+  int ctimeout = INTEGER(timeout)[0];
   const char *cname = isNull(name) ? "???" : CHAR(STRING_ELT(name, 0));
-  int ctimeout = INTEGER(timeout)[0], timeleft = ctimeout;
+
+  int ret = c_processx_wait(handle, ctimeout, cname);
+  return ScalarLogical(ret);
+}
+
+int c_processx_wait(processx_handle_t *handle, int timeout, const char *name) {
   struct pollfd fd;
   int ret = 0;
   pid_t pid;
+  int timeleft = timeout;
 
   int *fds = malloc(sizeof(int) * 2);
   if (!fds) R_THROW_SYSTEM_ERROR("Allocating memory when waiting");
   fds[0] = fds[1] = -1;
   r_call_on_exit(processx__wait_cleanup, fds);
 
-  processx__block_sigchld();
+  sigset_t old;
+  processx__block_sigchld_save(&old);
 
   if (!handle) {
-    processx__unblock_sigchld();
-    return ScalarLogical(1);
+    processx__procmask_set(&old);
+    return 1;
   }
 
   pid = handle->pid;
 
   /* If we already have the status, then return now. */
   if (handle->collected) {
-    processx__unblock_sigchld();
-    return ScalarLogical(1);
+    processx__procmask_set(&old);
+    return 1;
   }
 
   /* Make sure this is active, in case another package replaced it... */
@@ -706,8 +713,8 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
 
   /* Setup the self-pipe that we can poll */
   if (pipe(handle->waitpipe)) {
-    processx__unblock_sigchld();
-    R_THROW_SYSTEM_ERROR("processx error when waiting for '%s'", cname);
+    processx__procmask_set(&old);
+    R_THROW_SYSTEM_ERROR("processx error when waiting for '%s'", name);
   }
   fds[0] = handle->waitpipe[0];
   fds[1] = handle->waitpipe[1];
@@ -723,7 +730,7 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
 
 
 
-  while (ctimeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
+  while (timeout < 0 || timeleft > PROCESSX_INTERRUPT_INTERVAL) {
     do {
       ret = poll(&fd, 1, PROCESSX_INTERRUPT_INTERVAL);
     } while (ret == -1 && errno == EINTR);
@@ -743,7 +750,7 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
       goto cleanup;
     }
 
-    if (ctimeout >= 0) timeleft -= PROCESSX_INTERRUPT_INTERVAL;
+    if (timeout >= 0) timeleft -= PROCESSX_INTERRUPT_INTERVAL;
   }
 
   /* Maybe we are not done, and there is a little left from the timeout */
@@ -755,7 +762,7 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
 
   if (ret == -1) {
     R_THROW_SYSTEM_ERROR("processx wait with timeout error while "
-                         "waiting for '%s'", cname);
+                         "waiting for '%s'", name);
   }
 
  cleanup:
@@ -763,7 +770,9 @@ SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
   handle->waitpipe[0] = -1;
   handle->waitpipe[1] = -1;
 
-  return ScalarLogical(ret != 0);
+  processx__procmask_set(&old);
+
+  return ret != 0;
 }
 
 /* This is similar to `processx_wait`, but a bit simpler, because we
@@ -963,6 +972,10 @@ SEXP processx_interrupt(SEXP status, SEXP name) {
  */
 
 SEXP processx_kill(SEXP status, SEXP grace, SEXP name) {
+  return ScalarLogical(c_processx_kill(status, REAL(grace)[0], name));
+}
+
+int c_processx_kill(SEXP status, double grace, SEXP name) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   const char *cname = isNull(name) ? "???" : CHAR(STRING_ELT(name, 0));
   pid_t pid;
@@ -997,13 +1010,28 @@ SEXP processx_kill(SEXP status, SEXP grace, SEXP name) {
   /* If the process is not running, return (FALSE) */
   if (wp != 0) { goto cleanup; }
 
-  /* It is still running, so a SIGKILL */
-  int ret = kill(-pid, SIGKILL);
-  if (ret == -1 && (errno == ESRCH || errno == EPERM)) { goto cleanup; }
-  if (ret == -1) {
-    processx__unblock_sigchld();
-    R_THROW_SYSTEM_ERROR("process_kill for '%s'", cname);
+  /* It is still running, send a SIGTERM if gracious */
+  double grace_ms = grace * 1000;
+
+#define KILL_WITH(SIG) do {                                              \
+  int ret = kill(-pid, SIG);                                             \
+  if (ret == -1 && (errno == ESRCH || errno == EPERM)) { goto cleanup; } \
+  if (ret == -1) {                                                       \
+    processx__unblock_sigchld();                                         \
+    R_THROW_SYSTEM_ERROR("process_kill for '%s'", cname);                \
+  }                                                                      \
+} while(0)
+
+  if (grace_ms) {
+    KILL_WITH(SIGTERM);
+    if (c_processx_wait(handle, grace_ms, cname)) {
+      result = handle->exitcode == -SIGTERM;
+      goto cleanup;
+    }
   }
+
+  /* It is still running, send a SIGKILL */
+  KILL_WITH(SIGKILL);
 
   /* Do a waitpid to collect the status and reap the zombie */
   do {
@@ -1020,7 +1048,7 @@ SEXP processx_kill(SEXP status, SEXP grace, SEXP name) {
 
  cleanup:
   processx__unblock_sigchld();
-  return ScalarLogical(result);
+  return result;
 }
 
 SEXP processx_get_pid(SEXP status) {

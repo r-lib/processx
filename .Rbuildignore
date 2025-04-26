@@ -11,6 +11,8 @@
 ^src/processx\.dll$
 ^src/client\.so$
 ^src/client\.dll$
+^src/test/sigtermignore\.so$
+^src/test/sigtermignore\.dll$
 ^src/.*\.o$
 ^src/tools/px$
 ^src/tools/px.exe$
@@ -30,3 +32,5 @@
 ^src/.*[.]gcno$
 ^dev-lib$
 ^vignettes$
+^[\.]?air\.toml$
+^\.vscode$

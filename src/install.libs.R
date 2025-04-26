@@ -1,10 +1,10 @@
-
 progs <- if (WINDOWS) {
-  c(file.path("tools", c("px.exe", "pxu.exe", "interrupt.exe", "sock.exe")),
-    file.path("supervisor", "supervisor.exe"))
+  c(
+    file.path("tools", c("px.exe", "interrupt.exe", "sock.exe")),
+    file.path("supervisor", "supervisor.exe")
+  )
 } else {
-  c(file.path("tools", c("px", "sock")),
-    file.path("supervisor", "supervisor"))
+  c(file.path("tools", c("px", "sock")), file.path("supervisor", "supervisor"))
 }
 
 dest <- file.path(R_PACKAGE_DIR, paste0("bin", R_ARCH))
@@ -18,3 +18,8 @@ file.copy(files, dest, overwrite = TRUE)
 if (file.exists("symbols.rds")) {
   file.copy("symbols.rds", dest, overwrite = TRUE)
 }
+
+test_files <- Sys.glob(paste0("test/*", SHLIB_EXT))
+test_dest <- file.path(dest, "test")
+dir.create(test_dest, recursive = TRUE, showWarnings = FALSE)
+file.copy(test_files, test_dest, overwrite = TRUE)

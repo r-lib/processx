@@ -1,6 +1,4 @@
-
 test_that("poll a connection", {
-
   px <- get_tool("px")
   p <- process$new(px, c("sleep", ".5", "outln", "foobar"), stdout = "|")
   on.exit(p$kill())
@@ -19,7 +17,6 @@ test_that("poll a connection", {
 })
 
 test_that("poll a connection and a process", {
-
   px <- get_tool("px")
   p1 <- process$new(px, c("sleep", ".5", "outln", "foobar"), stdout = "|")
   p2 <- process$new(px, c("sleep", ".5", "outln", "foobar"), stdout = "|")
@@ -32,25 +29,26 @@ test_that("poll a connection and a process", {
     poll(list(out, p2), 0),
     list(
       "timeout",
-      c(output = "timeout", error = "nopipe", process = "nopipe"))
+      c(output = "timeout", error = "nopipe", process = "nopipe")
+    )
   )
 
   ## At least one of them is ready. Usually both on Unix, but on Windows
   ## it is different because the IOCP is a queue
   pr <- poll(list(out, p2), 2000)
-  expect_true(pr[[1]] == "ready"  || pr[[2]][["output"]] == "ready")
+  expect_true(pr[[1]] == "ready" || pr[[2]][["output"]] == "ready")
 
   p1$poll_io(2000)
   p2$poll_io(2000)
   p1$read_output_lines()
   p2$read_output_lines()
   pr <- poll(list(out, p2), 2000)
-  expect_true(pr[[1]] == "ready"  || pr[[2]][["output"]] == "ready")
+  expect_true(pr[[1]] == "ready" || pr[[2]][["output"]] == "ready")
 
   p1$kill(close_connections = FALSE)
   p2$kill(close_connections = FALSE)
   pr <- poll(list(out, p2), 2000)
-  expect_true(pr[[1]] == "ready"  || pr[[2]][["output"]] == "ready")
+  expect_true(pr[[1]] == "ready" || pr[[2]][["output"]] == "ready")
 
   close(out)
   close(p2$get_output_connection())

@@ -50,32 +50,6 @@
       ! This failed
       Type .Last.error to see the more details.
 
-# simple error with cli and colors
-
-    Code
-      cat(out$stderr)
-    Output
-      [1m[33mError[39m[22m in `f()`[90m at script.R:5:5[39m:
-      [33m![39m This failed
-      ---
-      Backtrace:
-      [90m1. [39mbase::[36msource[39m[33m("script.R")[39m
-      [90m2. | base::withVisible(eval(ei, envir))[39m
-      [90m3. | base::eval(ei, envir)[39m
-      [90m4. | base::eval(ei, envir)[39m
-      [90m5. [39mglobal [36mf[39m[33m()[39m[90m at script.R:5:5[39m
-      [90m6. [39mprocessx:::[36mthrow[39m[33m("This failed")[39m[90m at script.R:4:10[39m
-      Execution halted
-
----
-
-    Code
-      cat(out$stdout)
-    Output
-      [1m[33mError[39m[22m in `f()`[90m at script.R:6:5[39m:
-      [33m![39m This failed
-      [90mType .Last.error to see the more details.[39m
-
 # chain_error
 
     Code
@@ -159,42 +133,6 @@
       19. | base::signalCondition(cond)
       20. | (function (e) ...
       21. | processx:::throw_error(err, parent = e)
-      Execution halted
-
----
-
-    Code
-      cat(out$stderr)
-    Output
-      [1m[33mError[39m[22m in `do()`[90m at script.R:19:14[39m:
-      [33m![39m Failed to base64 encode
-      [1mCaused by error[22m in `do2()`[90m at script.R:15:13[39m:
-      [33m![39m something is wrong here
-      [1mCaused by error[22m in `do3()`[90m at script.R:12:13[39m:
-      [33m![39m because of this
-      ---
-      Backtrace:
-      [90m 1. [39mbase::[36msource[39m[33m("script.R")[39m
-      [90m 2. | base::withVisible(eval(ei, envir))[39m
-      [90m 3. | base::eval(ei, envir)[39m
-      [90m 4. | base::eval(ei, envir)[39m
-      [90m 5. [39mglobal [36mf[39m[33m()[39m[90m at script.R:20:9[39m
-      [90m 6. [39mglobal [36mg[39m[33m()[39m[90m at script.R:17:14[39m
-      [90m 7. [39mglobal [36mh[39m[33m()[39m[90m at script.R:18:14[39m
-      [90m 8. [39mglobal [36mdo[39m[33m()[39m[90m at script.R:19:14[39m
-      [90m 9. [39mprocessx:::[36mchain_error[39m[33m([39m[36mdo2[39m[34m()[39m, [33m"Failed to base64 encode")[39m[90m at script.R:15:13[39m
-      [90m10. | base::withCallingHandlers({ ...[39m
-      [90m11. [39mglobal [36mdo2[39m[33m()[39m
-      [90m12. [39mprocessx:::[36mchain_error[39m[33m([39m[36mdo3[39m[34m()[39m, [33m"something is wrong here")[39m[90m at script.R:12:13[39m
-      [90m13. | base::withCallingHandlers({ ...[39m
-      [90m14. [39mglobal [36mdo3[39m[33m()[39m
-      [90m15. [39mprocessx:::[36mthrow[39m[33m("because of this")[39m[90m at script.R:9:13[39m
-      [90m16. | base::signalCondition(cond)[39m
-      [90m17. | (function (e) ...[39m
-      [90m18. | processx:::throw_error(err, parent = e)[39m
-      [90m19. | base::signalCondition(cond)[39m
-      [90m20. | (function (e) ...[39m
-      [90m21. | processx:::throw_error(err, parent = e)[39m
       Execution halted
 
 # chain_error with stop()
@@ -359,32 +297,5 @@
        9. | base::signalCondition(cond)
       10. | (function (e) ...
       11. | processx:::throw_error(err, parent = e)
-      Execution halted
-
----
-
-    Code
-      cat(out$stderr)
-    Output
-      [1m[33mError[39m[22m in `eval(ei, envir)`:
-      [33m![39m failed to run external program
-      [1mCaused by error[22m in `processx::run(px, c("return", "1"))`[90m at script.R:9:9[39m:
-      [33m![39m System command 'px' failed
-      ---
-      Exit status: 1
-      Stderr: <empty>
-      ---
-      Backtrace:
-      [90m 1. [39mbase::[36msource[39m[33m("script.R")[39m
-      [90m 2. | base::withVisible(eval(ei, envir))[39m
-      [90m 3. | base::eval(ei, envir)[39m
-      [90m 4. | base::eval(ei, envir)[39m
-      [90m 5. [39mprocessx:::[36mchain_error[39m[33m([39mprocessx::[36mrun[39m[34m([39mpx, [36mc([39m[33m"return"[39m, [33m"1"[39m[36m)[39m[34m)[39m, [33m"failed to r[39m...[90m at script.R:9:9[39m
-      [90m 6. | base::withCallingHandlers({ ...[39m
-      [90m 7. [39mprocessx::[36mrun[39m[33m([39mpx, [36mc[39m[34m([39m[33m"return"[39m, [33m"1"[39m[34m)[39m[33m)[39m
-      [90m 8. [39mprocessx:::throw(new_process_error(res, call = sys.call(), echo = echo, ...
-      [90m 9. | base::signalCondition(cond)[39m
-      [90m10. | (function (e) ...[39m
-      [90m11. | processx:::throw_error(err, parent = e)[39m
       Execution halted
 

@@ -1,8 +1,7 @@
-
 is_string <- function(x) {
   is.character(x) &&
-  length(x) == 1 &&
-  !is.na(x)
+    length(x) == 1 &&
+    !is.na(x)
 }
 
 on_failure(is_string) <- function(call, env) {
@@ -19,12 +18,20 @@ on_failure(is_string_or_null) <- function(call, env) {
 
 is_flag <- function(x) {
   is.logical(x) &&
-  length(x) == 1 &&
-  !is.na(x)
+    length(x) == 1 &&
+    !is.na(x)
 }
 
 on_failure(is_flag) <- function(call, env) {
   paste0(deparse(call$x), " is not a flag (length 1 logical)")
+}
+
+is_numeric_scalar <- function(x) {
+  is.numeric(x) && length(x) == 1 && !is.na(x)
+}
+
+on_failure(is_numeric_scalar) <- function(call, env) {
+  paste0(deparse(call$x), " is not a length 1 number")
 }
 
 is_integerish_scalar <- function(x) {

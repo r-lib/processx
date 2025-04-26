@@ -1,8 +1,10 @@
-
 test_that("fails in windows", {
   skip_other_platforms("windows")
-  expect_error(process$new("R", pty = TRUE), "only implemented on Unix",
-               class = "error")
+  expect_error(
+    process$new("R", pty = TRUE),
+    "only implemented on Unix",
+    class = "error"
+  )
 })
 
 test_that("pty works", {
@@ -58,7 +60,7 @@ test_that("read_output_lines() fails for pty", {
 
   p <- process$new("cat", pty = TRUE)
   p$write_input("foobar\n")
-  expect_error(p$read_output_lines(), "Cannot read lines from a pty")
+  expect_snapshot(error = TRUE, p$read_output_lines())
 
   pr <- p$poll_io(300)
   expect_equal(pr[["output"]], "ready")
