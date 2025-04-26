@@ -1,4 +1,3 @@
-
 ## nocov start
 
 .onLoad <- function(libname, pkgname) {
@@ -13,8 +12,10 @@
   }
 
   supervisor_reset()
-  if (Sys.getenv("DEBUGME", "") != "" &&
-      requireNamespace("debugme", quietly = TRUE)) {
+  if (
+    Sys.getenv("DEBUGME", "") != "" &&
+      requireNamespace("debugme", quietly = TRUE)
+  ) {
     debugme::debugme()
   }
 

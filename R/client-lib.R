@@ -1,4 +1,3 @@
-
 client <- new.env(parent = emptyenv())
 
 local({
@@ -27,7 +26,6 @@ local({
     # devtools
     single <- system.file("src", paste0("client", ext), package = "processx")
     client[[paste0("arch-", arch)]] <- read_all(single)
-
   } else {
     # not devtools
     single <- file.path(libs, paste0("client", ext))
@@ -35,7 +33,6 @@ local({
       # not multiarch
       bts <- file.size(single)
       client[[paste0("arch-", arch)]] <- read_all(single)
-
     } else {
       # multiarch
       multi <- dir(libs)
@@ -62,7 +59,7 @@ load_client_lib <- function(client) {
   sym_encode <- getNativeSymbolInfo("processx_base64_encode", lib)
   sym_decode <- getNativeSymbolInfo("processx_base64_decode", lib)
   sym_disinh <- getNativeSymbolInfo("processx_disable_inheritance", lib)
-  sym_write  <- getNativeSymbolInfo("processx_write", lib)
+  sym_write <- getNativeSymbolInfo("processx_write", lib)
   sym_setout <- getNativeSymbolInfo("processx_set_stdout", lib)
   sym_seterr <- getNativeSymbolInfo("processx_set_stderr", lib)
   sym_setoutf <- getNativeSymbolInfo("processx_set_stdout_to_file", lib)
@@ -122,7 +119,8 @@ load_client_lib <- function(client) {
   reg.finalizer(
     env,
     function(e) if (".finalize" %in% names(e)) e$.finalize(),
-    onexit = TRUE)
+    onexit = TRUE
+  )
 
   ## Clear the cleanup method
   on.exit(NULL)

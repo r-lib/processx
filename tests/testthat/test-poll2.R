@@ -1,9 +1,10 @@
-
 test_that("single process", {
-
   px <- get_tool("px")
-  p <- process$new(px, c("sleep", "1", "outln", "foo", "outln", "bar"),
-                   stdout = "|")
+  p <- process$new(
+    px,
+    c("sleep", "1", "outln", "foo", "outln", "bar"),
+    stdout = "|"
+  )
   on.exit(p$kill(), add = TRUE)
 
   ## Timeout
@@ -38,7 +39,6 @@ test_that("single process", {
 })
 
 test_that("multiple processes", {
-
   px <- get_tool("px")
   cmd1 <- c("sleep", "1", "outln", "foo", "outln", "bar")
   cmd2 <- c("sleep", "2", "errln", "foo", "errln", "bar")
@@ -58,7 +58,10 @@ test_that("multiple processes", {
 
   p1$wait()
   res <- poll(list(p1 = p1, p2 = p2), -1)
-  expect_equal(res$p1, c(output = "ready", error = "nopipe", process = "nopipe"))
+  expect_equal(
+    res$p1,
+    c(output = "ready", error = "nopipe", process = "nopipe")
+  )
   expect_equal(res$p2[["output"]], "nopipe")
   expect_true(res$p2[["error"]] %in% c("silent", "ready"))
 
@@ -82,11 +85,9 @@ test_that("multiple processes", {
       p2 = c(output = "nopipe", error = "closed", process = "nopipe")
     )
   )
-
 })
 
 test_that("multiple polls", {
-
   px <- get_tool("px")
   cmd <- c("sleep", "1", "outln", "foo", "sleep", "1", "outln", "bar")
   p <- process$new(px, cmd, stdout = "|", stderr = "|")
@@ -107,10 +108,14 @@ test_that("polling and buffering", {
   px <- get_tool("px")
 
   for (i in 1:10) {
-
     ## We set up two processes, one produces a output, that we do not
     ## read out from the cache. The other one does not produce output.
-    p1 <- process$new(px, c(rbind("outln", 1:20), "sleep", "3"), stdout = "|", stderr = "|")
+    p1 <- process$new(
+      px,
+      c(rbind("outln", 1:20), "sleep", "3"),
+      stdout = "|",
+      stderr = "|"
+    )
     p2 <- process$new(px, c("sleep", "3"), stdout = "|", stderr = "|")
 
     ## We poll until p1 has output. We read out some of the output,
@@ -136,18 +141,16 @@ test_that("polling and buffering", {
 
     p1$kill()
     p2$kill()
-    if (s[[2]][1] != "silent") break;
+    if (s[[2]][1] != "silent") break
   }
 })
 
 test_that("polling and buffering #2", {
-
   px <- get_tool("px")
 
   ## We run this a bunch of times, because it used to fail
   ## non-deterministically on the CI
   for (i in 1:10) {
-
     ## Two processes, they both produce output. For the first process,
     ## we make sure that there is something in the buffer.
     ## For the second process we need to poll, but data should be

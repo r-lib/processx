@@ -11,7 +11,7 @@
 [![CRAN RStudio mirror
 downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
 [![Codecov test
-coverage](https://codecov.io/gh/r-lib/processx/branch/main/graph/badge.svg)](https://app.codecov.io/gh/r-lib/processx?branch=main)
+coverage](https://codecov.io/gh/r-lib/processx/graph/badge.svg)](https://app.codecov.io/gh/r-lib/processx)
 <!-- badges: end -->
 
 Tools to run system processes in the background, read their standard
@@ -101,7 +101,7 @@ px <- paste0(
 px
 ```
 
-    #> [1] "/Users/gaborcsardi/Library/R/arm64/4.2/library/processx/bin/px"
+    #> [1] "/Users/gaborcsardi/Library/R/arm64/4.5/library/processx/bin/px"
 
 ### Running an external process
 
@@ -234,12 +234,11 @@ out1
 out2
 ```
 
-    #>  [1] "CODE_OF_CONDUCT.md" "DESCRIPTION"        "LICENSE"           
-    #>  [4] "LICENSE.md"         "Makefile"           "NAMESPACE"         
-    #>  [7] "NEWS.md"            "R"                  "README.Rmd"        
-    #> [10] "README.md"          "_pkgdown.yml"       "codecov.yml"       
-    #> [13] "inst"               "man"                "processx.Rproj"    
-    #> [16] "src"                "tests"
+    #>  [1] "_pkgdown.yml"   "codecov.yml"    "DESCRIPTION"    "inst"          
+    #>  [5] "LICENSE"        "LICENSE.md"     "Makefile"       "man"           
+    #>  [9] "NAMESPACE"      "NEWS.md"        "processx.Rproj" "R"             
+    #> [13] "README.md"      "README.Rmd"     "src"            "tests"         
+    #> [17] "vignettes"
 
 #### Spinner
 
@@ -550,14 +549,14 @@ p$is_alive()
 Sys.time()
 ```
 
-    #> [1] "2022-06-10 13:57:49 CEST"
+    #> [1] "2025-04-26 09:34:10 CEST"
 
 ``` r
 p$wait()
 Sys.time()
 ```
 
-    #> [1] "2022-06-10 13:57:51 CEST"
+    #> [1] "2025-04-26 09:34:12 CEST"
 
 It is safe to call `wait()` multiple times:
 
@@ -612,7 +611,7 @@ p <- process$new("nonexistant-command-for-sure")
 ```
 
     #> Error in c("process_initialize(self, private, command, args, stdin, stdout, ", : ! Native call to `processx_exec` failed
-    #> Caused by error in `chain_call(c_processx_exec, command, c(command, args), pty, pty_options, …` at initialize.R:138:3:
+    #> Caused by error in `chain_call(c_processx_exec, command, c(command, args), pty, pty_options, …`:
     #> ! cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:613 (processx_exec)
 
 ``` r
