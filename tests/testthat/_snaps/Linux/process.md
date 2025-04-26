@@ -6,7 +6,7 @@
       Error:
       ! Native call to `processx_exec` failed
       Caused by error:
-      ! cannot start processx process '<tempdir>/<tempfile>' (system error 2, No such file or directory) @unix/processx.c:611 (processx_exec)
+      ! cannot start processx process '<tempdir>/<tempfile>' (system error 2, No such file or directory) @unix/processx.c:610 (processx_exec)
 
 # working directory does not exist
 
@@ -16,5 +16,5 @@
       Error:
       ! Native call to `processx_exec` failed
       Caused by error:
-      ! cannot start processx process '<path>/px' (system error 2, No such file or directory) @unix/processx.c:611 (processx_exec)
+      ! cannot start processx process '<path>/px' (system error 2, No such file or directory) @unix/processx.c:610 (processx_exec)
 
