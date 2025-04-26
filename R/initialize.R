@@ -1,4 +1,3 @@
-
 #' Start a process
 #'
 #' @param self this
@@ -22,14 +21,31 @@
 #'
 #' @keywords internal
 
-process_initialize <- function(self, private, command, args,
-                               stdin, stdout, stderr, pty, pty_options,
-                               connections, poll_connection, env, cleanup,
-                               cleanup_tree, cleanup_grace, wd, echo_cmd,
-                               supervise, windows_verbatim_args,
-                               windows_hide_window, windows_detached_process,
-                               encoding, post_process) {
-
+process_initialize <- function(
+  self,
+  private,
+  command,
+  args,
+  stdin,
+  stdout,
+  stderr,
+  pty,
+  pty_options,
+  connections,
+  poll_connection,
+  env,
+  cleanup,
+  cleanup_tree,
+  cleanup_grace,
+  wd,
+  echo_cmd,
+  supervise,
+  windows_verbatim_args,
+  windows_hide_window,
+  windows_detached_process,
+  encoding,
+  post_process
+) {
   "!DEBUG process_initialize `command`"
 
   assert_that(
@@ -39,7 +55,8 @@ process_initialize <- function(self, private, command, args,
     is_std_conn(stdout),
     is_std_conn(stderr),
     is_flag(pty),
-    is.list(pty_options), is_named(pty_options),
+    is.list(pty_options),
+    is_named(pty_options),
     is_connection_list(connections),
     is.null(poll_connection) || is_flag(poll_connection),
     is.null(env) || is_env_vector(env),
@@ -52,11 +69,14 @@ process_initialize <- function(self, private, command, args,
     is_flag(windows_hide_window),
     is_flag(windows_detached_process),
     is_string(encoding),
-    is.function(post_process) || is.null(post_process))
+    is.function(post_process) || is.null(post_process)
+  )
 
   if (cleanup_tree && !cleanup) {
-    warning("`cleanup_tree` overrides `cleanup`, and process will be ",
-            "killed on GC")
+    warning(
+      "`cleanup_tree` overrides `cleanup`, and process will be ",
+      "killed on GC"
+    )
     cleanup <- TRUE
   }
 
@@ -79,8 +99,10 @@ process_initialize <- function(self, private, command, args,
   def <- default_pty_options()
   pty_options <- utils::modifyList(def, pty_options)
   if (length(bad <- setdiff(names(def), names(pty_options)))) {
-    throw(new_error("Uknown pty option(s): ",
-                    paste(paste0("`", bad, "`"), collapse = ", ")))
+    throw(new_error(
+      "Uknown pty option(s): ",
+      paste(paste0("`", bad, "`"), collapse = ", ")
+    ))
   }
   pty_options$rows <- as.integer(pty_options$rows)
   pty_options$cols <- as.integer(pty_options$cols)
@@ -116,8 +138,7 @@ process_initialize <- function(self, private, command, args,
   private$post_process <- post_process
 
   poll_connection <- poll_connection %||%
-    (!identical(stdout, "|") && !identical(stderr, "|") &&
-     !length(connections))
+    (!identical(stdout, "|") && !identical(stderr, "|") && !length(connections))
   if (poll_connection) {
     pipe <- conn_create_pipepair()
     connections <- c(connections, list(pipe[[2]]))
@@ -139,9 +160,20 @@ process_initialize <- function(self, private, command, args,
   "!DEBUG process_initialize exec()"
   private$status <- chain_call(
     c_processx_exec,
-    command, c(command, args), pty, pty_options,
-    connections, env, windows_verbatim_args, windows_hide_window,
-    windows_detached_process, private, cleanup, cleanup_grace, wd, encoding,
+    command,
+    c(command, args),
+    pty,
+    pty_options,
+    connections,
+    env,
+    windows_verbatim_args,
+    windows_hide_window,
+    windows_detached_process,
+    private,
+    cleanup,
+    cleanup_grace,
+    wd,
+    encoding,
     paste0("PROCESSX_", private$tree_id, "=YES")
   )
 
@@ -168,7 +200,7 @@ process_initialize <- function(self, private, command, args,
     stderr <- full_path(stderr)
 
   ## Store the output and error files, we'll open them later if needed
-  private$stdin  <- stdin
+  private$stdin <- stdin
   private$stdout <- stdout
   private$stderr <- stderr
 

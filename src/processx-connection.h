@@ -260,7 +260,7 @@ typedef unsigned long DWORD;
 /* Threading in Windows */
 
 #ifdef _WIN32
-int processx__start_thread();
+int processx__start_thread(void);
 extern HANDLE processx__iocp_thread;
 extern HANDLE processx__thread_start;
 extern HANDLE processx__thread_done;
@@ -291,7 +291,7 @@ BOOL processx__thread_getstatus_select(LPDWORD lpNumberOfBytes,
 				       PULONG_PTR lpCompletionKey,
 				       LPOVERLAPPED *lpOverlapped,
 				       DWORD dwMilliseconds);
-DWORD processx__thread_get_last_error();
+DWORD processx__thread_get_last_error(void);
 
 #endif
 

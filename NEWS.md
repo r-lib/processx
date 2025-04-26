@@ -5,6 +5,34 @@
   timeout of `grace` seconds. After the timeout, `SIGKILL` is sent as
   before.
 
+# processx 3.8.6
+
+* `processx::process` objects are cloneable again, temporarily,
+  to avoid warning-like messages from R6 2.6.0 and later.
+
+* processx now does not change the state of the RNG (#390).
+
+# processx 3.8.5
+
+* No changes.
+
+# processx 3.8.4
+
+* No changes.
+
+# processx 3.8.3
+
+* `*printf()` format strings are now safer (#379).
+
+# processx 3.8.2
+
+* The client library, used by callr, now ignores `SIGPIPE` when writing
+  to a file descriptor, on unix. This avoid possible freezes when a
+  `callr::r_session` subprocess is trying to report its result after the
+  main process was terminated. In particular, this happened with parallel
+  testthat: https://github.com/r-lib/testthat/issues/1819
+>>>>>>> df0579681e7953e52174614fba8836b9a9c0afbc
+
 # processx 3.8.1
 
 * On Unixes, R processes created by callr now feature a `SIGTERM`

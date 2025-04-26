@@ -1,8 +1,7 @@
-
 is_string <- function(x) {
   is.character(x) &&
-  length(x) == 1 &&
-  !is.na(x)
+    length(x) == 1 &&
+    !is.na(x)
 }
 
 on_failure(is_string) <- function(call, env) {
@@ -19,8 +18,8 @@ on_failure(is_string_or_null) <- function(call, env) {
 
 is_flag <- function(x) {
   is.logical(x) &&
-  length(x) == 1 &&
-  !is.na(x)
+    length(x) == 1 &&
+    !is.na(x)
 }
 
 on_failure(is_flag) <- function(call, env) {

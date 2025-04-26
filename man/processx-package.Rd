@@ -12,7 +12,7 @@ Tools to run system processes in the background. It can check if a background pr
 Useful links:
 \itemize{
   \item \url{https://processx.r-lib.org}
-  \item \url{https://github.com/r-lib/processx#readme}
+  \item \url{https://github.com/r-lib/processx}
   \item Report bugs at \url{https://github.com/r-lib/processx/issues}
 }
 
@@ -27,8 +27,8 @@ Authors:
 
 Other contributors:
 \itemize{
-  \item RStudio [copyright holder, funder]
-  \item Mango Solutions [copyright holder, funder]
+  \item Posit Software, PBC [copyright holder, funder]
+  \item Ascent Digital Services [copyright holder, funder]
 }
 
 }

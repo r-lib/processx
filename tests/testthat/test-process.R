@@ -1,6 +1,4 @@
-
 test_that("process works", {
-
   px <- get_tool("px")
   p <- process$new(px, c("sleep", "5"))
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
@@ -8,7 +6,6 @@ test_that("process works", {
 })
 
 test_that("get_exit_status", {
-
   px <- get_tool("px")
   p <- process$new(px, c("return", "1"))
   on.exit(p$kill(), add = TRUE)
@@ -17,30 +14,43 @@ test_that("get_exit_status", {
 })
 
 test_that("non existing process", {
-  expect_error(process$new(tempfile()))
+  expect_snapshot(
+    error = TRUE,
+    process$new(tempfile()),
+    transform = transform_tempdir,
+    variant = sysname()
+  )
   ## This closes connections in finalizers
   gc()
 })
 
 test_that("post processing", {
-
   px <- get_tool("px")
   p <- process$new(
-    px, c("return", "0"), post_process = function() "foobar")
+    px,
+    c("return", "0"),
+    post_process = function() "foobar"
+  )
   p$wait(5000)
   p$kill()
   expect_equal(p$get_result(), "foobar")
 
   p <- process$new(
-    px, c("sleep", "5"), post_process = function() "yep")
-  expect_error(p$get_result(), "alive")
+    px,
+    c("sleep", "5"),
+    post_process = function() "yep"
+  )
+  expect_snapshot(error = TRUE, p$get_result())
   p$kill()
   expect_equal(p$get_result(), "yep")
 
   ## Only runs once
   xx <- 0
   p <- process$new(
-    px, c("return", "0"), post_process = function() xx <<- xx + 1)
+    px,
+    c("return", "0"),
+    post_process = function() xx <<- xx + 1
+  )
   p$wait(5000)
   p$kill()
   p$get_result()
@@ -50,7 +60,7 @@ test_that("post processing", {
 })
 
 test_that("working directory", {
-  px  <- get_tool("px")
+  px <- get_tool("px")
   dir.create(tmp <- tempfile())
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
   cat("foo\nbar\n", file = file.path(tmp, "file"))
@@ -63,7 +73,12 @@ test_that("working directory", {
 
 test_that("working directory does not exist", {
   px <- get_tool("px")
-  expect_error(process$new(px, wd = tempfile()))
+  expect_snapshot(
+    error = TRUE,
+    process$new(px, wd = tempfile()),
+    transform = transform_px,
+    variant = sysname()
+  )
   ## This closes connections in finalizers
   gc()
 })

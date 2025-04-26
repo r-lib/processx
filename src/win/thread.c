@@ -3,7 +3,7 @@
 
 HANDLE processx__connection_iocp = NULL;
 
-HANDLE processx__get_default_iocp() {
+HANDLE processx__get_default_iocp(void) {
   if (! processx__connection_iocp) {
     processx__connection_iocp = CreateIoCompletionPort(
     /* FileHandle = */                 INVALID_HANDLE_VALUE,
@@ -44,7 +44,7 @@ struct processx__thread_getstatus_data {
 
 ULONG_PTR processx__key_none = 1;
 
-DWORD processx_i_thread_readfile() {
+DWORD processx_i_thread_readfile(void) {
 
   processx_connection_t *ccon = processx__thread_readfile_data.ccon;
 
@@ -86,7 +86,7 @@ DWORD processx_i_thread_readfile() {
   return res;
 }
 
-DWORD processx_i_thread_connectpipe() {
+DWORD processx_i_thread_connectpipe(void) {
 
   processx_connection_t *ccon = processx__thread_readfile_data.ccon;
 
@@ -125,7 +125,7 @@ DWORD processx_i_thread_connectpipe() {
   return res;
 }
 
-DWORD processx_i_thread_getstatus() {
+DWORD processx_i_thread_getstatus(void) {
   static const char *ok_buf = "OK";
   HANDLE iocp = processx__get_default_iocp();
   if (!iocp) return FALSE;
@@ -185,7 +185,7 @@ DWORD processx__thread_callback(void *data) {
   return 0;
 }
 
-int processx__start_thread() {
+int processx__start_thread(void) {
   if (processx__iocp_thread != NULL) return 0;
 
   DWORD threadid;
@@ -317,6 +317,6 @@ BOOL processx__thread_getstatus_select(LPDWORD lpNumberOfBytes,
   return processx__thread_success;
 }
 
-DWORD processx__thread_get_last_error() {
+DWORD processx__thread_get_last_error(void) {
   return processx__thread_last_error;
 }
