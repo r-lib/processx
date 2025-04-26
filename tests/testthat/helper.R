@@ -15,6 +15,12 @@ skip_if_no_ps <- function() {
   if (!ps::ps_is_supported()) skip("ps does not support this platform")
 }
 
+skip_if_not_installed <- function(...) {
+  if (Sys.getenv("_R_CHECK_FORCE_SUGGESTS_") == "false") {
+    testthat::skip_if_not_installed(...)
+  }
+}
+
 try_silently <- function(expr) {
   tryCatch(
     expr,
