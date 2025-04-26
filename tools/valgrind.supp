@@ -418,3 +418,123 @@
    fun:Rf_eval
    fun:R_execClosure
 }
+{
+   Suppression 24 in malloc in processx
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:__add_to_environ
+   fun:setenv
+   fun:do_setenv
+   fun:bcEval_loop
+   fun:bcEval
+   fun:bcEval
+   fun:Rf_eval
+   fun:forcePromise.part.0
+   fun:forcePromise
+   fun:Rf_eval
+   fun:bcEval_loop
+   fun:bcEval
+   fun:bcEval
+   fun:Rf_eval
+}
+{
+   Suppression 25 in malloc in processx
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:tsearch
+   fun:__add_to_environ
+   fun:setenv
+   fun:do_setenv
+   fun:bcEval_loop
+   fun:bcEval
+   fun:bcEval
+   fun:Rf_eval
+   fun:forcePromise.part.0
+   fun:forcePromise
+   fun:Rf_eval
+   fun:bcEval_loop
+   fun:bcEval
+   fun:bcEval
+}
+{
+   Suppression 26 in malloc in processx
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:__add_to_environ
+   fun:setenv
+   fun:do_setenv
+   fun:bcEval_loop
+   fun:bcEval
+   fun:bcEval
+   fun:Rf_eval
+   fun:forcePromise.part.0
+   fun:forcePromise
+   fun:Rf_eval
+   fun:bcEval_loop
+   fun:bcEval
+   fun:bcEval
+   fun:Rf_eval
+}
+{
+   Suppression 27 in malloc in processx
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:tsearch
+   fun:__add_to_environ
+   fun:setenv
+   fun:do_setenv
+   fun:bcEval_loop
+   fun:bcEval
+   fun:bcEval
+   fun:Rf_eval
+   fun:forcePromise.part.0
+   fun:forcePromise
+   fun:Rf_eval
+   fun:bcEval_loop
+   fun:bcEval
+   fun:bcEval
+}
+{
+   Suppression 28 in malloc in processx
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:__add_to_environ
+   fun:setenv
+   fun:do_setenv
+   fun:bcEval_loop
+   fun:bcEval
+   fun:bcEval
+   fun:Rf_eval
+   fun:forcePromise.part.0
+   fun:forcePromise
+   fun:Rf_eval
+   fun:bcEval_loop
+   fun:bcEval
+   fun:bcEval
+   fun:Rf_eval
+}
+{
+   Suppression 29 in malloc in processx
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:tsearch
+   fun:__add_to_environ
+   fun:setenv
+   fun:do_setenv
+   fun:bcEval_loop
+   fun:bcEval
+   fun:bcEval
+   fun:Rf_eval
+   fun:forcePromise.part.0
+   fun:forcePromise
+   fun:Rf_eval
+   fun:bcEval_loop
+   fun:bcEval
+   fun:bcEval
+}
