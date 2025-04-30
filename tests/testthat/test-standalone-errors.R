@@ -134,7 +134,7 @@ test_that("chain_call", {
 })
 
 test_that("errors from subprocess", {
-  skip_if_not(isTRUE(tryCatch(packageVersion("callr") == "3.7.0", packageNotFoundError = function(c) FALSE)), "only with callr exactly 3.7.0")
+  skip_if_not(isTRUE(try(packageVersion("callr") == "3.7.0", silent = TRUE)), "only with callr exactly 3.7.0")
   err <- tryCatch(
     callr::r(function() 1 + "a"),
     error = function(e) e
