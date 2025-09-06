@@ -178,7 +178,7 @@ get_tool <- function(prog) {
   if (os_type() == "windows") prog <- paste0(prog, ".exe")
   exe <- system.file(package = "processx", "bin", .Platform$r_arch, prog)
   if (exe == "") {
-    pkgpath <- system.file(package = "processx")
+    pkgpath <- find.package("processx")
     if (basename(pkgpath) == "inst") pkgpath <- dirname(pkgpath)
     exe <- file.path(pkgpath, "src", "tools", prog)
     if (!file.exists(exe)) return("")
