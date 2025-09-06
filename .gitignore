@@ -22,3 +22,4 @@
 *.gcda
 *.gcno
 /dev-lib
+/.dev

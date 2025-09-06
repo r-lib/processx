@@ -32,3 +32,4 @@
 ^vignettes$
 ^[\.]?air\.toml$
 ^\.vscode$
+^[.]dev$
