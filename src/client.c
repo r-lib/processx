@@ -252,10 +252,27 @@ SEXP processx_base64_decode(SEXP array);
 #include <string.h>
 #include <signal.h>
 
+static FILE *cleanup_file;
+static int cleanup_fd;
+static int needs_handler_cleanup = 0;
+
+// We want to clean up the temporary directory on SIGTERM. Since we
+// can barely do anything safely from a signal handler, we set up a
+// process ahead of time that is going to run `rm -rf tempdir` on
+// termination. The process is waiting for an empty line that we send
+// with the signal-async-safe function `write()`.
+
+static
 void term_handler(int n) {
-  // Need the cast and the +1 to ignore compiler warning about unused
-  // return value.
-  (void) (system("rm -rf \"$R_SESSION_TMPDIR\"") + 1);
+  // `fwrite()` is not async-safe. Need the cast to avoid
+  // `-Wunused-result` warning
+  (void) (write(cleanup_fd, "\n", 1) + 1);
+
+  // `pclose()` is not async-safe. Just assume that the cleanup
+  // process is going to terminate naturally once it's finished the
+  // command. The file descriptors will be closed automatically on
+  // exit. This also allows us to exit faster.
+
   // Continue signal
   raise(SIGTERM);
 }
@@ -265,10 +282,25 @@ void install_term_handler(void) {
     return;
   }
 
+  // Ignore SIGTERM in cleanup process via inherited procmask
+  sigset_t mask;
+  sigemptyset(&mask);
+  sigaddset(&mask, SIGTERM);
+
+  sigset_t old;
+  sigprocmask(SIG_BLOCK, &mask, &old);
+
+  // FIXME: Is it a bit dangerous to use an envvar here?
+  cleanup_file = popen("read input && [ \"$input\" = \"\" ] && rm -rf \"$R_SESSION_TMPDIR\"", "w");
+  cleanup_fd = fileno(cleanup_file);
+  needs_handler_cleanup = 1;
+
   struct sigaction sig = {{ 0 }};
   sig.sa_handler = term_handler;
   sig.sa_flags = SA_RESETHAND;
   sigaction(SIGTERM, &sig, NULL);
+
+  sigprocmask(SIG_SETMASK, &old, NULL);
 }
 
 #endif // not _WIN32

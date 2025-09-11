@@ -293,3 +293,8 @@ ends_with <- function(x, post) {
   l <- nchar(post)
   substr(x, nchar(x) - l + 1, nchar(x)) == post
 }
+
+defer <- function(expr, frame = parent.frame(), after = FALSE) {
+  thunk <- as.call(list(function() expr))
+  do.call(on.exit, list(thunk, add = TRUE, after = after), envir = frame)
+}
