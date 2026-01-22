@@ -5,7 +5,7 @@
   ## because in a Docker container (maybe elsewhere as well?) on
   ## Linux it can change (!).
   ## See https://github.com/r-lib/processx/issues/258
-  if (ps::ps_is_supported()) {
+  if (is_linux() && ps::ps_is_supported()) {
     ps::ps_handle()
     bt <- ps::ps_boot_time()
     .Call(c_processx__set_boot_time, bt)
