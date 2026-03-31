@@ -33,3 +33,4 @@
 ^[\.]?air\.toml$
 ^\.vscode$
 ^[.]dev$
+^[.]covrignore$
