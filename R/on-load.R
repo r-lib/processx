@@ -5,6 +5,8 @@
   ## because in a Docker container (maybe elsewhere as well?) on
   ## Linux it can change (!).
   ## See https://github.com/r-lib/processx/issues/258
+  ## We don't do it on macOS, because it breaks codex
+  ## https://github.com/r-lib/processx/pull/401
   if (is_linux() && ps::ps_is_supported()) {
     ps::ps_handle()
     bt <- ps::ps_boot_time()
