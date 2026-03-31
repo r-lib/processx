@@ -4,12 +4,12 @@
       f()
     Condition
       Error:
-      ! my message
+      ! ! my message
     Code
       g()
     Condition
       Error:
-      ! my message
+      ! ! my message
 
 # can pass frame as error call in `throw()`
 
@@ -17,10 +17,10 @@
       f()
     Condition
       Error:
-      ! my message
+      ! ! my message
     Code
       g()
     Condition
       Error:
-      ! my message
+      ! ! my message
 

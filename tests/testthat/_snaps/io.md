@@ -4,32 +4,32 @@
       p$read_output_lines(n = 1)
     Condition
       Error:
-      ! stdout is not a pipe.
+      ! ! stdout is not a pipe.
     Code
       p$read_all_output_lines()
     Condition
       Error:
-      ! stdout is not a pipe.
+      ! ! stdout is not a pipe.
     Code
       p$read_all_output()
     Condition
       Error:
-      ! stdout is not a pipe.
+      ! ! stdout is not a pipe.
     Code
       p$read_error_lines(n = 1)
     Condition
       Error:
-      ! stderr is not a pipe.
+      ! ! stderr is not a pipe.
     Code
       p$read_all_error_lines()
     Condition
       Error:
-      ! stderr is not a pipe.
+      ! ! stderr is not a pipe.
     Code
       p$read_all_error()
     Condition
       Error:
-      ! stderr is not a pipe.
+      ! ! stderr is not a pipe.
 
 # same pipe
 
@@ -37,7 +37,7 @@
       p$read_all_error_lines()
     Condition
       Error:
-      ! stderr is not a pipe.
+      ! ! stderr is not a pipe.
 
 # same file
 
@@ -45,7 +45,7 @@
       p$read_all_output_lines()
     Condition
       Error:
-      ! stdout is not a pipe.
+      ! ! stdout is not a pipe.
 
 ---
 
@@ -53,7 +53,7 @@
       p$read_all_error_lines()
     Condition
       Error:
-      ! stderr is not a pipe.
+      ! ! stderr is not a pipe.
 
 # same NULL, for completeness
 
@@ -61,7 +61,7 @@
       p$read_all_output_lines()
     Condition
       Error:
-      ! stdout is not a pipe.
+      ! ! stdout is not a pipe.
 
 ---
 
@@ -69,5 +69,5 @@
       p$read_all_error_lines()
     Condition
       Error:
-      ! stderr is not a pipe.
+      ! ! stderr is not a pipe.
 

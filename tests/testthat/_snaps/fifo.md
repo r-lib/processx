@@ -4,7 +4,7 @@
       conn_create_fifo(read = TRUE, write = TRUE)
     Condition
       Error:
-      ! Bi-directional FIFOs are not supported currently
+      ! ! Bi-directional FIFOs are not supported currently
 
 ---
 
@@ -12,5 +12,5 @@
       conn_connect_fifo(read = TRUE, write = TRUE)
     Condition
       Error:
-      ! Bi-directional FIFOs are not supported currently
+      ! ! Bi-directional FIFOs are not supported currently
 
