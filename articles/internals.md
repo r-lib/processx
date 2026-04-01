@@ -1,0 +1,383 @@
+# processx internals
+
+## FIFOs
+
+### Unix FIFOs
+
+In Unix a FIFO is an interprocess communication device with a
+star-topology. (That’s right, a FIFO can have multiple readers and
+writers.) It has an entry in the file system, although most of the time
+the data in the FIFO is never written to the disk.
+
+Unix FIFO operations:
+
+1.  Creating the FIFO in the file system. `mkfifo(2)` system call.
+2.  Opening the FIFO. `open(2)`.
+3.  Polling the FIFO. We use normal `poll(2)` as for everything else.
+4.  Reading from the FIFO. `read(2)`.
+5.  Writing to the FIFO. `write(2)` and friends.
+6.  Closing the FIFO. `close(2)`.
+
+### Blocking vs Non-blocking mode
+
+The processx functions support opening the FIFO in blocking and
+non-blocking mode. Blocking mode is not very useful because
+[`open()`](https://rdrr.io/r/base/connections.html) will block until the
+other side of the FIFO is
+[`open()`](https://rdrr.io/r/base/connections.html)-d by at least one
+process. This is cumbersome to ensure and can often lead to deadlocks.
+E.g. the other process fails to start and connect to the FIFO, and then
+we block fovever.
+
+Blocking processx FIFOs are not tested very well, and unless noted
+otherwise this document is about non-blocking FIFOs.
+
+### processx’s FIFOs on Unix
+
+[`conn_create_fifo()`](http://processx.r-lib.org/reference/processx_fifos.md)
+first creates the FIFO with `mkfifo(2)` (1 above) and then opens it with
+`open(2)` (2 above). If `read = TRUE` then this is the reader end (*a*
+reader end, really), if `write = TRUE` then it is the writer. For the
+writer end, we need to open non-blocking FIFOs for read-write, because
+otherwise the [`open()`](https://rdrr.io/r/base/connections.html) fails
+if the FIFO does not have a reader. Weird, but this is how it is on
+Unix. Even weirder, according to POSIX, opening a FIFO in read-write
+mode is undefined behavior. On Linux the documented behavior is that
+`O_RDWR` does succeeds even if there is no reader (well, there is now).
+Apparently, this is also the bevarios on macOS. Many people say on the
+internet, and this is the standard behavior on all Unix systems.
+
+[`conn_connect_fifo()`](http://processx.r-lib.org/reference/processx_fifos.md)
+connects to an existing FIFO using `open(2)` (2 above). (Created by
+processx or not.) Just like
+[`conn_create_fifo()`](http://processx.r-lib.org/reference/processx_fifos.md)
+it opens the FIFO in read-write mode instead of write-only mode. This
+helps with the situations when the FIFO file exists but no reader is
+connected to it (yet). On Unix
+[`conn_connect_fifo()`](http://processx.r-lib.org/reference/processx_fifos.md)
+fails if the FIFO file does not exist, or we have no permissions to open
+it in the specified mode.
+
+The rest of the operations (3-6 above) are the usual processx connection
+operations, there is nothing special about FIFO connections once they
+are opened.
+
+### Emulating FIFOs with named pipes on Windows
+
+Windows does not quite have the equivalent of FIFOs, but we can
+reasonably emulate them with named pipes.
+
+[`conn_create_fifo()`](http://processx.r-lib.org/reference/processx_fifos.md)
+creates a named pipe with `CreateNamedPipeA()` with the specified name.
+This corresponds to creating the FIFO and opening it (1-2 above).
+
+[`conn_connect_fifo()`](http://processx.r-lib.org/reference/processx_fifos.md)
+opens a named pipe, like a regular file, with `CreateFileA()` (2 above).
+
+Once opened, the FIFOs work like regular connections. Well, mostly. See
+the notes about known platform differences below!
+
+### How-to
+
+##### How to check if the other write-end of the FIFO is connected?
+
+If you have the read end, then use
+[`poll()`](http://processx.r-lib.org/reference/poll.md) to see if there
+is data in the FIFO. There is no way to know currently when the other
+end connects, but once it writes data,
+[`poll()`](http://processx.r-lib.org/reference/poll.md) will return
+`ready` .
+
+##### How to check if the other read-end of the FIFO is connected?
+
+If you have the write end, then unfortunately there is no easy way to
+make sure that the other end is connected. You can try to write to the
+FIFO, and on Unix it might succeed, and on Windows it might fail. If you
+need to make sure that there is a reader at the other end, then you’ll
+need another FIFO in the opposite direction, where the reader can send a
+message about being connected. (Or some other way to communicate this.)
+This is admittedly not great, and make it much more difficult to use
+FIFOs.
+
+##### How to check for end-of-FIFO?
+
+This is as usual. A non-blocking read returns zero bytes if there is no
+more data and there are no more writers connected to the FIFO. On Unix
+maybe there will be more writers later, but processx does not care about
+that. Once a connection is set to EOF, it is EOF.
+[`conn_is_incomplete()`](http://processx.r-lib.org/reference/processx_connections.md)
+returns `FALSE` if EOF is set. (As usual, it only makes sense to check
+this after a `read()`.
+
+##### How to communicate with another process?
+
+Create a FIFO with
+[`conn_create_fifo()`](http://processx.r-lib.org/reference/processx_fifos.md)
+then pass the name of the FIFO (you can use
+[`conn_file_name()`](http://processx.r-lib.org/reference/processx_connections.md)
+to the other program. It is a piece of text, so you can pass it as an
+argument. (But watch out for special characters, especially on Windows.
+It is best to use processx and avoid system.) The other program can open
+the FIFO (for reading or writing) as a regular file with
+[`open()`](https://rdrr.io/r/base/connections.html), `fopen()`,
+`CreateFile()`, etc. It can open it in blocking or non-blocking mode, as
+needed. If you need bidirectional communication, then use two FIFOs.
+
+### Platform differences and portable code
+
+See also the “Known issues” below.
+
+- Do not connect more than one reader or more than one writer to a FIFO.
+  While this is fine on Unix, and it is pretty cool, actually, it will
+  fail on Windows.
+
+- Remember that once there are zero readers or writers on a FIFO, the
+  other end will signal EOF at the next read (or poll!) operation.
+
+- `conn_read_*()` will fail on Windows if the other end or the FIFO is
+  not connected. Always use
+  [`poll()`](http://processx.r-lib.org/reference/poll.md) first and only
+  read if it returns `ready`.
+  [`poll()`](http://processx.r-lib.org/reference/poll.md) will not
+  return `ready` if the other end of the FIFO is not connected.
+
+- [`conn_write()`](http://processx.r-lib.org/reference/processx_connections.md)
+  may fail (on Windows) if the other end of the FIFO is not connected
+  yet and also if there are no more writers. (But this does not always
+  happen, e.g. if we opened the FIFO in read-write mode in the first
+  place!) Be prepared that every
+  [`conn_write()`](http://processx.r-lib.org/reference/processx_connections.md)
+  call can fail.
+
+- As usual
+  [`conn_write()`](http://processx.r-lib.org/reference/processx_connections.md)
+  might not be able to write all data if the pipe/FIFO buffer is full,
+  and it will return the un-written
+  [`raw()`](https://rdrr.io/r/base/raw.html) data. Make sure to check
+  the return value of
+  [`conn_write()`](http://processx.r-lib.org/reference/processx_connections.md).
+
+- A [`poll()`](http://processx.r-lib.org/reference/poll.md) on a FIFO
+  can return `ready` and then have no data on the next `conn_read_*()`,
+  at least on Windows. This is because at the first
+  [`poll()`](http://processx.r-lib.org/reference/poll.md) (on Windows)
+  we need to start an asynchronous operation for waiting for the other
+  end of the pipe to connect. Once this returns,
+  [`poll()`](http://processx.r-lib.org/reference/poll.md) will signal
+  `ready`, but there might be no data to read just yet.
+
+### Known issues
+
+- A [`poll()`](http://processx.r-lib.org/reference/poll.md) on a FIFO
+  might not return if the writer on the other end (all the writers)
+  close the FIFO. The
+  [`poll()`](http://processx.r-lib.org/reference/poll.md) will only
+  return `ready` after a read operation, once the writer have closed
+  their end. This seems to be a macOS bug, and it is really bad. It
+  happens at least on macOS 12.3.1, and it does not happen on Ubuntu
+  20.04.
+
+- Non-ASCII file names or pipe name are currently an issue. (Just like
+  non-ASCII file name in
+  [`conn_create_file()`](http://processx.r-lib.org/reference/processx_connections.md)
+  are!) We will fix this.
+
+- Encodings of the pipe traffic are very little tested. We will also fix
+  this.
+
+### Links
+
+[Linux `fifo(7)` manual
+page](https://man7.org/linux/man-pages/man7/fifo.7.html)
+
+[Windows `CreateNamedPipeA()` manual
+page](https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createnamedpipea)
+
+## Unix Domain Sockets
+
+### Introduction
+
+processx has a few functions to perform IPC (inter process
+communication) between processes running on the same machine, using Unix
+domain sockets. On Windows it uses named pipes to emulate Unix domain
+sockets, as much as possible.
+
+Unix domain sockets solve many issues that FIFOs (processx FIFOs and
+FIFOs in general) have, so we suggest that you use sockets instead of
+FIFOs if you can.
+
+### API
+
+- processx Unix sockets are always bi-directional.
+
+- [`conn_create_unix_socket()`](http://processx.r-lib.org/reference/processx_sockets.md)
+  creates the server side of the socket.
+
+- [`conn_connect_unix_socket()`](http://processx.r-lib.org/reference/processx_sockets.md)
+  creates the client side and connects to a server socket. This call
+  does not block, so when it returns, the server side has not accepted
+  the connection yet, probably. You can still use the client socket for
+  reading and writing, see below.
+
+- You can use [`poll()`](http://processx.r-lib.org/reference/poll.md) to
+  wait for a client to connect to the server. If a client is available,
+  [`poll()`](http://processx.r-lib.org/reference/poll.md) returns
+  `"connect"` .
+
+- Once a client is available, call
+  [`conn_accept_unix_socket()`](http://processx.r-lib.org/reference/processx_sockets.md)
+  to accept it.
+
+- After accepting the client, you can send messages to it with
+  [`conn_write()`](http://processx.r-lib.org/reference/processx_connections.md)
+  and read messages from it with
+  [`conn_read_chars()`](http://processx.r-lib.org/reference/processx_connections.md)
+  and
+  [`conn_read_lines()`](http://processx.r-lib.org/reference/processx_connections.md)
+  and in general use the server socket as a read-write processx
+  connection.
+
+- The server cannot call `conn_read_*()` or
+  [`conn_write()`](http://processx.r-lib.org/reference/processx_connections.md)
+  before accepting a connection, these calls will error.
+
+- The client can call `conn_read_*()` and
+  [`conn_write()`](http://processx.r-lib.org/reference/processx_connections.md)
+  as soon as it is connected. Reading functions will return no data, and
+  [`conn_write()`](http://processx.r-lib.org/reference/processx_connections.md)
+  will succeed, until the internal buffer gets full. (Or the server
+  accepts the connection and starts reading the data from the buffer).
+  You can also use
+  [`poll()`](http://processx.r-lib.org/reference/poll.md) to wait for
+  incoming data.
+
+- [`poll()`](http://processx.r-lib.org/reference/poll.md) only uses the
+  read-side of the connections, both for the server and the client.
+  There is currently no way to poll the write-sides.
+
+- All processx Unix socket connections are non-blocking.
+  [`conn_create_unix_socket()`](http://processx.r-lib.org/reference/processx_sockets.md),
+  [`conn_connect_unix_socket()`](http://processx.r-lib.org/reference/processx_sockets.md),
+  [`conn_accept_unix_socket()`](http://processx.r-lib.org/reference/processx_sockets.md)
+  are non-blocking as well.
+
+- [`conn_unix_socket_state()`](http://processx.r-lib.org/reference/processx_sockets.md)
+  will return the current state of the socket:
+
+  - `listen` is a server socket before calling
+    [`conn_accept_unix_socket()`](http://processx.r-lib.org/reference/processx_sockets.md)
+
+  - `connected_server` is a server socket with an accepted client
+
+  - `connected_client` is a connected client
+
+- [`close()`](https://rdrr.io/r/base/connections.html) closes the
+  socket. (Both the read-end and the write-end.)
+
+### File names
+
+On Unix, the socket has entry in the file system. By default it will be
+created in the R temporary directory.
+
+On Windows, we use a named pipe to emulate the socket. The user can
+specify the name of the pipe, if they do not then a random name is used
+in the `\\?\pipe\` namespace. If you specify a pipe name on Windows,
+that starts with this string then processx uses it as is.
+
+You can use
+[`conn_file_name()`](http://processx.r-lib.org/reference/processx_connections.md)
+to query the full path of the socket on Unix, or the full name of the
+pipe on Windows.
+
+### How-to
+
+##### How to check if the other end of the socket is connected?
+
+The server socket can
+[`poll()`](http://processx.r-lib.org/reference/poll.md) for a client
+connection. The client can assume that it is connected, but it needs to
+handle the case when
+[`conn_write()`](http://processx.r-lib.org/reference/processx_connections.md)
+cannot write all the data. (As usual for every non-blocking processx
+connection.)
+
+##### How to check for the end of the connection?
+
+This is as usual.
+[`poll()`](http://processx.r-lib.org/reference/poll.md) will return with
+`ready` if the other end closes the connection. You can call
+[`conn_is_incomplete()`](http://processx.r-lib.org/reference/processx_connections.md)
+right after a `read()` to see if the other end has closed the
+connection.
+
+[`conn_write()`](http://processx.r-lib.org/reference/processx_connections.md)
+will error if the other side has closed the connection.
+
+##### How to communicate with another process?
+
+Pass the socket (or pipe) name to it. E.g. you can pass it as a command
+line argument. Note, however that passing the special file name of the
+named pipe might not work on older Windows systems, and you might want
+to only pass the last component of that path, and then append it to
+`\\?\pipe\` in the other process. See `sock.c` in `src/tools` for an
+example.
+
+If the other process is an R process that can load processx, then you
+can use the processx socket functions to connect to the socket and
+communicate.
+
+If the other process is not an R process, or it cannot load processx,
+then you can include the `include/processx/unix-socket.{c,h}` files in
+your project to connect to the socket and communicate. (Or write your
+own C/C++ code based on these.)
+
+Include the `.c` file in exactly one compilation unit of your program,
+and include the `.h` file in others. These files have a portable,
+blocking Unix socket implementation, with a simple API:
+
+``` c
+int processx_socket_connect(const char *filename,
+                            processx_socket_t *pxsocket);
+ssize_t processx_socket_read(processx_socket_t *pxsocket,
+                             void *buf,
+                             size_t nbyte);
+ssize_t processx_socket_write(processx_socket_t *pxsocket,
+                              void *buf,
+                              size_t nbyte);
+int processx_socket_close(processx_socket_t *pxsocket);
+const char* processx_socket_error_message();
+```
+
+All these functions are blocking, and except for the last one, they
+return -1 on error, and set errno on Unix, or you can use
+`GetLastError()` on Windows. You can also use
+`processx_socket_error_message()` to query the system error message in a
+portable way. This function returns a pointer to the error message in a
+static buffer, so copy that if you need to. Note that this is also not
+thread-safe.
+
+In an R package you can use `unix-socket.{c,h}` via the `LinkingTo`
+entry in `DESCRIPTION`, you need to specify
+
+    LinkingTo: processx
+
+and then write
+
+``` c
+#include <processx/unix-sockets.h>
+```
+
+similarly for the `.c` file:
+
+``` c
+#include <processx/unix-sockets.c>
+```
+
+### Known issues
+
+- Non-ASCII socket file names or pipe name are currently an issue. (Just
+  like non-ASCII file name in
+  [`conn_create_file()`](http://processx.r-lib.org/reference/processx_connections.md)
+  are!)
+
+- Encodings of the traffic are very little tested.
