@@ -2,6 +2,10 @@
 
 ## processx (development version)
 
+## processx 3.8.7
+
+No changes.
+
 ## processx 3.8.6
 
 CRAN release: 2025-02-21
