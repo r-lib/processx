@@ -3,7 +3,9 @@ test_that("throw() is standalone", {
   objs <- ls(stenv, all.names = TRUE)
   funs <- Filter(function(x) is.function(stenv[[x]]), objs)
   funobjs <- mget(funs, stenv)
-  for (f in funobjs) expect_identical(environmentName(topenv(f)), "base")
+  for (f in funobjs) {
+    expect_identical(environmentName(topenv(f)), "base")
+  }
 
   skip_if_not_installed("codetools")
   expect_message(

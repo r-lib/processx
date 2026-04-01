@@ -142,9 +142,13 @@ process_initialize <- function(
     private$poll_pipe <- pipe[[1]]
   }
 
-  if (echo_cmd) do_echo_cmd(command, args)
+  if (echo_cmd) {
+    do_echo_cmd(command, args)
+  }
 
-  if (!is.null(env)) env <- process_env(env)
+  if (!is.null(env)) {
+    env <- process_env(env)
+  }
 
   private$tree_id <- get_id()
 
@@ -181,19 +185,26 @@ process_initialize <- function(
   ## still.)
   private$starttime <-
     chain_call(c_processx__proc_start_time, private$status)
-  if (private$starttime == 0) private$starttime <- Sys.time()
+  if (private$starttime == 0) {
+    private$starttime <- Sys.time()
+  }
 
   ## Need to close this, otherwise the child's end of the pipe
   ## will not be closed when the child exits, and then we cannot
   ## poll it.
-  if (poll_connection) close(pipe[[2]])
+  if (poll_connection) {
+    close(pipe[[2]])
+  }
 
-  if (is.character(stdin) && stdin != "|" && stdin != "")
+  if (is.character(stdin) && stdin != "|" && stdin != "") {
     stdin <- full_path(stdin)
-  if (is.character(stdout) && stdout != "|" && stdout != "")
+  }
+  if (is.character(stdout) && stdout != "|" && stdout != "") {
     stdout <- full_path(stdout)
-  if (is.character(stderr) && stderr != "|" && stderr != "")
+  }
+  if (is.character(stderr) && stderr != "|" && stderr != "") {
     stderr <- full_path(stderr)
+  }
 
   ## Store the output and error files, we'll open them later if needed
   private$stdin <- stdin

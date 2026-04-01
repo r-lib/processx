@@ -229,7 +229,9 @@ test_that("it is ok if parallel has no active cluster", {
 
   code <- substitute({
     cl <- parallel::makeForkCluster(2)
-    if (getRversion() < "3.5.0") parallel::setDefaultCluster(cl)
+    if (getRversion() < "3.5.0") {
+      parallel::setDefaultCluster(cl)
+    }
     parallel::mclapply(1:2, function(x) x)
 
     job <- parallel::mcparallel(Sys.sleep(.5))
@@ -241,7 +243,9 @@ test_that("it is ok if parallel has no active cluster", {
     print(ps::ps_children(ps::ps_handle()))
 
     # try to run sg, this still calls the old sigchld handler
-    for (i in 1:5) processx::run("true")
+    for (i in 1:5) {
+      processx::run("true")
+    }
   })
 
   script <- tempfile(pattern = "processx-test-", fileext = ".R")

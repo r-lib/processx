@@ -41,7 +41,9 @@ test_that("UTF-8 directory name", {
 
 test_that("native program name is converted to UTF-8", {
   skip_other_platforms("windows")
-  if (!l10n_info()$`Latin-1`) skip("Needs latin1 locale")
+  if (!l10n_info()$`Latin-1`) {
+    skip("Needs latin1 locale")
+  }
   local_temp_dir()
   exe <- enc2native("./\u00fa\u00e1\u00f6.exe")
   file.copy(get_tool("px"), exe)

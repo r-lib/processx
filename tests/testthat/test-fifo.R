@@ -3,7 +3,9 @@ test_that("read end first", {
 
   fifo <- tempfile()
   on.exit(unlink(fifo), add = TRUE)
-  if (is_windows()) fifo <- basename(fifo)
+  if (is_windows()) {
+    fifo <- basename(fifo)
+  }
 
   reader <- conn_create_fifo(fifo)
   expect_equal(
@@ -27,7 +29,9 @@ test_that("read end first", {
 
   # Windows might read nothing the first time
   line <- conn_read_lines(reader, 1)
-  if (!length(line)) line <- conn_read_lines(reader, 1)
+  if (!length(line)) {
+    line <- conn_read_lines(reader, 1)
+  }
   expect_equal(line, "hello")
 
   rest <- conn_read_chars(reader)
@@ -74,7 +78,9 @@ test_that("write end first", {
 
   # Windows might read nothing the first time
   line <- conn_read_lines(reader, 1)
-  if (!length(line)) line <- conn_read_lines(reader, 1)
+  if (!length(line)) {
+    line <- conn_read_lines(reader, 1)
+  }
   expect_equal(line, "hello")
 
   rest <- conn_read_chars(reader)
@@ -108,7 +114,9 @@ test_that("write end first 2", {
 
   # Windows might read nothing the first time
   line <- conn_read_lines(reader, 1)
-  if (!length(line)) line <- conn_read_lines(reader, 1)
+  if (!length(line)) {
+    line <- conn_read_lines(reader, 1)
+  }
   expect_equal(line, "hello")
 
   rest <- conn_read_chars(reader)

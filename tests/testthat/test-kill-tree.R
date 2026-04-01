@@ -16,7 +16,9 @@ test_that("tree ids are inherited", {
   env <- "failed"
   deadline <- Sys.time() + 3
   while (TRUE) {
-    if (Sys.time() >= deadline) break
+    if (Sys.time() >= deadline) {
+      break
+    }
     tryCatch(
       {
         env <- ps::ps_environ(ep)[[ev]]
@@ -50,7 +52,9 @@ test_that("tree ids are inherited if env is specified", {
   env <- "failed"
   deadline <- Sys.time() + 3
   while (TRUE) {
-    if (Sys.time() >= deadline) break
+    if (Sys.time() >= deadline) {
+      break
+    }
     tryCatch(
       {
         env <- ps::ps_environ(ep)[[ev]]
@@ -79,7 +83,9 @@ test_that("kill_tree", {
   expect_true(p$get_pid() %in% res)
 
   deadline <- Sys.time() + 1
-  while (p$is_alive() && Sys.time() < deadline) Sys.sleep(0.05)
+  while (p$is_alive() && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
   expect_true(Sys.time() < deadline)
   expect_false(p$is_alive())
 })
@@ -106,7 +112,9 @@ test_that("kill_tree with children", {
   )
 
   deadline <- Sys.time() + 5
-  while (!file.exists(tmp) && Sys.time() < deadline) Sys.sleep(0.05)
+  while (!file.exists(tmp) && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
   expect_true(Sys.time() < deadline)
 
   res <- p$kill_tree()
@@ -115,7 +123,9 @@ test_that("kill_tree with children", {
   expect_true(p$get_pid() %in% res)
 
   deadline <- Sys.time() + 1
-  while (p$is_alive() && Sys.time() < deadline) Sys.sleep(0.05)
+  while (p$is_alive() && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
   expect_true(Sys.time() < deadline)
   expect_false(p$is_alive())
 })
@@ -153,15 +163,18 @@ test_that("kill_tree and orphaned children", {
   while (
     (!file.exists(tmp) || file_size(tmp) == 0) &&
       Sys.time() < deadline
-  )
+  ) {
     Sys.sleep(0.05)
+  }
   expect_true(Sys.time() < deadline)
 
   res <- p1$kill_tree(pres$id)
   expect_true(any(c("px", "px.exe") %in% names(res)))
 
   deadline <- Sys.time() + 1
-  while (ps::ps_is_running(ps) && Sys.time() < deadline) Sys.sleep(0.05)
+  while (ps::ps_is_running(ps) && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
   expect_true(Sys.time() < deadline)
   expect_false(ps::ps_is_running(ps))
 })
@@ -181,7 +194,9 @@ test_that("cleanup_tree option", {
   gc()
 
   deadline <- Sys.time() + 1
-  while (ps::ps_is_running(ps) && Sys.time() < deadline) Sys.sleep(0.05)
+  while (ps::ps_is_running(ps) && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
   expect_true(Sys.time() < deadline)
   expect_false(ps::ps_is_running(ps))
 })
@@ -202,10 +217,14 @@ test_that("cleanup_tree stress test", {
     gc()
 
     deadline <- Sys.time() + 1
-    while (ps::ps_is_running(ps) && Sys.time() < deadline) Sys.sleep(0.05)
+    while (ps::ps_is_running(ps) && Sys.time() < deadline) {
+      Sys.sleep(0.05)
+    }
     expect_true(Sys.time() < deadline)
     expect_false(ps::ps_is_running(ps))
   }
 
-  for (i in 1:50) do()
+  for (i in 1:50) {
+    do()
+  }
 })

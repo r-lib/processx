@@ -103,8 +103,12 @@ conn_create_fifo <- function(
     read <- TRUE
     write <- FALSE
   }
-  if (is.null(read)) read <- !write
-  if (is.null(write)) write <- !read
+  if (is.null(read)) {
+    read <- !write
+  }
+  if (is.null(write)) {
+    write <- !read
+  }
 
   if (read && write) {
     throw(new_error("Bi-directional FIFOs are not supported currently"))
@@ -197,8 +201,12 @@ conn_connect_fifo <- function(
     read <- TRUE
     write <- FALSE
   }
-  if (is.null(read)) read <- !write
-  if (is.null(write)) write <- !read
+  if (is.null(read)) {
+    read <- !write
+  }
+  if (is.null(write)) {
+    write <- !read
+  }
 
   if (read && write) {
     throw(new_error("Bi-directional FIFOs are not supported currently"))
@@ -354,8 +362,9 @@ processx_conn_is_incomplete <- function(con) {
 #' @rdname processx_connections
 #' @export
 
-conn_write <- function(con, str, sep = "\n", encoding = "")
+conn_write <- function(con, str, sep = "\n", encoding = "") {
   UseMethod("conn_write", con)
+}
 
 #' @rdname processx_connections
 #' @export
@@ -405,8 +414,12 @@ conn_create_file <- function(filename, read = NULL, write = NULL) {
     read <- TRUE
     write <- FALSE
   }
-  if (is.null(read)) read <- !write
-  if (is.null(write)) write <- !read
+  if (is.null(read)) {
+    read <- !write
+  }
+  if (is.null(write)) {
+    write <- !read
+  }
 
   assert_that(
     is_string(filename),

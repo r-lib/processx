@@ -11,7 +11,9 @@ skip_extra_tests <- function() {
 }
 
 skip_if_no_ps <- function() {
-  if (!requireNamespace("ps", quietly = TRUE)) skip("ps package needed")
+  if (!requireNamespace("ps", quietly = TRUE)) {
+    skip("ps package needed")
+  }
   if (!ps::ps_is_supported()) skip("ps does not support this platform")
 }
 
@@ -122,7 +124,9 @@ run_script <- function(expr, ..., quoted = NULL, encoding = "") {
   se <- paste0(sf, "err")
   on.exit(unlink(c(dir), recursive = TRUE), add = TRUE)
 
-  if (is.null(quoted)) quoted <- substitute(expr)
+  if (is.null(quoted)) {
+    quoted <- substitute(expr)
+  }
   writeLines(deparse(quoted), con = sf)
 
   writeLines(

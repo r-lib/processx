@@ -227,7 +227,7 @@ process <- R6::R6Class(
       windows_detached_process = !cleanup,
       encoding = "",
       post_process = NULL
-    )
+    ) {
       process_initialize(
         self,
         private,
@@ -251,7 +251,8 @@ process <- R6::R6Class(
         windows_detached_process,
         encoding,
         post_process
-      ),
+      )
+    },
 
     #' @description
     #' Terminate the process. It also terminate all of its child
@@ -260,8 +261,9 @@ process <- R6::R6Class(
     #' was terminated, and `FALSE` if it was not (because it was
     #' already finished/dead when `processx` tried to terminate it).
 
-    kill = function(grace = 0.1, close_connections = TRUE)
-      process_kill(self, private, grace, close_connections),
+    kill = function(grace = 0.1, close_connections = TRUE) {
+      process_kill(self, private, grace, close_connections)
+    },
 
     #' @description
     #' Process tree cleanup. It terminates the process
@@ -276,8 +278,9 @@ process <- R6::R6Class(
     #' were killed, the names are the names of the processes (e.g. `"sleep"`,
     #' `"notepad.exe"`, `"Rterm.exe"`, etc.).
 
-    kill_tree = function(grace = 0.1, close_connections = TRUE)
-      process_kill_tree(self, private, grace, close_connections),
+    kill_tree = function(grace = 0.1, close_connections = TRUE) {
+      process_kill_tree(self, private, grace, close_connections)
+    },
 
     #' @description
     #' Send a signal to the process. On Windows only the
@@ -393,55 +396,62 @@ process <- R6::R6Class(
     #' This will work only if `stdout="|"` was used. Otherwise, it will
     #' throw an error.
 
-    read_output_lines = function(n = -1)
-      process_read_output_lines(self, private, n),
+    read_output_lines = function(n = -1) {
+      process_read_output_lines(self, private, n)
+    },
 
     #' @description
     #' `$read_error_lines()` is similar to `$read_output_lines`, but
     #' it reads from the standard error stream.
 
-    read_error_lines = function(n = -1)
-      process_read_error_lines(self, private, n),
+    read_error_lines = function(n = -1) {
+      process_read_error_lines(self, private, n)
+    },
 
     #' @description
     #' `$is_incomplete_output()` return `FALSE` if the other end of
     #' the standard output connection was closed (most probably because the
     #' process exited). It return `TRUE` otherwise.
 
-    is_incomplete_output = function()
-      process_is_incompelete_output(self, private),
+    is_incomplete_output = function() {
+      process_is_incompelete_output(self, private)
+    },
 
     #' @description
     #' `$is_incomplete_error()` return `FALSE` if the other end of
     #' the standard error connection was closed (most probably because the
     #' process exited). It return `TRUE` otherwise.
 
-    is_incomplete_error = function()
-      process_is_incompelete_error(self, private),
+    is_incomplete_error = function() {
+      process_is_incompelete_error(self, private)
+    },
 
     #' @description
     #' `$has_input_connection()` return `TRUE` if there is a connection
     #' object for standard input; in other words, if `stdout="|"`. It returns
     #' `FALSE` otherwise.
 
-    has_input_connection = function()
-      process_has_input_connection(self, private),
+    has_input_connection = function() {
+      process_has_input_connection(self, private)
+    },
 
     #' @description
     #' `$has_output_connection()` returns `TRUE` if there is a connection
     #' object for standard output; in other words, if `stdout="|"`. It returns
     #' `FALSE` otherwise.
 
-    has_output_connection = function()
-      process_has_output_connection(self, private),
+    has_output_connection = function() {
+      process_has_output_connection(self, private)
+    },
 
     #' @description
     #' `$has_error_connection()` returns `TRUE` if there is a connection
     #' object for standard error; in other words, if `stderr="|"`. It returns
     #' `FALSE` otherwise.
 
-    has_error_connection = function()
-      process_has_error_connection(self, private),
+    has_error_connection = function() {
+      process_has_error_connection(self, private)
+    },
 
     #' @description
     #' `$has_poll_connection()` return `TRUE` if there is a poll connection,
@@ -453,22 +463,25 @@ process <- R6::R6Class(
     #' `$get_input_connection()` returns a connection object, to the
     #' standard input stream of the process.
 
-    get_input_connection = function()
-      process_get_input_connection(self, private),
+    get_input_connection = function() {
+      process_get_input_connection(self, private)
+    },
 
     #' @description
     #' `$get_output_connection()` returns a connection object, to the
     #' standard output stream of the process.
 
-    get_output_connection = function()
-      process_get_output_connection(self, private),
+    get_output_connection = function() {
+      process_get_output_connection(self, private)
+    },
 
     #' @description
     #' `$get_error_conneciton()` returns a connection object, to the
     #' standard error stream of the process.
 
-    get_error_connection = function()
-      process_get_error_connection(self, private),
+    get_error_connection = function() {
+      process_get_error_connection(self, private)
+    },
 
     #' @description
     #' `$read_all_output()` waits for all standard output from the process.
@@ -498,8 +511,9 @@ process <- R6::R6Class(
     #' It returns a character vector. This will return content only if
     #' `stdout="|"` was used. Otherwise, it will throw an error.
 
-    read_all_output_lines = function()
-      process_read_all_output_lines(self, private),
+    read_all_output_lines = function() {
+      process_read_all_output_lines(self, private)
+    },
 
     #' @description
     #' `$read_all_error_lines()` waits for all standard error lines from
@@ -509,8 +523,9 @@ process <- R6::R6Class(
     #' It returns a character vector. This will return content only if
     #' `stderr="|"` was used. Otherwise, it will throw an error.
 
-    read_all_error_lines = function()
-      process_read_all_error_lines(self, private),
+    read_all_error_lines = function() {
+      process_read_all_error_lines(self, private)
+    },
 
     #' @description
     #' `$write_input()` writes the character vector (separated by `sep`) to
@@ -529,8 +544,9 @@ process <- R6::R6Class(
     #'   character vector. It is ignored if `str` is a raw vector.
     #' @return Leftover text (as a raw vector), that was not written.
 
-    write_input = function(str, sep = "\n")
-      process_write_input(self, private, str, sep),
+    write_input = function(str, sep = "\n") {
+      process_write_input(self, private, str, sep)
+    },
 
     #' @description
     #' `$get_input_file()` if the `stdin` argument was a filename,
@@ -676,8 +692,9 @@ process <- R6::R6Class(
         !is.null(private$tree_id) &&
           private$cleanup_tree &&
           ps::ps_is_supported()
-      )
+      ) {
         self$kill_tree()
+      }
     },
 
     get_short_name = function() process_get_short_name(self, private),
@@ -742,7 +759,9 @@ process_kill <- function(self, private, grace, close_connections) {
     as.numeric(grace),
     private$get_short_name()
   )
-  if (close_connections) private$close_connections()
+  if (close_connections) {
+    private$close_connections()
+  }
   ret
 }
 
@@ -755,7 +774,9 @@ process_kill_tree <- function(self, private, grace, close_connections) {
   }
 
   ret <- get("ps_kill_tree", asNamespace("ps"))(private$tree_id)
-  if (close_connections) private$close_connections()
+  if (close_connections) {
+    private$close_connections()
+  }
   ret
 }
 
@@ -782,7 +803,9 @@ process_supervise <- function(self, private, status) {
 }
 
 process_get_result <- function(self, private) {
-  if (self$is_alive()) throw(new_error("Process is still alive"))
+  if (self$is_alive()) {
+    throw(new_error("Process is still alive"))
+  }
   if (!private$post_process_done && is.function(private$post_process)) {
     private$post_process_result <- private$post_process()
     private$post_process_done <- TRUE

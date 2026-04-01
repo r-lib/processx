@@ -105,7 +105,9 @@ test_that("sh_quote_smart", {
     list(c("foo", "1 2"), c("foo", shQuote("1 2")))
   )
 
-  for (c in cases) expect_equal(sh_quote_smart(c[[1]]), c[[length(c)]])
+  for (c in cases) {
+    expect_equal(sh_quote_smart(c[[1]]), c[[length(c)]])
+  }
 })
 
 test_that("base64", {

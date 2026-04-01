@@ -5,7 +5,9 @@ test_that("client lib is standalone", {
   objs <- ls(lib, all.names = TRUE)
   funs <- Filter(function(x) is.function(lib[[x]]), objs)
   funobjs <- mget(funs, lib)
-  for (f in funobjs) expect_identical(environmentName(topenv(f)), "base")
+  for (f in funobjs) {
+    expect_identical(environmentName(topenv(f)), "base")
+  }
 
   skip_if_not_installed("codetools")
   expect_message(

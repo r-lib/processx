@@ -81,13 +81,19 @@ load_client_lib <- function(client) {
   env$disable_fd_inheritance <- function() mycall(sym_disinh)
 
   env$write_fd <- function(fd, data) {
-    if (is.character(data)) data <- charToRaw(paste0(data, collapse = ""))
+    if (is.character(data)) {
+      data <- charToRaw(paste0(data, collapse = ""))
+    }
     len <- length(data)
     repeat {
       written <- mycall(sym_write, fd, data)
       len <- len - written
-      if (len == 0) break
-      if (written) data <- data[-(1:written)]
+      if (len == 0) {
+        break
+      }
+      if (written) {
+        data <- data[-(1:written)]
+      }
       Sys.sleep(.1)
     }
   }

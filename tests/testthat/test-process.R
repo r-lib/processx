@@ -14,6 +14,7 @@ test_that("get_exit_status", {
 })
 
 test_that("non existing process", {
+  withr::local_options(width = 400)
   expect_snapshot(
     error = TRUE,
     process$new(tempfile()),

@@ -68,7 +68,9 @@ on_failure(is_time_interval) <- function(call, env) {
 }
 
 is_list_of_pollables <- function(x) {
-  if (!is.list(x)) return(FALSE)
+  if (!is.list(x)) {
+    return(FALSE)
+  }
   proc <- vapply(x, inherits, FUN.VALUE = logical(1), "process")
   conn <- vapply(x, is_connection, logical(1))
   curl <- vapply(x, inherits, FUN.VALUE = logical(1), "processx_curl_fds")
@@ -112,8 +114,12 @@ on_failure(is_connection_list) <- function(call, env) {
 }
 
 is_env_vector <- function(x) {
-  if (is_named_character(x)) return(TRUE)
-  if (!is.character(x) || anyNA(x)) return(FALSE)
+  if (is_named_character(x)) {
+    return(TRUE)
+  }
+  if (!is.character(x) || anyNA(x)) {
+    return(FALSE)
+  }
   if (is.null(names(x))) {
     all(x == "current")
   } else {

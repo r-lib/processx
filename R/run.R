@@ -197,10 +197,14 @@ run <- function(
   ## The rest is checked by process$new()
   "!DEBUG run() Checked arguments"
 
-  if (!interactive()) spinner <- FALSE
+  if (!interactive()) {
+    spinner <- FALSE
+  }
 
   ## Run the process
-  if (stderr_to_stdout) stderr <- "2>&1"
+  if (stderr_to_stdout) {
+    stderr <- "2>&1"
+  }
   pr <- process$new(
     command,
     args,
@@ -309,7 +313,9 @@ echo_callback <- function(user_callback, type) {
   force(user_callback)
   force(type)
   function(x, ...) {
-    if (type == "stderr" && has_package("cli")) x <- cli::col_red(x)
+    if (type == "stderr" && has_package("cli")) {
+      x <- cli::col_red(x)
+    }
     cat(x, sep = "")
     if (!is.null(user_callback)) user_callback(x, ...)
   }
@@ -349,7 +355,9 @@ run_manage <- function(
       )
 
       if (length(newout) && nzchar(newout)) {
-        if (!is.null(stdout_callback)) stdout_callback(newout, proc)
+        if (!is.null(stdout_callback)) {
+          stdout_callback(newout, proc)
+        }
         resenv$outbuf$push(newout)
         if (!is.null(stdout_line_callback)) {
           newout <- paste0(pushback_out, newout)
@@ -376,7 +384,9 @@ run_manage <- function(
 
       if (length(newerr) && nzchar(newerr)) {
         resenv$errbuf$push(newerr)
-        if (!is.null(stderr_callback)) stderr_callback(newerr, proc)
+        if (!is.null(stderr_callback)) {
+          stderr_callback(newerr, proc)
+        }
         if (!is.null(stderr_line_callback)) {
           newerr <- paste0(pushback_err, newerr)
           pushback_err <<- ""
@@ -412,7 +422,9 @@ run_manage <- function(
         is.finite(timeout) &&
         Sys.time() - start_time > timeout
     ) {
-      if (proc$kill(close_connections = FALSE)) timeout_happened <- TRUE
+      if (proc$kill(close_connections = FALSE)) {
+        timeout_happened <- TRUE
+      }
       "!DEBUG Timeout killed run() process `proc$get_pid()`"
       break
     }
@@ -432,7 +444,9 @@ run_manage <- function(
     polled <- proc$poll_io(remains)
 
     ## If output/error, then collect it
-    if (any(polled == "ready")) do_output()
+    if (any(polled == "ready")) {
+      do_output()
+    }
 
     if (spinner) spin()
   }
@@ -451,7 +465,9 @@ run_manage <- function(
     if (!do_output()) break
   }
 
-  if (spinner) cat("\r \r")
+  if (spinner) {
+    cat("\r \r")
+  }
 
   list(
     status = proc$get_exit_status(),
@@ -609,7 +625,9 @@ system_error_parts <- function(x) {
 }
 
 last_stderr_lines <- function(text, std, prefix = "") {
-  if (!nzchar(text)) return(paste0(std, ": <empty>"))
+  if (!nzchar(text)) {
+    return(paste0(std, ": <empty>"))
+  }
   lines <- strsplit(text, "\r?\n")[[1]]
 
   if (is_interactive() && length(lines) > 10) {
