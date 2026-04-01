@@ -75,6 +75,7 @@ test_that("working directory", {
 })
 
 test_that("working directory does not exist", {
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   expect_snapshot(
     error = TRUE,

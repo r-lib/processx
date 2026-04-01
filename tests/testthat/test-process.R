@@ -14,6 +14,7 @@ test_that("get_exit_status", {
 })
 
 test_that("non existing process", {
+  skip_if_no_srcrefs()
   withr::local_options(width = 400)
   expect_snapshot(
     error = TRUE,
@@ -73,6 +74,7 @@ test_that("working directory", {
 })
 
 test_that("working directory does not exist", {
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   expect_snapshot(
     error = TRUE,

@@ -23,6 +23,15 @@ skip_if_not_installed <- function(...) {
   }
 }
 
+skip_if_no_srcrefs <- function() {
+  if (
+    !asNamespace("pkgload")$is_dev_package("processx") &&
+      Sys.getenv("R_KEEP_PKG_SOURCE") != "yes"
+  ) {
+    testthat::skip("no srcrefs")
+  }
+}
+
 try_silently <- function(expr) {
   tryCatch(
     expr,

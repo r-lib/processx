@@ -33,6 +33,7 @@ test_that("CRUD", {
   conn_accept_unix_socket(sock1)
   expect_equal(conn_unix_socket_state(sock1), "connected_server")
 
+  skip_if_no_srcrefs()
   expect_snapshot(error = TRUE, conn_accept_unix_socket(sock1))
 
   pr <- poll(list(sock1, sock2), 1)
@@ -135,6 +136,7 @@ test_that("reading unaccepted server socket is error", {
     list("connect")
   )
 
+  skip_if_no_srcrefs()
   expect_snapshot(error = TRUE, conn_read_chars(sock1), variant = sysname())
 
   close(sock1)
@@ -157,7 +159,7 @@ test_that("writing unaccepted server socket is error", {
     poll(list(sock1), 3000),
     list("connect")
   )
-
+  skip_if_no_srcrefs()
   expect_snapshot(error = TRUE, conn_write(sock1, "Hello\n"))
 
   close(sock1)
@@ -239,6 +241,7 @@ test_that("closing the other end finishes `poll()`, on macOS", {
 
 test_that("errors", {
   skip_on_cran()
+  skip_if_no_srcrefs()
 
   if (!is_windows()) {
     sock <- file.path(tempdir(), strrep(basename(tempfile()), 1000))
