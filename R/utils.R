@@ -234,6 +234,10 @@ has_package <- function(pkg) {
   requireNamespace(pkg, quietly = TRUE)
 }
 
+write_raw_stdout <- function(x) {
+  chain_call(c_processx_write_raw_stdout, x)
+}
+
 tty_echo_off <- function() {
   chain_call(c_processx__echo_off)
 }

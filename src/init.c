@@ -87,6 +87,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_disable_crash_dialog",  (DL_FUNC) &processx_disable_crash_dialog,   0 },
   { "processx_base64_encode", (DL_FUNC) &processx_base64_encode, 1 },
   { "processx_base64_decode", (DL_FUNC) &processx_base64_decode, 1 },
+  { "processx_write_raw_stdout", (DL_FUNC) &processx_write_raw_stdout, 1 },
   { "processx__echo_on", (DL_FUNC) &processx__echo_on, 0 },
   { "processx__echo_off", (DL_FUNC) &processx__echo_off, 0 },
 

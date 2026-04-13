@@ -110,6 +110,24 @@ test_that("sh_quote_smart", {
   }
 })
 
+test_that("write_raw_stdout writes bytes without text translation", {
+  skip_on_cran()
+
+  # Include bytes that text mode would mangle: \n (0x0a), \r (0x0d),
+  # \r\n pairs, NUL (0x00), and high bytes (0x80, 0xff).
+  bytes <- as.raw(c(0x00, 0x01, 0x0a, 0x0d, 0x0d, 0x0a, 0x80, 0xff))
+
+  px <- get_tool("px")
+  tf <- tempfile()
+  on.exit(unlink(tf), add = TRUE)
+
+  p <- process$new(px, c("rawout", "00010a0d0d0a80ff"), stdout = tf)
+  p$wait()
+
+  result <- readBin(tf, "raw", n = file.size(tf))
+  expect_identical(result, bytes)
+})
+
 test_that("base64", {
   expect_equal(base64_encode(charToRaw("foobar")), "Zm9vYmFy")
   expect_equal(base64_encode(charToRaw(" ")), "IA==")
