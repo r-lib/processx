@@ -19,7 +19,7 @@ test_that("non existing process", {
   expect_snapshot(
     error = TRUE,
     process$new(tempfile()),
-    transform = transform_tempdir,
+    transform = function(x) transform_column_number(transform_tempdir(x)),
     variant = sysname()
   )
   ## This closes connections in finalizers
@@ -79,7 +79,7 @@ test_that("working directory does not exist", {
   expect_snapshot(
     error = TRUE,
     process$new(px, wd = tempfile()),
-    transform = transform_px,
+    transform = function(x) transform_column_number(transform_px(x)),
     variant = sysname()
   )
   ## This closes connections in finalizers

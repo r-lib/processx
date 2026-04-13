@@ -34,7 +34,11 @@ test_that("CRUD", {
   expect_equal(conn_unix_socket_state(sock1), "connected_server")
 
   skip_if_no_srcrefs()
-  expect_snapshot(error = TRUE, conn_accept_unix_socket(sock1))
+  expect_snapshot(
+    error = TRUE,
+    conn_accept_unix_socket(sock1),
+    transform = transform_column_number
+  )
 
   pr <- poll(list(sock1, sock2), 1)
   expect_equal(pr, list("timeout", "timeout"))
@@ -137,7 +141,12 @@ test_that("reading unaccepted server socket is error", {
   )
 
   skip_if_no_srcrefs()
-  expect_snapshot(error = TRUE, conn_read_chars(sock1), variant = sysname())
+  expect_snapshot(
+    error = TRUE,
+    conn_read_chars(sock1),
+    transform = transform_column_number,
+    variant = sysname()
+  )
 
   close(sock1)
   close(sock2)
@@ -160,7 +169,11 @@ test_that("writing unaccepted server socket is error", {
     list("connect")
   )
   skip_if_no_srcrefs()
-  expect_snapshot(error = TRUE, conn_write(sock1, "Hello\n"))
+  expect_snapshot(
+    error = TRUE,
+    conn_write(sock1, "Hello\n"),
+    transform = transform_column_number
+  )
 
   close(sock1)
   close(sock2)
@@ -252,14 +265,22 @@ test_that("errors", {
         conn_create_unix_socket("/dev/null")
         conn_connect_unix_socket("/dev/null")
       },
-      transform = transform_tempdir,
+      transform = function(x) transform_column_number(transform_tempdir(x)),
       variant = sysname()
     )
   }
 
   ff <- conn_create_fifo()
-  expect_snapshot(error = TRUE, conn_accept_unix_socket(ff))
-  expect_snapshot(error = TRUE, conn_unix_socket_state(ff))
+  expect_snapshot(
+    error = TRUE,
+    conn_accept_unix_socket(ff),
+    transform = transform_column_number
+  )
+  expect_snapshot(
+    error = TRUE,
+    conn_unix_socket_state(ff),
+    transform = transform_column_number
+  )
 })
 
 test_that("unix-sockets.h", {

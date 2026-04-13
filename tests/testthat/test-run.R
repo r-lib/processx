@@ -80,7 +80,7 @@ test_that("working directory does not exist", {
   expect_snapshot(
     error = TRUE,
     run(px, wd = tempfile()),
-    transform = transform_px,
+    transform = function(x) transform_column_number(transform_px(x)),
     variant = sysname()
   )
   gc()

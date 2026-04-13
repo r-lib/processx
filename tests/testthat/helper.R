@@ -199,6 +199,10 @@ transform_px <- function(x) {
   sub("'.*/px([.]exe)?'", "'<path>/px'", x)
 }
 
+transform_column_number <- function(x) {
+  sub("([.]R:[0-9]+:)[0-9]+", "\\1<col>", x)
+}
+
 sysname <- function() {
   Sys.info()[["sysname"]]
 }
