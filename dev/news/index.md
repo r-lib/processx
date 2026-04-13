@@ -4,6 +4,8 @@
 
 ## processx 3.8.7
 
+CRAN release: 2026-04-01
+
 No changes.
 
 ## processx 3.8.6
