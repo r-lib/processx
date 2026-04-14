@@ -114,6 +114,11 @@ process_read_all_output <- function(self, private) {
   result <- ""
   while (self$is_incomplete_output()) {
     self$poll_io(-1)
+    # On Windows with pty=TRUE, calling is_alive() after poll_io() triggers
+    # ClosePseudoConsole() if the child has exited, which causes conhost.exe
+    # to release its write end of the stdout pipe and signal EOF.  Without
+    # this the drain loop blocks forever waiting for an EOF that never arrives.
+    self$is_alive()
     result <- paste0(result, self$read_output())
   }
   result
@@ -123,6 +128,7 @@ process_read_all_error <- function(self, private) {
   result <- ""
   while (self$is_incomplete_error()) {
     self$poll_io(-1)
+    self$is_alive()
     result <- paste0(result, self$read_error())
   }
   result
@@ -132,6 +138,7 @@ process_read_all_output_lines <- function(self, private) {
   results <- character()
   while (self$is_incomplete_output()) {
     self$poll_io(-1)
+    self$is_alive()
     results <- c(results, self$read_output_lines())
   }
   results
@@ -141,6 +148,7 @@ process_read_all_error_lines <- function(self, private) {
   results <- character()
   while (self$is_incomplete_error()) {
     self$poll_io(-1)
+    self$is_alive()
     results <- c(results, self$read_error_lines())
   }
   results
