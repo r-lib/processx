@@ -25,10 +25,14 @@ Useful links:
 
 Authors:
 
+- Gábor Csárdi <csardi.gabor@gmail.com>
+  ([ORCID](https://orcid.org/0000-0001-7098-9676)) \[copyright holder\]
+
 - Winston Chang
 
 Other contributors:
 
-- Posit Software, PBC \[copyright holder, funder\]
+- Posit Software, PBC ([ROR](https://ror.org/03wc8by49)) \[copyright
+  holder, funder\]
 
 - Ascent Digital Services \[copyright holder, funder\]

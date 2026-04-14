@@ -38,7 +38,9 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="processx-development-version">processx (development version)<a class="anchor" aria-label="anchor" href="#processx-development-version"></a></h2>
-</div>
+<ul><li><p><code><a href="../reference/run.html">run()</a></code> and <code>process$new()</code> now support <code>encoding = "binary"</code> to capture binary output. In this mode <code><a href="../reference/run.html">run()</a></code> returns <code>stdout</code> and <code>stderr</code> as raw vectors, and <code>process$read_output()</code> / <code>process$read_error()</code> return raw vectors instead of character strings. All bytes are preserved exactly, including null bytes and non-UTF-8 byte sequences (<a href="https://github.com/r-lib/processx/issues/406" class="external-link">#406</a>).</p></li>
+<li><p>New <code>process$read_output_bytes()</code>, <code>process$read_error_bytes()</code> methods and <code><a href="../reference/processx_connections.html">conn_read_bytes()</a></code> function for reading raw bytes from a processx connection directly (<a href="https://github.com/r-lib/processx/issues/406" class="external-link">#406</a>).</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="3.8.7" id="processx-387">processx 3.8.7<a class="anchor" aria-label="anchor" href="#processx-387"></a></h2><p class="text-muted">CRAN release: 2026-04-01</p>
 <p>No changes.</p>

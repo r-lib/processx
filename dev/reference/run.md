@@ -161,7 +161,10 @@ run(
 
   The encoding to assume for `stdout` and `stderr`. By default the
   encoding of the current locale is used. Note that `processx` always
-  reencodes the output of both streams in UTF-8 currently.
+  reencodes the output of both streams in UTF-8 currently. Use
+  `"binary"` to collect the raw bytes without any conversion: `stdout`
+  and `stderr` in the return value will be raw vectors instead of
+  character strings. Line callbacks are not supported in binary mode.
 
 - cleanup_tree:
 
@@ -266,7 +269,7 @@ run("ls")
 #> 
 system.time(run("sleep", "10", timeout = 1, error_on_status = FALSE))
 #>    user  system elapsed 
-#>   0.004   0.015   0.846 
+#>   0.005   0.013   0.630 
 system.time(
   run(
     "sh", c("-c", "for i in 1 2 3 4 5; do echo $i; sleep 1; done"),
@@ -274,7 +277,7 @@ system.time(
   )
 )
 #>    user  system elapsed 
-#>   0.006   0.009   1.842 
+#>   0.005   0.009   1.633 
 if (FALSE) {
 # This works on Windows systems, if the ping command is available
 run("ping", c("-n", "1", "127.0.0.1"))

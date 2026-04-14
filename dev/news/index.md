@@ -2,6 +2,22 @@
 
 ## processx (development version)
 
+- [`run()`](http://processx.r-lib.org/dev/reference/run.md) and
+  `process$new()` now support `encoding = "binary"` to capture binary
+  output. In this mode
+  [`run()`](http://processx.r-lib.org/dev/reference/run.md) returns
+  `stdout` and `stderr` as raw vectors, and `process$read_output()` /
+  `process$read_error()` return raw vectors instead of character
+  strings. All bytes are preserved exactly, including null bytes and
+  non-UTF-8 byte sequences
+  ([\#406](https://github.com/r-lib/processx/issues/406)).
+
+- New `process$read_output_bytes()`, `process$read_error_bytes()`
+  methods and
+  [`conn_read_bytes()`](http://processx.r-lib.org/dev/reference/processx_connections.md)
+  function for reading raw bytes from a processx connection directly
+  ([\#406](https://github.com/r-lib/processx/issues/406)).
+
 ## processx 3.8.7
 
 CRAN release: 2026-04-01

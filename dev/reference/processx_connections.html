@@ -62,6 +62,13 @@ compatible with R's built-in connection system.</p>
 <span></span>
 <span><span class="fu">processx_conn_read_chars</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
 <span></span>
+<span><span class="fu">conn_read_bytes</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'processx_connection'</span></span>
+<span><span class="fu">conn_read_bytes</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">processx_conn_read_bytes</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu">conn_read_lines</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'processx_connection'</span></span>
@@ -180,6 +187,12 @@ where it returns the full name of the pipe.</p>
 first one is writeable, the second one is readable.</p>
 <p><code>conn_read_chars()</code> reads UTF-8 characters from the connections. If the
 connection itself is not UTF-8 encoded, it re-encodes it.</p>
+<p><code>conn_read_bytes()</code> reads raw bytes from the connection into a raw vector.
+Unlike <code>conn_read_chars()</code>, it bypasses UTF-8 conversion, so null bytes
+and arbitrary binary data are preserved exactly. Calling this function
+switches the connection permanently to raw mode; after that,
+<code>conn_read_chars()</code> and <code>conn_read_lines()</code> must not be used on the
+same connection.</p>
 <p><code>conn_read_lines()</code> reads lines from a connection.</p>
 <p><code>conn_is_incomplete()</code> returns <code>FALSE</code> if the connection surely has no
 more data.</p>

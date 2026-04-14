@@ -20,6 +20,13 @@ conn_read_chars(con, n = -1)
 
 processx_conn_read_chars(con, n = -1)
 
+conn_read_bytes(con, n = -1)
+
+# S3 method for class 'processx_connection'
+conn_read_bytes(con, n = -1)
+
+processx_conn_read_bytes(con, n = -1)
+
 conn_read_lines(con, n = -1)
 
 # S3 method for class 'processx_connection'
@@ -139,6 +146,13 @@ first one is writeable, the second one is readable.
 
 `conn_read_chars()` reads UTF-8 characters from the connections. If the
 connection itself is not UTF-8 encoded, it re-encodes it.
+
+`conn_read_bytes()` reads raw bytes from the connection into a raw
+vector. Unlike `conn_read_chars()`, it bypasses UTF-8 conversion, so
+null bytes and arbitrary binary data are preserved exactly. Calling this
+function switches the connection permanently to raw mode; after that,
+`conn_read_chars()` and `conn_read_lines()` must not be used on the same
+connection.
 
 `conn_read_lines()` reads lines from a connection.
 

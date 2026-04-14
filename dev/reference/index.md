@@ -26,6 +26,8 @@
   [`conn_create_pipepair()`](http://processx.r-lib.org/dev/reference/processx_connections.md)
   [`conn_read_chars()`](http://processx.r-lib.org/dev/reference/processx_connections.md)
   [`processx_conn_read_chars()`](http://processx.r-lib.org/dev/reference/processx_connections.md)
+  [`conn_read_bytes()`](http://processx.r-lib.org/dev/reference/processx_connections.md)
+  [`processx_conn_read_bytes()`](http://processx.r-lib.org/dev/reference/processx_connections.md)
   [`conn_read_lines()`](http://processx.r-lib.org/dev/reference/processx_connections.md)
   [`processx_conn_read_lines()`](http://processx.r-lib.org/dev/reference/processx_connections.md)
   [`conn_is_incomplete()`](http://processx.r-lib.org/dev/reference/processx_connections.md)
