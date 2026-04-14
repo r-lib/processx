@@ -254,8 +254,11 @@ static void processx__child_init(processx_handle_t *handle, SEXP connections,
 	/* A file was requested, open it */
 	if (fd == 0) {
 	  use_fd = open(stroutput, O_RDONLY);
+	} else if (stroutput[0] == '>' && stroutput[1] == '>') {
+	  /* Append mode: ">>" prefix indicates appending to the file */
+	  use_fd = open(stroutput + 2, O_CREAT | O_APPEND | O_RDWR, 0644);
 	} else {
-	  use_fd = open(stroutput, O_CREAT | O_TRUNC| O_RDWR, 0644);
+	  use_fd = open(stroutput, O_CREAT | O_TRUNC | O_RDWR, 0644);
 	}
       } else {
 	/* NULL, so stdin/out/err is ignored, using /dev/null */

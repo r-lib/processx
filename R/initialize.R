@@ -200,10 +200,19 @@ process_initialize <- function(
     stdin <- full_path(stdin)
   }
   if (is.character(stdout) && stdout != "|" && stdout != "") {
-    stdout <- full_path(stdout)
+    if (startsWith(stdout, ">>")) {
+      stdout <- full_path(substring(stdout, 3))
+    } else {
+      stdout <- full_path(stdout)
+    }
   }
-  if (is.character(stderr) && stderr != "|" && stderr != "") {
-    stderr <- full_path(stderr)
+  if (is.character(stderr) && stderr != "|" && stderr != "" &&
+      stderr != "2>&1") {
+    if (startsWith(stderr, ">>")) {
+      stderr <- full_path(substring(stderr, 3))
+    } else {
+      stderr <- full_path(stderr)
+    }
   }
 
   ## Store the output and error files, we'll open them later if needed
