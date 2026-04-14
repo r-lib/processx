@@ -172,11 +172,15 @@ test_that("kill_tree and orphaned children", {
   expect_true(any(c("px", "px.exe") %in% names(res)))
 
   deadline <- get_deadline()
-  while (ps::ps_is_running(ps) && Sys.time() < deadline) {
+  while (
+    ps::ps_is_running(ps) &&
+      ps::ps_status(ps) != "zombie" &&
+      Sys.time() < deadline
+  ) {
     Sys.sleep(0.05)
   }
   expect_true(Sys.time() < deadline)
-  expect_false(ps::ps_is_running(ps))
+  expect_true(!ps::ps_is_running(ps) || ps::ps_status(ps) == "zombie")
 })
 
 test_that("cleanup_tree option", {
