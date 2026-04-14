@@ -1,5 +1,15 @@
 # processx (development version)
 
+* `run()` and `process$new()` now support `encoding = "binary"` to capture
+  binary output. In this mode `run()` returns `stdout` and `stderr` as raw
+  vectors, and `process$read_output()` / `process$read_error()` return raw
+  vectors instead of character strings. All bytes are preserved exactly,
+  including null bytes and non-UTF-8 byte sequences (#TODO).
+
+* New `process$read_output_bytes()`, `process$read_error_bytes()` methods
+  and `conn_read_bytes()` function for reading raw bytes from a processx
+  connection directly.
+
 # processx 3.8.7
 
 No changes.

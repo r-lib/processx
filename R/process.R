@@ -199,9 +199,12 @@ process <- R6::R6Class(
     #' @param encoding The encoding to assume for `stdin`, `stdout` and
     #'   `stderr`. By default the encoding of the current locale is
     #'   used. Note that `processx` always reencodes the output of the
-    #'  `stdout` and `stderr` streams in UTF-8 currently.
+    #'   `stdout` and `stderr` streams in UTF-8 currently.
     #'   If you want to read them without any conversion, on all platforms,
-    #'   specify `"UTF-8"` as encoding.
+    #'   specify `"UTF-8"` as encoding. Use `"binary"` to disable text
+    #'   conversion entirely: `$read_output()` and `$read_error()` will
+    #'   return raw vectors instead of character strings, preserving all
+    #'   bytes including null bytes and non-UTF-8 byte sequences.
     #' @param post_process An optional function to run when the process has
     #'   finished. Currently it only runs if `$get_result()` is called.
     #'   It is only run once.
@@ -379,15 +382,36 @@ process <- R6::R6Class(
     #' process. If the standard output connection was not requested, then
     #' then it returns an error. It uses a non-blocking text connection. This
     #' will work only if `stdout="|"` was used. Otherwise, it will throw an
-    #' error.
+    #' error. When the process was started with `encoding = "binary"`, returns
+    #' a raw vector instead of a character string.
 
     read_output = function(n = -1) process_read_output(self, private, n),
 
     #' @description
-    #' `$read_error()` is similar to `$read_output`, but it reads
-    #' from the standard error stream.
+    #' `$read_error()` is similar to `$read_output()`, but reads from the
+    #' standard error stream. Returns a raw vector when
+    #' `encoding = "binary"` was used.
 
     read_error = function(n = -1) process_read_error(self, private, n),
+
+    #' @description
+    #' `$read_output_bytes()` reads from the standard output connection of
+    #' the process and returns the result as a raw vector, preserving all
+    #' bytes including null bytes and other binary data. Switches the
+    #' underlying connection to raw mode; do not mix with `$read_output()`.
+    #' This will work only if `stdout="|"` was used.
+
+    read_output_bytes = function(n = -1) {
+      process_read_output_bytes(self, private, n)
+    },
+
+    #' @description
+    #' `$read_error_bytes()` is similar to `$read_output_bytes()`, but reads
+    #' from the standard error stream.
+
+    read_error_bytes = function(n = -1) {
+      process_read_error_bytes(self, private, n)
+    },
 
     #' @description
     #' `$read_output_lines()` reads lines from standard output connection

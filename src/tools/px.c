@@ -48,6 +48,8 @@ void usage(void) {
 	  "environment variable to stdout\n");
   fprintf(stderr, "  rawout <hexstring>         -- "
 	  "write raw bytes (hex pairs) to stdout\n");
+  fprintf(stderr, "  rawerr <hexstring>         -- "
+	  "write raw bytes (hex pairs) to stderr\n");
 }
 
 void cat2(int f, const char *s) {
@@ -229,6 +231,29 @@ int main(int argc, const char **argv) {
         unsigned char b = (unsigned char) byte;
         if (write(1, &b, 1) != 1) {
           fprintf(stderr, "Write error\n");
+          return 15;
+        }
+      }
+
+    } else if (!strcmp("rawerr", cmd)) {
+      const char *hex = argv[++idx];
+      int len = (int) strlen(hex);
+      int i;
+      if (len % 2 != 0) {
+        fprintf(stderr, "Invalid hex string for rawerr: odd length\n");
+        return 13;
+      }
+#ifdef WIN32
+      _setmode(2, _O_BINARY);
+#endif
+      for (i = 0; i < len; i += 2) {
+        unsigned int byte;
+        if (sscanf(hex + i, "%2x", &byte) != 1) {
+          fprintf(stderr, "Invalid hex byte at position %d\n", i / 2);
+          return 14;
+        }
+        unsigned char b = (unsigned char) byte;
+        if (write(2, &b, 1) != 1) {
           return 15;
         }
       }

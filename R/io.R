@@ -53,16 +53,36 @@ process_get_poll_connection <- function(self, private) {
 process_read_output <- function(self, private, n) {
   "!DEBUG process_read_output `private$get_short_name()`"
   con <- process_get_output_connection(self, private)
-  if (private$pty) {
-    if (poll(list(con), 0)[[1]] == "timeout") return("")
+  if (private$encoding == "binary") {
+    chain_call(c_processx_connection_read_bytes, con, n)
+  } else {
+    if (private$pty) {
+      if (poll(list(con), 0)[[1]] == "timeout") return("")
+    }
+    chain_call(c_processx_connection_read_chars, con, n)
   }
-  chain_call(c_processx_connection_read_chars, con, n)
 }
 
 process_read_error <- function(self, private, n) {
   "!DEBUG process_read_error `private$get_short_name()`"
   con <- process_get_error_connection(self, private)
-  chain_call(c_processx_connection_read_chars, con, n)
+  if (private$encoding == "binary") {
+    chain_call(c_processx_connection_read_bytes, con, n)
+  } else {
+    chain_call(c_processx_connection_read_chars, con, n)
+  }
+}
+
+process_read_output_bytes <- function(self, private, n) {
+  "!DEBUG process_read_output_bytes `private$get_short_name()`"
+  con <- process_get_output_connection(self, private)
+  chain_call(c_processx_connection_read_bytes, con, n)
+}
+
+process_read_error_bytes <- function(self, private, n) {
+  "!DEBUG process_read_error_bytes `private$get_short_name()`"
+  con <- process_get_error_connection(self, private)
+  chain_call(c_processx_connection_read_bytes, con, n)
 }
 
 process_read_output_lines <- function(self, private, n) {

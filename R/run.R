@@ -120,7 +120,10 @@
 #' @param encoding The encoding to assume for `stdout` and
 #'   `stderr`. By default the encoding of the current locale is
 #'   used. Note that `processx` always reencodes the output of
-#'   both streams in UTF-8 currently.
+#'   both streams in UTF-8 currently. Use `"binary"` to collect
+#'   the raw bytes without any conversion: `stdout` and `stderr`
+#'   in the return value will be raw vectors instead of character
+#'   strings. Line callbacks are not supported in binary mode.
 #' @param cleanup_tree Whether to clean up the child process tree after
 #'   the process has finished.
 #' @param ... Extra arguments are passed to `process$new()`, see
@@ -194,6 +197,18 @@ run <- function(
   assert_that(is.null(stderr_callback) || is.function(stderr_callback))
   assert_that(is_flag(cleanup_tree))
   assert_that(is_flag(stderr_to_stdout))
+  if (encoding == "binary") {
+    if (!is.null(stdout_line_callback)) {
+      throw(new_error(
+        "`stdout_line_callback` cannot be used with `encoding = \"binary\"`"
+      ))
+    }
+    if (!is.null(stderr_line_callback)) {
+      throw(new_error(
+        "`stderr_line_callback` cannot be used with `encoding = \"binary\"`"
+      ))
+    }
+  }
   ## The rest is checked by process$new()
   "!DEBUG run() Checked arguments"
 
@@ -241,12 +256,13 @@ run <- function(
   has_stdout <- !is.null(stdout) && stdout == "|"
   has_stderr <- !is.null(stderr) && stderr == "|"
 
+  binary <- encoding == "binary"
   if (has_stdout) {
-    resenv$outbuf <- make_buffer()
+    resenv$outbuf <- if (binary) make_raw_buffer() else make_buffer()
     on.exit(resenv$outbuf$done(), add = TRUE)
   }
   if (has_stderr) {
-    resenv$errbuf <- make_buffer()
+    resenv$errbuf <- if (binary) make_raw_buffer() else make_buffer()
     on.exit(resenv$errbuf$done(), add = TRUE)
   }
 
@@ -261,18 +277,29 @@ run <- function(
       stdout_callback,
       stderr_line_callback,
       stderr_callback,
-      resenv
+      resenv,
+      binary
     ),
     interrupt = function(e) {
       "!DEBUG run() process `pr$get_pid()` killed on interrupt"
       out <- if (has_stdout) {
-        resenv$outbuf$push(pr$read_output())
-        resenv$outbuf$push(pr$read_output())
+        if (binary) {
+          resenv$outbuf$push(pr$read_output_bytes())
+          resenv$outbuf$push(pr$read_output_bytes())
+        } else {
+          resenv$outbuf$push(pr$read_output())
+          resenv$outbuf$push(pr$read_output())
+        }
         resenv$outbuf$read()
       }
       err <- if (has_stderr) {
-        resenv$errbuf$push(pr$read_error())
-        resenv$errbuf$push(pr$read_error())
+        if (binary) {
+          resenv$errbuf$push(pr$read_error_bytes())
+          resenv$errbuf$push(pr$read_error_bytes())
+        } else {
+          resenv$errbuf$push(pr$read_error())
+          resenv$errbuf$push(pr$read_error())
+        }
         resenv$errbuf$read()
       }
       tryCatch(pr$kill(), error = function(e) NULL)
@@ -331,7 +358,8 @@ run_manage <- function(
   stdout_callback,
   stderr_line_callback,
   stderr_callback,
-  resenv
+  resenv,
+  binary = FALSE
 ) {
   timeout <- as.difftime(timeout, units = "secs")
   start_time <- proc$get_start_time()
@@ -347,27 +375,35 @@ run_manage <- function(
     if (has_stdout) {
       newout <- tryCatch(
         {
-          ret <- proc$read_output(2000)
+          ret <- if (binary) proc$read_output_bytes(2000) else
+            proc$read_output(2000)
           ok <- TRUE
           ret
         },
         error = function(e) NULL
       )
 
-      if (length(newout) && nzchar(newout)) {
-        if (!is.null(stdout_callback)) {
-          stdout_callback(newout, proc)
+      if (binary) {
+        if (length(newout) > 0L) {
+          if (!is.null(stdout_callback)) stdout_callback(newout, proc)
+          resenv$outbuf$push(newout)
         }
-        resenv$outbuf$push(newout)
-        if (!is.null(stdout_line_callback)) {
-          newout <- paste0(pushback_out, newout)
-          pushback_out <<- ""
-          lines <- strsplit(newout, "\r?\n")[[1]]
-          if (last_char(newout) != "\n") {
-            pushback_out <<- utils::tail(lines, 1)
-            lines <- utils::head(lines, -1)
+      } else {
+        if (length(newout) && nzchar(newout)) {
+          if (!is.null(stdout_callback)) {
+            stdout_callback(newout, proc)
           }
-          lapply(lines, function(x) stdout_line_callback(x, proc))
+          resenv$outbuf$push(newout)
+          if (!is.null(stdout_line_callback)) {
+            newout <- paste0(pushback_out, newout)
+            pushback_out <<- ""
+            lines <- strsplit(newout, "\r?\n")[[1]]
+            if (last_char(newout) != "\n") {
+              pushback_out <<- utils::tail(lines, 1)
+              lines <- utils::head(lines, -1)
+            }
+            lapply(lines, function(x) stdout_line_callback(x, proc))
+          }
         }
       }
     }
@@ -375,27 +411,35 @@ run_manage <- function(
     if (has_stderr) {
       newerr <- tryCatch(
         {
-          ret <- proc$read_error(2000)
+          ret <- if (binary) proc$read_error_bytes(2000) else
+            proc$read_error(2000)
           ok <- TRUE
           ret
         },
         error = function(e) NULL
       )
 
-      if (length(newerr) && nzchar(newerr)) {
-        resenv$errbuf$push(newerr)
-        if (!is.null(stderr_callback)) {
-          stderr_callback(newerr, proc)
+      if (binary) {
+        if (length(newerr) > 0L) {
+          if (!is.null(stderr_callback)) stderr_callback(newerr, proc)
+          resenv$errbuf$push(newerr)
         }
-        if (!is.null(stderr_line_callback)) {
-          newerr <- paste0(pushback_err, newerr)
-          pushback_err <<- ""
-          lines <- strsplit(newerr, "\r?\n")[[1]]
-          if (last_char(newerr) != "\n") {
-            pushback_err <<- utils::tail(lines, 1)
-            lines <- utils::head(lines, -1)
+      } else {
+        if (length(newerr) && nzchar(newerr)) {
+          resenv$errbuf$push(newerr)
+          if (!is.null(stderr_callback)) {
+            stderr_callback(newerr, proc)
           }
-          lapply(lines, function(x) stderr_line_callback(x, proc))
+          if (!is.null(stderr_line_callback)) {
+            newerr <- paste0(pushback_err, newerr)
+            pushback_err <<- ""
+            lines <- strsplit(newerr, "\r?\n")[[1]]
+            if (last_char(newerr) != "\n") {
+              pushback_err <<- utils::tail(lines, 1)
+              lines <- utils::head(lines, -1)
+            }
+            lapply(lines, function(x) stderr_line_callback(x, proc))
+          }
         }
       }
     }

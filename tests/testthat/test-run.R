@@ -175,3 +175,65 @@ test_that("redirect stout", {
   expect_equal(readLines(tmp1), "boo")
   expect_equal(readLines(tmp2), "bah")
 })
+
+test_that("binary=TRUE captures stdout as raw vector", {
+  skip_on_cran()
+
+  # Include null byte, high bytes, \r\n — bytes text mode would mangle
+  hex <- "00010a0d0d0a80ff"
+  expected <- as.raw(c(0x00, 0x01, 0x0a, 0x0d, 0x0d, 0x0a, 0x80, 0xff))
+
+  px <- get_tool("px")
+  res <- run(px, c("rawout", hex), encoding = "binary")
+
+  expect_identical(res$stdout, expected)
+  expect_identical(res$stderr, raw(0))
+})
+
+test_that("binary=TRUE captures stderr as raw vector", {
+  skip_on_cran()
+
+  hex <- "00010a0d0d0a80ff"
+  expected <- as.raw(c(0x00, 0x01, 0x0a, 0x0d, 0x0d, 0x0a, 0x80, 0xff))
+
+  px <- get_tool("px")
+  res <- run(
+    px,
+    c("rawerr", hex),
+    encoding = "binary",
+    error_on_status = FALSE
+  )
+
+  expect_identical(res$stdout, raw(0))
+  expect_identical(res$stderr, expected)
+})
+
+test_that("binary=TRUE with stdout_callback receives raw chunks", {
+  skip_on_cran()
+
+  hex <- "00010a80ff"
+  expected <- as.raw(c(0x00, 0x01, 0x0a, 0x80, 0xff))
+
+  px <- get_tool("px")
+  chunks <- list()
+  res <- run(
+    px,
+    c("rawout", hex),
+    encoding = "binary",
+    stdout_callback = function(x, ...) chunks[[length(chunks) + 1]] <<- x
+  )
+
+  combined <- do.call(c, chunks)
+  expect_identical(combined, expected)
+  expect_identical(res$stdout, expected)
+})
+
+test_that("binary=TRUE errors with line callbacks", {
+  px <- get_tool("px")
+  expect_snapshot(error = TRUE,
+    run(px, "out", encoding = "binary", stdout_line_callback = function(x, ...) x)
+  )
+  expect_snapshot(error = TRUE,
+    run(px, "out", encoding = "binary", stderr_line_callback = function(x, ...) x)
+  )
+})
