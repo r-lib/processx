@@ -25,11 +25,14 @@ run(
   stderr_line_callback = NULL,
   stderr_callback = NULL,
   stderr_to_stdout = FALSE,
+  stdin = NULL,
   env = NULL,
   windows_verbatim_args = FALSE,
   windows_hide_window = FALSE,
   encoding = "",
   cleanup_tree = FALSE,
+  pty = FALSE,
+  pty_options = list(),
   ...
 )
 ```
@@ -135,6 +138,14 @@ run(
   pieces of the output were coming from. If this is `TRUE`, the standard
   error callbacks (if any) are never called.
 
+- stdin:
+
+  What to do with the standard input. By default it is ignored (`NULL`).
+  It can be a file name, to redirect the contents of a file to the
+  standard input. When `pty = TRUE`, `stdin` can only be `NULL` (no
+  input) or a file path (whose contents are fed to the process via the
+  PTY).
+
 - env:
 
   Environment variables of the child process. If `NULL`, the parent's
@@ -170,6 +181,23 @@ run(
 
   Whether to clean up the child process tree after the process has
   finished.
+
+- pty:
+
+  Whether to use a pseudo-terminal (PTY) for the process. This is only
+  supported on Unix. When `TRUE`, stdout and stderr are merged into a
+  single stream (accessible via `$stdout` in the result), and `$stderr`
+  is always `NULL`. The process sees a real terminal, so programs that
+  disable colour or interactive features when not attached to a terminal
+  will behave as if they are. `stdout` and `stderr` must be left at
+  their defaults (`"|"`), and `stderr_to_stdout`, `stderr_callback`, and
+  `stderr_line_callback` must not be set.
+
+- pty_options:
+
+  Options for the PTY, a named list. See
+  [`default_pty_options()`](http://processx.r-lib.org/dev/reference/default_pty_options.md)
+  for the available options and their defaults.
 
 - ...:
 
@@ -269,7 +297,7 @@ run("ls")
 #> 
 system.time(run("sleep", "10", timeout = 1, error_on_status = FALSE))
 #>    user  system elapsed 
-#>   0.006   0.014   0.642 
+#>   0.005   0.015   0.517 
 system.time(
   run(
     "sh", c("-c", "for i in 1 2 3 4 5; do echo $i; sleep 1; done"),
@@ -277,7 +305,7 @@ system.time(
   )
 )
 #>    user  system elapsed 
-#>   0.002   0.012   1.636 
+#>   0.004   0.010   1.513 
 if (FALSE) {
 # This works on Windows systems, if the ping command is available
 run("ping", c("-n", "1", "127.0.0.1"))

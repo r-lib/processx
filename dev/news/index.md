@@ -2,6 +2,16 @@
 
 ## processx (development version)
 
+- [`run()`](http://processx.r-lib.org/dev/reference/run.md) now supports
+  `pty = TRUE` and `pty_options` to run a process in a pseudo-terminal
+  (PTY) on Unix. This causes the child to see a real terminal, so
+  programs that disable colour output or interactive behaviour when not
+  attached to a terminal will behave as if they are. `stderr` is merged
+  into `stdout` (the result’s `$stderr` is always `NULL`). A file-based
+  `stdin` argument is also supported: its contents are fed to the
+  process via the PTY master, followed by an EOF signal
+  ([\#230](https://github.com/r-lib/processx/issues/230)).
+
 - `process$new()` now supports `">>"` as a prefix for `stdout` and
   `stderr` file paths (e.g. `stdout = ">>output.log"`), which appends
   output to the file instead of truncating it. The file is created if it

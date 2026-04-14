@@ -243,10 +243,13 @@ Start a new process in the background, and then return immediately.
 
   - `NULL`: discard it;
 
-  - A string, redirect it to this file. Note that if you specify a
-    relative path, it will be relative to the current working directory,
-    even if you specify another directory in the `wd` argument. (See
-    issue 324.)
+  - A string starting with `">>"`, e.g. `">>output.txt"`: append it to
+    this file. The file is created if it does not exist.
+
+  - A string (not starting with `">>"`), redirect it to this file,
+    truncating the file first. Note that if you specify a relative path,
+    it will be relative to the current working directory, even if you
+    specify another directory in the `wd` argument. (See issue 324.)
 
   - `"|"`: create a connection for it.
 
@@ -260,10 +263,13 @@ Start a new process in the background, and then return immediately.
 
   - `NULL`: discard it.
 
-  - A string, redirect it to this file. Note that if you specify a
-    relative path, it will be relative to the current working directory,
-    even if you specify another directory in the `wd` argument. (See
-    issue 324.)
+  - A string starting with `">>"`, e.g. `">>error.txt"`: append it to
+    this file. The file is created if it does not exist.
+
+  - A string (not starting with `">>"`), redirect it to this file,
+    truncating the file first. Note that if you specify a relative path,
+    it will be relative to the current working directory, even if you
+    specify another directory in the `wd` argument. (See issue 324.)
 
   - `"|"`: create a connection for it.
 
@@ -1156,7 +1162,7 @@ p <- process$new("sleep", "2")
 p$is_alive()
 #> [1] TRUE
 p
-#> PROCESS 'sleep', running, pid 7022.
+#> PROCESS 'sleep', running, pid 7171.
 p$kill()
 #> [1] TRUE
 p$is_alive()

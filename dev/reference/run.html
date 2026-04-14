@@ -65,11 +65,14 @@ extra features, see below.</p>
 <span>  stderr_line_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stderr_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stderr_to_stdout <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  stdin <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  env <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  windows_verbatim_args <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  windows_hide_window <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  encoding <span class="op">=</span> <span class="st">""</span>,</span>
 <span>  cleanup_tree <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  pty <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  pty_options <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -183,6 +186,14 @@ to deduce where pieces of the output were coming from. If this is
 <code>TRUE</code>, the standard error callbacks  (if any) are never called.</p></dd>
 
 
+<dt id="arg-stdin">stdin<a class="anchor" aria-label="anchor" href="#arg-stdin"></a></dt>
+<dd><p>What to do with the standard input. By default it is
+ignored (<code>NULL</code>). It can be a file name, to redirect the contents of
+a file to the standard input. When <code>pty = TRUE</code>, <code>stdin</code> can only be
+<code>NULL</code> (no input) or a file path (whose contents are fed to the
+process via the PTY).</p></dd>
+
+
 <dt id="arg-env">env<a class="anchor" aria-label="anchor" href="#arg-env"></a></dt>
 <dd><p>Environment variables of the child process. If <code>NULL</code>,
 the parent's environment is inherited. On Windows, many programs
@@ -218,6 +229,22 @@ strings. Line callbacks are not supported in binary mode.</p></dd>
 <dt id="arg-cleanup-tree">cleanup_tree<a class="anchor" aria-label="anchor" href="#arg-cleanup-tree"></a></dt>
 <dd><p>Whether to clean up the child process tree after
 the process has finished.</p></dd>
+
+
+<dt id="arg-pty">pty<a class="anchor" aria-label="anchor" href="#arg-pty"></a></dt>
+<dd><p>Whether to use a pseudo-terminal (PTY) for the process.
+This is only supported on Unix. When <code>TRUE</code>, stdout and stderr are
+merged into a single stream (accessible via <code>$stdout</code> in the result),
+and <code>$stderr</code> is always <code>NULL</code>. The process sees a real terminal, so
+programs that disable colour or interactive features when not attached
+to a terminal will behave as if they are. <code>stdout</code> and <code>stderr</code> must
+be left at their defaults (<code>"|"</code>), and <code>stderr_to_stdout</code>,
+<code>stderr_callback</code>, and <code>stderr_line_callback</code> must not be set.</p></dd>
+
+
+<dt id="arg-pty-options">pty_options<a class="anchor" aria-label="anchor" href="#arg-pty-options"></a></dt>
+<dd><p>Options for the PTY, a named list. See
+<code><a href="default_pty_options.html">default_pty_options()</a></code> for the available options and their defaults.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -300,7 +327,7 @@ of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="fu">run</span><span class="op">(</span><span class="st">"sleep"</span>, <span class="st">"10"</span>, timeout <span class="op">=</span> <span class="fl">1</span>, error_on_status <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    user  system elapsed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   0.006   0.014   0.642 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   0.005   0.015   0.517 </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="fu">run</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    <span class="st">"sh"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"-c"</span>, <span class="st">"for i in 1 2 3 4 5; do echo $i; sleep 1; done"</span><span class="op">)</span>,</span></span>
@@ -308,7 +335,7 @@ of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    user  system elapsed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   0.002   0.012   1.636 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   0.004   0.010   1.513 </span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span><span class="co"># This works on Windows systems, if the ping command is available</span></span></span>
 <span class="r-in"><span><span class="fu">run</span><span class="op">(</span><span class="st">"ping"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"-n"</span>, <span class="st">"1"</span>, <span class="st">"127.0.0.1"</span><span class="op">)</span><span class="op">)</span></span></span>
