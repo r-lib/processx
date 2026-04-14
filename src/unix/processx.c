@@ -392,6 +392,7 @@ static SEXP processx__make_handle(SEXP private, int cleanup) {
 
 static void processx__handle_destroy(processx_handle_t *handle) {
   if (!handle) return;
+  if (handle->pty_child_fd >= 0) close(handle->pty_child_fd);
   free(handle);
 }
 
@@ -555,7 +556,18 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
   handle->create_time = processx__create_time(pid);
 
   handle->ptyfd = -1;
-  if (cpty) handle->ptyfd = pty_main_fd;
+  handle->pty_child_fd = -1;
+  if (cpty) {
+    handle->ptyfd = pty_main_fd;
+    /* Keep the PTY child fd open in the parent so that the kernel does not
+       discard unread data from the master's buffer when the child exits
+       and closes its side.  We close this fd once we have confirmed the
+       process has exited and collected its exit status. */
+    handle->pty_child_fd = open(pty_name, O_RDWR | O_NOCTTY);
+    /* Make the master non-blocking so read() returns EAGAIN instead of
+       blocking when there is no data (needed after we add O_NONBLOCK). */
+    processx__nonblock_fcntl(pty_main_fd, 1);
+  }
 
   /* We need to know the processx children */
   if (processx__child_add(pid, result)) {
@@ -641,6 +653,15 @@ void processx__collect_exit_status(SEXP status, int retval, int wstat) {
   }
 
   handle->collected = 1;
+
+  /* Now that the child has exited, release our hold on the PTY child fd.
+     It was kept open to prevent macOS from discarding the master's read
+     buffer when the child closed its side.  After this close the master
+     will see EOF (or EIO on Linux) once all buffered data is read. */
+  if (handle->pty_child_fd >= 0) {
+    close(handle->pty_child_fd);
+    handle->pty_child_fd = -1;
+  }
 }
 
 static void processx__wait_cleanup(void *ptr) {

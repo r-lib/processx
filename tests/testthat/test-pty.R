@@ -63,6 +63,23 @@ test_that("pty echo", {
   expect_equal(p$read_output(), "bar\r\nfoobar\r\n")
 })
 
+test_that("pty captures output from a short-lived process", {
+  skip_other_platforms("unix")
+  skip_on_os("solaris")
+  skip_on_cran()
+
+  px <- get_tool("px")
+  p <- process$new(px, "--help", pty = TRUE)
+  on.exit(p$kill(), add = TRUE)
+  p$wait(5000)
+
+  pr <- p$poll_io(1000)
+  expect_equal(pr[["output"]], "ready")
+
+  out <- p$read_output()
+  expect_true(nchar(out) > 0)
+})
+
 test_that("read_output_lines() fails for pty", {
   skip_other_platforms("unix")
   skip_on_os("solaris")

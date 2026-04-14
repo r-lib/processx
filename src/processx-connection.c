@@ -1877,6 +1877,15 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
     /* There is still data to read, potentially */
     bytes_read = 0;
 
+  } else if (bytes_read == -1 && errno == EIO) {
+    /* PTY child side was closed (common on Linux once the child exits).
+       Treat as EOF so callers can drain any buffered data cleanly. */
+    ccon->is_eof_raw_ = 1;
+    if (ccon->utf8_data_size == 0 && ccon->buffer_data_size == 0) {
+      ccon->is_eof_ = 1;
+    }
+    bytes_read = 0;
+
   } else if (bytes_read == -1) {
     /* Proper error  */
     R_THROW_SYSTEM_ERROR("Cannot read from processx connection");
