@@ -141,13 +141,14 @@ strings. Line callbacks are not supported in binary mode.}
 the process has finished.}
 
 \item{pty}{Whether to use a pseudo-terminal (PTY) for the process.
-This is only supported on Unix. When \code{TRUE}, stdout and stderr are
-merged into a single stream (accessible via \verb{$stdout} in the result),
-and \verb{$stderr} is always \code{NULL}. The process sees a real terminal, so
-programs that disable colour or interactive features when not attached
-to a terminal will behave as if they are. \code{stdout} and \code{stderr} must
-be left at their defaults (\code{"|"}), and \code{stderr_to_stdout},
-\code{stderr_callback}, and \code{stderr_line_callback} must not be set.}
+Supported on Unix and on Windows 10 version 1809 or later (via
+ConPTY). When \code{TRUE}, stdout and stderr are merged into a single
+stream (accessible via \verb{$stdout} in the result), and \verb{$stderr} is
+always \code{NULL}. The process sees a real terminal, so programs that
+disable colour or interactive features when not attached to a terminal
+will behave as if they are. \code{stdout} and \code{stderr} must be left at
+their defaults (\code{"|"}), and \code{stderr_to_stdout}, \code{stderr_callback},
+and \code{stderr_line_callback} must not be set.}
 
 \item{pty_options}{Options for the PTY, a named list. See
 \code{\link[=default_pty_options]{default_pty_options()}} for the available options and their defaults.}

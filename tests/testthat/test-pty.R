@@ -1,10 +1,35 @@
-test_that("fails in windows", {
+test_that("pty works on windows", {
   skip_other_platforms("windows")
-  expect_error(
-    process$new("R", pty = TRUE),
-    "only implemented on Unix",
-    class = "error"
-  )
+  skip_on_cran()
+
+  p <- process$new("cmd.exe", pty = TRUE)
+  on.exit(p$kill(), add = TRUE)
+  expect_true(p$is_alive())
+
+  pr <- p$poll_io(2000)
+  expect_equal(pr[["output"]], "ready")
+
+  out <- p$read_output()
+  expect_true(nchar(out) > 0)
+})
+
+test_that("pty write_input works on windows", {
+  skip_other_platforms("windows")
+  skip_on_cran()
+
+  p <- process$new("cmd.exe", pty = TRUE)
+  on.exit(p$kill(), add = TRUE)
+  expect_true(p$is_alive())
+
+  # flush the initial prompt
+  p$poll_io(2000)
+  p$read_output()
+
+  p$write_input("echo hello\r\n")
+  pr <- p$poll_io(2000)
+  expect_equal(pr[["output"]], "ready")
+  out <- p$read_output()
+  expect_match(out, "hello")
 })
 
 test_that("pty works", {
