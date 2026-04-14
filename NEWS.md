@@ -1,12 +1,19 @@
 # processx (development version)
 
+* `process$new()` and `run()` now support `pty = TRUE` on Windows 10 version
+  1809 and later, in addition to Unix. The Windows implementation uses the
+  ConPTY API (`CreatePseudoConsole`). The API is loaded dynamically so
+  processx continues to load on older Windows and emits a clear error if
+  `pty = TRUE` is requested on an unsupported version (#231).
+
 * `run()` now supports `pty = TRUE` and `pty_options` to run a process in a
-  pseudo-terminal (PTY) on Unix. This causes the child to see a real terminal,
-  so programs that disable colour output or interactive behaviour when not
-  attached to a terminal will behave as if they are. `stderr` is merged into
-  `stdout` (the result's `$stderr` is always `NULL`). A file-based `stdin`
-  argument is also supported: its contents are fed to the process via the PTY
-  master, followed by an EOF signal (#230).
+  pseudo-terminal (PTY) on Unix and Windows (see above). This causes the
+  child to see a real terminal, so programs that disable colour output or
+  interactive behaviour when not attached to a terminal will behave as if
+  they are. `stderr` is merged into `stdout` (the result's `$stderr` is
+  always `NULL`). A file-based `stdin` argument is also supported: its
+  contents are fed to the process via the PTY master, followed by an EOF
+  signal (#230).
 
 * `process$new()` now supports `">>"` as a prefix for `stdout` and `stderr`
   file paths (e.g. `stdout = ">>output.log"`), which appends output to the
