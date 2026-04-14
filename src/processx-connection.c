@@ -1246,7 +1246,9 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
       int poll_idx = con->poll_idx;
       con->handle.read_pending = FALSE;
       con->buffer_data_size += bytes;
-      if (con->buffer_data_size > 0) processx__connection_to_utf8(con);
+      if (con->buffer_data_size > 0 && !con->raw_mode) {
+	processx__connection_to_utf8(con);
+      }
       if (con->type == PROCESSX_FILE_TYPE_ASYNCFILE) {
 	/* TODO: larger files */
 	con->handle.overlapped.Offset += bytes;
