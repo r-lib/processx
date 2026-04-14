@@ -20,11 +20,14 @@ run(
   stderr_line_callback = NULL,
   stderr_callback = NULL,
   stderr_to_stdout = FALSE,
+  stdin = NULL,
   env = NULL,
   windows_verbatim_args = FALSE,
   windows_hide_window = FALSE,
   encoding = "",
   cleanup_tree = FALSE,
+  pty = FALSE,
+  pty_options = list(),
   ...
 )
 }
@@ -104,6 +107,12 @@ standard output, correctly interleaved. However, it is not possible
 to deduce where pieces of the output were coming from. If this is
 \code{TRUE}, the standard error callbacks  (if any) are never called.}
 
+\item{stdin}{What to do with the standard input. By default it is
+ignored (\code{NULL}). It can be a file name, to redirect the contents of
+a file to the standard input. When \code{pty = TRUE}, \code{stdin} can only be
+\code{NULL} (no input) or a file path (whose contents are fed to the
+process via the PTY).}
+
 \item{env}{Environment variables of the child process. If \code{NULL},
 the parent's environment is inherited. On Windows, many programs
 cannot function correctly if some environment variables are not
@@ -130,6 +139,18 @@ strings. Line callbacks are not supported in binary mode.}
 
 \item{cleanup_tree}{Whether to clean up the child process tree after
 the process has finished.}
+
+\item{pty}{Whether to use a pseudo-terminal (PTY) for the process.
+This is only supported on Unix. When \code{TRUE}, stdout and stderr are
+merged into a single stream (accessible via \verb{$stdout} in the result),
+and \verb{$stderr} is always \code{NULL}. The process sees a real terminal, so
+programs that disable colour or interactive features when not attached
+to a terminal will behave as if they are. \code{stdout} and \code{stderr} must
+be left at their defaults (\code{"|"}), and \code{stderr_to_stdout},
+\code{stderr_callback}, and \code{stderr_line_callback} must not be set.}
+
+\item{pty_options}{Options for the PTY, a named list. See
+\code{\link[=default_pty_options]{default_pty_options()}} for the available options and their defaults.}
 
 \item{...}{Extra arguments are passed to \code{process$new()}, see
 \link{process}. Note that you cannot pass \code{stout} or \code{stderr} here,

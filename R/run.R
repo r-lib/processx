@@ -126,6 +126,21 @@
 #'   strings. Line callbacks are not supported in binary mode.
 #' @param cleanup_tree Whether to clean up the child process tree after
 #'   the process has finished.
+#' @param stdin What to do with the standard input. By default it is
+#'   ignored (`NULL`). It can be a file name, to redirect the contents of
+#'   a file to the standard input. When `pty = TRUE`, `stdin` can only be
+#'   `NULL` (no input) or a file path (whose contents are fed to the
+#'   process via the PTY).
+#' @param pty Whether to use a pseudo-terminal (PTY) for the process.
+#'   This is only supported on Unix. When `TRUE`, stdout and stderr are
+#'   merged into a single stream (accessible via `$stdout` in the result),
+#'   and `$stderr` is always `NULL`. The process sees a real terminal, so
+#'   programs that disable colour or interactive features when not attached
+#'   to a terminal will behave as if they are. `stdout` and `stderr` must
+#'   be left at their defaults (`"|"`), and `stderr_to_stdout`,
+#'   `stderr_callback`, and `stderr_line_callback` must not be set.
+#' @param pty_options Options for the PTY, a named list. See
+#'   [default_pty_options()] for the available options and their defaults.
 #' @param ... Extra arguments are passed to `process$new()`, see
 #'   [process]. Note that you cannot pass `stout` or `stderr` here,
 #'   because they are used internally by `run()`. You can use the
@@ -173,11 +188,14 @@ run <- function(
   stderr_line_callback = NULL,
   stderr_callback = NULL,
   stderr_to_stdout = FALSE,
+  stdin = NULL,
   env = NULL,
   windows_verbatim_args = FALSE,
   windows_hide_window = FALSE,
   encoding = "",
   cleanup_tree = FALSE,
+  pty = FALSE,
+  pty_options = list(),
   ...
 ) {
   assert_that(is_flag(error_on_status))
@@ -209,6 +227,38 @@ run <- function(
       ))
     }
   }
+  if (pty) {
+    if (!identical(stdout, "|")) {
+      throw(new_error(
+        "`stdout` must be `\"|\"` (the default) if `pty = TRUE`"
+      ))
+    }
+    if (!identical(stderr, "|")) {
+      throw(new_error(
+        "`stderr` must be `\"|\"` (the default) if `pty = TRUE`"
+      ))
+    }
+    if (stderr_to_stdout) {
+      throw(new_error(
+        "`stderr_to_stdout` must be `FALSE` if `pty = TRUE`"
+      ))
+    }
+    if (!is.null(stderr_callback)) {
+      throw(new_error(
+        "`stderr_callback` cannot be used with `pty = TRUE`"
+      ))
+    }
+    if (!is.null(stderr_line_callback)) {
+      throw(new_error(
+        "`stderr_line_callback` cannot be used with `pty = TRUE`"
+      ))
+    }
+    if (!is.null(stdin) && (!is_string(stdin) || stdin %in% c("|", ""))) {
+      throw(new_error(
+        "When `pty = TRUE`, `stdin` must be `NULL` or a file path"
+      ))
+    }
+  }
   ## The rest is checked by process$new()
   "!DEBUG run() Checked arguments"
 
@@ -220,6 +270,13 @@ run <- function(
   if (stderr_to_stdout) {
     stderr <- "2>&1"
   }
+  ## For PTY, stdin must be NULL in process$new() (PTY handles I/O itself).
+  ## We read a file-based stdin now so we can write it via the PTY master.
+  if (pty && is.character(stdin)) {
+    stdin_bytes <- readBin(stdin, "raw", n = file.info(stdin)$size)
+  } else {
+    stdin_bytes <- NULL
+  }
   pr <- process$new(
     command,
     args,
@@ -227,11 +284,14 @@ run <- function(
     wd = wd,
     windows_verbatim_args = windows_verbatim_args,
     windows_hide_window = windows_hide_window,
-    stdout = stdout,
-    stderr = stderr,
+    stdin = if (pty) NULL else stdin,
+    stdout = if (pty) NULL else stdout,
+    stderr = if (pty) NULL else stderr,
     env = env,
     encoding = encoding,
     cleanup_tree = cleanup_tree,
+    pty = pty,
+    pty_options = pty_options,
     ...
   )
   "#!DEBUG run() Started the process: `pr$get_pid()`"
@@ -247,14 +307,14 @@ run <- function(
   ## These are merged to user callbacks if there are any.
   if (echo) {
     stdout_callback <- echo_callback(stdout_callback, "stdout")
-    stderr_callback <- echo_callback(stderr_callback, "stderr")
+    if (!pty) stderr_callback <- echo_callback(stderr_callback, "stderr")
   }
 
   ## Make the process interruptible, and kill it on interrupt
   runcall <- sys.call()
   resenv <- new.env(parent = emptyenv())
-  has_stdout <- !is.null(stdout) && stdout == "|"
-  has_stderr <- !is.null(stderr) && stderr == "|"
+  has_stdout <- pty || (!is.null(stdout) && stdout == "|")
+  has_stderr <- !pty && (!is.null(stderr) && stderr == "|")
 
   binary <- encoding == "binary"
   if (has_stdout) {
@@ -278,7 +338,9 @@ run <- function(
       stderr_line_callback,
       stderr_callback,
       resenv,
-      binary
+      binary,
+      pty,
+      stdin_bytes
     ),
     interrupt = function(e) {
       "!DEBUG run() process `pr$get_pid()` killed on interrupt"
@@ -359,13 +421,26 @@ run_manage <- function(
   stderr_line_callback,
   stderr_callback,
   resenv,
-  binary = FALSE
+  binary = FALSE,
+  pty = FALSE,
+  stdin_bytes = NULL
 ) {
   timeout <- as.difftime(timeout, units = "secs")
   start_time <- proc$get_start_time()
 
-  has_stdout <- !is.null(stdout) && stdout == "|"
-  has_stderr <- !is.null(stderr) && stderr == "|"
+  has_stdout <- pty || (!is.null(stdout) && stdout == "|")
+  has_stderr <- !pty && (!is.null(stderr) && stderr == "|")
+
+  ## For PTY with file-based stdin, we feed bytes inside the poll loop
+  ## rather than up front. This prevents a deadlock where the child's
+  ## stdin buffer is full (so it blocks reading) AND the child's output
+  ## buffer is full (so it blocks writing): feeding stdin and draining
+  ## output must be interleaved.
+  ##
+  ## stdin_remaining: bytes left to write (NULL = nothing to write / done)
+  ## stdin_eof_sent:  TRUE once we have sent the double Ctrl+D EOF signal
+  stdin_remaining <- stdin_bytes
+  stdin_eof_sent  <- is.null(stdin_bytes)
 
   pushback_out <- ""
   pushback_err <- ""
@@ -484,6 +559,18 @@ run_manage <- function(
     } else {
       remains <- 200
     }
+    ## Feed PTY stdin a chunk at a time, interleaved with output draining
+    ## to prevent the write-write deadlock described above.
+    if (!stdin_eof_sent) {
+      if (length(stdin_remaining) > 0L) {
+        stdin_remaining <- proc$write_input(stdin_remaining)
+      }
+      if (length(stdin_remaining) == 0L) {
+        proc$write_input(as.raw(c(0x04L, 0x04L)))
+        stdin_eof_sent <- TRUE
+      }
+    }
+
     "!DEBUG run is polling for `remains` ms, process `proc$get_pid()`"
     polled <- proc$poll_io(remains)
 
