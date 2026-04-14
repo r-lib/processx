@@ -28,6 +28,14 @@ test_that("specify custom env", {
   gc()
 })
 
+test_that("env = 'current' inherits current env", {
+  withr::local_envvar(FOO = "fooe")
+  px <- get_tool("px")
+  out <- run(px, c("getenv", "FOO"), env = "current")
+  outenv <- strsplit(out$stdout, "\r?\n")[[1]]
+  expect_equal(outenv, "fooe")
+})
+
 test_that("append to env", {
   withr::local_envvar(FOO = "fooe", BAR = "bare")
   px <- get_tool("px")

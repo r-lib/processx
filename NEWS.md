@@ -1,5 +1,8 @@
 # processx (development version)
 
+* `env = "current"` now works correctly as a standalone value, inheriting
+  the full environment of the current process (#399).
+
 * `run()` and `process$new()` now support `encoding = "binary"` to capture
   binary output. In this mode `run()` returns `stdout` and `stderr` as raw
   vectors, and `process$read_output()` / `process$read_error()` return raw
