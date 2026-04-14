@@ -608,9 +608,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     return result;
   }
 
-  R_THROW_SYSTEM_ERROR_CODE(-exec_errorno,
-                            "cannot start processx process '%s'",
-                            ccommand);
+  // keep this in one line, othewise line numbers are off in sanitizer builds
+  // because -O0 changes how instructions are mapped back to source lines
+  R_THROW_SYSTEM_ERROR_CODE(-exec_errorno, "cannot start processx process '%s'", ccommand);
+
   return R_NilValue;
 }
 
