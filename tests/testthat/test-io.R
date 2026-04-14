@@ -97,6 +97,64 @@ test_that("Output and error to specific files", {
   expect_identical(readLines(tmperr), c("hello", "world"))
 })
 
+test_that("Output and error can be appended to files with >>", {
+  px <- get_tool("px")
+  tmpout <- tempfile()
+  tmperr <- tempfile()
+  on.exit(unlink(c(tmpout, tmperr)), add = TRUE)
+
+  ## Write initial content into the files
+  writeLines("existing-out", tmpout)
+  writeLines("existing-err", tmperr)
+
+  p <- process$new(
+    px,
+    c("outln", "appended-out", "errln", "appended-err"),
+    stdout = paste0(">>", tmpout),
+    stderr = paste0(">>", tmperr)
+  )
+  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+  p$wait()
+
+  expect_identical(readLines(tmpout), c("existing-out", "appended-out"))
+  expect_identical(readLines(tmperr), c("existing-err", "appended-err"))
+
+  ## Also verify that get_output_file / get_error_file return the plain path
+  ## (use normalizePath on both sides to handle platform symlinks like
+  ## /var -> /private/var on macOS)
+  expect_identical(
+    normalizePath(p$get_output_file()),
+    normalizePath(tmpout)
+  )
+  expect_identical(
+    normalizePath(p$get_error_file()),
+    normalizePath(tmperr)
+  )
+})
+
+test_that(">> creates the file if it does not exist", {
+  px <- get_tool("px")
+  tmpout <- tempfile()
+  tmperr <- tempfile()
+  on.exit(unlink(c(tmpout, tmperr)), add = TRUE)
+
+  ## Files must not exist before the process runs
+  expect_false(file.exists(tmpout))
+  expect_false(file.exists(tmperr))
+
+  p <- process$new(
+    px,
+    c("outln", "new-out", "errln", "new-err"),
+    stdout = paste0(">>", tmpout),
+    stderr = paste0(">>", tmperr)
+  )
+  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+  p$wait()
+
+  expect_identical(readLines(tmpout), "new-out")
+  expect_identical(readLines(tmperr), "new-err")
+})
+
 test_that("is_incomplete", {
   px <- get_tool("px")
   p <- process$new(px, c("out", "foo\nbar\nfoobar\n"), stdout = "|")

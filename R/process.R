@@ -119,7 +119,10 @@ process <- R6::R6Class(
     #'     RGui on Windows, then an error is thrown.
     #' @param stdout  What to do with the standard output. Possible values:
     #'   * `NULL`: discard it;
-    #'   * A string, redirect it to this file.
+    #'   * A string starting with `">>"`, e.g. `">>output.txt"`: append it
+    #'     to this file. The file is created if it does not exist.
+    #'   * A string (not starting with `">>"`), redirect it to this file,
+    #'     truncating the file first.
     #'     Note that if you specify a relative path, it will be relative to
     #'     the current working directory, even if you specify another
     #'     directory in the `wd` argument. (See issue 324.)
@@ -129,7 +132,10 @@ process <- R6::R6Class(
     #'     RGui on Windows, then an error is thrown.
     #' @param stderr What to do with the standard error. Possible values:
     #'   * `NULL`: discard it.
-    #'   * A string, redirect it to this file.
+    #'   * A string starting with `">>"`, e.g. `">>error.txt"`: append it
+    #'     to this file. The file is created if it does not exist.
+    #'   * A string (not starting with `">>"`), redirect it to this file,
+    #'     truncating the file first.
     #'     Note that if you specify a relative path, it will be relative to
     #'     the current working directory, even if you specify another
     #'     directory in the `wd` argument. (See issue 324.)
