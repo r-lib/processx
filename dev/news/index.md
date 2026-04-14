@@ -2,6 +2,12 @@
 
 ## processx (development version)
 
+- `process$new()` now supports `">>"` as a prefix for `stdout` and
+  `stderr` file paths (e.g. `stdout = ">>output.log"`), which appends
+  output to the file instead of truncating it. The file is created if it
+  does not exist
+  ([\#403](https://github.com/r-lib/processx/issues/403)).
+
 - `env = "current"` now works correctly as a standalone value,
   inheriting the full environment of the current process
   ([\#399](https://github.com/r-lib/processx/issues/399)).
