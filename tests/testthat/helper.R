@@ -207,4 +207,20 @@ sysname <- function() {
   Sys.info()[["sysname"]]
 }
 
+is_asan <- function() {
+  .Call(c_is_asan_)
+}
+
+is_ubsan <- function() {
+  .Call(c_is_ubsan_)
+}
+
+is_san <- function() {
+  is_asan() || is_ubsan()
+}
+
+get_deadline <- function(secs = 1, asan_secs = secs * 10) {
+  Sys.time() + if (is_san()) asan_secs else secs
+}
+
 err$register_testthat_print()

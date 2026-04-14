@@ -14,7 +14,7 @@ test_that("tree ids are inherited", {
   ## this will return ERROR_PARTIAL_COPY (System error 299).
   ## Until this is fixed in ps, we just retry a couple of times.
   env <- "failed"
-  deadline <- Sys.time() + 3
+  deadline <- get_deadline(secs = 3)
   while (TRUE) {
     if (Sys.time() >= deadline) {
       break
@@ -50,7 +50,7 @@ test_that("tree ids are inherited if env is specified", {
   ## this will return ERROR_PARTIAL_COPY (System error 299).
   ## Until this is fixed in ps, we just retry a couple of times.
   env <- "failed"
-  deadline <- Sys.time() + 3
+  deadline <- get_deadline(secs = 3)
   while (TRUE) {
     if (Sys.time() >= deadline) {
       break
@@ -111,7 +111,7 @@ test_that("kill_tree with children", {
     args = list(px = get_tool("px"), tmp = tmp)
   )
 
-  deadline <- Sys.time() + 5
+  deadline <- get_deadline(secs = 5)
   while (!file.exists(tmp) && Sys.time() < deadline) {
     Sys.sleep(0.05)
   }
@@ -122,7 +122,7 @@ test_that("kill_tree with children", {
   expect_true(any(c("R", "Rterm.exe") %in% names(res)))
   expect_true(p$get_pid() %in% res)
 
-  deadline <- Sys.time() + 1
+  deadline <- get_deadline()
   while (p$is_alive() && Sys.time() < deadline) {
     Sys.sleep(0.05)
   }
@@ -159,7 +159,7 @@ test_that("kill_tree and orphaned children", {
   ps <- ps::ps_handle(pres$pid)
   expect_true(ps::ps_is_running(ps))
 
-  deadline <- Sys.time() + 2
+  deadline <- get_deadline(secs = 2)
   while (
     (!file.exists(tmp) || file_size(tmp) == 0) &&
       Sys.time() < deadline
@@ -171,7 +171,7 @@ test_that("kill_tree and orphaned children", {
   res <- p1$kill_tree(pres$id)
   expect_true(any(c("px", "px.exe") %in% names(res)))
 
-  deadline <- Sys.time() + 1
+  deadline <- get_deadline()
   while (ps::ps_is_running(ps) && Sys.time() < deadline) {
     Sys.sleep(0.05)
   }
@@ -193,7 +193,7 @@ test_that("cleanup_tree option", {
   gc()
   gc()
 
-  deadline <- Sys.time() + 1
+  deadline <- get_deadline()
   while (ps::ps_is_running(ps) && Sys.time() < deadline) {
     Sys.sleep(0.05)
   }
@@ -216,7 +216,7 @@ test_that("cleanup_tree stress test", {
     gc()
     gc()
 
-    deadline <- Sys.time() + 1
+    deadline <- get_deadline()
     while (ps::ps_is_running(ps) && Sys.time() < deadline) {
       Sys.sleep(0.05)
     }

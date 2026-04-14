@@ -30,6 +30,36 @@ SEXP gcov_flush(void) {
 
 #endif
 
+SEXP is_asan_()
+{
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer) // for clang
+#define __SANITIZE_ADDRESS__         // GCC already sets this
+#endif
+#endif
+
+#ifdef __SANITIZE_ADDRESS__
+  return Rf_ScalarLogical(1);
+#else
+  return Rf_ScalarLogical(0);
+#endif
+}
+
+SEXP is_ubsan_()
+{
+#if defined(__has_feature)
+#if __has_feature(undefined_behavior_sanitizer)
+#define HAS_UBSAN 1
+#endif
+#endif
+
+#ifdef HAS_UBSAN
+  return Rf_ScalarLogical(1);
+#else
+  return Rf_ScalarLogical(0);
+#endif
+}
+
 static const R_CallMethodDef callMethods[]  = {
   CLEANCALL_METHOD_RECORD,
   { "processx_exec",               (DL_FUNC) &processx_exec,              14 },
@@ -93,6 +123,8 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx__echo_off", (DL_FUNC) &processx__echo_off, 0 },
 
   { "gcov_flush", (DL_FUNC) gcov_flush, 0 },
+  { "is_asan_", (DL_FUNC) is_asan_, 0 },
+  { "is_ubsan_", (DL_FUNC) is_ubsan_, 0 },
 
   { NULL, NULL, 0 }
 };
