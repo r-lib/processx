@@ -6,7 +6,7 @@
       Error:
       ! ! Native call to `processx_connection_read_chars` failed
       Caused by error in `chain_call(c_processx_connection_read_chars, con, n)` at connections.R:302:<col>:
-      ! Cannot read from processx connection (system error 57, Socket is not connected) @processx-connection.c:1880 (processx__connection_read)
+      ! Cannot read from processx connection (system error 57, Socket is not connected) @processx-connection.c:1882 (processx__connection_read)
 
 # errors
 
