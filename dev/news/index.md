@@ -2,6 +2,10 @@
 
 ## processx (development version)
 
+- `env = "current"` now works correctly as a standalone value,
+  inheriting the full environment of the current process
+  ([\#399](https://github.com/r-lib/processx/issues/399)).
+
 - [`run()`](http://processx.r-lib.org/dev/reference/run.md) and
   `process$new()` now support `encoding = "binary"` to capture binary
   output. In this mode
