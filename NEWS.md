@@ -8,7 +8,7 @@
 
 * New `process$read_output_bytes()`, `process$read_error_bytes()` methods
   and `conn_read_bytes()` function for reading raw bytes from a processx
-  connection directly.
+  connection directly (#406).
 
 # processx 3.8.7
 
