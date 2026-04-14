@@ -160,7 +160,7 @@ static void processx__child_init(processx_handle_t *handle, SEXP connections,
 #endif
 
 #ifdef TIOCSWINSZ
-    struct winsize w;
+    struct winsize w = { 0 };
     w.ws_row = options->pty_rows;
     w.ws_col = options->pty_cols;
     if (ioctl(sub_fd, TIOCSWINSZ, &w) == -1) {
