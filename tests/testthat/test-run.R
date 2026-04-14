@@ -80,7 +80,7 @@ test_that("working directory does not exist", {
   expect_snapshot(
     error = TRUE,
     run(px, wd = tempfile()),
-    transform = function(x) transform_column_number(transform_px(x)),
+    transform = function(x) transform_line_number(transform_px(x)),
     variant = sysname()
   )
   gc()
@@ -230,11 +230,23 @@ test_that("binary=TRUE with stdout_callback receives raw chunks", {
 
 test_that("binary=TRUE errors with line callbacks", {
   px <- get_tool("px")
-  expect_snapshot(error = TRUE,
-    run(px, "out", encoding = "binary", stdout_line_callback = function(x, ...) x)
+  expect_snapshot(
+    error = TRUE,
+    run(
+      px,
+      "out",
+      encoding = "binary",
+      stdout_line_callback = function(x, ...) x
+    )
   )
-  expect_snapshot(error = TRUE,
-    run(px, "out", encoding = "binary", stderr_line_callback = function(x, ...) x)
+  expect_snapshot(
+    error = TRUE,
+    run(
+      px,
+      "out",
+      encoding = "binary",
+      stderr_line_callback = function(x, ...) x
+    )
   )
 })
 
@@ -264,7 +276,8 @@ test_that("pty=TRUE works with stdout_callback", {
 
   chunks <- character()
   res <- run(
-    "echo", "hello",
+    "echo",
+    "hello",
     pty = TRUE,
     stdout_callback = function(x, ...) chunks <<- c(chunks, x)
   )
@@ -278,7 +291,8 @@ test_that("pty=TRUE works with stdout_callback (windows)", {
 
   chunks <- character()
   res <- run(
-    "cmd.exe", c("/c", "echo", "hello"),
+    "cmd.exe",
+    c("/c", "echo", "hello"),
     pty = TRUE,
     stdout_callback = function(x, ...) chunks <<- c(chunks, x)
   )
@@ -290,18 +304,19 @@ test_that("pty=TRUE errors on incompatible arguments", {
   skip_on_cran()
   expect_snapshot(error = TRUE, run("echo", pty = TRUE, stdout = NULL))
   expect_snapshot(error = TRUE, run("echo", pty = TRUE, stderr = NULL))
-  expect_snapshot(error = TRUE,
+  expect_snapshot(
+    error = TRUE,
     run("echo", pty = TRUE, stderr_to_stdout = TRUE)
   )
-  expect_snapshot(error = TRUE,
+  expect_snapshot(
+    error = TRUE,
     run("echo", pty = TRUE, stderr_callback = function(x, ...) x)
   )
-  expect_snapshot(error = TRUE,
+  expect_snapshot(
+    error = TRUE,
     run("echo", pty = TRUE, stderr_line_callback = function(x, ...) x)
   )
-  expect_snapshot(error = TRUE,
-    run("echo", pty = TRUE, stdin = "|")
-  )
+  expect_snapshot(error = TRUE, run("echo", pty = TRUE, stdin = "|"))
 })
 
 test_that("pty=TRUE with file stdin feeds content to the process", {
