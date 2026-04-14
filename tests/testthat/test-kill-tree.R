@@ -175,6 +175,7 @@ test_that("kill_tree and orphaned children", {
   while (ps::ps_is_running(ps) && Sys.time() < deadline) {
     Sys.sleep(0.05)
   }
+  print(ps::ps_status(ps))
   expect_true(Sys.time() < deadline)
   expect_false(ps::ps_is_running(ps))
 })

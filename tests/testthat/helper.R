@@ -219,7 +219,7 @@ is_san <- function() {
   is_asan() || is_ubsan()
 }
 
-get_deadline <- function(secs = 1, asan_secs = secs * 1000) {
+get_deadline <- function(secs = 1, asan_secs = secs * 100) {
   dl <- if (is_san()) asan_secs else secs
   Sys.time() + as.difftime(dl, units = "secs")
 }
