@@ -31,6 +31,10 @@ int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_
 int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_ptr,
 				const char *cname);
 
+processx_connection_t *processx__create_connection(
+  HANDLE pipe_handle, const char *membername, SEXP private,
+  const char *encoding, BOOL async);
+
 void processx__handle_destroy(processx_handle_t *handle);
 
 void processx__stdio_noinherit(BYTE* buffer);
