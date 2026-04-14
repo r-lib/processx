@@ -1156,7 +1156,7 @@ p <- process$new("sleep", "2")
 p$is_alive()
 #> [1] TRUE
 p
-#> PROCESS 'sleep', running, pid 7105.
+#> PROCESS 'sleep', running, pid 7028.
 p$kill()
 #> [1] TRUE
 p$is_alive()
