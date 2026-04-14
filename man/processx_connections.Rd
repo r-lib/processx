@@ -7,6 +7,9 @@
 \alias{conn_read_chars}
 \alias{conn_read_chars.processx_connection}
 \alias{processx_conn_read_chars}
+\alias{conn_read_bytes}
+\alias{conn_read_bytes.processx_connection}
+\alias{processx_conn_read_bytes}
 \alias{conn_read_lines}
 \alias{conn_read_lines.processx_connection}
 \alias{processx_conn_read_lines}
@@ -37,6 +40,12 @@ conn_read_chars(con, n = -1)
 \method{conn_read_chars}{processx_connection}(con, n = -1)
 
 processx_conn_read_chars(con, n = -1)
+
+conn_read_bytes(con, n = -1)
+
+\method{conn_read_bytes}{processx_connection}(con, n = -1)
+
+processx_conn_read_bytes(con, n = -1)
 
 conn_read_lines(con, n = -1)
 
@@ -129,6 +138,13 @@ first one is writeable, the second one is readable.
 
 \code{conn_read_chars()} reads UTF-8 characters from the connections. If the
 connection itself is not UTF-8 encoded, it re-encodes it.
+
+\code{conn_read_bytes()} reads raw bytes from the connection into a raw vector.
+Unlike \code{conn_read_chars()}, it bypasses UTF-8 conversion, so null bytes
+and arbitrary binary data are preserved exactly. Calling this function
+switches the connection permanently to raw mode; after that,
+\code{conn_read_chars()} and \code{conn_read_lines()} must not be used on the
+same connection.
 
 \code{conn_read_lines()} reads lines from a connection.
 

@@ -303,6 +303,34 @@ processx_conn_read_chars <- function(con, n = -1) {
 }
 
 #' @details
+#' `conn_read_bytes()` reads raw bytes from the connection into a raw vector.
+#' Unlike `conn_read_chars()`, it bypasses UTF-8 conversion, so null bytes
+#' and arbitrary binary data are preserved exactly. Calling this function
+#' switches the connection permanently to raw mode; after that,
+#' `conn_read_chars()` and `conn_read_lines()` must not be used on the
+#' same connection.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_read_bytes <- function(con, n = -1) UseMethod("conn_read_bytes", con)
+
+#' @rdname processx_connections
+#' @export
+
+conn_read_bytes.processx_connection <- function(con, n = -1) {
+  processx_conn_read_bytes(con, n)
+}
+
+#' @rdname processx_connections
+#' @export
+
+processx_conn_read_bytes <- function(con, n = -1) {
+  assert_that(is_connection(con), is_integerish_scalar(n))
+  chain_call(c_processx_connection_read_bytes, con, n)
+}
+
+#' @details
 #' `conn_read_lines()` reads lines from a connection.
 #'
 #' @rdname processx_connections

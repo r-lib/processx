@@ -168,6 +168,43 @@ SEXP processx_connection_read_chars(SEXP con, SEXP nchars) {
   return result;
 }
 
+SEXP processx_connection_read_bytes(SEXP con, SEXP nbytes) {
+
+  processx_connection_t *ccon = R_ExternalPtrAddr(con);
+  SEXP result;
+  int cnbytes = asInteger(nbytes);
+  size_t to_read;
+
+  PROCESSX_CHECK_VALID_CONN(ccon);
+
+  /* Switch to raw mode — bypasses UTF-8 conversion from here on */
+  ccon->raw_mode = 1;
+
+  /* Fill the buffer from the OS if it is empty and not at EOF */
+  if (ccon->buffer_data_size == 0 && !ccon->is_eof_raw_) {
+    processx__connection_read(ccon);
+  }
+
+  /* Update EOF for raw mode: done when the OS-level stream is exhausted
+     and the raw buffer is drained */
+  if (ccon->is_eof_raw_ && ccon->buffer_data_size == 0) {
+    ccon->is_eof_ = 1;
+  }
+
+  to_read = ccon->buffer_data_size;
+  if (cnbytes >= 0 && (size_t) cnbytes < to_read) to_read = (size_t) cnbytes;
+
+  result = PROTECT(allocVector(RAWSXP, to_read));
+  if (to_read > 0) {
+    memcpy(RAW(result), ccon->buffer, to_read);
+    ccon->buffer_data_size -= to_read;
+    memmove(ccon->buffer, ccon->buffer + to_read, ccon->buffer_data_size);
+  }
+
+  UNPROTECT(1);
+  return result;
+}
+
 SEXP processx_connection_read_lines(SEXP con, SEXP nlines) {
 
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
@@ -768,6 +805,7 @@ processx_connection_t *processx_c_connection_create(
   con->is_eof_raw_ = 0;
   con->close_on_destroy = 1;
   con->iconv_ctx = 0;
+  con->raw_mode = 0;
 
   con->buffer = 0;
   con->buffer_allocated_size = 0;
@@ -779,11 +817,16 @@ processx_connection_t *processx_c_connection_create(
 
   con->encoding = 0;
   if (encoding && encoding[0]) {
-    con->encoding = strdup(encoding);
-    if (!con->encoding) {
-      free(con);
-      R_THROW_ERROR("cannot create connection, out of memory");
-      return 0;			/* never reached */
+    if (strcmp(encoding, "binary") == 0) {
+      /* Binary mode: bypass UTF-8 conversion entirely */
+      con->raw_mode = 1;
+    } else {
+      con->encoding = strdup(encoding);
+      if (!con->encoding) {
+        free(con);
+        R_THROW_ERROR("cannot create connection, out of memory");
+        return 0;			/* never reached */
+      }
     }
   }
 
@@ -1203,7 +1246,9 @@ int processx_c_connection_poll(processx_pollable_t pollables[],
       int poll_idx = con->poll_idx;
       con->handle.read_pending = FALSE;
       con->buffer_data_size += bytes;
-      if (con->buffer_data_size > 0) processx__connection_to_utf8(con);
+      if (con->buffer_data_size > 0 && !con->raw_mode) {
+	processx__connection_to_utf8(con);
+      }
       if (con->type == PROCESSX_FILE_TYPE_ASYNCFILE) {
 	/* TODO: larger files */
 	con->handle.overlapped.Offset += bytes;
@@ -1470,11 +1515,15 @@ void processx__connection_start_read(processx_connection_t *ccon) {
   if (!ccon) return PXNOPIPE;						\
   if (ccon->is_closed_) return PXCLOSED;				\
   if (ccon->is_eof_) return PXREADY;					\
-  if (ccon->utf8_data_size > 0) return PXREADY;				\
-  if (ccon->buffer_data_size > 0 && ccon->is_eof_raw_) return PXREADY;	\
-  if (ccon->buffer_data_size > 0) {					\
-    processx__connection_to_utf8(ccon);					\
+  if (ccon->raw_mode) {							\
+    if (ccon->buffer_data_size > 0) return PXREADY;			\
+  } else {								\
     if (ccon->utf8_data_size > 0) return PXREADY;			\
+    if (ccon->buffer_data_size > 0 && ccon->is_eof_raw_) return PXREADY; \
+    if (ccon->buffer_data_size > 0) {					\
+      processx__connection_to_utf8(ccon);				\
+      if (ccon->utf8_data_size > 0) return PXREADY;			\
+    }									\
   } } while (0)
 
 int processx_i_pre_poll_func_connection(processx_pollable_t *pollable) {
@@ -1741,7 +1790,10 @@ ssize_t processx__connection_read(processx_connection_t *ccon) {
 
   /* If cannot read anything more, then try to convert to UTF8 */
   todo = ccon->buffer_allocated_size - ccon->buffer_data_size;
-  if (todo == 0) return processx__connection_to_utf8(ccon);
+  if (todo == 0) {
+    if (ccon->raw_mode) return (ssize_t) ccon->buffer_data_size;
+    return processx__connection_to_utf8(ccon);
+  }
 
   /* Otherwise we read. If there is no read pending, we start one. */
   processx__connection_start_read(ccon);
@@ -1759,8 +1811,10 @@ ssize_t processx__connection_read(processx_connection_t *ccon) {
 	processx_connection_t *con = (processx_connection_t *) key;
 	con->handle.read_pending = FALSE;
 	con->buffer_data_size += bytes;
-	if (con->buffer && con->buffer_data_size > 0) {
+	if (con->buffer && con->buffer_data_size > 0 && !con->raw_mode) {
 	  bytes = processx__connection_to_utf8(con);
+	} else if (con->buffer_data_size > 0) {
+	  bytes = con->buffer_data_size;
 	}
 	if (con->type == PROCESSX_FILE_TYPE_ASYNCFILE) {
 	  /* TODO: large files */
@@ -1830,11 +1884,12 @@ static ssize_t processx__connection_read(processx_connection_t *ccon) {
 
   ccon->buffer_data_size += bytes_read;
 
-  /* If there is anything to convert to UTF8, try converting */
-  if (ccon->buffer_data_size > 0) {
+  /* If there is anything to convert to UTF8, try converting.
+     In raw_mode we skip iconv and leave data in the raw buffer. */
+  if (!ccon->raw_mode && ccon->buffer_data_size > 0) {
     bytes_read = processx__connection_to_utf8(ccon);
   } else {
-    bytes_read = 0;
+    bytes_read = (ssize_t) ccon->buffer_data_size;
   }
 
   return bytes_read;

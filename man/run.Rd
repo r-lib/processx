@@ -123,7 +123,10 @@ application on windows. Ignored on other platforms.}
 \item{encoding}{The encoding to assume for \code{stdout} and
 \code{stderr}. By default the encoding of the current locale is
 used. Note that \code{processx} always reencodes the output of
-both streams in UTF-8 currently.}
+both streams in UTF-8 currently. Use \code{"binary"} to collect
+the raw bytes without any conversion: \code{stdout} and \code{stderr}
+in the return value will be raw vectors instead of character
+strings. Line callbacks are not supported in binary mode.}
 
 \item{cleanup_tree}{Whether to clean up the child process tree after
 the process has finished.}
@@ -202,7 +205,7 @@ of the process if \code{stderr_to_stdout} was \code{TRUE}.
 }
 
 \examples{
-\dontshow{if (.Platform$OS.type == "unix") (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (.Platform$OS.type == "unix") withAutoprint(\{ # examplesIf}
 # This works on Unix systems
 run("ls")
 system.time(run("sleep", "10", timeout = 1, error_on_status = FALSE))
@@ -213,7 +216,7 @@ system.time(
   )
 )
 \dontshow{\}) # examplesIf}
-\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 # This works on Windows systems, if the ping command is available
 run("ping", c("-n", "1", "127.0.0.1"))
 run("ping", c("-n", "6", "127.0.0.1"), timeout = 1,

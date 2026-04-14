@@ -281,6 +281,35 @@ is_interactive <- function() {
   }
 }
 
+make_raw_buffer <- function() {
+  chunks <- list()
+  total <- 0L
+  list(
+    push = function(raw_bytes) {
+      n <- length(raw_bytes)
+      if (n > 0L) {
+        chunks[[length(chunks) + 1L]] <<- raw_bytes
+        total <<- total + n
+      }
+    },
+    read = function() {
+      if (total == 0L) return(raw(0L))
+      result <- raw(total)
+      pos <- 1L
+      for (chunk in chunks) {
+        n <- length(chunk)
+        result[pos:(pos + n - 1L)] <- chunk
+        pos <- pos + n
+      }
+      result
+    },
+    done = function() {
+      chunks <<- list()
+      total <<- 0L
+    }
+  )
+}
+
 make_buffer <- function() {
   con <- file(open = "w+b")
   size <- 0L
