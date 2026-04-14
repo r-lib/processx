@@ -335,6 +335,7 @@ update_vector <- function(x, y = NULL) {
 }
 
 process_env <- function(env) {
+  if (is.null(names(env))) names(env) <- rep("", length(env))
   current <- env == "current" & names(env) == ""
   if (any(current)) {
     env <- update_vector(Sys.getenv(), env[!current])
