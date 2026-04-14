@@ -201,7 +201,10 @@ RGui on Windows, then an error is thrown.
       \item{\code{stdout}}{What to do with the standard output. Possible values:
 \itemize{
 \item \code{NULL}: discard it;
-\item A string, redirect it to this file.
+\item A string starting with \code{">>"}, e.g. \code{">>output.txt"}: append it
+to this file. The file is created if it does not exist.
+\item A string (not starting with \code{">>"}), redirect it to this file,
+truncating the file first.
 Note that if you specify a relative path, it will be relative to
 the current working directory, even if you specify another
 directory in the \code{wd} argument. (See issue 324.)
@@ -213,7 +216,10 @@ RGui on Windows, then an error is thrown.
       \item{\code{stderr}}{What to do with the standard error. Possible values:
 \itemize{
 \item \code{NULL}: discard it.
-\item A string, redirect it to this file.
+\item A string starting with \code{">>"}, e.g. \code{">>error.txt"}: append it
+to this file. The file is created if it does not exist.
+\item A string (not starting with \code{">>"}), redirect it to this file,
+truncating the file first.
 Note that if you specify a relative path, it will be relative to
 the current working directory, even if you specify another
 directory in the \code{wd} argument. (See issue 324.)

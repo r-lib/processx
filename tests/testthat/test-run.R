@@ -237,3 +237,61 @@ test_that("binary=TRUE errors with line callbacks", {
     run(px, "out", encoding = "binary", stderr_line_callback = function(x, ...) x)
   )
 })
+
+test_that("pty=TRUE collects merged output in stdout", {
+  skip_other_platforms("unix")
+  skip_on_os("solaris")
+  skip_on_cran()
+
+  res <- run("echo", c("hello", "pty"), pty = TRUE)
+  expect_match(res$stdout, "hello pty")
+  expect_null(res$stderr)
+})
+
+test_that("pty=TRUE works with stdout_callback", {
+  skip_other_platforms("unix")
+  skip_on_os("solaris")
+  skip_on_cran()
+
+  chunks <- character()
+  res <- run(
+    "echo", "hello",
+    pty = TRUE,
+    stdout_callback = function(x, ...) chunks <<- c(chunks, x)
+  )
+  expect_match(paste(chunks, collapse = ""), "hello")
+  expect_null(res$stderr)
+})
+
+test_that("pty=TRUE errors on incompatible arguments", {
+  skip_on_cran()
+  expect_snapshot(error = TRUE, run("echo", pty = TRUE, stdout = NULL))
+  expect_snapshot(error = TRUE, run("echo", pty = TRUE, stderr = NULL))
+  expect_snapshot(error = TRUE,
+    run("echo", pty = TRUE, stderr_to_stdout = TRUE)
+  )
+  expect_snapshot(error = TRUE,
+    run("echo", pty = TRUE, stderr_callback = function(x, ...) x)
+  )
+  expect_snapshot(error = TRUE,
+    run("echo", pty = TRUE, stderr_line_callback = function(x, ...) x)
+  )
+  expect_snapshot(error = TRUE,
+    run("echo", pty = TRUE, stdin = "|")
+  )
+})
+
+test_that("pty=TRUE with file stdin feeds content to the process", {
+  skip_other_platforms("unix")
+  skip_on_os("solaris")
+  skip_on_cran()
+
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+  writeLines(c("hello", "world"), tmp)
+
+  res <- run("cat", pty = TRUE, stdin = tmp)
+  expect_match(res$stdout, "hello")
+  expect_match(res$stdout, "world")
+  expect_null(res$stderr)
+})
