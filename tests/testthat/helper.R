@@ -203,6 +203,10 @@ transform_column_number <- function(x) {
   sub("([.]R:[0-9]+:)[0-9]+", "\\1<col>", x)
 }
 
+transform_line_number <- function(x) {
+  sub("([.]R:[0-9]+:)[0-9]+", ".R:<line>:<col>", x)
+}
+
 sysname <- function() {
   Sys.info()[["sysname"]]
 }

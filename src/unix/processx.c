@@ -697,6 +697,11 @@ static void processx__wait_cleanup(void *ptr) {
  * 7. We keep polling until the timeout expires or the process finishes.
  */
 
+/* No-op on Unix: ConPTY is Windows-only. */
+SEXP processx_pty_close(SEXP status, SEXP name) {
+  return R_NilValue;
+}
+
 SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   const char *cname = isNull(name) ? "???" : CHAR(STRING_ELT(name, 0));

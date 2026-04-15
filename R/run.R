@@ -132,13 +132,14 @@
 #'   `NULL` (no input) or a file path (whose contents are fed to the
 #'   process via the PTY).
 #' @param pty Whether to use a pseudo-terminal (PTY) for the process.
-#'   This is only supported on Unix. When `TRUE`, stdout and stderr are
-#'   merged into a single stream (accessible via `$stdout` in the result),
-#'   and `$stderr` is always `NULL`. The process sees a real terminal, so
-#'   programs that disable colour or interactive features when not attached
-#'   to a terminal will behave as if they are. `stdout` and `stderr` must
-#'   be left at their defaults (`"|"`), and `stderr_to_stdout`,
-#'   `stderr_callback`, and `stderr_line_callback` must not be set.
+#'   Supported on Unix and on Windows 10 version 1809 or later (via
+#'   ConPTY). When `TRUE`, stdout and stderr are merged into a single
+#'   stream (accessible via `$stdout` in the result), and `$stderr` is
+#'   always `NULL`. The process sees a real terminal, so programs that
+#'   disable colour or interactive features when not attached to a terminal
+#'   will behave as if they are. `stdout` and `stderr` must be left at
+#'   their defaults (`"|"`), and `stderr_to_stdout`, `stderr_callback`,
+#'   and `stderr_line_callback` must not be set.
 #' @param pty_options Options for the PTY, a named list. See
 #'   [default_pty_options()] for the available options and their defaults.
 #' @param ... Extra arguments are passed to `process$new()`, see
@@ -566,7 +567,17 @@ run_manage <- function(
         stdin_remaining <- proc$write_input(stdin_remaining)
       }
       if (length(stdin_remaining) == 0L) {
-        proc$write_input(as.raw(c(0x04L, 0x04L)))
+        ## Signal EOF to the PTY.
+        ## Unix: two Ctrl+D (0x04) — first flushes the line buffer,
+        ##       second triggers unconditional EOF.
+        ## Windows ConPTY: Ctrl+Z (0x1A) — the Windows CRT treats this
+        ##       as EOF when reading from a console in text mode.
+        eof_bytes <- if (.Platform$OS.type == "windows") {
+          as.raw(0x1aL)
+        } else {
+          as.raw(c(0x04L, 0x04L))
+        }
+        proc$write_input(eof_bytes)
         stdin_eof_sent <- TRUE
       }
     }
@@ -580,6 +591,24 @@ run_manage <- function(
     }
 
     if (spinner) spin()
+  }
+
+  ## Windows PTY: after process exit the IOCP timeout is forced to 0 (because
+  ## poll_pipe is at EOF), so proc$poll_io(-1) returns immediately regardless
+  ## of the timeout.  conhost.exe processes the child's final writes
+  ## asynchronously; we must poll *only* the stdout connection (not the full
+  ## process) to give conhost time to flush.  Then call ClosePseudoConsole()
+  ## so conhost closes its write end of the pipe, causing EOF on our read end.
+  ## Skip this if we already killed the process (timeout / forced kill).
+  if (pty && .Platform$OS.type == "windows" && has_stdout && !timeout_happened) {
+    con <- proc$get_output_connection()
+    repeat {
+      p <- poll(list(con), 1000L)[[1]]
+      if (!identical(p, "ready")) break
+      do_output()
+    }
+    priv <- get_private(proc)
+    chain_call(c_processx_pty_close, priv$status, priv$get_short_name())
   }
 
   ## Needed to get the exit status
