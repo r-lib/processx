@@ -261,3 +261,17 @@ SEXP processx__proc_start_time(SEXP status) {
 
   return ScalarReal(handle->create_time);
 }
+
+SEXP processx__proc_end_time(SEXP status) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
+
+  if (!handle) {
+    R_THROW_ERROR("Internal processx error, handle already removed");
+  }
+
+  if (handle->end_time == 0.0) {
+    return R_NilValue;
+  } else {
+    return ScalarReal(handle->end_time);
+  }
+}

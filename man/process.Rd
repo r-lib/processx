@@ -119,6 +119,7 @@ p$is_alive()
     \item \href{#method-process-format}{\code{process$format()}}
     \item \href{#method-process-print}{\code{process$print()}}
     \item \href{#method-process-get_start_time}{\code{process$get_start_time()}}
+    \item \href{#method-process-get_end_time}{\code{process$get_end_time()}}
     \item \href{#method-process-is_supervised}{\code{process$is_supervised()}}
     \item \href{#method-process-supervise}{\code{process$supervise()}}
     \item \href{#method-process-read_output}{\code{process$read_output()}}
@@ -535,6 +536,24 @@ started.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{process$get_start_time()}
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-process-get_end_time"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_end_time}{}}}
+\subsection{\code{process$get_end_time()}}{
+  \verb{$get_end_time()} returns the time when the process finished,
+or \code{NULL} if it is still running.
+On Unix the timestamp is recorded when R first notices the exit
+(via the \code{SIGCHLD} handler or a call to \verb{$is_alive()},
+\verb{$get_exit_status()}, or \verb{$wait()}), so it may be slightly later
+than the actual kernel exit time.
+On Windows the exact kernel exit time is used.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{process$get_end_time()}
     \if{html}{\out{</div>}}
   }
 }

@@ -382,6 +382,17 @@ process <- R6::R6Class(
     get_start_time = function() process_get_start_time(self, private),
 
     #' @description
+    #' `$get_end_time()` returns the time when the process finished,
+    #' or `NULL` if it is still running.
+    #' On Unix the timestamp is recorded when R first notices the exit
+    #' (via the `SIGCHLD` handler or a call to `$is_alive()`,
+    #' `$get_exit_status()`, or `$wait()`), so it may be slightly later
+    #' than the actual kernel exit time.
+    #' On Windows the exact kernel exit time is used.
+
+    get_end_time = function() process_get_end_time(self, private),
+
+    #' @description
     #' `$is_supervised()` returns whether the process is being tracked by
     #' supervisor process.
 
@@ -726,6 +737,7 @@ process <- R6::R6Class(
     cleanfiles = NULL, # which temp stdout/stderr file(s) to clean up
     wd = NULL, # working directory (or NULL for current)
     starttime = NULL, # timestamp of start
+    endtime = NULL, # timestamp of exit, or 0 if not yet exited
     echo_cmd = NULL, # whether to echo the command
     windows_verbatim_args = NULL,
     windows_hide_window = NULL,
@@ -846,6 +858,18 @@ process_kill_tree <- function(self, private, grace, close_connections) {
 
 process_get_start_time <- function(self, private) {
   format_unix_time(private$starttime)
+}
+
+process_get_end_time <- function(self, private) {
+  if (!is.null(private$endtime)) {
+    return(private$endtime)
+  }
+  et <- chain_call(c_processx__proc_end_time, private$status)
+  if (is.null(et)) {
+    return(NULL)
+  }
+  private$endtime <- format_unix_time(et)
+  private$endtime
 }
 
 process_get_pid <- function(self, private) {

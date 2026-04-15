@@ -1,5 +1,8 @@
 # processx (development version)
 
+* New `process$get_end_time()` method returns the time when the process
+  exited as a `POSIXct`, or `NULL` if it is still running (#218).
+
 * `run()` now supports `pty = TRUE` and `pty_options` to run a process in a
   pseudo-terminal (PTY) on Unix. This causes the child to see a real terminal,
   so programs that disable colour output or interactive behaviour when not

@@ -79,6 +79,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_create_named_pipe",  (DL_FUNC) &processx_create_named_pipe,  2 },
   { "processx_write_named_pipe",   (DL_FUNC) &processx_write_named_pipe,   2 },
   { "processx__proc_start_time",   (DL_FUNC) &processx__proc_start_time,   1 },
+  { "processx__proc_end_time",     (DL_FUNC) &processx__proc_end_time,     1 },
   { "processx__set_boot_time",     (DL_FUNC) &processx__set_boot_time,     1 },
 
   { "processx_connection_create",     (DL_FUNC) &processx_connection_create,     2 },

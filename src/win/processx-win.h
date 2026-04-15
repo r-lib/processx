@@ -14,6 +14,7 @@ typedef struct processx_handle_s {
   processx_connection_t *pipes[3];
   int cleanup;
   double create_time;
+  double end_time;          /* 0.0 until the process exits */
 } processx_handle_t;
 
 int processx__utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr);

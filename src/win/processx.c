@@ -1088,6 +1088,18 @@ void processx__collect_exit_status(SEXP status, DWORD exitcode) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   handle->exitcode = exitcode;
   handle->collected = 1;
+  {
+    FILETIME ftCreate, ftExit, ftKernel, ftUser;
+    if (GetProcessTimes(handle->hProcess,
+                        &ftCreate, &ftExit, &ftKernel, &ftUser)) {
+      long long ll = ((LONGLONG)ftExit.dwHighDateTime) << 32;
+      ll += ftExit.dwLowDateTime - 116444736000000000LL;
+      handle->end_time = (double)(ll / 10000000) +
+                         (double)(ll % 10000000) / 10000000.0;
+    } else {
+      handle->end_time = 0.0;
+    }
+  }
 }
 
 SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {
