@@ -593,6 +593,24 @@ run_manage <- function(
     if (spinner) spin()
   }
 
+  ## Windows PTY: after process exit the IOCP timeout is forced to 0 (because
+  ## poll_pipe is at EOF), so proc$poll_io(-1) returns immediately regardless
+  ## of the timeout.  conhost.exe processes the child's final writes
+  ## asynchronously; we must poll *only* the stdout connection (not the full
+  ## process) to give conhost time to flush.  Then call ClosePseudoConsole()
+  ## so conhost closes its write end of the pipe, causing EOF on our read end.
+  ## Skip this if we already killed the process (timeout / forced kill).
+  if (pty && .Platform$OS.type == "windows" && has_stdout && !timeout_happened) {
+    con <- proc$get_output_connection()
+    repeat {
+      p <- poll(list(con), 100L)[[1]]
+      if (!identical(p, "ready")) break
+      do_output()
+    }
+    priv <- get_private(proc)
+    chain_call(c_processx_pty_close, priv$status, priv$get_short_name())
+  }
+
   ## Needed to get the exit status
   "!DEBUG run() waiting to get exit status, process `proc$get_pid()`"
   proc$wait()

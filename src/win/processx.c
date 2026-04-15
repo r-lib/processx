@@ -1310,17 +1310,24 @@ void processx__collect_exit_status(SEXP status, DWORD exitcode) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   handle->exitcode = exitcode;
   handle->collected = 1;
+  /* Do NOT call ClosePseudoConsole() here.  ConPTY processes the child's
+     writes asynchronously: by the time GetExitCodeProcess() reports that
+     the child has exited, conhost may not have finished writing the child's
+     last output to our pipe.  Calling ClosePseudoConsole() too early
+     causes that buffered output to be silently discarded.
+     The caller is responsible for draining the stdout pipe first (via
+     processx_pty_close()) after polling until no more data arrives. */
+}
 
-  /* For ConPTY processes: close the pseudo-console as soon as we know
-     the child has exited.  Until ClosePseudoConsole() is called, the
-     ConPTY host (conhost.exe) keeps the write end of the output pipe
-     open, so poll_io() would block forever waiting for an EOF that
-     never arrives.  Closing here lets conhost release its pipe handle,
-     which in turn signals EOF to our reader. */
-  if (handle->ptycon && processx__ClosePseudoConsole) {
+/* Called from R after the stdout pipe has been drained: signals conhost
+   to flush any remaining terminal output and close the pipe (EOF). */
+SEXP processx_pty_close(SEXP status, SEXP name) {
+  processx_handle_t *handle = R_ExternalPtrAddr(status);
+  if (handle && handle->ptycon && processx__ClosePseudoConsole) {
     processx__ClosePseudoConsole((HPCON) handle->ptycon);
     handle->ptycon = NULL;
   }
+  return R_NilValue;
 }
 
 SEXP processx_wait(SEXP status, SEXP timeout, SEXP name) {

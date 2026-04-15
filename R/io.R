@@ -114,11 +114,27 @@ process_read_all_output <- function(self, private) {
   result <- ""
   while (self$is_incomplete_output()) {
     self$poll_io(-1)
-    # On Windows with pty=TRUE, calling is_alive() after poll_io() triggers
-    # ClosePseudoConsole() if the child has exited, which causes conhost.exe
-    # to release its write end of the stdout pipe and signal EOF.  Without
-    # this the drain loop blocks forever waiting for an EOF that never arrives.
-    self$is_alive()
+    # On Windows with pty=TRUE the IOCP loop forces timeout=0 once poll_pipe
+    # signals EOF (process exit), so poll_io(-1) returns immediately after the
+    # child exits regardless of the requested timeout.  conhost.exe processes
+    # the child's final writes asynchronously; we must poll *only* the stdout
+    # connection (not the full process) to give conhost time to flush, and then
+    # call ClosePseudoConsole() explicitly so conhost closes its end of the pipe.
+    if (private$pty && .Platform$OS.type == "windows" && !self$is_alive()) {
+      con <- self$get_output_connection()
+      repeat {
+        p <- poll(list(con), 100L)[[1]]
+        if (!identical(p, "ready")) break
+        result <- paste0(result, self$read_output())
+      }
+      chain_call(c_processx_pty_close, private$status,
+                 private$get_short_name())
+      while (self$is_incomplete_output()) {
+        poll(list(con), -1L)
+        result <- paste0(result, self$read_output())
+      }
+      return(result)
+    }
     result <- paste0(result, self$read_output())
   }
   result
@@ -128,7 +144,6 @@ process_read_all_error <- function(self, private) {
   result <- ""
   while (self$is_incomplete_error()) {
     self$poll_io(-1)
-    self$is_alive()
     result <- paste0(result, self$read_error())
   }
   result
@@ -138,7 +153,6 @@ process_read_all_output_lines <- function(self, private) {
   results <- character()
   while (self$is_incomplete_output()) {
     self$poll_io(-1)
-    self$is_alive()
     results <- c(results, self$read_output_lines())
   }
   results
@@ -148,7 +162,6 @@ process_read_all_error_lines <- function(self, private) {
   results <- character()
   while (self$is_incomplete_error()) {
     self$poll_io(-1)
-    self$is_alive()
     results <- c(results, self$read_error_lines())
   }
   results

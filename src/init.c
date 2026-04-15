@@ -65,6 +65,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "processx_exec",               (DL_FUNC) &processx_exec,              14 },
   { "processx_wait",               (DL_FUNC) &processx_wait,               3 },
   { "processx_is_alive",           (DL_FUNC) &processx_is_alive,           2 },
+  { "processx_pty_close",          (DL_FUNC) &processx_pty_close,          2 },
   { "processx_get_exit_status",    (DL_FUNC) &processx_get_exit_status,    2 },
   { "processx_signal",             (DL_FUNC) &processx_signal,             3 },
   { "processx_interrupt",          (DL_FUNC) &processx_interrupt,          2 },
