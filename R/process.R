@@ -52,6 +52,23 @@ dummy_r6 <- function() R6::R6Class
 #' can poll the output of several processes, and returns as soon as any
 #' of them has generated output (or exited).
 #'
+#' **Always call `$poll_io()` (or [poll()]) before reading from the
+#' stdout or stderr pipes.** The OS pipe buffer is finite (typically 64KB
+#' on Linux/macOS, ~76KB on Windows). If the child process fills the pipe
+#' buffer before the parent reads from it, the child blocks waiting for
+#' the buffer to drain, while the parent may be waiting for the child —
+#' resulting in a deadlock. Polling drains the buffer and prevents this.
+#' Even a zero-timeout poll (`$poll_io(0)`) is sufficient when you know
+#' output is available; use a positive timeout (or `-1` to wait
+#' indefinitely) when you need to wait for output to arrive.
+#'
+#' Note also that `$read_output()` and `$read_error()` may return _less_
+#' data than requested: a single call is not guaranteed to return all
+#' buffered output. Call them in a loop (polling before each read) until
+#' `$is_incomplete_output()` / `$is_incomplete_error()` returns `FALSE`
+#' to collect everything. The `$read_all_output()` and
+#' `$read_all_error()` helpers already do this for you.
+#'
 #' @section Cleaning up background processes:
 #' processx kills processes that are not referenced any more (if `cleanup`
 #' is set to `TRUE`), or the whole subprocess tree (if `cleanup_tree` is
@@ -390,13 +407,21 @@ process <- R6::R6Class(
     #' will work only if `stdout="|"` was used. Otherwise, it will throw an
     #' error. When the process was started with `encoding = "binary"`, returns
     #' a raw vector instead of a character string.
+    #'
+    #' A single call may return less data than requested (or an empty string)
+    #' even when more output will eventually arrive: the OS pipe buffer is
+    #' finite, and `$read_output()` only returns what is already buffered.
+    #' Always call `$poll_io()` (or [poll()]) before reading to avoid
+    #' deadlocking when the child fills the pipe buffer (see the _Polling_
+    #' section for details). To read _all_ output call `$read_all_output()`.
 
     read_output = function(n = -1) process_read_output(self, private, n),
 
     #' @description
     #' `$read_error()` is similar to `$read_output()`, but reads from the
     #' standard error stream. Returns a raw vector when
-    #' `encoding = "binary"` was used.
+    #' `encoding = "binary"` was used. The same polling requirement applies
+    #' as for `$read_output()` (see the _Polling_ section).
 
     read_error = function(n = -1) process_read_error(self, private, n),
 
@@ -425,6 +450,14 @@ process <- R6::R6Class(
     #' then it returns an error. It uses a non-blocking text connection.
     #' This will work only if `stdout="|"` was used. Otherwise, it will
     #' throw an error.
+    #'
+    #' Because `$read_output_lines()` only returns complete lines already in
+    #' the buffer, it may return zero lines even when the process has produced
+    #' output — for example when a line is longer than the pipe buffer (~64KB
+    #' on Linux/macOS, ~76KB on Windows) or when the line is not yet
+    #' terminated. Always call `$poll_io()` before reading to avoid
+    #' deadlocking (see the _Polling_ section), and use `$read_output()`
+    #' when lines may be very long.
 
     read_output_lines = function(n = -1) {
       process_read_output_lines(self, private, n)
@@ -432,7 +465,8 @@ process <- R6::R6Class(
 
     #' @description
     #' `$read_error_lines()` is similar to `$read_output_lines`, but
-    #' it reads from the standard error stream.
+    #' it reads from the standard error stream. The same polling requirement
+    #' applies (see the _Polling_ section).
 
     read_error_lines = function(n = -1) {
       process_read_error_lines(self, private, n)

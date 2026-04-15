@@ -42,6 +42,23 @@ in either of them, or they are closed (e.g. because the process exits)
 In addition to polling a single process, the \code{\link[=poll]{poll()}} function
 can poll the output of several processes, and returns as soon as any
 of them has generated output (or exited).
+
+\strong{Always call \verb{$poll_io()} (or \code{\link[=poll]{poll()}}) before reading from the
+stdout or stderr pipes.} The OS pipe buffer is finite (typically 64KB
+on Linux/macOS, ~76KB on Windows). If the child process fills the pipe
+buffer before the parent reads from it, the child blocks waiting for
+the buffer to drain, while the parent may be waiting for the child —
+resulting in a deadlock. Polling drains the buffer and prevents this.
+Even a zero-timeout poll (\verb{$poll_io(0)}) is sufficient when you know
+output is available; use a positive timeout (or \code{-1} to wait
+indefinitely) when you need to wait for output to arrive.
+
+Note also that \verb{$read_output()} and \verb{$read_error()} may return \emph{less}
+data than requested: a single call is not guaranteed to return all
+buffered output. Call them in a loop (polling before each read) until
+\verb{$is_incomplete_output()} / \verb{$is_incomplete_error()} returns \code{FALSE}
+to collect everything. The \verb{$read_all_output()} and
+\verb{$read_all_error()} helpers already do this for you.
 }
 
 \section{Cleaning up background processes}{
@@ -569,6 +586,13 @@ then it returns an error. It uses a non-blocking text connection. This
 will work only if \code{stdout="|"} was used. Otherwise, it will throw an
 error. When the process was started with \code{encoding = "binary"}, returns
 a raw vector instead of a character string.
+
+A single call may return less data than requested (or an empty string)
+even when more output will eventually arrive: the OS pipe buffer is
+finite, and \verb{$read_output()} only returns what is already buffered.
+Always call \verb{$poll_io()} (or \code{\link[=poll]{poll()}}) before reading to avoid
+deadlocking when the child fills the pipe buffer (see the \emph{Polling}
+section for details). To read \emph{all} output call \verb{$read_all_output()}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{process$read_output(n = -1)}
@@ -589,7 +613,8 @@ a raw vector instead of a character string.
 \subsection{\code{process$read_error()}}{
   \verb{$read_error()} is similar to \verb{$read_output()}, but reads from the
 standard error stream. Returns a raw vector when
-\code{encoding = "binary"} was used.
+\code{encoding = "binary"} was used. The same polling requirement applies
+as for \verb{$read_output()} (see the \emph{Polling} section).
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{process$read_error(n = -1)}
@@ -656,6 +681,14 @@ of the process. If the standard output connection was not requested,
 then it returns an error. It uses a non-blocking text connection.
 This will work only if \code{stdout="|"} was used. Otherwise, it will
 throw an error.
+
+Because \verb{$read_output_lines()} only returns complete lines already in
+the buffer, it may return zero lines even when the process has produced
+output — for example when a line is longer than the pipe buffer (~64KB
+on Linux/macOS, ~76KB on Windows) or when the line is not yet
+terminated. Always call \verb{$poll_io()} before reading to avoid
+deadlocking (see the \emph{Polling} section), and use \verb{$read_output()}
+when lines may be very long.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{process$read_output_lines(n = -1)}
@@ -675,7 +708,8 @@ throw an error.
 \if{latex}{\out{\hypertarget{method-process-read_error_lines}{}}}
 \subsection{\code{process$read_error_lines()}}{
   \verb{$read_error_lines()} is similar to \verb{$read_output_lines}, but
-it reads from the standard error stream.
+it reads from the standard error stream. The same polling requirement
+applies (see the \emph{Polling} section).
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{process$read_error_lines(n = -1)}
