@@ -19,18 +19,13 @@ typedef VOID* HPCON;
 #endif
 
 /* Fallback type and constant definitions for older MinGW headers (rtools40).
-   These are Vista+ features so they may not be declared when _WIN32_WINNT
-   is set below 0x0600. */
-#ifndef LPPROC_THREAD_ATTRIBUTE_LIST
-typedef VOID *PPROC_THREAD_ATTRIBUTE_LIST, *LPPROC_THREAD_ATTRIBUTE_LIST;
-#endif
-
-#ifndef EXTENDED_STARTUPINFO_PRESENT
+   These are Vista+ (0x0600) features; the 32-bit rtools40 toolchain sets
+   _WIN32_WINNT below that threshold so the declarations are absent.
+   We cannot use #ifndef because typedefs do not create preprocessor macros. */
+#if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0600)
+typedef struct _PROC_THREAD_ATTRIBUTE_LIST *PPROC_THREAD_ATTRIBUTE_LIST,
+                                           *LPPROC_THREAD_ATTRIBUTE_LIST;
 #define EXTENDED_STARTUPINFO_PRESENT 0x00080000
-#endif
-
-#ifndef STARTUPINFOEXW_DEFINED
-#define STARTUPINFOEXW_DEFINED
 typedef struct _STARTUPINFOEXW {
     STARTUPINFOW StartupInfo;
     LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList;
