@@ -8,11 +8,14 @@ test_that("pty works on windows", {
   expect_true(p$is_alive())
 
   con <- p$get_output_connection()
-  pr <- poll(list(con), 2000L)[[1]]
-  expect_equal(pr, "ready")
-
-  out <- p$read_output()
-  expect_true(nchar(out) > 0)
+  out <- ""
+  repeat {
+    pr <- poll(list(con), 2000L)[[1]]
+    if (!identical(pr, "ready")) break
+    out <- paste0(out, p$read_output())
+    if (grepl("hello", out, fixed = TRUE)) break
+  }
+  expect_match(out, "hello")
 })
 
 test_that("pty write_input works on windows", {
@@ -31,9 +34,14 @@ test_that("pty write_input works on windows", {
   p$write_input("hello\r\n")
   # Poll the stdout connection directly (not the full process) to avoid the
   # poll_pipe-forces-timeout-0 effect when the process has already exited.
-  pr <- poll(list(con), 2000L)[[1]]
-  expect_equal(pr, "ready")
-  out <- p$read_output()
+  # Loop to skip VT init sequences that ConPTY writes before any child output.
+  out <- ""
+  repeat {
+    pr <- poll(list(con), 2000L)[[1]]
+    if (!identical(pr, "ready")) break
+    out <- paste0(out, p$read_output())
+    if (grepl("hello", out, fixed = TRUE)) break
+  }
   expect_match(out, "hello")
 })
 
