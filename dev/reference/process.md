@@ -37,6 +37,24 @@ In addition to polling a single process, the
 poll the output of several processes, and returns as soon as any of them
 has generated output (or exited).
 
+**Always call `$poll_io()` (or
+[`poll()`](http://processx.r-lib.org/dev/reference/poll.md)) before
+reading from the stdout or stderr pipes.** The OS pipe buffer is finite
+(typically 64KB on Linux/macOS, ~76KB on Windows). If the child process
+fills the pipe buffer before the parent reads from it, the child blocks
+waiting for the buffer to drain, while the parent may be waiting for the
+child — resulting in a deadlock. Polling drains the buffer and prevents
+this. Even a zero-timeout poll (`$poll_io(0)`) is sufficient when you
+know output is available; use a positive timeout (or `-1` to wait
+indefinitely) when you need to wait for output to arrive.
+
+Note also that `$read_output()` and `$read_error()` may return *less*
+data than requested: a single call is not guaranteed to return all
+buffered output. Call them in a loop (polling before each read) until
+`$is_incomplete_output()` / `$is_incomplete_error()` returns `FALSE` to
+collect everything. The `$read_all_output()` and `$read_all_error()`
+helpers already do this for you.
+
 ## Cleaning up background processes
 
 processx kills processes that are not referenced any more (if `cleanup`
@@ -631,6 +649,15 @@ work only if `stdout="|"` was used. Otherwise, it will throw an error.
 When the process was started with `encoding = "binary"`, returns a raw
 vector instead of a character string.
 
+A single call may return less data than requested (or an empty string)
+even when more output will eventually arrive: the OS pipe buffer is
+finite, and `$read_output()` only returns what is already buffered.
+Always call `$poll_io()` (or
+[`poll()`](http://processx.r-lib.org/dev/reference/poll.md)) before
+reading to avoid deadlocking when the child fills the pipe buffer (see
+the *Polling* section for details). To read *all* output call
+`$read_all_output()`.
+
 #### Usage
 
     process$read_output(n = -1)
@@ -647,7 +674,8 @@ vector instead of a character string.
 
 `$read_error()` is similar to `$read_output()`, but reads from the
 standard error stream. Returns a raw vector when `encoding = "binary"`
-was used.
+was used. The same polling requirement applies as for `$read_output()`
+(see the *Polling* section).
 
 #### Usage
 
@@ -705,6 +733,14 @@ the process. If the standard output connection was not requested, then
 it returns an error. It uses a non-blocking text connection. This will
 work only if `stdout="|"` was used. Otherwise, it will throw an error.
 
+Because `$read_output_lines()` only returns complete lines already in
+the buffer, it may return zero lines even when the process has produced
+output — for example when a line is longer than the pipe buffer (~64KB
+on Linux/macOS, ~76KB on Windows) or when the line is not yet
+terminated. Always call `$poll_io()` before reading to avoid deadlocking
+(see the *Polling* section), and use `$read_output()` when lines may be
+very long.
+
 #### Usage
 
     process$read_output_lines(n = -1)
@@ -720,7 +756,8 @@ work only if `stdout="|"` was used. Otherwise, it will throw an error.
 ### `process$read_error_lines()`
 
 `$read_error_lines()` is similar to `$read_output_lines`, but it reads
-from the standard error stream.
+from the standard error stream. The same polling requirement applies
+(see the *Polling* section).
 
 #### Usage
 
@@ -1162,7 +1199,7 @@ p <- process$new("sleep", "2")
 p$is_alive()
 #> [1] TRUE
 p
-#> PROCESS 'sleep', running, pid 7040.
+#> PROCESS 'sleep', running, pid 7097.
 p$kill()
 #> [1] TRUE
 p$is_alive()

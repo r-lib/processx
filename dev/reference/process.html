@@ -83,6 +83,21 @@ in either of them, or they are closed (e.g. because the process exits)
 <p>In addition to polling a single process, the <code><a href="poll.html">poll()</a></code> function
 can poll the output of several processes, and returns as soon as any
 of them has generated output (or exited).</p>
+<p><strong>Always call <code>$poll_io()</code> (or <code><a href="poll.html">poll()</a></code>) before reading from the
+stdout or stderr pipes.</strong> The OS pipe buffer is finite (typically 64KB
+on Linux/macOS, ~76KB on Windows). If the child process fills the pipe
+buffer before the parent reads from it, the child blocks waiting for
+the buffer to drain, while the parent may be waiting for the child —
+resulting in a deadlock. Polling drains the buffer and prevents this.
+Even a zero-timeout poll (<code>$poll_io(0)</code>) is sufficient when you know
+output is available; use a positive timeout (or <code>-1</code> to wait
+indefinitely) when you need to wait for output to arrive.</p>
+<p>Note also that <code>$read_output()</code> and <code>$read_error()</code> may return <em>less</em>
+data than requested: a single call is not guaranteed to return all
+buffered output. Call them in a loop (polling before each read) until
+<code>$is_incomplete_output()</code> / <code>$is_incomplete_error()</code> returns <code>FALSE</code>
+to collect everything. The <code>$read_all_output()</code> and
+<code>$read_all_error()</code> helpers already do this for you.</p>
     </div>
     <div class="section level2">
     <h2 id="cleaning-up-background-processes">Cleaning up background processes<a class="anchor" aria-label="anchor" href="#cleaning-up-background-processes"></a></h2>
@@ -583,7 +598,13 @@ process. If the standard output connection was not requested, then
 then it returns an error. It uses a non-blocking text connection. This
 will work only if <code>stdout="|"</code> was used. Otherwise, it will throw an
 error. When the process was started with <code>encoding = "binary"</code>, returns
-a raw vector instead of a character string.</p><div class="section">
+a raw vector instead of a character string.</p>
+<p>A single call may return less data than requested (or an empty string)
+even when more output will eventually arrive: the OS pipe buffer is
+finite, and <code>$read_output()</code> only returns what is already buffered.
+Always call <code>$poll_io()</code> (or <code><a href="poll.html">poll()</a></code>) before reading to avoid
+deadlocking when the child fills the pipe buffer (see the <em>Polling</em>
+section for details). To read <em>all</em> output call <code>$read_all_output()</code>.</p><div class="section">
 <h4 id="usage-14">Usage<a class="anchor" aria-label="anchor" href="#usage-14"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_output</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
@@ -601,7 +622,8 @@ a raw vector instead of a character string.</p><div class="section">
 <h3 id="process-read-error-"><code>process$read_error()</code><a class="anchor" aria-label="anchor" href="#process-read-error-"></a></h3>
 <p><code>$read_error()</code> is similar to <code>$read_output()</code>, but reads from the
 standard error stream. Returns a raw vector when
-<code>encoding = "binary"</code> was used.</p><div class="section">
+<code>encoding = "binary"</code> was used. The same polling requirement applies
+as for <code>$read_output()</code> (see the <em>Polling</em> section).</p><div class="section">
 <h4 id="usage-15">Usage<a class="anchor" aria-label="anchor" href="#usage-15"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_error</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
@@ -658,7 +680,14 @@ from the standard error stream.</p><div class="section">
 of the process. If the standard output connection was not requested,
 then it returns an error. It uses a non-blocking text connection.
 This will work only if <code>stdout="|"</code> was used. Otherwise, it will
-throw an error.</p><div class="section">
+throw an error.</p>
+<p>Because <code>$read_output_lines()</code> only returns complete lines already in
+the buffer, it may return zero lines even when the process has produced
+output — for example when a line is longer than the pipe buffer (~64KB
+on Linux/macOS, ~76KB on Windows) or when the line is not yet
+terminated. Always call <code>$poll_io()</code> before reading to avoid
+deadlocking (see the <em>Polling</em> section), and use <code>$read_output()</code>
+when lines may be very long.</p><div class="section">
 <h4 id="usage-18">Usage<a class="anchor" aria-label="anchor" href="#usage-18"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_output_lines</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
@@ -675,7 +704,8 @@ throw an error.</p><div class="section">
 <p></p><hr><a id="method-process-read_error_lines"></a><div class="section">
 <h3 id="process-read-error-lines-"><code>process$read_error_lines()</code><a class="anchor" aria-label="anchor" href="#process-read-error-lines-"></a></h3>
 <p><code>$read_error_lines()</code> is similar to <code>$read_output_lines</code>, but
-it reads from the standard error stream.</p><div class="section">
+it reads from the standard error stream. The same polling requirement
+applies (see the <em>Polling</em> section).</p><div class="section">
 <h4 id="usage-19">Usage<a class="anchor" aria-label="anchor" href="#usage-19"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_error_lines</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
@@ -1070,7 +1100,7 @@ the process.</p><div class="section">
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="va">p</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> PROCESS 'sleep', running, pid 7040.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> PROCESS 'sleep', running, pid 7097.</span>
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">kill</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></span></span>
