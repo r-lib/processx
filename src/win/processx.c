@@ -18,12 +18,44 @@ typedef VOID* HPCON;
 #define PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE 0x00020016
 #endif
 
+/* Fallback type and constant definitions for older MinGW headers (rtools40).
+   These are Vista+ features so they may not be declared when _WIN32_WINNT
+   is set below 0x0600. */
+#ifndef LPPROC_THREAD_ATTRIBUTE_LIST
+typedef VOID *PPROC_THREAD_ATTRIBUTE_LIST, *LPPROC_THREAD_ATTRIBUTE_LIST;
+#endif
+
+#ifndef EXTENDED_STARTUPINFO_PRESENT
+#define EXTENDED_STARTUPINFO_PRESENT 0x00080000
+#endif
+
+#ifndef STARTUPINFOEXW_DEFINED
+#define STARTUPINFOEXW_DEFINED
+typedef struct _STARTUPINFOEXW {
+    STARTUPINFOW StartupInfo;
+    LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList;
+} STARTUPINFOEXW, *LPSTARTUPINFOEXW;
+#endif
+
 typedef HRESULT (WINAPI *pfn_CreatePseudoConsole)(
     COORD, HANDLE, HANDLE, DWORD, HPCON *);
 typedef void   (WINAPI *pfn_ClosePseudoConsole)(HPCON);
+typedef BOOL   (WINAPI *pfn_InitializeProcThreadAttributeList)(
+    LPPROC_THREAD_ATTRIBUTE_LIST, DWORD, DWORD, PSIZE_T);
+typedef BOOL   (WINAPI *pfn_UpdateProcThreadAttribute)(
+    LPPROC_THREAD_ATTRIBUTE_LIST, DWORD, DWORD_PTR, PVOID, SIZE_T,
+    PVOID, PSIZE_T);
+typedef VOID   (WINAPI *pfn_DeleteProcThreadAttributeList)(
+    LPPROC_THREAD_ATTRIBUTE_LIST);
 
 static pfn_CreatePseudoConsole processx__CreatePseudoConsole = NULL;
 static pfn_ClosePseudoConsole  processx__ClosePseudoConsole  = NULL;
+static pfn_InitializeProcThreadAttributeList
+    processx__InitializeProcThreadAttributeList = NULL;
+static pfn_UpdateProcThreadAttribute
+    processx__UpdateProcThreadAttribute = NULL;
+static pfn_DeleteProcThreadAttributeList
+    processx__DeleteProcThreadAttributeList = NULL;
 /* 0 = unchecked, 1 = available, -1 = not available */
 static int processx__pty_api_state = 0;
 
@@ -36,10 +68,22 @@ static int processx__load_pty_api(void) {
         (pfn_CreatePseudoConsole) GetProcAddress(hK32, "CreatePseudoConsole");
     processx__ClosePseudoConsole =
         (pfn_ClosePseudoConsole)  GetProcAddress(hK32, "ClosePseudoConsole");
+    processx__InitializeProcThreadAttributeList =
+        (pfn_InitializeProcThreadAttributeList)
+            GetProcAddress(hK32, "InitializeProcThreadAttributeList");
+    processx__UpdateProcThreadAttribute =
+        (pfn_UpdateProcThreadAttribute)
+            GetProcAddress(hK32, "UpdateProcThreadAttribute");
+    processx__DeleteProcThreadAttributeList =
+        (pfn_DeleteProcThreadAttributeList)
+            GetProcAddress(hK32, "DeleteProcThreadAttributeList");
   }
 
   processx__pty_api_state =
-      (processx__CreatePseudoConsole && processx__ClosePseudoConsole) ? 1 : -1;
+      (processx__CreatePseudoConsole && processx__ClosePseudoConsole &&
+       processx__InitializeProcThreadAttributeList &&
+       processx__UpdateProcThreadAttribute &&
+       processx__DeleteProcThreadAttributeList) ? 1 : -1;
   return processx__pty_api_state == 1;
 }
 
@@ -1084,7 +1128,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 
     /* Build the process-thread attribute list containing the ConPTY handle */
     SIZE_T attrlist_size = 0;
-    InitializeProcThreadAttributeList(NULL, 1, 0, &attrlist_size);
+    processx__InitializeProcThreadAttributeList(NULL, 1, 0, &attrlist_size);
     LPPROC_THREAD_ATTRIBUTE_LIST lpAttrList =
         (LPPROC_THREAD_ATTRIBUTE_LIST) malloc(attrlist_size);
     if (!lpAttrList) {
@@ -1095,7 +1139,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
       free(handle);
       R_THROW_ERROR("Out of memory when creating subprocess '%s'", ccommand);
     }
-    if (!InitializeProcThreadAttributeList(lpAttrList, 1, 0, &attrlist_size)) {
+    if (!processx__InitializeProcThreadAttributeList(
+            lpAttrList, 1, 0, &attrlist_size)) {
       free(lpAttrList);
       processx__ClosePseudoConsole(hPC);
       CloseHandle(ptyin_write);
@@ -1105,10 +1150,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
       R_THROW_SYSTEM_ERROR(
           "InitializeProcThreadAttributeList for '%s'", ccommand);
     }
-    if (!UpdateProcThreadAttribute(lpAttrList, 0,
-                                   PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
-                                   hPC, sizeof(HPCON), NULL, NULL)) {
-      DeleteProcThreadAttributeList(lpAttrList);
+    if (!processx__UpdateProcThreadAttribute(
+            lpAttrList, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
+            hPC, sizeof(HPCON), NULL, NULL)) {
+      processx__DeleteProcThreadAttributeList(lpAttrList);
       free(lpAttrList);
       processx__ClosePseudoConsole(hPC);
       CloseHandle(ptyin_write);
@@ -1147,7 +1192,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
       /* lpStartupInfo =        */ (LPSTARTUPINFOW) &siEx,
       /* lpProcessInformation = */ &info);
 
-    DeleteProcThreadAttributeList(lpAttrList);
+    processx__DeleteProcThreadAttributeList(lpAttrList);
     free(lpAttrList);
 
     if (!err) {
