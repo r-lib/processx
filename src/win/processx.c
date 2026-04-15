@@ -1108,35 +1108,37 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     /* Create the pseudo-console.
        On Windows 10, CreatePseudoConsole internally spawns conhost.exe which
        needs access to the console device (\Device\ConDrv).  When the calling
-       process has no console at all (e.g. Rscript started by R CMD check or
-       a CI runner), that device is unreachable and the call returns
-       E_UNEXPECTED.  Fix: allocate a hidden console so the device is
-       accessible.
-       We do NOT call FreeConsole afterwards.  Experimentation shows that
-       calling FreeConsole at any point — even after ResumeThread — causes
-       the child process's I/O to silently detach from the ConPTY: the
-       conhost.exe initialisation sequences (written before the child starts)
-       still arrive, but the child's own output is lost.  The most likely
-       explanation is that the ConPTY conhost.exe is internally tied to the
-       console session created by AllocConsole; destroying that session via
-       FreeConsole severs the child→ConPTY connection.
-       Instead we save and restore R's original standard handles around
-       AllocConsole so that R's own I/O (e.g. callr's capture pipes)
-       continues to work correctly.  The hidden console persists for the
-       lifetime of the R session, which is harmless.
-       On Windows 11, CreatePseudoConsole is in-process and does not need
-       a pre-existing console at all, so AllocConsole is a no-op there
-       (it returns FALSE when a console already exists). */
+       process has no console at all (e.g. Rscript started by R CMD check,
+       callr, or processx::run with redirected stdout), that device is
+       unreachable and the call returns E_UNEXPECTED.  Fix: allocate a hidden
+       console so the device is accessible, then FREE it again before calling
+       CreateProcessW.
+       The FreeConsole call must happen AFTER CreatePseudoConsole (which has
+       already taken its own internal copies of the pipe handles) but BEFORE
+       CreateProcessW.  If the console is still alive when the child process is
+       created, the child attaches to it for its stdout rather than exclusively
+       using the ConPTY — all child output is then lost from ptyout_read (only
+       the conhost init sequences arrive, written before the child starts).
+       FreeConsole is safe at this point: on Windows 10 CreatePseudoConsole
+       already spawned conhost.exe as a separate process with its own console
+       reference; on Windows 11 the ConPTY is entirely in-process (HPCON).
+       Either way, the ConPTY does not depend on the parent's console
+       attachment after CreatePseudoConsole returns.
+       On Windows 11 (and interactive R sessions), AllocConsole returns FALSE
+       because the process already has a console, so allocated_console stays
+       FALSE and FreeConsole is not called. */
     COORD pty_size;
     pty_size.X = (SHORT) pty_cols;
     pty_size.Y = (SHORT) pty_rows;
     HPCON hPC;
+    BOOL allocated_console = FALSE;
     {
       /* Save R's current standard handles (may be callr/Rscript pipes). */
       HANDLE saved_in  = GetStdHandle(STD_INPUT_HANDLE);
       HANDLE saved_out = GetStdHandle(STD_OUTPUT_HANDLE);
       HANDLE saved_err = GetStdHandle(STD_ERROR_HANDLE);
       if (AllocConsole()) {
+        allocated_console = TRUE;
         /* AllocConsole replaced the standard handles with CONIN$/CONOUT$;
            restore the originals so R's own I/O is unaffected. */
         HWND ach = GetConsoleWindow();
@@ -1151,6 +1153,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     /* ConPTY made its own internal copies; close the pipe ends we passed in */
     CloseHandle(ptyin_read);
     CloseHandle(ptyout_child);
+    /* Free the temporary console before spawning the child. */
+    if (allocated_console) {
+        FreeConsole();
+    }
     if (FAILED(hr)) {
       CloseHandle(ptyin_write);
       CloseHandle(ptyout_read);
