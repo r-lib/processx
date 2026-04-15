@@ -1105,13 +1105,24 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
       R_THROW_SYSTEM_ERROR_CODE(err, "create PTY stdout pipe for '%s'", ccommand);
     }
 
-    /* Create the pseudo-console */
+    /* Create the pseudo-console.
+       On Windows 10, CreatePseudoConsole internally spawns conhost.exe and
+       needs access to the console device (\Device\ConDrv).  When the calling
+       process has no console at all (e.g. Rscript started without one by
+       R CMD check or a CI runner), that device is unreachable and the call
+       returns E_UNEXPECTED.  The fix: temporarily allocate a hidden console
+       so the device is accessible, then free it once ConPTY is set up.
+       On Windows 11 the implementation is in-process and does not need this,
+       but the extra AllocConsole/FreeConsole is harmless there too. */
     COORD pty_size;
     pty_size.X = (SHORT) pty_cols;
     pty_size.Y = (SHORT) pty_rows;
     HPCON hPC;
+    BOOL alloc_console = (GetConsoleWindow() == NULL);
+    if (alloc_console) AllocConsole();
     HRESULT hr = processx__CreatePseudoConsole(
         pty_size, ptyin_read, ptyout_child, 0, &hPC);
+    if (alloc_console) FreeConsole();
     /* ConPTY made its own internal copies; close the pipe ends we passed in */
     CloseHandle(ptyin_read);
     CloseHandle(ptyout_child);
