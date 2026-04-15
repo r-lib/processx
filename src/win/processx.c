@@ -22,10 +22,13 @@ typedef VOID* HPCON;
    These are Vista+ (0x0600) features; the 32-bit rtools40 toolchain sets
    _WIN32_WINNT below that threshold so the declarations are absent.
    We cannot use #ifndef because typedefs do not create preprocessor macros. */
+#ifndef EXTENDED_STARTUPINFO_PRESENT
+#define EXTENDED_STARTUPINFO_PRESENT 0x00080000
+#endif
+
 #if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0600)
 typedef struct _PROC_THREAD_ATTRIBUTE_LIST *PPROC_THREAD_ATTRIBUTE_LIST,
                                            *LPPROC_THREAD_ATTRIBUTE_LIST;
-#define EXTENDED_STARTUPINFO_PRESENT 0x00080000
 typedef struct _STARTUPINFOEXW {
     STARTUPINFOW StartupInfo;
     LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList;
