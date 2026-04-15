@@ -1110,26 +1110,41 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
        needs access to the console device (\Device\ConDrv).  When the calling
        process has no console at all (e.g. Rscript started by R CMD check or
        a CI runner), that device is unreachable and the call returns
-       E_UNEXPECTED.  Fix: temporarily allocate a hidden console so the
-       device is accessible.
-       Critically, keep the console alive through CreateProcessW and
-       ResumeThread: the child's ConPTY stdin/stdout/stderr attachment is
-       initialised during process startup, and it needs a valid console
-       context in the parent at that point.  Freeing the console before the
-       child starts causes the child's I/O not to be wired up, so only the
-       init escape sequences written by conhost.exe arrive and the child's
-       own output is lost.
+       E_UNEXPECTED.  Fix: allocate a hidden console so the device is
+       accessible.
+       We do NOT call FreeConsole afterwards.  Experimentation shows that
+       calling FreeConsole at any point — even after ResumeThread — causes
+       the child process's I/O to silently detach from the ConPTY: the
+       conhost.exe initialisation sequences (written before the child starts)
+       still arrive, but the child's own output is lost.  The most likely
+       explanation is that the ConPTY conhost.exe is internally tied to the
+       console session created by AllocConsole; destroying that session via
+       FreeConsole severs the child→ConPTY connection.
+       Instead we save and restore R's original standard handles around
+       AllocConsole so that R's own I/O (e.g. callr's capture pipes)
+       continues to work correctly.  The hidden console persists for the
+       lifetime of the R session, which is harmless.
        On Windows 11, CreatePseudoConsole is in-process and does not need
-       this, but the AllocConsole/FreeConsole pair is harmless there too. */
+       a pre-existing console at all, so AllocConsole is a no-op there
+       (it returns FALSE when a console already exists). */
     COORD pty_size;
     pty_size.X = (SHORT) pty_cols;
     pty_size.Y = (SHORT) pty_rows;
     HPCON hPC;
-    BOOL alloc_console = (GetConsoleWindow() == NULL);
-    if (alloc_console) {
-      AllocConsole();
-      HWND ach = GetConsoleWindow();
-      if (ach) ShowWindow(ach, SW_HIDE);
+    {
+      /* Save R's current standard handles (may be callr/Rscript pipes). */
+      HANDLE saved_in  = GetStdHandle(STD_INPUT_HANDLE);
+      HANDLE saved_out = GetStdHandle(STD_OUTPUT_HANDLE);
+      HANDLE saved_err = GetStdHandle(STD_ERROR_HANDLE);
+      if (AllocConsole()) {
+        /* AllocConsole replaced the standard handles with CONIN$/CONOUT$;
+           restore the originals so R's own I/O is unaffected. */
+        HWND ach = GetConsoleWindow();
+        if (ach) ShowWindow(ach, SW_HIDE);
+        SetStdHandle(STD_INPUT_HANDLE,  saved_in);
+        SetStdHandle(STD_OUTPUT_HANDLE, saved_out);
+        SetStdHandle(STD_ERROR_HANDLE,  saved_err);
+      }
     }
     HRESULT hr = processx__CreatePseudoConsole(
         pty_size, ptyin_read, ptyout_child, 0, &hPC);
@@ -1137,7 +1152,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     CloseHandle(ptyin_read);
     CloseHandle(ptyout_child);
     if (FAILED(hr)) {
-      if (alloc_console) FreeConsole();
       CloseHandle(ptyin_write);
       CloseHandle(ptyout_read);
       R_ClearExternalPtr(result);
@@ -1152,7 +1166,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     LPPROC_THREAD_ATTRIBUTE_LIST lpAttrList =
         (LPPROC_THREAD_ATTRIBUTE_LIST) malloc(attrlist_size);
     if (!lpAttrList) {
-      if (alloc_console) FreeConsole();
       processx__ClosePseudoConsole(hPC);
       CloseHandle(ptyin_write);
       CloseHandle(ptyout_read);
@@ -1162,7 +1175,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     }
     if (!processx__InitializeProcThreadAttributeList(
             lpAttrList, 1, 0, &attrlist_size)) {
-      if (alloc_console) FreeConsole();
       free(lpAttrList);
       processx__ClosePseudoConsole(hPC);
       CloseHandle(ptyin_write);
@@ -1175,7 +1187,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     if (!processx__UpdateProcThreadAttribute(
             lpAttrList, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
             hPC, sizeof(HPCON), NULL, NULL)) {
-      if (alloc_console) FreeConsole();
       processx__DeleteProcThreadAttributeList(lpAttrList);
       free(lpAttrList);
       processx__ClosePseudoConsole(hPC);
@@ -1201,8 +1212,8 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
        prevents the child from attaching to the pseudo-console.
        bInheritHandles must be FALSE: the child's I/O is entirely through
        ConPTY, so there are no handles to pass from the parent.  Using TRUE
-       in a background R process (e.g. from callr) would inherit R's own
-       stdout pipe into the child, interfering with the ConPTY wiring. */
+       in a background R process would inherit R's own stdout pipe into the
+       child, interfering with the ConPTY wiring. */
     DWORD pty_flags = CREATE_UNICODE_ENVIRONMENT | CREATE_SUSPENDED
                       | EXTENDED_STARTUPINFO_PRESENT;
     if (!ccleanup) pty_flags |= CREATE_NEW_PROCESS_GROUP;
@@ -1223,7 +1234,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     free(lpAttrList);
 
     if (!err) {
-      if (alloc_console) FreeConsole();
       processx__ClosePseudoConsole(hPC);
       CloseHandle(ptyin_write);
       CloseHandle(ptyout_read);
@@ -1244,7 +1254,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
                                     info.hProcess)) {
         DWORD derr = GetLastError();
         if (derr != ERROR_ACCESS_DENIED) {
-          if (alloc_console) FreeConsole();
           R_THROW_SYSTEM_ERROR_CODE(derr, "Assign to job object '%s'",
                                     ccommand);
         }
@@ -1252,10 +1261,6 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     }
 
     dwerr = ResumeThread(info.hThread);
-    /* Free the temporary console only after the child's main thread is
-       resumed: the child needs a valid console context in the parent
-       during its ConPTY initialisation. */
-    if (alloc_console) FreeConsole();
     if (dwerr == (DWORD) -1) {
       R_THROW_SYSTEM_ERROR("resume thread for '%s'", ccommand);
     }
