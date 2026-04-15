@@ -603,7 +603,7 @@ run_manage <- function(
   if (pty && .Platform$OS.type == "windows" && has_stdout && !timeout_happened) {
     con <- proc$get_output_connection()
     repeat {
-      p <- poll(list(con), 100L)[[1]]
+      p <- poll(list(con), 1000L)[[1]]
       if (!identical(p, "ready")) break
       do_output()
     }

@@ -123,7 +123,7 @@ process_read_all_output <- function(self, private) {
     if (private$pty && .Platform$OS.type == "windows" && !self$is_alive()) {
       con <- self$get_output_connection()
       repeat {
-        p <- poll(list(con), 100L)[[1]]
+        p <- poll(list(con), 1000L)[[1]]
         if (!identical(p, "ready")) break
         result <- paste0(result, self$read_output())
       }
