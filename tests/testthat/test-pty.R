@@ -21,17 +21,23 @@ test_that("pty write_input works on windows", {
   on.exit(p$kill(), add = TRUE)
   expect_true(p$is_alive())
 
-  # flush the initial prompt; cmd.exe banner arrives in multiple VTE chunks
-  # so loop until 500ms of silence (the prompt is waiting for input)
+  # flush the initial prompt; cmd.exe banner arrives in multiple VTE chunks.
+  # Poll the stdout connection directly (not the full process) to avoid the
+  # poll_pipe-forces-timeout-0 effect: once poll_pipe has data (process event),
+  # the IOCP hasdata flag forces timeleft=0 in every subsequent poll_io() call,
+  # so poll_io() would return immediately with output="silent" regardless of
+  # the requested timeout, and the banner would never be fully drained.
+  con <- p$get_output_connection()
   repeat {
-    pr <- p$poll_io(500)
-    if (pr[["output"]] != "ready") break
+    pr <- poll(list(con), 1000L)[[1]]
+    if (pr != "ready") break
     p$read_output()
   }
 
   p$write_input("echo hello\r\n")
-  pr <- p$poll_io(2000)
-  expect_equal(pr[["output"]], "ready")
+  # Poll stdout directly here too, for the same reason
+  pr <- poll(list(con), 2000L)[[1]]
+  expect_equal(pr, "ready")
   out <- p$read_output()
   expect_match(out, "hello")
 })
