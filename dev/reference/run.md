@@ -184,13 +184,14 @@ run(
 
 - pty:
 
-  Whether to use a pseudo-terminal (PTY) for the process. This is only
-  supported on Unix. When `TRUE`, stdout and stderr are merged into a
-  single stream (accessible via `$stdout` in the result), and `$stderr`
-  is always `NULL`. The process sees a real terminal, so programs that
-  disable colour or interactive features when not attached to a terminal
-  will behave as if they are. `stdout` and `stderr` must be left at
-  their defaults (`"|"`), and `stderr_to_stdout`, `stderr_callback`, and
+  Whether to use a pseudo-terminal (PTY) for the process. Supported on
+  Unix and on Windows 10 version 1809 or later (via ConPTY). When
+  `TRUE`, stdout and stderr are merged into a single stream (accessible
+  via `$stdout` in the result), and `$stderr` is always `NULL`. The
+  process sees a real terminal, so programs that disable colour or
+  interactive features when not attached to a terminal will behave as if
+  they are. `stdout` and `stderr` must be left at their defaults
+  (`"|"`), and `stderr_to_stdout`, `stderr_callback`, and
   `stderr_line_callback` must not be set.
 
 - pty_options:
@@ -297,7 +298,7 @@ run("ls")
 #> 
 system.time(run("sleep", "10", timeout = 1, error_on_status = FALSE))
 #>    user  system elapsed 
-#>   0.005   0.013   0.686 
+#>   0.006   0.015   0.013 
 system.time(
   run(
     "sh", c("-c", "for i in 1 2 3 4 5; do echo $i; sleep 1; done"),
@@ -305,7 +306,7 @@ system.time(
   )
 )
 #>    user  system elapsed 
-#>   0.005   0.008   1.683 
+#>   0.003   0.010   1.002 
 if (FALSE) {
 # This works on Windows systems, if the ping command is available
 run("ping", c("-n", "1", "127.0.0.1"))
