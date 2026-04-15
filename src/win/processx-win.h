@@ -15,6 +15,7 @@ typedef struct processx_handle_s {
   int cleanup;
   double create_time;
   double end_time;          /* 0.0 until the process exits */
+  void *ptycon;           /* ConPTY handle (HPCON), NULL if not using PTY */
 } processx_handle_t;
 
 int processx__utf8_to_utf16_alloc(const char* s, WCHAR** ws_ptr);
@@ -30,6 +31,10 @@ int processx__create_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_
                           const char *cname);
 int processx__create_input_pipe(void *id, HANDLE* parent_pipe_ptr, HANDLE* child_pipe_ptr,
 				const char *cname);
+
+processx_connection_t *processx__create_connection(
+  HANDLE pipe_handle, const char *membername, SEXP private,
+  const char *encoding, BOOL async);
 
 void processx__handle_destroy(processx_handle_t *handle);
 

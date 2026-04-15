@@ -49,6 +49,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 		   SEXP tree_id);
 SEXP processx_wait(SEXP status, SEXP timeout, SEXP name);
 SEXP processx_is_alive(SEXP status, SEXP name);
+SEXP processx_pty_close(SEXP status, SEXP name);
 SEXP processx_get_exit_status(SEXP status, SEXP name);
 SEXP processx_signal(SEXP status, SEXP signal, SEXP name);
 SEXP processx_interrupt(SEXP status, SEXP name);
