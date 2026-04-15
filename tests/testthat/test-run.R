@@ -264,7 +264,8 @@ test_that("pty=TRUE collects merged output in stdout (windows)", {
   skip_other_platforms("windows")
   skip_on_cran()
 
-  res <- run("cmd.exe", c("/c", "echo", "hello", "pty"), pty = TRUE)
+  px <- get_tool("px")
+  res <- run(px, c("outln", "hello pty"), pty = TRUE)
   expect_match(res$stdout, "hello pty")
   expect_null(res$stderr)
 })
@@ -289,10 +290,11 @@ test_that("pty=TRUE works with stdout_callback (windows)", {
   skip_other_platforms("windows")
   skip_on_cran()
 
+  px <- get_tool("px")
   chunks <- character()
   res <- run(
-    "cmd.exe",
-    c("/c", "echo", "hello"),
+    px,
+    c("outln", "hello"),
     pty = TRUE,
     stdout_callback = function(x, ...) chunks <<- c(chunks, x)
   )
