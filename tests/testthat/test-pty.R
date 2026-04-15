@@ -21,9 +21,13 @@ test_that("pty write_input works on windows", {
   on.exit(p$kill(), add = TRUE)
   expect_true(p$is_alive())
 
-  # flush the initial prompt
-  p$poll_io(2000)
-  p$read_output()
+  # flush the initial prompt; cmd.exe banner arrives in multiple VTE chunks
+  # so loop until 500ms of silence (the prompt is waiting for input)
+  repeat {
+    pr <- p$poll_io(500)
+    if (pr[["output"]] != "ready") break
+    p$read_output()
+  }
 
   p$write_input("echo hello\r\n")
   pr <- p$poll_io(2000)
