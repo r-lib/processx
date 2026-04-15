@@ -1106,58 +1106,72 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     }
 
     /* Create the pseudo-console.
-       On Windows 10, CreatePseudoConsole internally spawns conhost.exe which
-       needs access to the console device (\Device\ConDrv).  When the calling
-       process has no console at all (e.g. Rscript started by R CMD check,
-       callr, or processx::run with redirected stdout), that device is
-       unreachable and the call returns E_UNEXPECTED.  Fix: allocate a hidden
-       console so the device is accessible, then FREE it again before calling
-       CreateProcessW.
-       The FreeConsole call must happen AFTER CreatePseudoConsole (which has
-       already taken its own internal copies of the pipe handles) but BEFORE
-       CreateProcessW.  If the console is still alive when the child process is
-       created, the child attaches to it for its stdout rather than exclusively
-       using the ConPTY — all child output is then lost from ptyout_read (only
-       the conhost init sequences arrive, written before the child starts).
-       FreeConsole is safe at this point: on Windows 10 CreatePseudoConsole
-       already spawned conhost.exe as a separate process with its own console
-       reference; on Windows 11 the ConPTY is entirely in-process (HPCON).
-       Either way, the ConPTY does not depend on the parent's console
-       attachment after CreatePseudoConsole returns.
-       On Windows 11 (and interactive R sessions), AllocConsole returns FALSE
-       because the process already has a console, so allocated_console stays
-       FALSE and FreeConsole is not called. */
+       Background R processes (callr, R CMD check, processx::run with captured
+       stdout) have their standard handles set to PIPE handles, not to the
+       console handles CONIN$/CONOUT$.  PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE
+       can only intercept writes that go to CONSOLE handles; writes to pipe
+       handles bypass the ConPTY entirely, causing child output to be lost.
+       Fix: ensure the parent's standard handles are CONSOLE handles
+       (CONIN$/CONOUT$) at the point CreateProcessW is called.  The kernel
+       copies the parent's standard handles into the child; PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE
+       then intercepts those console writes and routes them through the ConPTY.
+       We restore the original pipe handles immediately after CreateProcessW so
+       that R's own I/O is unaffected.
+       AllocConsole (if the process has no console yet) both makes
+       CreatePseudoConsole work on Windows 10 (which needs \Device\ConDrv) and
+       sets the standard handles to CONIN$/CONOUT$ in one step.  When the
+       process already has a console, AllocConsole returns FALSE and we open
+       CONIN$/CONOUT$ explicitly to set the standard handles.  The hidden
+       console from AllocConsole persists for the process lifetime (harmless;
+       subsequent AllocConsole calls return FALSE). */
     COORD pty_size;
     pty_size.X = (SHORT) pty_cols;
     pty_size.Y = (SHORT) pty_rows;
     HPCON hPC;
-    BOOL allocated_console = FALSE;
-    {
-      /* Save R's current standard handles (may be callr/Rscript pipes). */
-      HANDLE saved_in  = GetStdHandle(STD_INPUT_HANDLE);
-      HANDLE saved_out = GetStdHandle(STD_OUTPUT_HANDLE);
-      HANDLE saved_err = GetStdHandle(STD_ERROR_HANDLE);
-      if (AllocConsole()) {
-        allocated_console = TRUE;
-        /* AllocConsole replaced the standard handles with CONIN$/CONOUT$;
-           restore the originals so R's own I/O is unaffected. */
-        HWND ach = GetConsoleWindow();
-        if (ach) ShowWindow(ach, SW_HIDE);
-        SetStdHandle(STD_INPUT_HANDLE,  saved_in);
-        SetStdHandle(STD_OUTPUT_HANDLE, saved_out);
-        SetStdHandle(STD_ERROR_HANDLE,  saved_err);
+    /* Save originals and open/set console handles for CreateProcessW. */
+    HANDLE saved_in  = GetStdHandle(STD_INPUT_HANDLE);
+    HANDLE saved_out = GetStdHandle(STD_OUTPUT_HANDLE);
+    HANDLE saved_err = GetStdHandle(STD_ERROR_HANDLE);
+    HANDLE hConIn  = INVALID_HANDLE_VALUE;
+    HANDLE hConOut = INVALID_HANDLE_VALUE;
+    if (AllocConsole()) {
+      /* AllocConsole already set std handles to CONIN$/CONOUT$. */
+      HWND ach = GetConsoleWindow();
+      if (ach) ShowWindow(ach, SW_HIDE);
+    } else {
+      /* Process already has a console (interactive session or a previous
+         AllocConsole call).  Std handles may still be pipe handles; open
+         CONIN$/CONOUT$ explicitly and install them as std handles. */
+      hConIn  = CreateFileA("CONIN$",  GENERIC_READ  | GENERIC_WRITE,
+                            FILE_SHARE_READ | FILE_SHARE_WRITE,
+                            NULL, OPEN_EXISTING, 0, NULL);
+      hConOut = CreateFileA("CONOUT$", GENERIC_READ  | GENERIC_WRITE,
+                            FILE_SHARE_READ | FILE_SHARE_WRITE,
+                            NULL, OPEN_EXISTING, 0, NULL);
+      if (hConIn  != INVALID_HANDLE_VALUE) SetStdHandle(STD_INPUT_HANDLE,  hConIn);
+      if (hConOut != INVALID_HANDLE_VALUE) {
+        SetStdHandle(STD_OUTPUT_HANDLE, hConOut);
+        SetStdHandle(STD_ERROR_HANDLE,  hConOut);
       }
     }
+
+    /* Helper: restores original std handles and closes any console handles
+       we opened.  Called on every error path and after CreateProcessW. */
+#define PROCESSX_PTY_RESTORE_STD_HANDLES() do { \
+      SetStdHandle(STD_INPUT_HANDLE,  saved_in);  \
+      SetStdHandle(STD_OUTPUT_HANDLE, saved_out); \
+      SetStdHandle(STD_ERROR_HANDLE,  saved_err); \
+      if (hConIn  != INVALID_HANDLE_VALUE) CloseHandle(hConIn);  \
+      if (hConOut != INVALID_HANDLE_VALUE) CloseHandle(hConOut); \
+    } while (0)
+
     HRESULT hr = processx__CreatePseudoConsole(
         pty_size, ptyin_read, ptyout_child, 0, &hPC);
     /* ConPTY made its own internal copies; close the pipe ends we passed in */
     CloseHandle(ptyin_read);
     CloseHandle(ptyout_child);
-    /* Free the temporary console before spawning the child. */
-    if (allocated_console) {
-        FreeConsole();
-    }
     if (FAILED(hr)) {
+      PROCESSX_PTY_RESTORE_STD_HANDLES();
       CloseHandle(ptyin_write);
       CloseHandle(ptyout_read);
       R_ClearExternalPtr(result);
@@ -1172,6 +1186,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     LPPROC_THREAD_ATTRIBUTE_LIST lpAttrList =
         (LPPROC_THREAD_ATTRIBUTE_LIST) malloc(attrlist_size);
     if (!lpAttrList) {
+      PROCESSX_PTY_RESTORE_STD_HANDLES();
       processx__ClosePseudoConsole(hPC);
       CloseHandle(ptyin_write);
       CloseHandle(ptyout_read);
@@ -1181,6 +1196,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     }
     if (!processx__InitializeProcThreadAttributeList(
             lpAttrList, 1, 0, &attrlist_size)) {
+      PROCESSX_PTY_RESTORE_STD_HANDLES();
       free(lpAttrList);
       processx__ClosePseudoConsole(hPC);
       CloseHandle(ptyin_write);
@@ -1193,6 +1209,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     if (!processx__UpdateProcThreadAttribute(
             lpAttrList, 0, PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
             hPC, sizeof(HPCON), NULL, NULL)) {
+      PROCESSX_PTY_RESTORE_STD_HANDLES();
       processx__DeleteProcThreadAttributeList(lpAttrList);
       free(lpAttrList);
       processx__ClosePseudoConsole(hPC);
@@ -1207,7 +1224,9 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     STARTUPINFOEXW siEx;
     memset(&siEx, 0, sizeof(siEx));
     siEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
-    /* Do NOT set STARTF_USESTDHANDLES: ConPTY wires up stdin/stdout/stderr */
+    /* Do NOT set STARTF_USESTDHANDLES: the parent's current std handles
+       (CONIN$/CONOUT$, set above) are copied into the child by CreateProcessW
+       and then intercepted by PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE. */
     siEx.StartupInfo.dwFlags = STARTF_USESHOWWINDOW;
     siEx.StartupInfo.wShowWindow =
         options.windows_hide ? SW_HIDE : SW_SHOWDEFAULT;
@@ -1215,11 +1234,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 
     /* ConPTY requires EXTENDED_STARTUPINFO_PRESENT.
        Do NOT use CREATE_NO_WINDOW or DETACHED_PROCESS — either flag
-       prevents the child from attaching to the pseudo-console.
-       bInheritHandles must be FALSE: the child's I/O is entirely through
-       ConPTY, so there are no handles to pass from the parent.  Using TRUE
-       in a background R process would inherit R's own stdout pipe into the
-       child, interfering with the ConPTY wiring. */
+       prevents the child from attaching to the pseudo-console. */
     DWORD pty_flags = CREATE_UNICODE_ENVIRONMENT | CREATE_SUSPENDED
                       | EXTENDED_STARTUPINFO_PRESENT;
     if (!ccleanup) pty_flags |= CREATE_NEW_PROCESS_GROUP;
@@ -1238,6 +1253,10 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 
     processx__DeleteProcThreadAttributeList(lpAttrList);
     free(lpAttrList);
+
+    /* Restore R's original standard handles now that the child exists. */
+    PROCESSX_PTY_RESTORE_STD_HANDLES();
+#undef PROCESSX_PTY_RESTORE_STD_HANDLES
 
     if (!err) {
       processx__ClosePseudoConsole(hPC);
