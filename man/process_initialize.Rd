@@ -26,7 +26,8 @@ process_initialize(
   windows_hide_window,
   windows_detached_process,
   encoding,
-  post_process
+  post_process,
+  linux_pdeathsig
 )
 }
 \arguments{

@@ -132,6 +132,87 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   expect_true(dir.exists(p_temp_dir))
 })
 
+test_that("linux_pdeathsig kills child when parent exits", {
+  skip_if(!is_linux())
+  skip_on_cran()
+
+  px <- get_tool("px")
+
+  # The callr subprocess spawns a grandchild with linux_pdeathsig = TRUE and
+  # cleanup = FALSE, then returns its PID and exits. The grandchild should
+  # receive SIGTERM and die when the callr subprocess exits.
+  grandchild_pid <- callr::r(
+    function(px) {
+      p <- processx::process$new(
+        px,
+        c("sleep", "100"),
+        cleanup = FALSE,
+        linux_pdeathsig = TRUE
+      )
+      p$get_pid()
+    },
+    args = list(px = px)
+  )
+
+  on.exit(tools::pskill(grandchild_pid, tools::SIGKILL), add = TRUE)
+
+  deadline <- get_deadline(secs = 3)
+  while (process__exists(grandchild_pid) && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
+  expect_false(process__exists(grandchild_pid))
+})
+
+test_that("without linux_pdeathsig child survives parent exit", {
+  skip_if(!is_linux())
+  skip_on_cran()
+
+  px <- get_tool("px")
+
+  grandchild_pid <- callr::r(
+    function(px) {
+      p <- processx::process$new(
+        px,
+        c("sleep", "100"),
+        cleanup = FALSE,
+        linux_pdeathsig = FALSE
+      )
+      p$get_pid()
+    },
+    args = list(px = px)
+  )
+
+  on.exit(tools::pskill(grandchild_pid, tools::SIGKILL), add = TRUE)
+  Sys.sleep(0.2)
+  expect_true(process__exists(grandchild_pid))
+})
+
+test_that("linux_pdeathsig input validation", {
+  px <- get_tool("px")
+
+  # Valid: FALSE (default)
+  p <- process$new(px, c("return", "0"), linux_pdeathsig = FALSE)
+  p$wait()
+
+  # Valid signal numbers are accepted on all platforms; non-Linux just warns
+  if (is_linux()) {
+    p <- process$new(px, c("return", "0"), linux_pdeathsig = TRUE)
+    p$wait()
+    p <- process$new(px, c("return", "0"), linux_pdeathsig = tools::SIGTERM)
+    p$wait()
+  } else {
+    expect_warning(
+      process$new(px, c("return", "0"), linux_pdeathsig = TRUE)$wait(),
+      "ignored on non-Linux"
+    )
+  }
+
+  # Invalid: string, negative, zero
+  expect_error(process$new(px, c("return", "0"), linux_pdeathsig = "foo"))
+  expect_error(process$new(px, c("return", "0"), linux_pdeathsig = -1))
+  expect_error(process$new(px, c("return", "0"), linux_pdeathsig = 0))
+})
+
 test_that("get_end_time", {
   px <- get_tool("px")
 

@@ -53,6 +53,10 @@ extern char **environ;
 #include <sys/ioctl.h>
 #include <pthread.h>
 
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+
 extern processx__child_list_t child_list_head;
 extern processx__child_list_t *child_list;
 extern processx__child_list_t child_free_list_head;
@@ -141,6 +145,15 @@ static void processx__child_init(processx_handle_t *handle, SEXP connections,
   int min_fd = 0;
 
   setsid();
+
+#ifdef __linux__
+  if (options->linux_pdeathsig > 0) {
+    if (prctl(PR_SET_PDEATHSIG, options->linux_pdeathsig) == -1) {
+      processx__write_int(error_fd, -errno);
+      raise(SIGKILL);
+    }
+  }
+#endif
 
   /* Do we need a pty? */
   if (pty_name) {
@@ -434,7 +447,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
                    SEXP connections, SEXP env, SEXP windows_verbatim_args,
                    SEXP windows_hide_window, SEXP windows_detached_process,
                    SEXP private, SEXP cleanup, SEXP wd, SEXP encoding,
-                   SEXP tree_id) {
+                   SEXP tree_id, SEXP linux_pdeathsig) {
 
   char *ccommand = processx__tmp_string(command, 0);
   char **cargs = processx__tmp_character(args);
@@ -465,6 +478,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
   for (i = 0; i < num_connections; i++) pipes[i][0] = pipes[i][1] = -1;
 
   options.wd = isNull(wd) ? 0 : CHAR(STRING_ELT(wd, 0));
+  options.linux_pdeathsig = INTEGER(linux_pdeathsig)[0];
 
   if (pipe(signal_pipe)) {
     R_THROW_SYSTEM_ERROR("Cannot create pipe when running '%s'", ccommand);

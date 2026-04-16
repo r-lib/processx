@@ -189,7 +189,8 @@ p$is_alive()
   windows_hide_window = FALSE,
   windows_detached_process = !cleanup,
   encoding = "",
-  post_process = NULL
+  post_process = NULL,
+  linux_pdeathsig = FALSE
 )}
     \if{html}{\out{</div>}}
   }
@@ -317,6 +318,11 @@ bytes including null bytes and non-UTF-8 byte sequences.}
       \item{\code{post_process}}{An optional function to run when the process has
 finished. Currently it only runs if \verb{$get_result()} is called.
 It is only run once.}
+      \item{\code{linux_pdeathsig}}{On Linux, send this signal to the child process
+when the parent R process exits. \code{FALSE} (the default) disables this.
+\code{TRUE} sends \code{SIGTERM}. An integer signal number, e.g.
+\code{tools::SIGTERM} or \code{tools::SIGKILL}, sends that signal. Ignored on
+non-Linux platforms.}
     }
     \if{html}{\out{</div>}}
   }

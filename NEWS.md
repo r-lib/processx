@@ -1,5 +1,10 @@
 # processx (development version)
 
+* New `linux_pdeathsig` argument to `process$new()`: on Linux, the child
+  process receives the specified signal when the parent R process exits.
+  Set to `TRUE` for `SIGTERM`, or pass an integer signal number directly
+  (e.g. `tools::SIGKILL`). Ignored on non-Linux platforms (#36).
+
 * New `process$get_end_time()` method returns the time when the process
   exited as a `POSIXct`, or `NULL` if it is still running (#218).
 

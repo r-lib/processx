@@ -43,7 +43,8 @@ process_initialize <- function(
   windows_hide_window,
   windows_detached_process,
   encoding,
-  post_process
+  post_process,
+  linux_pdeathsig
 ) {
   "!DEBUG process_initialize `command`"
 
@@ -67,7 +68,8 @@ process_initialize <- function(
     is_flag(windows_hide_window),
     is_flag(windows_detached_process),
     is_string(encoding),
-    is.function(post_process) || is.null(post_process)
+    is.function(post_process) || is.null(post_process),
+    is_pdeathsig(linux_pdeathsig)
   )
 
   if (cleanup_tree && !cleanup) {
@@ -153,6 +155,17 @@ process_initialize <- function(
     wd <- normalizePath(wd, winslash = "\\", mustWork = FALSE)
   }
 
+  if (!isFALSE(linux_pdeathsig) && Sys.info()[["sysname"]] != "Linux") {
+    warning("`linux_pdeathsig` is ignored on non-Linux systems")
+  }
+  if (isTRUE(linux_pdeathsig)) {
+    linux_pdeathsig <- 15L # SIGTERM
+  } else if (isFALSE(linux_pdeathsig)) {
+    linux_pdeathsig <- 0L
+  } else {
+    linux_pdeathsig <- as.integer(linux_pdeathsig)
+  }
+
   connections <- c(list(stdin, stdout, stderr), connections)
 
   "!DEBUG process_initialize exec()"
@@ -171,7 +184,8 @@ process_initialize <- function(
     cleanup,
     wd,
     encoding,
-    paste0("PROCESSX_", private$tree_id, "=YES")
+    paste0("PROCESSX_", private$tree_id, "=YES"),
+    linux_pdeathsig
   )
 
   ## We try the query the start time according to the OS, because we can
@@ -203,8 +217,9 @@ process_initialize <- function(
       stdout <- full_path(stdout)
     }
   }
-  if (is.character(stderr) && stderr != "|" && stderr != "" &&
-      stderr != "2>&1") {
+  if (
+    is.character(stderr) && stderr != "|" && stderr != "" && stderr != "2>&1"
+  ) {
     if (startsWith(stderr, ">>")) {
       stderr <- full_path(substring(stderr, 3))
     } else {

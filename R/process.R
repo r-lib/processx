@@ -231,6 +231,11 @@ process <- R6::R6Class(
     #' @param post_process An optional function to run when the process has
     #'   finished. Currently it only runs if `$get_result()` is called.
     #'   It is only run once.
+    #' @param linux_pdeathsig On Linux, send this signal to the child process
+    #'   when the parent R process exits. `FALSE` (the default) disables this.
+    #'   `TRUE` sends `SIGTERM`. An integer signal number, e.g.
+    #'   `tools::SIGTERM` or `tools::SIGKILL`, sends that signal. Ignored on
+    #'   non-Linux platforms.
 
     initialize = function(
       command = NULL,
@@ -252,7 +257,8 @@ process <- R6::R6Class(
       windows_hide_window = FALSE,
       windows_detached_process = !cleanup,
       encoding = "",
-      post_process = NULL
+      post_process = NULL,
+      linux_pdeathsig = FALSE
     ) {
       process_initialize(
         self,
@@ -276,7 +282,8 @@ process <- R6::R6Class(
         windows_hide_window,
         windows_detached_process,
         encoding,
-        post_process
+        post_process,
+        linux_pdeathsig
       )
     },
 
