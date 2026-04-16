@@ -134,27 +134,39 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
 
 test_that("linux_pdeathsig kills child when parent exits", {
   skip_if(!is_linux())
+  skip_if_not_installed("callr")
   skip_on_cran()
 
   px <- get_tool("px")
+  pidfile <- tempfile()
+  on.exit(unlink(pidfile), add = TRUE)
 
-  # The callr subprocess spawns a grandchild with linux_pdeathsig = TRUE and
-  # cleanup = FALSE, then returns its PID and exits. The grandchild should
-  # receive SIGTERM and die when the callr subprocess exits.
-  grandchild_pid <- callr::r(
-    function(px) {
+  # Start a long-lived parent that spawns a grandchild with linux_pdeathsig
+  # and writes its PID to a file, then sleeps. We SIGKILL the parent
+  # explicitly — instantaneous, no sanitizer cleanup delay — so PDEATHSIG
+  # fires at a known time regardless of ASAN/valgrind overhead.
+  bg <- callr::r_bg(
+    function(px, pidfile) {
       p <- processx::process$new(
-        px,
-        c("sleep", "100"),
+        px, c("sleep", "100"),
         cleanup = FALSE,
         linux_pdeathsig = TRUE
       )
-      p$get_pid()
+      writeLines(as.character(p$get_pid()), pidfile)
+      Sys.sleep(600)
     },
-    args = list(px = px)
+    args = list(px = px, pidfile = pidfile)
   )
+  on.exit(bg$kill(), add = TRUE)
 
+  deadline <- get_deadline(secs = 5)
+  while (!file.exists(pidfile) && Sys.time() < deadline) Sys.sleep(0.05)
+  skip_if(!file.exists(pidfile), "grandchild did not start in time")
+  grandchild_pid <- as.integer(readLines(pidfile))
   on.exit(tools::pskill(grandchild_pid, tools::SIGKILL), add = TRUE)
+
+  bg$kill()
+  bg$wait()
 
   deadline <- get_deadline(secs = 3)
   while (process__exists(grandchild_pid) && Sys.time() < deadline) {
@@ -165,24 +177,36 @@ test_that("linux_pdeathsig kills child when parent exits", {
 
 test_that("without linux_pdeathsig child survives parent exit", {
   skip_if(!is_linux())
+  skip_if_not_installed("callr")
   skip_on_cran()
 
   px <- get_tool("px")
+  pidfile <- tempfile()
+  on.exit(unlink(pidfile), add = TRUE)
 
-  grandchild_pid <- callr::r(
-    function(px) {
+  bg <- callr::r_bg(
+    function(px, pidfile) {
       p <- processx::process$new(
-        px,
-        c("sleep", "100"),
+        px, c("sleep", "100"),
         cleanup = FALSE,
         linux_pdeathsig = FALSE
       )
-      p$get_pid()
+      writeLines(as.character(p$get_pid()), pidfile)
+      Sys.sleep(600)
     },
-    args = list(px = px)
+    args = list(px = px, pidfile = pidfile)
   )
+  on.exit(bg$kill(), add = TRUE)
 
+  deadline <- get_deadline(secs = 5)
+  while (!file.exists(pidfile) && Sys.time() < deadline) Sys.sleep(0.05)
+  skip_if(!file.exists(pidfile), "grandchild did not start in time")
+  grandchild_pid <- as.integer(readLines(pidfile))
   on.exit(tools::pskill(grandchild_pid, tools::SIGKILL), add = TRUE)
+
+  bg$kill()
+  bg$wait()
+
   Sys.sleep(0.2)
   expect_true(process__exists(grandchild_pid))
 })
