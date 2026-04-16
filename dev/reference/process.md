@@ -221,7 +221,8 @@ Start a new process in the background, and then return immediately.
       windows_hide_window = FALSE,
       windows_detached_process = !cleanup,
       encoding = "",
-      post_process = NULL
+      post_process = NULL,
+      linux_pdeathsig = FALSE
     )
 
 #### Arguments
@@ -409,6 +410,15 @@ Start a new process in the background, and then return immediately.
 
   An optional function to run when the process has finished. Currently
   it only runs if `$get_result()` is called. It is only run once.
+
+- `linux_pdeathsig`:
+
+  On Linux, send this signal to the child process when the parent R
+  process exits. `FALSE` (the default) disables this. `TRUE` sends
+  `SIGTERM`. An integer signal number, e.g.
+  [`tools::SIGTERM`](https://rdrr.io/r/tools/pskill.html) or
+  [`tools::SIGKILL`](https://rdrr.io/r/tools/pskill.html), sends that
+  signal. Ignored on non-Linux platforms.
 
 #### Returns
 
@@ -1216,7 +1226,7 @@ p <- process$new("sleep", "2")
 p$is_alive()
 #> [1] TRUE
 p
-#> PROCESS 'sleep', running, pid 7112.
+#> PROCESS 'sleep', running, pid 7133.
 p$kill()
 #> [1] TRUE
 p$is_alive()
