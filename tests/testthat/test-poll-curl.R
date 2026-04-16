@@ -100,7 +100,7 @@ test_that("process fd before curl fd", {
   repeat {
     state <- curl::multi_run(timeout = 1 / 10000, pool = pool, poll = TRUE)
     fds <- curl::multi_fdset(pool = pool)
-    if (length(fds$reads) > 0) {
+    if (length(fds$reads) > 0 && length(fds$writes) == 0) {
       break
     }
     if (Sys.time() >= timeout) break
