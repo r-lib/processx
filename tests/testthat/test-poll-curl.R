@@ -93,7 +93,7 @@ test_that("process fd before curl fd", {
   skip_on_cran()
 
   pool <- curl::new_pool()
-  url <- httpbin$url("/delay/1")
+  url <- httpbin$url("/delay/10")
   curl::multi_add(pool = pool, curl::new_handle(url = url, http_version = 2))
 
   timeout <- Sys.time() + 5
