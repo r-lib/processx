@@ -135,6 +135,7 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
 test_that("linux_pdeathsig kills child when parent exits", {
   skip_if(!is_linux())
   skip_if(is_valgrind())
+  skip_if(is_asan())
   skip_on_cran()
 
   px <- get_tool("px")
@@ -180,8 +181,8 @@ test_that("linux_pdeathsig kills child when parent exits", {
 
 test_that("without linux_pdeathsig child survives parent exit", {
   skip_if(!is_linux())
-  skip_if_not_installed("callr")
   skip_if(is_valgrind())
+  skip_if(is_asan())
   skip_on_cran()
 
   px <- get_tool("px")
