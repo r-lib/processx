@@ -131,3 +131,24 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   # Was not cleaned up
   expect_true(dir.exists(p_temp_dir))
 })
+
+test_that("get_end_time", {
+  px <- get_tool("px")
+
+  p <- process$new(px, c("sleep", "1"))
+  on.exit(p$kill(), add = TRUE)
+
+  before <- Sys.time()
+  expect_null(p$get_end_time())
+
+  p$wait()
+  after <- Sys.time()
+
+  et <- p$get_end_time()
+  expect_s3_class(et, "POSIXct")
+  expect_gte(as.double(et), as.double(before))
+  expect_gte(as.double(et), as.double(p$get_start_time()))
+
+  # cached: second call returns the same value
+  expect_equal(p$get_end_time(), et)
+})

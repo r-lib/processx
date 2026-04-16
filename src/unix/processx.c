@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "../processx.h"
 #include "../cleancall.h"
@@ -650,6 +651,15 @@ void processx__collect_exit_status(SEXP status, int retval, int wstat) {
     handle->exitcode = WEXITSTATUS(wstat);
   } else {
     handle->exitcode = - WTERMSIG(wstat);
+  }
+
+  {
+    struct timespec _et;
+    if (clock_gettime(CLOCK_REALTIME, &_et) == 0) {
+      handle->end_time = (double)_et.tv_sec + (double)_et.tv_nsec * 1e-9;
+    } else {
+      handle->end_time = NA_REAL;
+    }
   }
 
   handle->collected = 1;

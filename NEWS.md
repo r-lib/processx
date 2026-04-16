@@ -1,5 +1,8 @@
 # processx (development version)
 
+* New `process$get_end_time()` method returns the time when the process
+  exited as a `POSIXct`, or `NULL` if it is still running (#218).
+
 * `process$new()` and `run()` now support `pty = TRUE` on Windows 10 version
   1809 and later, in addition to Unix. The Windows implementation uses the
   ConPTY API (`CreatePseudoConsole`). The API is loaded dynamically so
