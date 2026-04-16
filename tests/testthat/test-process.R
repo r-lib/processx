@@ -136,6 +136,7 @@ test_that("linux_pdeathsig kills child when parent exits", {
   skip_if(!is_linux())
   skip_if(is_valgrind())
   skip_if(is_asan())
+  skip_if(is_ubsan())
   skip_on_cran()
 
   px <- get_tool("px")
@@ -183,6 +184,7 @@ test_that("without linux_pdeathsig child survives parent exit", {
   skip_if(!is_linux())
   skip_if(is_valgrind())
   skip_if(is_asan())
+  skip_if(is_ubsan())
   skip_on_cran()
 
   px <- get_tool("px")
