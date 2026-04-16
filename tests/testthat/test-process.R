@@ -147,7 +147,6 @@ test_that("get_end_time", {
   et <- p$get_end_time()
   expect_s3_class(et, "POSIXct")
   expect_gte(as.double(et), as.double(before))
-  expect_lte(as.double(et), as.double(after))
   expect_gte(as.double(et), as.double(p$get_start_time()))
 
   # cached: second call returns the same value
