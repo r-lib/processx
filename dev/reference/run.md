@@ -298,7 +298,7 @@ run("ls")
 #> 
 system.time(run("sleep", "10", timeout = 1, error_on_status = FALSE))
 #>    user  system elapsed 
-#>   0.005   0.014   0.222 
+#>   0.005   0.017   0.111 
 system.time(
   run(
     "sh", c("-c", "for i in 1 2 3 4 5; do echo $i; sleep 1; done"),
@@ -306,7 +306,7 @@ system.time(
   )
 )
 #>    user  system elapsed 
-#>   0.005   0.010   1.221 
+#>   0.007   0.008   1.115 
 if (FALSE) {
 # This works on Windows systems, if the ping command is available
 run("ping", c("-n", "1", "127.0.0.1"))
