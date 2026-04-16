@@ -111,6 +111,8 @@ closed. The same happens at a regular exit.
 
 - [`process$get_start_time()`](#method-process-get_start_time)
 
+- [`process$get_end_time()`](#method-process-get_end_time)
+
 - [`process$is_supervised()`](#method-process-is_supervised)
 
 - [`process$supervise()`](#method-process-supervise)
@@ -606,6 +608,21 @@ the screen, whether it is running and it's process id, etc.
 #### Usage
 
     process$get_start_time()
+
+------------------------------------------------------------------------
+
+### `process$get_end_time()`
+
+`$get_end_time()` returns the time when the process finished, or `NULL`
+if it is still running. On Unix the timestamp is recorded when R first
+notices the exit (via the `SIGCHLD` handler or a call to `$is_alive()`,
+`$get_exit_status()`, or `$wait()`), so it may be slightly later than
+the actual kernel exit time. On Windows the exact kernel exit time is
+used.
+
+#### Usage
+
+    process$get_end_time()
 
 ------------------------------------------------------------------------
 
@@ -1199,7 +1216,7 @@ p <- process$new("sleep", "2")
 p$is_alive()
 #> [1] TRUE
 p
-#> PROCESS 'sleep', running, pid 7131.
+#> PROCESS 'sleep', running, pid 7119.
 p$kill()
 #> [1] TRUE
 p$is_alive()
