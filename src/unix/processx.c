@@ -152,6 +152,14 @@ static void processx__child_init(processx_handle_t *handle, SEXP connections,
       processx__write_int(error_fd, -errno);
       raise(SIGKILL);
     }
+    /* Unblock the death signal in case the parent had it blocked at fork
+       time (e.g. sanitizer runtimes temporarily block signals in fork
+       wrappers; the child inherits the blocked mask and the signal would
+       be queued but never delivered after execvp). */
+    sigset_t sigset;
+    sigemptyset(&sigset);
+    sigaddset(&sigset, options->linux_pdeathsig);
+    sigprocmask(SIG_UNBLOCK, &sigset, NULL);
   }
 #endif
 

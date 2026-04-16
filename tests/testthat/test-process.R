@@ -134,7 +134,7 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
 
 test_that("linux_pdeathsig kills child when parent exits", {
   skip_if(!is_linux())
-  skip_if_not_installed("callr")
+  skip_if(is_valgrind())
   skip_on_cran()
 
   px <- get_tool("px")
@@ -148,7 +148,8 @@ test_that("linux_pdeathsig kills child when parent exits", {
   bg <- callr::r_bg(
     function(px, pidfile) {
       p <- processx::process$new(
-        px, c("sleep", "100"),
+        px,
+        c("sleep", "100"),
         cleanup = FALSE,
         linux_pdeathsig = TRUE
       )
@@ -160,7 +161,9 @@ test_that("linux_pdeathsig kills child when parent exits", {
   on.exit(bg$kill(), add = TRUE)
 
   deadline <- get_deadline(secs = 5)
-  while (!file.exists(pidfile) && Sys.time() < deadline) Sys.sleep(0.05)
+  while (!file.exists(pidfile) && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
   skip_if(!file.exists(pidfile), "grandchild did not start in time")
   grandchild_pid <- as.integer(readLines(pidfile))
   on.exit(tools::pskill(grandchild_pid, tools::SIGKILL), add = TRUE)
@@ -178,6 +181,7 @@ test_that("linux_pdeathsig kills child when parent exits", {
 test_that("without linux_pdeathsig child survives parent exit", {
   skip_if(!is_linux())
   skip_if_not_installed("callr")
+  skip_if(is_valgrind())
   skip_on_cran()
 
   px <- get_tool("px")
@@ -187,7 +191,8 @@ test_that("without linux_pdeathsig child survives parent exit", {
   bg <- callr::r_bg(
     function(px, pidfile) {
       p <- processx::process$new(
-        px, c("sleep", "100"),
+        px,
+        c("sleep", "100"),
         cleanup = FALSE,
         linux_pdeathsig = FALSE
       )
@@ -199,7 +204,9 @@ test_that("without linux_pdeathsig child survives parent exit", {
   on.exit(bg$kill(), add = TRUE)
 
   deadline <- get_deadline(secs = 5)
-  while (!file.exists(pidfile) && Sys.time() < deadline) Sys.sleep(0.05)
+  while (!file.exists(pidfile) && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
   skip_if(!file.exists(pidfile), "grandchild did not start in time")
   grandchild_pid <- as.integer(readLines(pidfile))
   on.exit(tools::pskill(grandchild_pid, tools::SIGKILL), add = TRUE)

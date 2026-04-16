@@ -219,6 +219,10 @@ is_ubsan <- function() {
   .Call(c_is_ubsan_)
 }
 
+is_valgrind <- function() {
+  .Call(c_is_valgrind_)
+}
+
 is_san <- function() {
   is_asan() || is_ubsan()
 }

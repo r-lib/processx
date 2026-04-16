@@ -4,6 +4,16 @@
 
 #include <R_ext/Rdynload.h>
 #include <R.h>
+#include <stdio.h>
+
+/* RUNNING_ON_VALGRIND is a runtime check provided by <valgrind/valgrind.h>.
+   Use __has_include so the build does not fail when the header is absent. */
+#if defined(__has_include) && __has_include(<valgrind/valgrind.h>)
+# include <valgrind/valgrind.h>
+# define PROCESSX_RUNNING_ON_VALGRIND() (RUNNING_ON_VALGRIND)
+#else
+# define PROCESSX_RUNNING_ON_VALGRIND() 0
+#endif
 
 void R_init_processx_win(void);
 void R_init_processx_unix(void);
@@ -12,6 +22,7 @@ SEXP run_testthat_tests(void);
 SEXP processx__echo_on(void);
 SEXP processx__echo_off(void);
 SEXP processx__set_boot_time(SEXP);
+SEXP is_valgrind_(void);
 
 #ifdef GCOV_COMPILE
 
@@ -58,6 +69,30 @@ SEXP is_ubsan_()
 #else
   return Rf_ScalarLogical(0);
 #endif
+}
+
+SEXP is_valgrind_(void)
+{
+#ifdef __linux__
+  /* On Linux, /proc/self/maps lists all mapped files.  When running under
+     valgrind the map will contain paths like "vgpreload_memcheck*.so", so
+     scanning for "valgrind" reliably detects it even when the valgrind
+     development headers are not installed (common on CI). */
+  FILE *fp = fopen("/proc/self/maps", "r");
+  if (fp != NULL) {
+    char line[1024];
+    int found = 0;
+    while (fgets(line, sizeof(line), fp) != NULL) {
+      if (strstr(line, "/valgrind/") != NULL) {
+        found = 1;
+        break;
+      }
+    }
+    fclose(fp);
+    if (found) return Rf_ScalarLogical(1);
+  }
+#endif
+  return Rf_ScalarLogical(PROCESSX_RUNNING_ON_VALGRIND() != 0);
 }
 
 static const R_CallMethodDef callMethods[]  = {
@@ -127,6 +162,7 @@ static const R_CallMethodDef callMethods[]  = {
   { "gcov_flush", (DL_FUNC) gcov_flush, 0 },
   { "is_asan_", (DL_FUNC) is_asan_, 0 },
   { "is_ubsan_", (DL_FUNC) is_ubsan_, 0 },
+  { "is_valgrind_", (DL_FUNC) is_valgrind_, 0 },
 
   { NULL, NULL, 0 }
 };
