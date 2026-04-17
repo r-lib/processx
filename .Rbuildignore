@@ -34,3 +34,4 @@
 ^\.vscode$
 ^[.]dev$
 ^[.]covrignore$
+^docs$

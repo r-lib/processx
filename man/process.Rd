@@ -63,14 +63,13 @@ to collect everything. The \verb{$read_all_output()} and
 
 \section{Cleaning up background processes}{
 
-processx kills processes that are not referenced any more (if \code{cleanup}
-is set to \code{TRUE}), or the whole subprocess tree (if \code{cleanup_tree} is
-also set to \code{TRUE}).
-
-The cleanup happens when the references of the processes object are
-garbage collected. To clean up earlier, you can call the \code{kill()} or
-\code{kill_tree()} method of the process(es), from an \code{on.exit()} expression,
-or an error handler:
+processx provides several mechanisms to clean up background processes.
+See the \href{https://processx.r-lib.org/articles/cleanup.html}{Process cleanup}
+article for a full discussion. A brief summary:
+\itemize{
+\item \strong{Explicit cleanup} (most reliable): call \verb{$kill()} or \verb{$kill_tree()}
+from an \code{on.exit()} expression or error handler:
+}
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{process_manager <- function() \{
   on.exit(\{
@@ -85,9 +84,35 @@ or an error handler:
 process_manager()
 }\if{html}{\out{</div>}}
 
-If you interrupt \code{process_manager()} or an error happens then both \code{p1}
-and \code{p2} are cleaned up immediately. Their connections will also be
-closed. The same happens at a regular exit.
+If you interrupt \code{process_manager()} or an error happens then both
+\code{p1} and \code{p2} are cleaned up immediately.
+\itemize{
+\item \strong{Automatic GC cleanup} (\code{cleanup = TRUE}, the default): the process
+is killed when the \code{process} R object is garbage collected. On Unix,
+\code{kill(-pid, SIGKILL)} is used, which kills the child's whole process
+group (since the child calls \code{setsid()} on startup). On Windows, the
+child is added to a global Job Object with
+\code{JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE}, so it is also killed if R exits
+or crashes. GC timing is non-deterministic; prefer \code{on.exit()} when
+determinism matters.
+\item \strong{Process tree cleanup} (\code{cleanup_tree = TRUE}): kills the process
+and all its descendants, including orphaned ones. processx marks each
+child with a unique environment variable (\verb{PROCESSX_<id>=YES}) that is
+inherited by all descendants; \verb{$kill_tree()} uses the \emph{ps} package to
+find and kill every process carrying that variable. On macOS, system
+restrictions may prevent reading other processes' environment, so tree
+cleanup may not work reliably.
+\item \strong{Linux parent-death signal} (\code{linux_pdeathsig}): on Linux, the
+kernel can send a signal (e.g. \code{SIGTERM}) to the child when the parent
+R process exits, including on crash. Pass \code{linux_pdeathsig = TRUE} for
+\code{SIGTERM}, or an integer signal number. Ignored on non-Linux platforms.
+\item \strong{Supervisor} (\code{supervise = TRUE}): a separate native process that
+polls every 200 ms and kills registered children if the parent R
+process dies (including crashes). On Unix it sends SIGTERM then
+(after 5 s) SIGKILL. On Windows it sends CTRL+C / WM_CLOSE then
+hard-kills. Note: on Windows, antivirus software may block
+\code{supervisor.exe}.
+}
 }
 
 \examples{

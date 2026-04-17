@@ -23,3 +23,5 @@
 *.gcno
 /dev-lib
 /.dev
+/vignettes/**/*.html
+/docs
