@@ -57,15 +57,14 @@ helpers already do this for you.
 
 ## Cleaning up background processes
 
-processx kills processes that are not referenced any more (if `cleanup`
-is set to `TRUE`), or the whole subprocess tree (if `cleanup_tree` is
-also set to `TRUE`).
+processx provides several mechanisms to clean up background processes.
+See the [Process
+cleanup](https://processx.r-lib.org/articles/cleanup.html) article for a
+full discussion. A brief summary:
 
-The cleanup happens when the references of the processes object are
-garbage collected. To clean up earlier, you can call the `kill()` or
-`kill_tree()` method of the process(es), from an
-[`on.exit()`](https://rdrr.io/r/base/on.exit.html) expression, or an
-error handler:
+- **Explicit cleanup** (most reliable): call `$kill()` or `$kill_tree()`
+  from an [`on.exit()`](https://rdrr.io/r/base/on.exit.html) expression
+  or error handler:
 
     process_manager <- function() {
       on.exit({
@@ -80,8 +79,37 @@ error handler:
     process_manager()
 
 If you interrupt `process_manager()` or an error happens then both `p1`
-and `p2` are cleaned up immediately. Their connections will also be
-closed. The same happens at a regular exit.
+and `p2` are cleaned up immediately.
+
+- **Automatic GC cleanup** (`cleanup = TRUE`, the default): the process
+  is killed when the `process` R object is garbage collected. On Unix,
+  `kill(-pid, SIGKILL)` is used, which kills the child's whole process
+  group (since the child calls `setsid()` on startup). On Windows, the
+  child is added to a global Job Object with
+  `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`, so it is also killed if R exits
+  or crashes. GC timing is non-deterministic; prefer
+  [`on.exit()`](https://rdrr.io/r/base/on.exit.html) when determinism
+  matters.
+
+- **Process tree cleanup** (`cleanup_tree = TRUE`): kills the process
+  and all its descendants, including orphaned ones. processx marks each
+  child with a unique environment variable (`PROCESSX_<id>=YES`) that is
+  inherited by all descendants; `$kill_tree()` uses the *ps* package to
+  find and kill every process carrying that variable. On macOS, system
+  restrictions may prevent reading other processes' environment, so tree
+  cleanup may not work reliably.
+
+- **Linux parent-death signal** (`linux_pdeathsig`): on Linux, the
+  kernel can send a signal (e.g. `SIGTERM`) to the child when the parent
+  R process exits, including on crash. Pass `linux_pdeathsig = TRUE` for
+  `SIGTERM`, or an integer signal number. Ignored on non-Linux
+  platforms.
+
+- **Supervisor** (`supervise = TRUE`): a separate native process that
+  polls every 200 ms and kills registered children if the parent R
+  process dies (including crashes). On Unix it sends SIGTERM then (after
+  5 s) SIGKILL. On Windows it sends CTRL+C / WM_CLOSE then hard-kills.
+  Note: on Windows, antivirus software may block `supervisor.exe`.
 
 ## Methods
 
@@ -1226,7 +1254,7 @@ p <- process$new("sleep", "2")
 p$is_alive()
 #> [1] TRUE
 p
-#> PROCESS 'sleep', running, pid 7049.
+#> PROCESS 'sleep', running, pid 7047.
 p$kill()
 #> [1] TRUE
 p$is_alive()

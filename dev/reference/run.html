@@ -22,7 +22,8 @@ extra features, see below."><meta name="robots" content="noindex"><script src="h
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/internals.html">processx internals</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/cleanup.html">Process cleanup</a></li>
+    <li><a class="dropdown-item" href="../articles/internals.html">processx internals</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -328,7 +329,7 @@ of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="fu">run</span><span class="op">(</span><span class="st">"sleep"</span>, <span class="st">"10"</span>, timeout <span class="op">=</span> <span class="fl">1</span>, error_on_status <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    user  system elapsed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   0.005   0.014   0.467 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   0.003   0.015   0.304 </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="fu">run</span><span class="op">(</span></span></span>
 <span class="r-in"><span>    <span class="st">"sh"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"-c"</span>, <span class="st">"for i in 1 2 3 4 5; do echo $i; sleep 1; done"</span><span class="op">)</span>,</span></span>
@@ -336,7 +337,7 @@ of the process if <code>stderr_to_stdout</code> was <code>TRUE</code>.</p></li>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    user  system elapsed </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   0.004   0.009   1.469 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   0.006   0.007   1.303 </span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span><span class="co"># This works on Windows systems, if the ping command is available</span></span></span>
 <span class="r-in"><span><span class="fu">run</span><span class="op">(</span><span class="st">"ping"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"-n"</span>, <span class="st">"1"</span>, <span class="st">"127.0.0.1"</span><span class="op">)</span><span class="op">)</span></span></span>
