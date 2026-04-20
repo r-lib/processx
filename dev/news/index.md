@@ -2,6 +2,8 @@
 
 ## processx (development version)
 
+- New “Process cleanup” article.
+
 - New `linux_pdeathsig` argument to `process$new()`: on Linux, the child
   process receives the specified signal when the parent R process exits.
   Set to `TRUE` for `SIGTERM`, or pass an integer signal number directly

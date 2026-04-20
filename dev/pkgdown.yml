@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   articles/cleanup: cleanup.html
   internals: internals.html
-last_built: 2026-04-17T10:40Z
+last_built: 2026-04-20T11:43Z
 urls:
   reference: http://processx.r-lib.org/reference
   article: http://processx.r-lib.org/articles
