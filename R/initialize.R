@@ -169,6 +169,14 @@ process_initialize <- function(
   connections <- c(list(stdin, stdout, stderr), connections)
 
   "!DEBUG process_initialize exec()"
+  ## Capture time just before the fork so we have a lower bound for the
+  ## child's start time. /proc/<pid>/stat starttime has only 10ms resolution
+  ## (100 Hz clock ticks), so it can appear to slightly predate this point.
+  ## We take max(kernel_start_time, before_start) so the reported start time
+  ## ($get_start_time()) is never earlier than when process$new() was called.
+  ## private$starttime_raw holds the unmodified kernel time and is used for
+  ## ps::ps_handle() validation (which has a 1-tick tolerance).
+  before_start <- as.numeric(Sys.time())
   private$status <- chain_call(
     c_processx_exec,
     command,
@@ -188,17 +196,18 @@ process_initialize <- function(
     linux_pdeathsig
   )
 
-  ## We try the query the start time according to the OS, because we can
+  ## We try to query the start time according to the OS, because we can
   ## use the (pid, start time) pair as an id when performing operations on
   ## the process, e.g. sending signals. This is only implemented on Linux,
   ## macOS and Windows and on other OSes it returns 0.0, so we just use the
   ## current time instead. (In the C process handle, there will be 0,
   ## still.)
-  private$starttime <-
+  private$starttime_raw <-
     chain_call(c_processx__proc_start_time, private$status)
-  if (private$starttime == 0) {
-    private$starttime <- Sys.time()
+  if (private$starttime_raw == 0) {
+    private$starttime_raw <- as.numeric(Sys.time())
   }
+  private$starttime <- max(private$starttime_raw, before_start)
 
   ## Need to close this, otherwise the child's end of the pipe
   ## will not be closed when the child exits, and then we cannot

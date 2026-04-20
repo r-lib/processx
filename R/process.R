@@ -705,52 +705,52 @@ process <- R6::R6Class(
     #' @description
     #' Calls [ps::ps_name()] to get the process name.
 
-    get_name = function() ps_method(ps::ps_name, self),
+    get_name = function() ps_method(ps::ps_name, self, private),
 
     #' @description
     #' Calls [ps::ps_exe()] to get the path of the executable.
 
-    get_exe = function() ps_method(ps::ps_exe, self),
+    get_exe = function() ps_method(ps::ps_exe, self, private),
 
     #' @description
     #' Calls [ps::ps_cmdline()] to get the command line.
 
-    get_cmdline = function() ps_method(ps::ps_cmdline, self),
+    get_cmdline = function() ps_method(ps::ps_cmdline, self, private),
 
     #' @description
     #' Calls [ps::ps_status()] to get the process status.
 
-    get_status = function() ps_method(ps::ps_status, self),
+    get_status = function() ps_method(ps::ps_status, self, private),
 
     #' @description
     #' calls [ps::ps_username()] to get the username.
 
-    get_username = function() ps_method(ps::ps_username, self),
+    get_username = function() ps_method(ps::ps_username, self, private),
 
     #' @description
     #' Calls [ps::ps_cwd()] to get the current working directory.
 
-    get_wd = function() ps_method(ps::ps_cwd, self),
+    get_wd = function() ps_method(ps::ps_cwd, self, private),
 
     #' @description
     #' Calls [ps::ps_cpu_times()] to get CPU usage data.
 
-    get_cpu_times = function() ps_method(ps::ps_cpu_times, self),
+    get_cpu_times = function() ps_method(ps::ps_cpu_times, self, private),
 
     #' @description
     #' Calls [ps::ps_memory_info()] to get memory data.
 
-    get_memory_info = function() ps_method(ps::ps_memory_info, self),
+    get_memory_info = function() ps_method(ps::ps_memory_info, self, private),
 
     #' @description
     #' Calls [ps::ps_suspend()] to suspend the process.
 
-    suspend = function() ps_method(ps::ps_suspend, self),
+    suspend = function() ps_method(ps::ps_suspend, self, private),
 
     #' @description
     #' Calls [ps::ps_resume()] to resume a suspended process.
 
-    resume = function() ps_method(ps::ps_resume, self)
+    resume = function() ps_method(ps::ps_resume, self, private)
   ),
 
   private = list(
@@ -768,7 +768,8 @@ process <- R6::R6Class(
     pstderr = NULL, # the original stderr argument
     cleanfiles = NULL, # which temp stdout/stderr file(s) to clean up
     wd = NULL, # working directory (or NULL for current)
-    starttime = NULL, # timestamp of start
+    starttime = NULL, # timestamp of start (display; >= starttime_raw)
+    starttime_raw = NULL, # timestamp of start as reported by OS (for ps compat)
     endtime = NULL, # timestamp of exit, or 0 if not yet exited
     echo_cmd = NULL, # whether to echo the command
     windows_verbatim_args = NULL,
@@ -934,11 +935,11 @@ process_get_result <- function(self, private) {
 }
 
 process_as_ps_handle <- function(self, private) {
-  ps::ps_handle(self$get_pid(), self$get_start_time())
+  ps::ps_handle(self$get_pid(), format_unix_time(private$starttime_raw))
 }
 
-ps_method <- function(fun, self) {
-  fun(ps::ps_handle(self$get_pid(), self$get_start_time()))
+ps_method <- function(fun, self, private) {
+  fun(ps::ps_handle(self$get_pid(), format_unix_time(private$starttime_raw)))
 }
 
 process_close_connections <- function(self, private) {
