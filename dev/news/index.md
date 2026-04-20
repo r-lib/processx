@@ -60,6 +60,16 @@
   function for reading raw bytes from a processx connection directly
   ([\#406](https://github.com/r-lib/processx/issues/406)).
 
+- On Linux, `process$get_start_time()` now returns the correct
+  wall-clock start time. Previously it was systematically ~0.3–0.5 s too
+  early because the boot time was read from `/proc/stat btime`, which is
+  truncated to whole seconds. processx now derives the boot time from
+  `CLOCK_REALTIME − CLOCK_MONOTONIC`, which has nanosecond precision.
+  The ps package is updated in tandem to accept handles created by
+  either the old or the new method, so new ps + old processx continues
+  to work ([\#394](https://github.com/r-lib/processx/issues/394),
+  [\#402](https://github.com/r-lib/processx/issues/402)).
+
 ## processx 3.8.7
 
 CRAN release: 2026-04-01
