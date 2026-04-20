@@ -229,6 +229,7 @@ test_that("binary=TRUE with stdout_callback receives raw chunks", {
 })
 
 test_that("binary=TRUE errors with line callbacks", {
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   expect_snapshot(
     error = TRUE,
@@ -303,6 +304,7 @@ test_that("pty=TRUE works with stdout_callback (windows)", {
 })
 
 test_that("pty=TRUE errors on incompatible arguments", {
+  skip_if_no_srcrefs()
   skip_on_cran()
   expect_snapshot(error = TRUE, run("echo", pty = TRUE, stdout = NULL))
   expect_snapshot(error = TRUE, run("echo", pty = TRUE, stderr = NULL))

@@ -1,4 +1,5 @@
 test_that("Output and error are discarded by default", {
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   p <- process$new(px, c("outln", "foobar"))
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
@@ -203,6 +204,7 @@ test_that("readChar on IO, windows", {
 })
 
 test_that("same pipe", {
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   cmd <- c("out", "o1", "err", "e1", "out", "o2", "err", "e2")
   p <- process$new(px, cmd, stdout = "|", stderr = "2>&1")
@@ -216,6 +218,7 @@ test_that("same pipe", {
 })
 
 test_that("same file", {
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   cmd <- c("out", "o1", "err", "e1", "out", "o2", "errln", "e2")
   tmp <- tempfile()
@@ -231,6 +234,7 @@ test_that("same file", {
 })
 
 test_that("same NULL, for completeness", {
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   cmd <- c("out", "o1", "err", "e1", "out", "o2", "errln", "e2")
   p <- process$new(px, cmd, stdout = NULL, stderr = "2>&1")

@@ -66,7 +66,7 @@ test_that("throw() adds the proper call, if requested", {
   f <- function() throw(new_error("ooops"))
   err <- tryCatch(f(), error = function(e) e)
   expect_s3_class(err, "rlib_error")
-  expect_identical(err$call, "f()")
+  expect_identical(deparse(err$call), "f()")
 
   g <- function() throw(new_error("ooops", call. = FALSE))
   err <- tryCatch(g(), error = function(e) e)
@@ -130,7 +130,7 @@ test_that("chain_call", {
     error = function(e) e
   )
 
-  expect_equal(cond$call, "do()")
+  expect_equal(deparse(cond$call), "do()")
   expect_s3_class(cond, "c_error")
   expect_s3_class(cond, "rlib_error")
 })

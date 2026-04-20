@@ -11,7 +11,9 @@ test_that("pty works on windows", {
   out <- ""
   repeat {
     pr <- poll(list(con), 2000L)[[1]]
-    if (!identical(pr, "ready")) break
+    if (!identical(pr, "ready")) {
+      break
+    }
     out <- paste0(out, p$read_output())
     if (grepl("hello", out, fixed = TRUE)) break
   }
@@ -38,7 +40,9 @@ test_that("pty write_input works on windows", {
   out <- ""
   repeat {
     pr <- poll(list(con), 2000L)[[1]]
-    if (!identical(pr, "ready")) break
+    if (!identical(pr, "ready")) {
+      break
+    }
     out <- paste0(out, p$read_output())
     if (grepl("hello", out, fixed = TRUE)) break
   }
@@ -119,6 +123,7 @@ test_that("pty captures output from a short-lived process", {
 })
 
 test_that("read_output_lines() fails for pty", {
+  skip_if_no_srcrefs()
   skip_other_platforms("unix")
   skip_on_os("solaris")
   skip_on_cran()

@@ -1,5 +1,6 @@
 test_that("CRUD", {
   skip_on_cran()
+  skip_if_no_srcrefs()
 
   sock <- tempfile()
   on.exit(unlink(sock), add = TRUE)

@@ -135,6 +135,7 @@ test_that("write end first 2", {
 
 test_that("errors", {
   skip_on_cran()
+  skip_if_no_srcrefs()
 
   expect_snapshot(error = TRUE, conn_create_fifo(read = TRUE, write = TRUE))
 

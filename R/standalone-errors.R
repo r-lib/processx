@@ -903,9 +903,9 @@ err <- local({
 
   format_header_line_cli <- function(x, prefix = NULL) {
     p_error <- format_error_heading_cli(x, prefix)
-    p_call <- format_call_cli(x[["call"]])
-    p_srcref <- format_srcref_cli(conditionCall(x), x$procsrcref %||% x$srcref)
-    paste0(p_error, p_call, p_srcref, if (!is.null(conditionCall(x))) ":")
+    p_call <- format_call_cli(conditionCall(x))
+    p_srcref <- format_srcref_cli(p_call, x$procsrcref %||% x$srcref)
+    paste0(p_error, p_call, p_srcref, if (!is.null(p_call)) ":")
   }
 
   format_class_cli <- function(x) {
@@ -1006,9 +1006,9 @@ err <- local({
       ifelse(visible, "", "| "),
       scope,
       vapply(
-        seq_along(x$call),
+        seq_along(x[["call"]]),
         function(i) {
-          format_trace_call_cli(x$call[[i]], x$namespace[[i]])
+          format_trace_call_cli(x[["call"]][[i]], x$namespace[[i]])
         },
         character(1)
       ),
@@ -1115,7 +1115,7 @@ err <- local({
 
   format_header_line_plain <- function(x, prefix = NULL) {
     p_error <- format_error_heading_plain(x, prefix)
-    p_call <- format_call_plain(x[["call"]])
+    p_call <- format_call_plain(conditionCall(x))
     p_srcref <- format_srcref_plain(
       conditionCall(x),
       x$procsrcref %||% x$srcref
@@ -1189,15 +1189,17 @@ err <- local({
     nchar(x, type = "bytes")
   }
 
+  minimize_call <- function(call) {
+    if (!is.call(call)) return(call)
+    dep <- deparse(call, nlines = 2)
+    result <- tryCatch(str2lang(dep[[1L]]), error = function(e) NULL)
+    if (!is.null(result)) return(result)
+    tryCatch(as.call(list(call[[1L]], quote(...))), error = function(e) NULL)
+  }
+
   process_call <- function(cond) {
     cond[c("call", "srcref", "procsrcref")] <- list(
-      call = if (is.null(cond[["call"]])) {
-        NULL
-      } else if (is.character(cond[["call"]])) {
-        cond[["call"]]
-      } else {
-        deparse(cond[["call"]], nlines = 2)
-      },
+      call = minimize_call(cond[["call"]]),
       srcref = NULL,
       procsrcref = get_srcref(cond[["call"]], cond$procsrcref %||% cond$srcref)
     )
@@ -1301,9 +1303,13 @@ err <- local({
   }
 
   frame_call <- function(frame) {
-    out <- NULL
-    delayedAssign("out", base::sys.call(), frame)
-    out
+    frames <- sys.frames()
+    for (i in seq_along(frames)) {
+      if (identical(frames[[i]], frame)) {
+        return(sys.call(i))
+      }
+    }
+    NULL
   }
 
   # Useful for snapshots so that they print without an unstable backtrace.
