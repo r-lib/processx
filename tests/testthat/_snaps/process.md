@@ -3,6 +3,6 @@
     Code
       p$get_result()
     Condition
-      Error:
+      Error in `process_get_result()`:
       ! ! Process is still alive
 
