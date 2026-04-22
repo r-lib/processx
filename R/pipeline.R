@@ -48,6 +48,8 @@
 #' `$read_all_output()`, `$read_all_output_lines()` — read from the last
 #' process (only meaningful when `stdout = "|"`).
 #'
+#' `$poll_io(timeout)` — poll the last process's connections for I/O.
+#'
 #' `$read_error(n = -1)`, `$read_error_lines(n = -1)`,
 #' `$read_all_error()`, `$read_all_error_lines()` — read stderr of the
 #' last process (only meaningful when `stderr = "|"`).
@@ -203,6 +205,11 @@ pipeline <- R6::R6Class(
     #' @description Read all output lines of the last process.
     read_all_output_lines = function() {
       private$last()$read_all_output_lines()
+    },
+
+    #' @description Poll the connections of the last process for I/O.
+    poll_io = function(timeout) {
+      private$last()$poll_io(timeout)
     },
 
     ## ------------------------------------------------------------------ ##

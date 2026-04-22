@@ -20,6 +20,8 @@ final command (when \code{stdout = "|"}).
 \verb{$read_all_output()}, \verb{$read_all_output_lines()} — read from the last
 process (only meaningful when \code{stdout = "|"}).
 
+\verb{$poll_io(timeout)} — poll the last process's connections for I/O.
+
 \verb{$read_error(n = -1)}, \verb{$read_error_lines(n = -1)},
 \verb{$read_all_error()}, \verb{$read_all_error_lines()} — read stderr of the
 last process (only meaningful when \code{stderr = "|"}).
@@ -73,6 +75,7 @@ pl$get_exit_statuses()
 \item \href{#method-pipeline-read_output_lines}{\code{pipeline$read_output_lines()}}
 \item \href{#method-pipeline-read_all_output}{\code{pipeline$read_all_output()}}
 \item \href{#method-pipeline-read_all_output_lines}{\code{pipeline$read_all_output_lines()}}
+\item \href{#method-pipeline-poll_io}{\code{pipeline$poll_io()}}
 \item \href{#method-pipeline-read_error}{\code{pipeline$read_error()}}
 \item \href{#method-pipeline-read_error_lines}{\code{pipeline$read_error_lines()}}
 \item \href{#method-pipeline-read_all_error}{\code{pipeline$read_all_error()}}
@@ -199,6 +202,23 @@ Read all output lines of the last process.
 \if{html}{\out{<div class="r">}}\preformatted{pipeline$read_all_output_lines()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-pipeline-poll_io"></a>}}
+\if{latex}{\out{\hypertarget{method-pipeline-poll_io}{}}}
+\subsection{Method \code{poll_io()}}{
+Poll the connections of the last process for I/O.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{pipeline$poll_io(timeout)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{timeout}}{Timeout in milliseconds. -1 means no timeout.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-read_error"></a>}}
