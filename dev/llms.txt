@@ -135,12 +135,14 @@ result <- run(px, "--help", echo = TRUE)
 #>   outln  <string>            -- print string to stdout, add newline
 #>   errln  <string>            -- print string to stderr, add newline
 #>   errflush                   -- flush stderr stream
-#>   cat    <filename>          -- print file to stdout
+#>   cat    <filename>          -- print file to stdout (use '<stdin>' for standard input)
 #>   return <exitcode>          -- return with exitcode
 #>   writefile <path> <string>  -- write to file
 #>   write <fd> <string>        -- write to file descriptor
 #>   echo <fd1> <fd2> <nbytes>  -- echo from fd to another fd
 #>   getenv <var>               -- environment variable to stdout
+#>   rawout <hexstring>         -- write raw bytes (hex pairs) to stdout
+#>   rawerr <hexstring>         -- write raw bytes (hex pairs) to stderr
 ```
 
 > Note: From version 3.0.1, processx does not let you specify a full
@@ -670,9 +672,10 @@ p <- process$new("nonexistant-command-for-sure")
 ```
 
 ``` R
-#> Error in c("process_initialize(self, private, command, args, stdin, stdout, ", : ! Native call to `processx_exec` failed
-#> Caused by error in `chain_call(c_processx_exec, command, c(command, args), pty, pty_options, …`:
-#> ! cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:613 (processx_exec)
+#> Error in `process_initialize()`:
+#> ! ! Native call to `processx_exec` failed
+#> Caused by error in `chain_call(...)`:
+#> ! cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:651 (processx_exec)
 ```
 
 ``` r

@@ -2,6 +2,10 @@
 
 ## processx (development version)
 
+## processx 3.9.0
+
+CRAN release: 2026-04-22
+
 - New experimental `pipeline` R6 class for running two or more processes
   connected by kernel-level pipes, like a Unix shell pipeline
   (`cmd1 | cmd2 | cmd3`). Data flows directly between child processes
