@@ -142,6 +142,8 @@ static const R_CallMethodDef callMethods[]  = {
     (DL_FUNC) processx_connection_socket_state,      1 },
   { "processx_connection_create_pipepair",
     (DL_FUNC) processx_connection_create_pipepair, 2 },
+  { "processx_connection_create_proc_pipepair",
+    (DL_FUNC) processx_connection_create_proc_pipepair, 1 },
   { "processx_connection_create_fd",  (DL_FUNC) &processx_connection_create_fd,  3 },
   { "processx_connection_create_file",
     (DL_FUNC) &processx_connection_create_file,    3 },

@@ -35,7 +35,7 @@ void usage(void) {
   fprintf(stderr, "  errflush                   -- "
 	  "flush stderr stream\n");
   fprintf(stderr, "  cat    <filename>          -- "
-	  "print file to stdout\n");
+	  "print file to stdout (use '<stdin>' for standard input)\n");
   fprintf(stderr, "  return <exitcode>          -- "
 	  "return with exitcode\n");
   fprintf(stderr, "  writefile <path> <string>  -- "

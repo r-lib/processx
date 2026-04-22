@@ -4,6 +4,7 @@
 \alias{conn_create_fd}
 \alias{conn_file_name}
 \alias{conn_create_pipepair}
+\alias{conn_create_proc_pipepair}
 \alias{conn_read_chars}
 \alias{conn_read_chars.processx_connection}
 \alias{processx_conn_read_chars}
@@ -34,6 +35,8 @@ conn_create_fd(fd, encoding = "", close = TRUE)
 conn_file_name(con)
 
 conn_create_pipepair(encoding = "", nonblocking = c(TRUE, FALSE))
+
+conn_create_proc_pipepair(encoding = "")
 
 conn_read_chars(con, n = -1)
 
@@ -105,9 +108,9 @@ characters or lines.}
 \item{sep}{Separator to use if \code{str} is a character vector. Ignored if
 \code{str} is a raw vector.}
 
-\item{filename}{File name. For \code{conn_create_pipe()} on Windows, a
+\item{filename}{File name. For \code{conn_create_fifo()} on Windows, a
 \verb{\\\\?\\pipe} prefix is added to this, if it does not have such a prefix.
-For \code{conn_create_pipe()} it can also be \code{NULL}, in which case a random
+For \code{conn_create_fifo()} it can also be \code{NULL}, in which case a random
 file name is used via \code{tempfile()}.}
 
 \item{read}{Whether the connection is readable.}
@@ -135,6 +138,13 @@ where it returns the full name of the pipe.
 
 \code{conn_create_pipepair()} creates a pair of connected connections, the
 first one is writeable, the second one is readable.
+
+\code{conn_create_proc_pipepair()} creates a unidirectional pipe suitable for
+connecting two child processes: the first element is the write end (pass as
+\code{stdout} to the writing process) and the second is the read end (pass as
+\code{stdin} to the reading process). Unlike \code{conn_create_pipepair()}, both ends
+are synchronous (blocking), which is required for child-process stdin/stdout
+on Windows.
 
 \code{conn_read_chars()} reads UTF-8 characters from the connections. If the
 connection itself is not UTF-8 encoded, it re-encodes it.

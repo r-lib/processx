@@ -19,7 +19,7 @@ conn_unix_socket_state(con)
 \item{filename}{File name of the socket. On Windows it the name of the
 pipe within the \verb{\\\\?\\pipe\\} namespace, either the full name, or the
 part after that prefix. If \code{NULL}, then a random name
-is used, on Unix in the R temporary directory: \code{\link[base:tempdir]{base::tempdir()}}.}
+is used, on Unix in the R temporary directory: \code{\link[base:tempfile]{base::tempdir()}}.}
 
 \item{encoding}{Encoding to assume when reading from the socket.}
 

@@ -27,6 +27,10 @@ reference:
   contents:
   - process
 
+- title: Pipelines
+  contents:
+  - pipeline
+
 - title: Polling
   contents:
   - poll
