@@ -64,7 +64,7 @@ to collect everything. The \verb{$read_all_output()} and
 \section{Cleaning up background processes}{
 
 processx provides several mechanisms to clean up background processes.
-See the \href{https://processx.r-lib.org/articles/cleanup.html}{Process cleanup}
+See the \href{https://processx.r-lib.org/dev/articles/cleanup.html}{Process cleanup}
 article for a full discussion. A brief summary:
 \itemize{
 \item \strong{Explicit cleanup} (most reliable): call \verb{$kill()} or \verb{$kill_tree()}

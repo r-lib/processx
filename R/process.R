@@ -71,7 +71,7 @@ dummy_r6 <- function() R6::R6Class
 #'
 #' @section Cleaning up background processes:
 #' processx provides several mechanisms to clean up background processes.
-#' See the [Process cleanup](https://processx.r-lib.org/articles/cleanup.html)
+#' See the [Process cleanup](https://processx.r-lib.org/dev/articles/cleanup.html)
 #' article for a full discussion. A brief summary:
 #'
 #' * **Explicit cleanup** (most reliable): call `$kill()` or `$kill_tree()`
