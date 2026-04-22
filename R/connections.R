@@ -275,6 +275,22 @@ conn_create_pipepair <- function(encoding = "", nonblocking = c(TRUE, FALSE)) {
 }
 
 #' @details
+#' `conn_create_proc_pipepair()` creates a unidirectional pipe suitable for
+#' connecting two child processes: the first element is the write end (pass as
+#' `stdout` to the writing process) and the second is the read end (pass as
+#' `stdin` to the reading process). Unlike `conn_create_pipepair()`, both ends
+#' are synchronous (blocking), which is required for child-process stdin/stdout
+#' on Windows.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_create_proc_pipepair <- function(encoding = "") {
+  assert_that(is_string(encoding))
+  chain_call(c_processx_connection_create_proc_pipepair, encoding)
+}
+
+#' @details
 #' `conn_read_chars()` reads UTF-8 characters from the connections. If the
 #' connection itself is not UTF-8 encoded, it re-encodes it.
 #'
@@ -427,9 +443,9 @@ processx_conn_write <- function(con, str, sep = "\n", encoding = "") {
 #' @details
 #' `conn_create_file()` creates a connection to a file.
 #'
-#' @param filename File name. For `conn_create_pipe()` on Windows, a
+#' @param filename File name. For `conn_create_fifo()` on Windows, a
 #' `\\?\pipe` prefix is added to this, if it does not have such a prefix.
-#' For `conn_create_pipe()` it can also be `NULL`, in which case a random
+#' For `conn_create_fifo()` it can also be `NULL`, in which case a random
 #' file name is used via `tempfile()`.
 #' @param read Whether the connection is readable.
 #' @param write Whethe the connection is writeable.

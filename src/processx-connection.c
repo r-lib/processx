@@ -660,6 +660,55 @@ SEXP processx_connection_create_pipepair(SEXP encoding, SEXP nonblocking) {
   return result;
 }
 
+SEXP processx_connection_create_proc_pipepair(SEXP encoding) {
+  const char *c_encoding = CHAR(STRING_ELT(encoding, 0));
+  SEXP result, con1, con2;
+
+#ifdef _WIN32
+  HANDLE hRead = INVALID_HANDLE_VALUE;
+  HANDLE hWrite = INVALID_HANDLE_VALUE;
+  SECURITY_ATTRIBUTES sa;
+  sa.nLength = sizeof(sa);
+  sa.lpSecurityDescriptor = NULL;
+  sa.bInheritHandle = TRUE;
+
+  if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
+    R_THROW_SYSTEM_ERROR("Cannot create pipe");
+  }
+
+  /* con1 = write end [[1]], con2 = read end [[2]] */
+  processx_c_connection_create(hWrite, PROCESSX_FILE_TYPE_PIPE,
+                               c_encoding, NULL, &con1);
+  PROTECT(con1);
+  processx_c_connection_create(hRead, PROCESSX_FILE_TYPE_PIPE,
+                               c_encoding, NULL, &con2);
+  PROTECT(con2);
+
+#else
+  int fds[2];
+  if (pipe(fds) == -1) {
+    R_THROW_SYSTEM_ERROR("Cannot create pipe");
+  }
+  processx__cloexec_fcntl(fds[0], 1);
+  processx__cloexec_fcntl(fds[1], 1);
+
+  /* fds[1] = write end [[1]], fds[0] = read end [[2]], both blocking */
+  processx_c_connection_create(fds[1], PROCESSX_FILE_TYPE_PIPE,
+                               c_encoding, NULL, &con1);
+  PROTECT(con1);
+  processx_c_connection_create(fds[0], PROCESSX_FILE_TYPE_PIPE,
+                               c_encoding, NULL, &con2);
+  PROTECT(con2);
+#endif
+
+  result = PROTECT(allocVector(VECSXP, 2));
+  SET_VECTOR_ELT(result, 0, con1);  /* [[1]] = write end */
+  SET_VECTOR_ELT(result, 1, con2);  /* [[2]] = read end  */
+
+  UNPROTECT(3);
+  return result;
+}
+
 SEXP processx__connection_set_std(SEXP con, int which, int drop) {
   processx_connection_t *ccon = R_ExternalPtrAddr(con);
   if (!ccon) R_THROW_ERROR("Invalid connection object");

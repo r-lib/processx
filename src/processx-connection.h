@@ -184,6 +184,7 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout);
 
 /* Functions for connection inheritance */
 SEXP processx_connection_create_pipepair(SEXP encoding, SEXP nonblocking);
+SEXP processx_connection_create_proc_pipepair(SEXP encoding);
 
 SEXP processx_connection_set_stdout(SEXP con, SEXP drop);
 

@@ -8,7 +8,7 @@ curl_fds(fds)
 }
 \arguments{
 \item{fds}{A list of file descriptors, as returned by
-\code{\link[curl:multi_fdset]{curl::multi_fdset()}}.}
+\code{\link[curl:multi]{curl::multi_fdset()}}.}
 }
 \value{
 Pollable object, that be used with \code{\link[=poll]{poll()}} directly.
