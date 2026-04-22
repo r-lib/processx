@@ -4,6 +4,8 @@
 \alias{pipeline}
 \title{Pipeline of processes connected with pipes}
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
 A \code{pipeline} object represents a sequence of processes whose standard
 input and output streams are connected with pipes, like a Unix pipeline
 (\code{cmd1 | cmd2 | cmd3}). Data flows directly between the child processes

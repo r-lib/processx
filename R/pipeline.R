@@ -1,6 +1,8 @@
 #' Pipeline of processes connected with pipes
 #'
 #' @description
+#' `r lifecycle::badge("experimental")`
+#'
 #' A `pipeline` object represents a sequence of processes whose standard
 #' input and output streams are connected with pipes, like a Unix pipeline
 #' (`cmd1 | cmd2 | cmd3`). Data flows directly between the child processes
