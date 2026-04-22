@@ -11,7 +11,7 @@ compatible with R's built-in connection system."><script src="https://cdn.jsdeli
 
     <a class="navbar-brand me-2" href="../index.html">processx</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">3.8.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">3.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,7 +22,8 @@ compatible with R's built-in connection system."><script src="https://cdn.jsdeli
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/internals.html">processx internals</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/cleanup.html">Process cleanup</a></li>
+    <li><a class="dropdown-item" href="../articles/internals.html">processx internals</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -55,12 +56,21 @@ compatible with R's built-in connection system.</p>
 <span></span>
 <span><span class="fu">conn_create_pipepair</span><span class="op">(</span>encoding <span class="op">=</span> <span class="st">""</span>, nonblocking <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
+<span><span class="fu">conn_create_proc_pipepair</span><span class="op">(</span>encoding <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu">conn_read_chars</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'processx_connection'</span></span>
 <span><span class="fu">conn_read_chars</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">processx_conn_read_chars</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">conn_read_bytes</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'processx_connection'</span></span>
+<span><span class="fu">conn_read_bytes</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">processx_conn_read_bytes</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">conn_read_lines</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
 <span></span>
@@ -145,9 +155,9 @@ characters or lines.</p></dd>
 
 
 <dt id="arg-filename">filename<a class="anchor" aria-label="anchor" href="#arg-filename"></a></dt>
-<dd><p>File name. For <code>conn_create_pipe()</code> on Windows, a
+<dd><p>File name. For <code><a href="processx_fifos.html">conn_create_fifo()</a></code> on Windows, a
 <code>\\?\pipe</code> prefix is added to this, if it does not have such a prefix.
-For <code>conn_create_pipe()</code> it can also be <code>NULL</code>, in which case a random
+For <code><a href="processx_fifos.html">conn_create_fifo()</a></code> it can also be <code>NULL</code>, in which case a random
 file name is used via <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile()</a></code>.</p></dd>
 
 
@@ -178,8 +188,20 @@ system it returns <code>NA_character()</code>. Except for named pipes on Windows
 where it returns the full name of the pipe.</p>
 <p><code>conn_create_pipepair()</code> creates a pair of connected connections, the
 first one is writeable, the second one is readable.</p>
+<p><code>conn_create_proc_pipepair()</code> creates a unidirectional pipe suitable for
+connecting two child processes: the first element is the write end (pass as
+<code>stdout</code> to the writing process) and the second is the read end (pass as
+<code>stdin</code> to the reading process). Unlike <code>conn_create_pipepair()</code>, both ends
+are synchronous (blocking), which is required for child-process stdin/stdout
+on Windows.</p>
 <p><code>conn_read_chars()</code> reads UTF-8 characters from the connections. If the
 connection itself is not UTF-8 encoded, it re-encodes it.</p>
+<p><code>conn_read_bytes()</code> reads raw bytes from the connection into a raw vector.
+Unlike <code>conn_read_chars()</code>, it bypasses UTF-8 conversion, so null bytes
+and arbitrary binary data are preserved exactly. Calling this function
+switches the connection permanently to raw mode; after that,
+<code>conn_read_chars()</code> and <code>conn_read_lines()</code> must not be used on the
+same connection.</p>
 <p><code>conn_read_lines()</code> reads lines from a connection.</p>
 <p><code>conn_is_incomplete()</code> returns <code>FALSE</code> if the connection surely has no
 more data.</p>

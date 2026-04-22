@@ -3,6 +3,7 @@
 <url><loc>http://processx.r-lib.org/CODE_OF_CONDUCT.html</loc></url>
 <url><loc>http://processx.r-lib.org/LICENSE-text.html</loc></url>
 <url><loc>http://processx.r-lib.org/LICENSE.html</loc></url>
+<url><loc>http://processx.r-lib.org/articles/cleanup.html</loc></url>
 <url><loc>http://processx.r-lib.org/articles/index.html</loc></url>
 <url><loc>http://processx.r-lib.org/articles/internals.html</loc></url>
 <url><loc>http://processx.r-lib.org/authors.html</loc></url>
@@ -12,6 +13,7 @@
 <url><loc>http://processx.r-lib.org/reference/curl_fds.html</loc></url>
 <url><loc>http://processx.r-lib.org/reference/default_pty_options.html</loc></url>
 <url><loc>http://processx.r-lib.org/reference/index.html</loc></url>
+<url><loc>http://processx.r-lib.org/reference/pipeline.html</loc></url>
 <url><loc>http://processx.r-lib.org/reference/poll.html</loc></url>
 <url><loc>http://processx.r-lib.org/reference/process.html</loc></url>
 <url><loc>http://processx.r-lib.org/reference/process_initialize.html</loc></url>

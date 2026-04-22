@@ -15,7 +15,7 @@ streams. The process id is then used to manage the process."><script src="https:
 
     <a class="navbar-brand me-2" href="../index.html">processx</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">3.8.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">3.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,7 +26,8 @@ streams. The process id is then used to manage the process."><script src="https:
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/internals.html">processx internals</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/cleanup.html">Process cleanup</a></li>
+    <li><a class="dropdown-item" href="../articles/internals.html">processx internals</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -83,19 +84,31 @@ in either of them, or they are closed (e.g. because the process exits)
 <p>In addition to polling a single process, the <code><a href="poll.html">poll()</a></code> function
 can poll the output of several processes, and returns as soon as any
 of them has generated output (or exited).</p>
+<p><strong>Always call <code>$poll_io()</code> (or <code><a href="poll.html">poll()</a></code>) before reading from the
+stdout or stderr pipes.</strong> The OS pipe buffer is finite (typically 64KB
+on Linux/macOS, ~76KB on Windows). If the child process fills the pipe
+buffer before the parent reads from it, the child blocks waiting for
+the buffer to drain, while the parent may be waiting for the child —
+resulting in a deadlock. Polling drains the buffer and prevents this.
+Even a zero-timeout poll (<code>$poll_io(0)</code>) is sufficient when you know
+output is available; use a positive timeout (or <code>-1</code> to wait
+indefinitely) when you need to wait for output to arrive.</p>
+<p>Note also that <code>$read_output()</code> and <code>$read_error()</code> may return <em>less</em>
+data than requested: a single call is not guaranteed to return all
+buffered output. Call them in a loop (polling before each read) until
+<code>$is_incomplete_output()</code> / <code>$is_incomplete_error()</code> returns <code>FALSE</code>
+to collect everything. The <code>$read_all_output()</code> and
+<code>$read_all_error()</code> helpers already do this for you.</p>
     </div>
     <div class="section level2">
     <h2 id="cleaning-up-background-processes">Cleaning up background processes<a class="anchor" aria-label="anchor" href="#cleaning-up-background-processes"></a></h2>
 
 
-<p>processx kills processes that are not referenced any more (if <code>cleanup</code>
-is set to <code>TRUE</code>), or the whole subprocess tree (if <code>cleanup_tree</code> is
-also set to <code>TRUE</code>).</p>
-<p>The cleanup happens when the references of the processes object are
-garbage collected. To clean up earlier, you can call the <code>kill()</code> or
-<code>kill_tree()</code> method of the process(es), from an <code><a href="https://rdrr.io/r/base/on.exit.html" class="external-link">on.exit()</a></code> expression,
-or an error handler:</p>
-<p></p><div class="sourceCode r"><pre><code><span><span class="va">process_manager</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
+<p>processx provides several mechanisms to clean up background processes.
+See the <a href="https://processx.r-lib.org/dev/articles/cleanup.html" class="external-link">Process cleanup</a>
+article for a full discussion. A brief summary:</p><ul><li><p><strong>Explicit cleanup</strong> (most reliable): call <code>$kill()</code> or <code>$kill_tree()</code>
+from an <code><a href="https://rdrr.io/r/base/on.exit.html" class="external-link">on.exit()</a></code> expression or error handler:</p></li>
+</ul><p></p><div class="sourceCode r"><pre><code><span><span class="va">process_manager</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/on.exit.html" class="external-link">on.exit</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="kw"><a href="https://rdrr.io/r/base/try.html" class="external-link">try</a></span><span class="op">(</span><span class="va">p1</span><span class="op">$</span><span class="fu">kill</span><span class="op">(</span><span class="op">)</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span>    <span class="kw"><a href="https://rdrr.io/r/base/try.html" class="external-link">try</a></span><span class="op">(</span><span class="va">p2</span><span class="op">$</span><span class="fu">kill</span><span class="op">(</span><span class="op">)</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -106,10 +119,33 @@ or an error handler:</p>
 <span>  <span class="va">p2</span><span class="op">$</span><span class="fu">wait</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="fu">process_manager</span><span class="op">(</span><span class="op">)</span></span></code></pre><p></p></div>
-<p>If you interrupt <code>process_manager()</code> or an error happens then both <code>p1</code>
-and <code>p2</code> are cleaned up immediately. Their connections will also be
-closed. The same happens at a regular exit.</p>
-    </div>
+<p>If you interrupt <code>process_manager()</code> or an error happens then both
+<code>p1</code> and <code>p2</code> are cleaned up immediately.</p><ul><li><p><strong>Automatic GC cleanup</strong> (<code>cleanup = TRUE</code>, the default): the process
+is killed when the <code>process</code> R object is garbage collected. On Unix,
+<code>kill(-pid, SIGKILL)</code> is used, which kills the child's whole process
+group (since the child calls <code>setsid()</code> on startup). On Windows, the
+child is added to a global Job Object with
+<code>JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE</code>, so it is also killed if R exits
+or crashes. GC timing is non-deterministic; prefer <code><a href="https://rdrr.io/r/base/on.exit.html" class="external-link">on.exit()</a></code> when
+determinism matters.</p></li>
+<li><p><strong>Process tree cleanup</strong> (<code>cleanup_tree = TRUE</code>): kills the process
+and all its descendants, including orphaned ones. processx marks each
+child with a unique environment variable (<code>PROCESSX_&lt;id&gt;=YES</code>) that is
+inherited by all descendants; <code>$kill_tree()</code> uses the <em>ps</em> package to
+find and kill every process carrying that variable. On macOS, system
+restrictions may prevent reading other processes' environment, so tree
+cleanup may not work reliably.</p></li>
+<li><p><strong>Linux parent-death signal</strong> (<code>linux_pdeathsig</code>): on Linux, the
+kernel can send a signal (e.g. <code>SIGTERM</code>) to the child when the parent
+R process exits, including on crash. Pass <code>linux_pdeathsig = TRUE</code> for
+<code>SIGTERM</code>, or an integer signal number. Ignored on non-Linux platforms.</p></li>
+<li><p><strong>Supervisor</strong> (<code>supervise = TRUE</code>): a separate native process that
+polls every 200 ms and kills registered children if the parent R
+process dies (including crashes). On Unix it sends SIGTERM then
+(after 5 s) SIGKILL. On Windows it sends CTRL+C / WM_CLOSE then
+hard-kills. Note: on Windows, antivirus software may block
+<code>supervisor.exe</code>.</p></li>
+</ul></div>
     <div class="section level2">
     <h2 id="methods">Methods<a class="anchor" aria-label="anchor" href="#methods"></a></h2>
 
@@ -128,10 +164,13 @@ closed. The same happens at a regular exit.</p>
 <li><p><a href="#method-process-format"><code>process$format()</code></a></p></li>
 <li><p><a href="#method-process-print"><code>process$print()</code></a></p></li>
 <li><p><a href="#method-process-get_start_time"><code>process$get_start_time()</code></a></p></li>
+<li><p><a href="#method-process-get_end_time"><code>process$get_end_time()</code></a></p></li>
 <li><p><a href="#method-process-is_supervised"><code>process$is_supervised()</code></a></p></li>
 <li><p><a href="#method-process-supervise"><code>process$supervise()</code></a></p></li>
 <li><p><a href="#method-process-read_output"><code>process$read_output()</code></a></p></li>
 <li><p><a href="#method-process-read_error"><code>process$read_error()</code></a></p></li>
+<li><p><a href="#method-process-read_output_bytes"><code>process$read_output_bytes()</code></a></p></li>
+<li><p><a href="#method-process-read_error_bytes"><code>process$read_error_bytes()</code></a></p></li>
 <li><p><a href="#method-process-read_output_lines"><code>process$read_output_lines()</code></a></p></li>
 <li><p><a href="#method-process-read_error_lines"><code>process$read_error_lines()</code></a></p></li>
 <li><p><a href="#method-process-is_incomplete_output"><code>process$is_incomplete_output()</code></a></p></li>
@@ -190,7 +229,8 @@ closed. The same happens at a regular exit.</p>
 <span>  windows_hide_window <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  windows_detached_process <span class="op">=</span> <span class="op">!</span><span class="va">cleanup</span>,</span>
 <span>  encoding <span class="op">=</span> <span class="st">""</span>,</span>
-<span>  post_process <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  post_process <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  linux_pdeathsig <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -225,7 +265,10 @@ RGui on Windows, then an error is thrown.</p></li>
 
 <dt><code>stdout</code></dt>
 <dd><p>What to do with the standard output. Possible values:</p><ul><li><p><code>NULL</code>: discard it;</p></li>
-<li><p>A string, redirect it to this file.
+<li><p>A string starting with <code>"&gt;&gt;"</code>, e.g. <code>"&gt;&gt;output.txt"</code>: append it
+to this file. The file is created if it does not exist.</p></li>
+<li><p>A string (not starting with <code>"&gt;&gt;"</code>), redirect it to this file,
+truncating the file first.
 Note that if you specify a relative path, it will be relative to
 the current working directory, even if you specify another
 directory in the <code>wd</code> argument. (See issue 324.)</p></li>
@@ -238,7 +281,10 @@ RGui on Windows, then an error is thrown.</p></li>
 
 <dt><code>stderr</code></dt>
 <dd><p>What to do with the standard error. Possible values:</p><ul><li><p><code>NULL</code>: discard it.</p></li>
-<li><p>A string, redirect it to this file.
+<li><p>A string starting with <code>"&gt;&gt;"</code>, e.g. <code>"&gt;&gt;error.txt"</code>: append it
+to this file. The file is created if it does not exist.</p></li>
+<li><p>A string (not starting with <code>"&gt;&gt;"</code>), redirect it to this file,
+truncating the file first.
 Note that if you specify a relative path, it will be relative to
 the current working directory, even if you specify another
 directory in the <code>wd</code> argument. (See issue 324.)</p></li>
@@ -353,13 +399,24 @@ parent had one.</p></dd>
 used. Note that <code>processx</code> always reencodes the output of the
 <code>stdout</code> and <code>stderr</code> streams in UTF-8 currently.
 If you want to read them without any conversion, on all platforms,
-specify <code>"UTF-8"</code> as encoding.</p></dd>
+specify <code>"UTF-8"</code> as encoding. Use <code>"binary"</code> to disable text
+conversion entirely: <code>$read_output()</code> and <code>$read_error()</code> will
+return raw vectors instead of character strings, preserving all
+bytes including null bytes and non-UTF-8 byte sequences.</p></dd>
 
 
 <dt><code>post_process</code></dt>
 <dd><p>An optional function to run when the process has
 finished. Currently it only runs if <code>$get_result()</code> is called.
 It is only run once.</p></dd>
+
+
+<dt><code>linux_pdeathsig</code></dt>
+<dd><p>On Linux, send this signal to the child process
+when the parent R process exits. <code>FALSE</code> (the default) disables this.
+<code>TRUE</code> sends <code>SIGTERM</code>. An integer signal number, e.g.
+<code><a href="https://rdrr.io/r/tools/pskill.html" class="external-link">tools::SIGTERM</a></code> or <code><a href="https://rdrr.io/r/tools/pskill.html" class="external-link">tools::SIGKILL</a></code>, sends that signal. Ignored on
+non-Linux platforms.</p></dd>
 
 
 </dl><p></p></div>
@@ -553,11 +610,25 @@ started.</p><div class="section">
 </div>
 
 
+</div><p></p><hr><a id="method-process-get_end_time"></a><div class="section">
+<h3 id="method-get-end-time-">Method <code>get_end_time()</code><a class="anchor" aria-label="anchor" href="#method-get-end-time-"></a></h3>
+<p><code>$get_end_time()</code> returns the time when the process finished,
+or <code>NULL</code> if it is still running.
+On Unix the timestamp is recorded when R first notices the exit
+(via the <code>SIGCHLD</code> handler or a call to <code>$is_alive()</code>,
+<code>$get_exit_status()</code>, or <code>$wait()</code>), so it may be slightly later
+than the actual kernel exit time.
+On Windows the exact kernel exit time is used.</p><div class="section">
+<h4 id="usage-12">Usage<a class="anchor" aria-label="anchor" href="#usage-12"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_end_time</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+
 </div><p></p><hr><a id="method-process-is_supervised"></a><div class="section">
 <h3 id="method-is-supervised-">Method <code>is_supervised()</code><a class="anchor" aria-label="anchor" href="#method-is-supervised-"></a></h3>
 <p><code>$is_supervised()</code> returns whether the process is being tracked by
 supervisor process.</p><div class="section">
-<h4 id="usage-12">Usage<a class="anchor" aria-label="anchor" href="#usage-12"></a></h4>
+<h4 id="usage-13">Usage<a class="anchor" aria-label="anchor" href="#usage-13"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">is_supervised</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -569,7 +640,7 @@ tracking the process. If <code>FALSE</code>, tells the supervisor to stop
 tracking the process. Note that even if the supervisor is disabled
 for a process, if it was started with <code>cleanup = TRUE</code>, the process
 will still be killed when the object is garbage collected.</p><div class="section">
-<h4 id="usage-13">Usage<a class="anchor" aria-label="anchor" href="#usage-13"></a></h4>
+<h4 id="usage-14">Usage<a class="anchor" aria-label="anchor" href="#usage-14"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">supervise</span><span class="op">(</span><span class="va">status</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -589,8 +660,15 @@ process.</p></dd>
 process. If the standard output connection was not requested, then
 then it returns an error. It uses a non-blocking text connection. This
 will work only if <code>stdout="|"</code> was used. Otherwise, it will throw an
-error.</p><div class="section">
-<h4 id="usage-14">Usage<a class="anchor" aria-label="anchor" href="#usage-14"></a></h4>
+error. When the process was started with <code>encoding = "binary"</code>, returns
+a raw vector instead of a character string.</p>
+<p>A single call may return less data than requested (or an empty string)
+even when more output will eventually arrive: the OS pipe buffer is
+finite, and <code>$read_output()</code> only returns what is already buffered.
+Always call <code>$poll_io()</code> (or <code><a href="poll.html">poll()</a></code>) before reading to avoid
+deadlocking when the child fills the pipe buffer (see the <em>Polling</em>
+section for details). To read <em>all</em> output call <code>$read_all_output()</code>.</p><div class="section">
+<h4 id="usage-15">Usage<a class="anchor" aria-label="anchor" href="#usage-15"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_output</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -605,14 +683,53 @@ error.</p><div class="section">
 
 </div><p></p><hr><a id="method-process-read_error"></a><div class="section">
 <h3 id="method-read-error-">Method <code>read_error()</code><a class="anchor" aria-label="anchor" href="#method-read-error-"></a></h3>
-<p><code>$read_error()</code> is similar to <code>$read_output</code>, but it reads
-from the standard error stream.</p><div class="section">
-<h4 id="usage-15">Usage<a class="anchor" aria-label="anchor" href="#usage-15"></a></h4>
+<p><code>$read_error()</code> is similar to <code>$read_output()</code>, but reads from the
+standard error stream. Returns a raw vector when
+<code>encoding = "binary"</code> was used. The same polling requirement applies
+as for <code>$read_output()</code> (see the <em>Polling</em> section).</p><div class="section">
+<h4 id="usage-16">Usage<a class="anchor" aria-label="anchor" href="#usage-16"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_error</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
 <h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>n</code></dt>
+<dd><p>Number of characters or lines to read.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
+</div><p></p><hr><a id="method-process-read_output_bytes"></a><div class="section">
+<h3 id="method-read-output-bytes-">Method <code>read_output_bytes()</code><a class="anchor" aria-label="anchor" href="#method-read-output-bytes-"></a></h3>
+<p><code>$read_output_bytes()</code> reads from the standard output connection of
+the process and returns the result as a raw vector, preserving all
+bytes including null bytes and other binary data. Switches the
+underlying connection to raw mode; do not mix with <code>$read_output()</code>.
+This will work only if <code>stdout="|"</code> was used.</p><div class="section">
+<h4 id="usage-17">Usage<a class="anchor" aria-label="anchor" href="#usage-17"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_output_bytes</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>n</code></dt>
+<dd><p>Number of characters or lines to read.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
+</div><p></p><hr><a id="method-process-read_error_bytes"></a><div class="section">
+<h3 id="method-read-error-bytes-">Method <code>read_error_bytes()</code><a class="anchor" aria-label="anchor" href="#method-read-error-bytes-"></a></h3>
+<p><code>$read_error_bytes()</code> is similar to <code>$read_output_bytes()</code>, but reads
+from the standard error stream.</p><div class="section">
+<h4 id="usage-18">Usage<a class="anchor" aria-label="anchor" href="#usage-18"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_error_bytes</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div>
+
+<div class="section">
+<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>n</code></dt>
 <dd><p>Number of characters or lines to read.</p></dd>
 
@@ -626,13 +743,20 @@ from the standard error stream.</p><div class="section">
 of the process. If the standard output connection was not requested,
 then it returns an error. It uses a non-blocking text connection.
 This will work only if <code>stdout="|"</code> was used. Otherwise, it will
-throw an error.</p><div class="section">
-<h4 id="usage-16">Usage<a class="anchor" aria-label="anchor" href="#usage-16"></a></h4>
+throw an error.</p>
+<p>Because <code>$read_output_lines()</code> only returns complete lines already in
+the buffer, it may return zero lines even when the process has produced
+output — for example when a line is longer than the pipe buffer (~64KB
+on Linux/macOS, ~76KB on Windows) or when the line is not yet
+terminated. Always call <code>$poll_io()</code> before reading to avoid
+deadlocking (see the <em>Polling</em> section), and use <code>$read_output()</code>
+when lines may be very long.</p><div class="section">
+<h4 id="usage-19">Usage<a class="anchor" aria-label="anchor" href="#usage-19"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_output_lines</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
+<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>n</code></dt>
 <dd><p>Number of characters or lines to read.</p></dd>
 
@@ -643,13 +767,14 @@ throw an error.</p><div class="section">
 </div><p></p><hr><a id="method-process-read_error_lines"></a><div class="section">
 <h3 id="method-read-error-lines-">Method <code>read_error_lines()</code><a class="anchor" aria-label="anchor" href="#method-read-error-lines-"></a></h3>
 <p><code>$read_error_lines()</code> is similar to <code>$read_output_lines</code>, but
-it reads from the standard error stream.</p><div class="section">
-<h4 id="usage-17">Usage<a class="anchor" aria-label="anchor" href="#usage-17"></a></h4>
+it reads from the standard error stream. The same polling requirement
+applies (see the <em>Polling</em> section).</p><div class="section">
+<h4 id="usage-20">Usage<a class="anchor" aria-label="anchor" href="#usage-20"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_error_lines</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
+<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>n</code></dt>
 <dd><p>Number of characters or lines to read.</p></dd>
 
@@ -662,7 +787,7 @@ it reads from the standard error stream.</p><div class="section">
 <p><code>$is_incomplete_output()</code> return <code>FALSE</code> if the other end of
 the standard output connection was closed (most probably because the
 process exited). It return <code>TRUE</code> otherwise.</p><div class="section">
-<h4 id="usage-18">Usage<a class="anchor" aria-label="anchor" href="#usage-18"></a></h4>
+<h4 id="usage-21">Usage<a class="anchor" aria-label="anchor" href="#usage-21"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">is_incomplete_output</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -672,7 +797,7 @@ process exited). It return <code>TRUE</code> otherwise.</p><div class="section">
 <p><code>$is_incomplete_error()</code> return <code>FALSE</code> if the other end of
 the standard error connection was closed (most probably because the
 process exited). It return <code>TRUE</code> otherwise.</p><div class="section">
-<h4 id="usage-19">Usage<a class="anchor" aria-label="anchor" href="#usage-19"></a></h4>
+<h4 id="usage-22">Usage<a class="anchor" aria-label="anchor" href="#usage-22"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">is_incomplete_error</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -682,7 +807,7 @@ process exited). It return <code>TRUE</code> otherwise.</p><div class="section">
 <p><code>$has_input_connection()</code> return <code>TRUE</code> if there is a connection
 object for standard input; in other words, if <code>stdout="|"</code>. It returns
 <code>FALSE</code> otherwise.</p><div class="section">
-<h4 id="usage-20">Usage<a class="anchor" aria-label="anchor" href="#usage-20"></a></h4>
+<h4 id="usage-23">Usage<a class="anchor" aria-label="anchor" href="#usage-23"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">has_input_connection</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -692,7 +817,7 @@ object for standard input; in other words, if <code>stdout="|"</code>. It return
 <p><code>$has_output_connection()</code> returns <code>TRUE</code> if there is a connection
 object for standard output; in other words, if <code>stdout="|"</code>. It returns
 <code>FALSE</code> otherwise.</p><div class="section">
-<h4 id="usage-21">Usage<a class="anchor" aria-label="anchor" href="#usage-21"></a></h4>
+<h4 id="usage-24">Usage<a class="anchor" aria-label="anchor" href="#usage-24"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">has_output_connection</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -702,7 +827,7 @@ object for standard output; in other words, if <code>stdout="|"</code>. It retur
 <p><code>$has_error_connection()</code> returns <code>TRUE</code> if there is a connection
 object for standard error; in other words, if <code>stderr="|"</code>. It returns
 <code>FALSE</code> otherwise.</p><div class="section">
-<h4 id="usage-22">Usage<a class="anchor" aria-label="anchor" href="#usage-22"></a></h4>
+<h4 id="usage-25">Usage<a class="anchor" aria-label="anchor" href="#usage-25"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">has_error_connection</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -711,7 +836,7 @@ object for standard error; in other words, if <code>stderr="|"</code>. It return
 <h3 id="method-has-poll-connection-">Method <code>has_poll_connection()</code><a class="anchor" aria-label="anchor" href="#method-has-poll-connection-"></a></h3>
 <p><code>$has_poll_connection()</code> return <code>TRUE</code> if there is a poll connection,
 <code>FALSE</code> otherwise.</p><div class="section">
-<h4 id="usage-23">Usage<a class="anchor" aria-label="anchor" href="#usage-23"></a></h4>
+<h4 id="usage-26">Usage<a class="anchor" aria-label="anchor" href="#usage-26"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">has_poll_connection</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -720,7 +845,7 @@ object for standard error; in other words, if <code>stderr="|"</code>. It return
 <h3 id="method-get-input-connection-">Method <code>get_input_connection()</code><a class="anchor" aria-label="anchor" href="#method-get-input-connection-"></a></h3>
 <p><code>$get_input_connection()</code> returns a connection object, to the
 standard input stream of the process.</p><div class="section">
-<h4 id="usage-24">Usage<a class="anchor" aria-label="anchor" href="#usage-24"></a></h4>
+<h4 id="usage-27">Usage<a class="anchor" aria-label="anchor" href="#usage-27"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_input_connection</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -729,7 +854,7 @@ standard input stream of the process.</p><div class="section">
 <h3 id="method-get-output-connection-">Method <code>get_output_connection()</code><a class="anchor" aria-label="anchor" href="#method-get-output-connection-"></a></h3>
 <p><code>$get_output_connection()</code> returns a connection object, to the
 standard output stream of the process.</p><div class="section">
-<h4 id="usage-25">Usage<a class="anchor" aria-label="anchor" href="#usage-25"></a></h4>
+<h4 id="usage-28">Usage<a class="anchor" aria-label="anchor" href="#usage-28"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_output_connection</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -738,7 +863,7 @@ standard output stream of the process.</p><div class="section">
 <h3 id="method-get-error-connection-">Method <code>get_error_connection()</code><a class="anchor" aria-label="anchor" href="#method-get-error-connection-"></a></h3>
 <p><code>$get_error_conneciton()</code> returns a connection object, to the
 standard error stream of the process.</p><div class="section">
-<h4 id="usage-26">Usage<a class="anchor" aria-label="anchor" href="#usage-26"></a></h4>
+<h4 id="usage-29">Usage<a class="anchor" aria-label="anchor" href="#usage-29"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_error_connection</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -751,7 +876,7 @@ Note that this process involves waiting for the process to finish,
 polling for I/O and potentially several <code><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines()</a></code> calls.
 It returns a character scalar. This will return content only if
 <code>stdout="|"</code> was used. Otherwise, it will throw an error.</p><div class="section">
-<h4 id="usage-27">Usage<a class="anchor" aria-label="anchor" href="#usage-27"></a></h4>
+<h4 id="usage-30">Usage<a class="anchor" aria-label="anchor" href="#usage-30"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_all_output</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -764,7 +889,7 @@ Note that this process involves waiting for the process to finish,
 polling for I/O and potentially several <code><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines()</a></code> calls.
 It returns a character scalar. This will return content only if
 <code>stderr="|"</code> was used. Otherwise, it will throw an error.</p><div class="section">
-<h4 id="usage-28">Usage<a class="anchor" aria-label="anchor" href="#usage-28"></a></h4>
+<h4 id="usage-31">Usage<a class="anchor" aria-label="anchor" href="#usage-31"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_all_error</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -777,7 +902,7 @@ Note that this process involves waiting for the process to finish,
 polling for I/O and potentially several <code><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines()</a></code> calls.
 It returns a character vector. This will return content only if
 <code>stdout="|"</code> was used. Otherwise, it will throw an error.</p><div class="section">
-<h4 id="usage-29">Usage<a class="anchor" aria-label="anchor" href="#usage-29"></a></h4>
+<h4 id="usage-32">Usage<a class="anchor" aria-label="anchor" href="#usage-32"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_all_output_lines</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -790,7 +915,7 @@ Note that this process involves waiting for the process to finish,
 polling for I/O and potentially several <code><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines()</a></code> calls.
 It returns a character vector. This will return content only if
 <code>stderr="|"</code> was used. Otherwise, it will throw an error.</p><div class="section">
-<h4 id="usage-30">Usage<a class="anchor" aria-label="anchor" href="#usage-30"></a></h4>
+<h4 id="usage-33">Usage<a class="anchor" aria-label="anchor" href="#usage-33"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_all_error_lines</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -805,12 +930,12 @@ partially (i.e. not the full string is written). It returns with a raw
 vector, that contains the bytes that were not written. You can supply
 this raw vector to <code>$write_input()</code> again, until it is fully written,
 and then the return value will be <code>raw(0)</code> (invisibly).</p><div class="section">
-<h4 id="usage-31">Usage<a class="anchor" aria-label="anchor" href="#usage-31"></a></h4>
+<h4 id="usage-34">Usage<a class="anchor" aria-label="anchor" href="#usage-34"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">write_input</span><span class="op">(</span><span class="va">str</span>, sep <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
+<h4 id="arguments-12">Arguments<a class="anchor" aria-label="anchor" href="#arguments-12"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>str</code></dt>
 <dd><p>Character or raw vector to write to the standard input
 of the process. If a character vector with a marked encoding,
@@ -834,7 +959,7 @@ character vector. It is ignored if <code>str</code> is a raw vector.</p></dd>
 <p><code>$get_input_file()</code> if the <code>stdin</code> argument was a filename,
 this returns the absolute path to the file. If <code>stdin</code> was <code>"|"</code> or
 <code>NULL</code>, this simply returns that value.</p><div class="section">
-<h4 id="usage-32">Usage<a class="anchor" aria-label="anchor" href="#usage-32"></a></h4>
+<h4 id="usage-35">Usage<a class="anchor" aria-label="anchor" href="#usage-35"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_input_file</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -844,7 +969,7 @@ this returns the absolute path to the file. If <code>stdin</code> was <code>"|"<
 <p><code>$get_output_file()</code> if the <code>stdout</code> argument was a filename,
 this returns the absolute path to the file. If <code>stdout</code> was <code>"|"</code> or
 <code>NULL</code>, this simply returns that value.</p><div class="section">
-<h4 id="usage-33">Usage<a class="anchor" aria-label="anchor" href="#usage-33"></a></h4>
+<h4 id="usage-36">Usage<a class="anchor" aria-label="anchor" href="#usage-36"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_output_file</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -854,7 +979,7 @@ this returns the absolute path to the file. If <code>stdout</code> was <code>"|"
 <p><code>$get_error_file()</code> if the <code>stderr</code> argument was a filename,
 this returns the absolute path to the file. If <code>stderr</code> was <code>"|"</code> or
 <code>NULL</code>, this simply returns that value.</p><div class="section">
-<h4 id="usage-34">Usage<a class="anchor" aria-label="anchor" href="#usage-34"></a></h4>
+<h4 id="usage-37">Usage<a class="anchor" aria-label="anchor" href="#usage-37"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_error_file</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -864,12 +989,12 @@ this returns the absolute path to the file. If <code>stderr</code> was <code>"|"
 <p><code>$poll_io()</code> polls the process's connections for I/O. See more in
 the <em>Polling</em> section, and see also the <code><a href="poll.html">poll()</a></code> function
 to poll on multiple processes.</p><div class="section">
-<h4 id="usage-35">Usage<a class="anchor" aria-label="anchor" href="#usage-35"></a></h4>
+<h4 id="usage-38">Usage<a class="anchor" aria-label="anchor" href="#usage-38"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">poll_io</span><span class="op">(</span><span class="va">timeout</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
+<h4 id="arguments-13">Arguments<a class="anchor" aria-label="anchor" href="#arguments-13"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>timeout</code></dt>
 <dd><p>Timeout in milliseconds, for the wait or the I/O
 polling.</p></dd>
@@ -882,7 +1007,7 @@ polling.</p></dd>
 <h3 id="method-get-poll-connection-">Method <code>get_poll_connection()</code><a class="anchor" aria-label="anchor" href="#method-get-poll-connection-"></a></h3>
 <p><code>$get_poll_connetion()</code> returns the poll connection, if the process has
 one.</p><div class="section">
-<h4 id="usage-36">Usage<a class="anchor" aria-label="anchor" href="#usage-36"></a></h4>
+<h4 id="usage-39">Usage<a class="anchor" aria-label="anchor" href="#usage-39"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_poll_connection</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -892,7 +1017,7 @@ one.</p><div class="section">
 <p><code>$get_result()</code> returns the result of the post processesing function.
 It can only be called once the process has finished. If the process has
 no post-processing function, then <code>NULL</code> is returned.</p><div class="section">
-<h4 id="usage-37">Usage<a class="anchor" aria-label="anchor" href="#usage-37"></a></h4>
+<h4 id="usage-40">Usage<a class="anchor" aria-label="anchor" href="#usage-40"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_result</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -901,7 +1026,7 @@ no post-processing function, then <code>NULL</code> is returned.</p><div class="
 <h3 id="method-as-ps-handle-">Method <code>as_ps_handle()</code><a class="anchor" aria-label="anchor" href="#method-as-ps-handle-"></a></h3>
 <p><code>$as_ps_handle()</code> returns a <a href="https://ps.r-lib.org/reference/ps_handle.html" class="external-link">ps::ps_handle</a> object, corresponding to
 the process.</p><div class="section">
-<h4 id="usage-38">Usage<a class="anchor" aria-label="anchor" href="#usage-38"></a></h4>
+<h4 id="usage-41">Usage<a class="anchor" aria-label="anchor" href="#usage-41"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">as_ps_handle</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -909,7 +1034,7 @@ the process.</p><div class="section">
 </div><p></p><hr><a id="method-process-get_name"></a><div class="section">
 <h3 id="method-get-name-">Method <code>get_name()</code><a class="anchor" aria-label="anchor" href="#method-get-name-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_name.html" class="external-link">ps::ps_name()</a></code> to get the process name.</p><div class="section">
-<h4 id="usage-39">Usage<a class="anchor" aria-label="anchor" href="#usage-39"></a></h4>
+<h4 id="usage-42">Usage<a class="anchor" aria-label="anchor" href="#usage-42"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_name</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -917,7 +1042,7 @@ the process.</p><div class="section">
 </div><p></p><hr><a id="method-process-get_exe"></a><div class="section">
 <h3 id="method-get-exe-">Method <code>get_exe()</code><a class="anchor" aria-label="anchor" href="#method-get-exe-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_exe.html" class="external-link">ps::ps_exe()</a></code> to get the path of the executable.</p><div class="section">
-<h4 id="usage-40">Usage<a class="anchor" aria-label="anchor" href="#usage-40"></a></h4>
+<h4 id="usage-43">Usage<a class="anchor" aria-label="anchor" href="#usage-43"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_exe</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -925,7 +1050,7 @@ the process.</p><div class="section">
 </div><p></p><hr><a id="method-process-get_cmdline"></a><div class="section">
 <h3 id="method-get-cmdline-">Method <code>get_cmdline()</code><a class="anchor" aria-label="anchor" href="#method-get-cmdline-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_cmdline.html" class="external-link">ps::ps_cmdline()</a></code> to get the command line.</p><div class="section">
-<h4 id="usage-41">Usage<a class="anchor" aria-label="anchor" href="#usage-41"></a></h4>
+<h4 id="usage-44">Usage<a class="anchor" aria-label="anchor" href="#usage-44"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_cmdline</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -933,7 +1058,7 @@ the process.</p><div class="section">
 </div><p></p><hr><a id="method-process-get_status"></a><div class="section">
 <h3 id="method-get-status-">Method <code>get_status()</code><a class="anchor" aria-label="anchor" href="#method-get-status-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_status.html" class="external-link">ps::ps_status()</a></code> to get the process status.</p><div class="section">
-<h4 id="usage-42">Usage<a class="anchor" aria-label="anchor" href="#usage-42"></a></h4>
+<h4 id="usage-45">Usage<a class="anchor" aria-label="anchor" href="#usage-45"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_status</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -941,7 +1066,7 @@ the process.</p><div class="section">
 </div><p></p><hr><a id="method-process-get_username"></a><div class="section">
 <h3 id="method-get-username-">Method <code>get_username()</code><a class="anchor" aria-label="anchor" href="#method-get-username-"></a></h3>
 <p>calls <code><a href="https://ps.r-lib.org/reference/ps_username.html" class="external-link">ps::ps_username()</a></code> to get the username.</p><div class="section">
-<h4 id="usage-43">Usage<a class="anchor" aria-label="anchor" href="#usage-43"></a></h4>
+<h4 id="usage-46">Usage<a class="anchor" aria-label="anchor" href="#usage-46"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_username</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -949,7 +1074,7 @@ the process.</p><div class="section">
 </div><p></p><hr><a id="method-process-get_wd"></a><div class="section">
 <h3 id="method-get-wd-">Method <code>get_wd()</code><a class="anchor" aria-label="anchor" href="#method-get-wd-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_cwd.html" class="external-link">ps::ps_cwd()</a></code> to get the current working directory.</p><div class="section">
-<h4 id="usage-44">Usage<a class="anchor" aria-label="anchor" href="#usage-44"></a></h4>
+<h4 id="usage-47">Usage<a class="anchor" aria-label="anchor" href="#usage-47"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_wd</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -957,7 +1082,7 @@ the process.</p><div class="section">
 </div><p></p><hr><a id="method-process-get_cpu_times"></a><div class="section">
 <h3 id="method-get-cpu-times-">Method <code>get_cpu_times()</code><a class="anchor" aria-label="anchor" href="#method-get-cpu-times-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_cpu_times.html" class="external-link">ps::ps_cpu_times()</a></code> to get CPU usage data.</p><div class="section">
-<h4 id="usage-45">Usage<a class="anchor" aria-label="anchor" href="#usage-45"></a></h4>
+<h4 id="usage-48">Usage<a class="anchor" aria-label="anchor" href="#usage-48"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_cpu_times</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -965,7 +1090,7 @@ the process.</p><div class="section">
 </div><p></p><hr><a id="method-process-get_memory_info"></a><div class="section">
 <h3 id="method-get-memory-info-">Method <code>get_memory_info()</code><a class="anchor" aria-label="anchor" href="#method-get-memory-info-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_memory_info.html" class="external-link">ps::ps_memory_info()</a></code> to get memory data.</p><div class="section">
-<h4 id="usage-46">Usage<a class="anchor" aria-label="anchor" href="#usage-46"></a></h4>
+<h4 id="usage-49">Usage<a class="anchor" aria-label="anchor" href="#usage-49"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">get_memory_info</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -973,7 +1098,7 @@ the process.</p><div class="section">
 </div><p></p><hr><a id="method-process-suspend"></a><div class="section">
 <h3 id="method-suspend-">Method <code>suspend()</code><a class="anchor" aria-label="anchor" href="#method-suspend-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_suspend.html" class="external-link">ps::ps_suspend()</a></code> to suspend the process.</p><div class="section">
-<h4 id="usage-47">Usage<a class="anchor" aria-label="anchor" href="#usage-47"></a></h4>
+<h4 id="usage-50">Usage<a class="anchor" aria-label="anchor" href="#usage-50"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">suspend</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -981,7 +1106,7 @@ the process.</p><div class="section">
 </div><p></p><hr><a id="method-process-resume"></a><div class="section">
 <h3 id="method-resume-">Method <code>resume()</code><a class="anchor" aria-label="anchor" href="#method-resume-"></a></h3>
 <p>Calls <code><a href="https://ps.r-lib.org/reference/ps_resume.html" class="external-link">ps::ps_resume()</a></code> to resume a suspended process.</p><div class="section">
-<h4 id="usage-48">Usage<a class="anchor" aria-label="anchor" href="#usage-48"></a></h4>
+<h4 id="usage-51">Usage<a class="anchor" aria-label="anchor" href="#usage-51"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">resume</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
@@ -989,12 +1114,12 @@ the process.</p><div class="section">
 </div><p></p><hr><a id="method-process-clone"></a><div class="section">
 <h3 id="method-clone-">Method <code>clone()</code><a class="anchor" aria-label="anchor" href="#method-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-49">Usage<a class="anchor" aria-label="anchor" href="#usage-49"></a></h4>
+<h4 id="usage-52">Usage<a class="anchor" aria-label="anchor" href="#usage-52"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div>
 
 <div class="section">
-<h4 id="arguments-12">Arguments<a class="anchor" aria-label="anchor" href="#arguments-12"></a></h4>
+<h4 id="arguments-14">Arguments<a class="anchor" aria-label="anchor" href="#arguments-14"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 
@@ -1012,7 +1137,7 @@ the process.</p><div class="section">
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="va">p</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> PROCESS 'sleep', running, pid 7601.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> PROCESS 'sleep', running, pid 7056.</span>
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">kill</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></span></span>

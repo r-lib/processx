@@ -12,6 +12,11 @@
 - [`process`](http://processx.r-lib.org/reference/process.md) : External
   process
 
+## Pipelines
+
+- [`pipeline`](http://processx.r-lib.org/reference/pipeline.md)
+  **\[experimental\]** : Pipeline of processes connected with pipes
+
 ## Polling
 
 - [`poll()`](http://processx.r-lib.org/reference/poll.md) : Poll for
@@ -24,8 +29,11 @@
 - [`conn_create_fd()`](http://processx.r-lib.org/reference/processx_connections.md)
   [`conn_file_name()`](http://processx.r-lib.org/reference/processx_connections.md)
   [`conn_create_pipepair()`](http://processx.r-lib.org/reference/processx_connections.md)
+  [`conn_create_proc_pipepair()`](http://processx.r-lib.org/reference/processx_connections.md)
   [`conn_read_chars()`](http://processx.r-lib.org/reference/processx_connections.md)
   [`processx_conn_read_chars()`](http://processx.r-lib.org/reference/processx_connections.md)
+  [`conn_read_bytes()`](http://processx.r-lib.org/reference/processx_connections.md)
+  [`processx_conn_read_bytes()`](http://processx.r-lib.org/reference/processx_connections.md)
   [`conn_read_lines()`](http://processx.r-lib.org/reference/processx_connections.md)
   [`processx_conn_read_lines()`](http://processx.r-lib.org/reference/processx_connections.md)
   [`conn_is_incomplete()`](http://processx.r-lib.org/reference/processx_connections.md)

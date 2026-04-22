@@ -19,12 +19,12 @@ Source:
 [`DESCRIPTION`](https://github.com/r-lib/processx/blob/main/DESCRIPTION)
 
 Csárdi G, Chang W (2026). *processx: Execute and Control System
-Processes*. R package version 3.8.7, <https://processx.r-lib.org>.
+Processes*. R package version 3.9.0, <https://processx.r-lib.org>.
 
     @Manual{,
       title = {processx: Execute and Control System Processes},
       author = {Gábor Csárdi and Winston Chang},
       year = {2026},
-      note = {R package version 3.8.7},
+      note = {R package version 3.9.0},
       url = {https://processx.r-lib.org},
     }

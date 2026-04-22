@@ -37,17 +37,34 @@ In addition to polling a single process, the
 poll the output of several processes, and returns as soon as any of them
 has generated output (or exited).
 
+**Always call `$poll_io()` (or
+[`poll()`](http://processx.r-lib.org/reference/poll.md)) before reading
+from the stdout or stderr pipes.** The OS pipe buffer is finite
+(typically 64KB on Linux/macOS, ~76KB on Windows). If the child process
+fills the pipe buffer before the parent reads from it, the child blocks
+waiting for the buffer to drain, while the parent may be waiting for the
+child — resulting in a deadlock. Polling drains the buffer and prevents
+this. Even a zero-timeout poll (`$poll_io(0)`) is sufficient when you
+know output is available; use a positive timeout (or `-1` to wait
+indefinitely) when you need to wait for output to arrive.
+
+Note also that `$read_output()` and `$read_error()` may return *less*
+data than requested: a single call is not guaranteed to return all
+buffered output. Call them in a loop (polling before each read) until
+`$is_incomplete_output()` / `$is_incomplete_error()` returns `FALSE` to
+collect everything. The `$read_all_output()` and `$read_all_error()`
+helpers already do this for you.
+
 ## Cleaning up background processes
 
-processx kills processes that are not referenced any more (if `cleanup`
-is set to `TRUE`), or the whole subprocess tree (if `cleanup_tree` is
-also set to `TRUE`).
+processx provides several mechanisms to clean up background processes.
+See the [Process
+cleanup](https://processx.r-lib.org/dev/articles/cleanup.html) article
+for a full discussion. A brief summary:
 
-The cleanup happens when the references of the processes object are
-garbage collected. To clean up earlier, you can call the `kill()` or
-`kill_tree()` method of the process(es), from an
-[`on.exit()`](https://rdrr.io/r/base/on.exit.html) expression, or an
-error handler:
+- **Explicit cleanup** (most reliable): call `$kill()` or `$kill_tree()`
+  from an [`on.exit()`](https://rdrr.io/r/base/on.exit.html) expression
+  or error handler:
 
     process_manager <- function() {
       on.exit({
@@ -62,8 +79,37 @@ error handler:
     process_manager()
 
 If you interrupt `process_manager()` or an error happens then both `p1`
-and `p2` are cleaned up immediately. Their connections will also be
-closed. The same happens at a regular exit.
+and `p2` are cleaned up immediately.
+
+- **Automatic GC cleanup** (`cleanup = TRUE`, the default): the process
+  is killed when the `process` R object is garbage collected. On Unix,
+  `kill(-pid, SIGKILL)` is used, which kills the child's whole process
+  group (since the child calls `setsid()` on startup). On Windows, the
+  child is added to a global Job Object with
+  `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`, so it is also killed if R exits
+  or crashes. GC timing is non-deterministic; prefer
+  [`on.exit()`](https://rdrr.io/r/base/on.exit.html) when determinism
+  matters.
+
+- **Process tree cleanup** (`cleanup_tree = TRUE`): kills the process
+  and all its descendants, including orphaned ones. processx marks each
+  child with a unique environment variable (`PROCESSX_<id>=YES`) that is
+  inherited by all descendants; `$kill_tree()` uses the *ps* package to
+  find and kill every process carrying that variable. On macOS, system
+  restrictions may prevent reading other processes' environment, so tree
+  cleanup may not work reliably.
+
+- **Linux parent-death signal** (`linux_pdeathsig`): on Linux, the
+  kernel can send a signal (e.g. `SIGTERM`) to the child when the parent
+  R process exits, including on crash. Pass `linux_pdeathsig = TRUE` for
+  `SIGTERM`, or an integer signal number. Ignored on non-Linux
+  platforms.
+
+- **Supervisor** (`supervise = TRUE`): a separate native process that
+  polls every 200 ms and kills registered children if the parent R
+  process dies (including crashes). On Unix it sends SIGTERM then (after
+  5 s) SIGKILL. On Windows it sends CTRL+C / WM_CLOSE then hard-kills.
+  Note: on Windows, antivirus software may block `supervisor.exe`.
 
 ## Methods
 
@@ -93,6 +139,8 @@ closed. The same happens at a regular exit.
 
 - [`process$get_start_time()`](#method-process-get_start_time)
 
+- [`process$get_end_time()`](#method-process-get_end_time)
+
 - [`process$is_supervised()`](#method-process-is_supervised)
 
 - [`process$supervise()`](#method-process-supervise)
@@ -100,6 +148,10 @@ closed. The same happens at a regular exit.
 - [`process$read_output()`](#method-process-read_output)
 
 - [`process$read_error()`](#method-process-read_error)
+
+- [`process$read_output_bytes()`](#method-process-read_output_bytes)
+
+- [`process$read_error_bytes()`](#method-process-read_error_bytes)
 
 - [`process$read_output_lines()`](#method-process-read_output_lines)
 
@@ -197,7 +249,8 @@ Start a new process in the background, and then return immediately.
       windows_hide_window = FALSE,
       windows_detached_process = !cleanup,
       encoding = "",
-      post_process = NULL
+      post_process = NULL,
+      linux_pdeathsig = FALSE
     )
 
 #### Arguments
@@ -239,10 +292,13 @@ Start a new process in the background, and then return immediately.
 
   - `NULL`: discard it;
 
-  - A string, redirect it to this file. Note that if you specify a
-    relative path, it will be relative to the current working directory,
-    even if you specify another directory in the `wd` argument. (See
-    issue 324.)
+  - A string starting with `">>"`, e.g. `">>output.txt"`: append it to
+    this file. The file is created if it does not exist.
+
+  - A string (not starting with `">>"`), redirect it to this file,
+    truncating the file first. Note that if you specify a relative path,
+    it will be relative to the current working directory, even if you
+    specify another directory in the `wd` argument. (See issue 324.)
 
   - `"|"`: create a connection for it.
 
@@ -256,10 +312,13 @@ Start a new process in the background, and then return immediately.
 
   - `NULL`: discard it.
 
-  - A string, redirect it to this file. Note that if you specify a
-    relative path, it will be relative to the current working directory,
-    even if you specify another directory in the `wd` argument. (See
-    issue 324.)
+  - A string starting with `">>"`, e.g. `">>error.txt"`: append it to
+    this file. The file is created if it does not exist.
+
+  - A string (not starting with `">>"`), redirect it to this file,
+    truncating the file first. Note that if you specify a relative path,
+    it will be relative to the current working directory, even if you
+    specify another directory in the `wd` argument. (See issue 324.)
 
   - `"|"`: create a connection for it.
 
@@ -370,12 +429,24 @@ Start a new process in the background, and then return immediately.
   the encoding of the current locale is used. Note that `processx`
   always reencodes the output of the `stdout` and `stderr` streams in
   UTF-8 currently. If you want to read them without any conversion, on
-  all platforms, specify `"UTF-8"` as encoding.
+  all platforms, specify `"UTF-8"` as encoding. Use `"binary"` to
+  disable text conversion entirely: `$read_output()` and `$read_error()`
+  will return raw vectors instead of character strings, preserving all
+  bytes including null bytes and non-UTF-8 byte sequences.
 
 - `post_process`:
 
   An optional function to run when the process has finished. Currently
   it only runs if `$get_result()` is called. It is only run once.
+
+- `linux_pdeathsig`:
+
+  On Linux, send this signal to the child process when the parent R
+  process exits. `FALSE` (the default) disables this. `TRUE` sends
+  `SIGTERM`. An integer signal number, e.g.
+  [`tools::SIGTERM`](https://rdrr.io/r/tools/pskill.html) or
+  [`tools::SIGKILL`](https://rdrr.io/r/tools/pskill.html), sends that
+  signal. Ignored on non-Linux platforms.
 
 #### Returns
 
@@ -578,6 +649,21 @@ the screen, whether it is running and it's process id, etc.
 
 ------------------------------------------------------------------------
 
+### Method `get_end_time()`
+
+`$get_end_time()` returns the time when the process finished, or `NULL`
+if it is still running. On Unix the timestamp is recorded when R first
+notices the exit (via the `SIGCHLD` handler or a call to `$is_alive()`,
+`$get_exit_status()`, or `$wait()`), so it may be slightly later than
+the actual kernel exit time. On Windows the exact kernel exit time is
+used.
+
+#### Usage
+
+    process$get_end_time()
+
+------------------------------------------------------------------------
+
 ### Method `is_supervised()`
 
 `$is_supervised()` returns whether the process is being tracked by
@@ -615,6 +701,17 @@ when the object is garbage collected.
 process. If the standard output connection was not requested, then then
 it returns an error. It uses a non-blocking text connection. This will
 work only if `stdout="|"` was used. Otherwise, it will throw an error.
+When the process was started with `encoding = "binary"`, returns a raw
+vector instead of a character string.
+
+A single call may return less data than requested (or an empty string)
+even when more output will eventually arrive: the OS pipe buffer is
+finite, and `$read_output()` only returns what is already buffered.
+Always call `$poll_io()` (or
+[`poll()`](http://processx.r-lib.org/reference/poll.md)) before reading
+to avoid deadlocking when the child fills the pipe buffer (see the
+*Polling* section for details). To read *all* output call
+`$read_all_output()`.
 
 #### Usage
 
@@ -630,12 +727,51 @@ work only if `stdout="|"` was used. Otherwise, it will throw an error.
 
 ### Method `read_error()`
 
-`$read_error()` is similar to `$read_output`, but it reads from the
-standard error stream.
+`$read_error()` is similar to `$read_output()`, but reads from the
+standard error stream. Returns a raw vector when `encoding = "binary"`
+was used. The same polling requirement applies as for `$read_output()`
+(see the *Polling* section).
 
 #### Usage
 
     process$read_error(n = -1)
+
+#### Arguments
+
+- `n`:
+
+  Number of characters or lines to read.
+
+------------------------------------------------------------------------
+
+### Method `read_output_bytes()`
+
+`$read_output_bytes()` reads from the standard output connection of the
+process and returns the result as a raw vector, preserving all bytes
+including null bytes and other binary data. Switches the underlying
+connection to raw mode; do not mix with `$read_output()`. This will work
+only if `stdout="|"` was used.
+
+#### Usage
+
+    process$read_output_bytes(n = -1)
+
+#### Arguments
+
+- `n`:
+
+  Number of characters or lines to read.
+
+------------------------------------------------------------------------
+
+### Method `read_error_bytes()`
+
+`$read_error_bytes()` is similar to `$read_output_bytes()`, but reads
+from the standard error stream.
+
+#### Usage
+
+    process$read_error_bytes(n = -1)
 
 #### Arguments
 
@@ -652,6 +788,14 @@ the process. If the standard output connection was not requested, then
 it returns an error. It uses a non-blocking text connection. This will
 work only if `stdout="|"` was used. Otherwise, it will throw an error.
 
+Because `$read_output_lines()` only returns complete lines already in
+the buffer, it may return zero lines even when the process has produced
+output — for example when a line is longer than the pipe buffer (~64KB
+on Linux/macOS, ~76KB on Windows) or when the line is not yet
+terminated. Always call `$poll_io()` before reading to avoid deadlocking
+(see the *Polling* section), and use `$read_output()` when lines may be
+very long.
+
 #### Usage
 
     process$read_output_lines(n = -1)
@@ -667,7 +811,8 @@ work only if `stdout="|"` was used. Otherwise, it will throw an error.
 ### Method `read_error_lines()`
 
 `$read_error_lines()` is similar to `$read_output_lines`, but it reads
-from the standard error stream.
+from the standard error stream. The same polling requirement applies
+(see the *Polling* section).
 
 #### Usage
 
@@ -1109,7 +1254,7 @@ p <- process$new("sleep", "2")
 p$is_alive()
 #> [1] TRUE
 p
-#> PROCESS 'sleep', running, pid 7601.
+#> PROCESS 'sleep', running, pid 7056.
 p$kill()
 #> [1] TRUE
 p$is_alive()

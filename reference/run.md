@@ -25,11 +25,14 @@ run(
   stderr_line_callback = NULL,
   stderr_callback = NULL,
   stderr_to_stdout = FALSE,
+  stdin = NULL,
   env = NULL,
   windows_verbatim_args = FALSE,
   windows_hide_window = FALSE,
   encoding = "",
   cleanup_tree = FALSE,
+  pty = FALSE,
+  pty_options = list(),
   ...
 )
 ```
@@ -135,6 +138,14 @@ run(
   pieces of the output were coming from. If this is `TRUE`, the standard
   error callbacks (if any) are never called.
 
+- stdin:
+
+  What to do with the standard input. By default it is ignored (`NULL`).
+  It can be a file name, to redirect the contents of a file to the
+  standard input. When `pty = TRUE`, `stdin` can only be `NULL` (no
+  input) or a file path (whose contents are fed to the process via the
+  PTY).
+
 - env:
 
   Environment variables of the child process. If `NULL`, the parent's
@@ -161,12 +172,33 @@ run(
 
   The encoding to assume for `stdout` and `stderr`. By default the
   encoding of the current locale is used. Note that `processx` always
-  reencodes the output of both streams in UTF-8 currently.
+  reencodes the output of both streams in UTF-8 currently. Use
+  `"binary"` to collect the raw bytes without any conversion: `stdout`
+  and `stderr` in the return value will be raw vectors instead of
+  character strings. Line callbacks are not supported in binary mode.
 
 - cleanup_tree:
 
   Whether to clean up the child process tree after the process has
   finished.
+
+- pty:
+
+  Whether to use a pseudo-terminal (PTY) for the process. Supported on
+  Unix and on Windows 10 version 1809 or later (via ConPTY). When
+  `TRUE`, stdout and stderr are merged into a single stream (accessible
+  via `$stdout` in the result), and `$stderr` is always `NULL`. The
+  process sees a real terminal, so programs that disable colour or
+  interactive features when not attached to a terminal will behave as if
+  they are. `stdout` and `stderr` must be left at their defaults
+  (`"|"`), and `stderr_to_stdout`, `stderr_callback`, and
+  `stderr_line_callback` must not be set.
+
+- pty_options:
+
+  Options for the PTY, a named list. See
+  [`default_pty_options()`](http://processx.r-lib.org/reference/default_pty_options.md)
+  for the available options and their defaults.
 
 - ...:
 
@@ -256,7 +288,7 @@ run("ls")
 #> [1] 0
 #> 
 #> $stdout
-#> [1] "base64_decode.html\ncurl_fds.html\ndefault_pty_options.html\nfigures\nindex.html\npoll.html\nprocess.html\nprocess_initialize.html\nprocessx-package.html\nprocessx_connections.html\nprocessx_fifos.html\nprocessx_sockets.html\n"
+#> [1] "base64_decode.html\ncurl_fds.html\ndefault_pty_options.html\nfigures\nindex.html\npipeline.html\npoll.html\nprocess.html\nprocess_initialize.html\nprocessx-package.html\nprocessx_connections.html\nprocessx_fifos.html\nprocessx_sockets.html\n"
 #> 
 #> $stderr
 #> [1] ""
@@ -266,7 +298,7 @@ run("ls")
 #> 
 system.time(run("sleep", "10", timeout = 1, error_on_status = FALSE))
 #>    user  system elapsed 
-#>   0.007   0.013   0.773 
+#>   0.002   0.014   1.005 
 system.time(
   run(
     "sh", c("-c", "for i in 1 2 3 4 5; do echo $i; sleep 1; done"),
@@ -274,7 +306,7 @@ system.time(
   )
 )
 #>    user  system elapsed 
-#>   0.004   0.011   1.775 
+#>   0.005   0.009   2.003 
 if (FALSE) {
 # This works on Windows systems, if the ping command is available
 run("ping", c("-n", "1", "127.0.0.1"))
