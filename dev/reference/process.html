@@ -105,7 +105,7 @@ to collect everything. The <code>$read_all_output()</code> and
 
 
 <p>processx provides several mechanisms to clean up background processes.
-See the <a href="https://processx.r-lib.org/articles/cleanup.html" class="external-link">Process cleanup</a>
+See the <a href="https://processx.r-lib.org/dev/articles/cleanup.html" class="external-link">Process cleanup</a>
 article for a full discussion. A brief summary:</p><ul><li><p><strong>Explicit cleanup</strong> (most reliable): call <code>$kill()</code> or <code>$kill_tree()</code>
 from an <code><a href="https://rdrr.io/r/base/on.exit.html" class="external-link">on.exit()</a></code> expression or error handler:</p></li>
 </ul><p></p><div class="sourceCode r"><pre><code><span><span class="va">process_manager</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="op">)</span> <span class="op">{</span></span>
@@ -1145,7 +1145,7 @@ the process.</p><div class="section">
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="va">p</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> PROCESS 'sleep', running, pid 7495.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> PROCESS 'sleep', running, pid 7582.</span>
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">kill</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></span></span>

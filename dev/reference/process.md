@@ -59,8 +59,8 @@ helpers already do this for you.
 
 processx provides several mechanisms to clean up background processes.
 See the [Process
-cleanup](https://processx.r-lib.org/articles/cleanup.html) article for a
-full discussion. A brief summary:
+cleanup](https://processx.r-lib.org/dev/articles/cleanup.html) article
+for a full discussion. A brief summary:
 
 - **Explicit cleanup** (most reliable): call `$kill()` or `$kill_tree()`
   from an [`on.exit()`](https://rdrr.io/r/base/on.exit.html) expression
@@ -1254,7 +1254,7 @@ p <- process$new("sleep", "2")
 p$is_alive()
 #> [1] TRUE
 p
-#> PROCESS 'sleep', running, pid 7495.
+#> PROCESS 'sleep', running, pid 7582.
 p$kill()
 #> [1] TRUE
 p$is_alive()
