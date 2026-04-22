@@ -154,14 +154,18 @@ pipeline <- R6::R6Class(
           cleanup_tree     = cleanup_tree,
           poll_connection  = proc_poll
         )
-      }
 
-      ## Close the parent's copies of all intermediate pipe ends so that the
-      ## kernel can signal EOF to the downstream process when the upstream
-      ## process exits and closes its end.
-      for (p in pipes) {
-        close(p[[1L]])
-        close(p[[2L]])
+        ## Close the parent's copy of each pipe end immediately after the
+        ## process that needed it has been spawned.  On Windows, every
+        ## inheritable handle is silently duplicated into each child created
+        ## with bInheritHandles = TRUE.  Keeping the write-end of an
+        ## inter-process pipe open in the parent while spawning the next child
+        ## would cause that child to inherit the write-end of its own stdin
+        ## pipe — so the write-end is never fully closed and stdin never
+        ## reaches EOF.  On Unix, O_CLOEXEC prevents inheritance anyway, but
+        ## closing early is still correct.
+        if (i < n)   close(pipes[[i]][[1L]])        ## write end → stdout of process i
+        if (i > 1L)  close(pipes[[i - 1L]][[2L]])   ## read end  → stdin  of process i
       }
 
       private$procs <- procs
