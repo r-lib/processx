@@ -2,6 +2,12 @@
 
 ## processx (development version)
 
+- New experimental `pipeline` R6 class for running two or more processes
+  connected by kernel-level pipes, like a Unix shell pipeline
+  (`cmd1 | cmd2 | cmd3`). Data flows directly between child processes
+  without passing through R. Works on Unix and Windows
+  ([\#280](https://github.com/r-lib/processx/issues/280)).
+
 - New “Process cleanup” article.
 
 - New `linux_pdeathsig` argument to `process$new()`: on Linux, the child

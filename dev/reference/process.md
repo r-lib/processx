@@ -115,7 +115,7 @@ and `p2` are cleaned up immediately.
 
 ### Public methods
 
-- [`process$new()`](#method-process-initialize)
+- [`process$new()`](#method-process-new)
 
 - [`process$kill()`](#method-process-kill)
 
@@ -223,7 +223,7 @@ and `p2` are cleaned up immediately.
 
 ------------------------------------------------------------------------
 
-### `process$new()`
+### Method `new()`
 
 Start a new process in the background, and then return immediately.
 
@@ -454,7 +454,7 @@ R6 object representing the process.
 
 ------------------------------------------------------------------------
 
-### `process$kill()`
+### Method `kill()`
 
 Terminate the process. It also terminate all of its child processes,
 except if they have created a new process group (on Unix), or job object
@@ -479,7 +479,7 @@ except if they have created a new process group (on Unix), or job object
 
 ------------------------------------------------------------------------
 
-### `process$kill_tree()`
+### Method `kill_tree()`
 
 Process tree cleanup. It terminates the process (if still alive),
 together with any child (or grandchild, etc.) processes. It uses the
@@ -509,7 +509,7 @@ processes (e.g. `"sleep"`, `"notepad.exe"`, `"Rterm.exe"`, etc.).
 
 ------------------------------------------------------------------------
 
-### `process$signal()`
+### Method `signal()`
 
 Send a signal to the process. On Windows only the `SIGINT`, `SIGTERM`
 and `SIGKILL` signals are interpreted, and the special 0 signal. The
@@ -531,7 +531,7 @@ supported that the OS supports, and the 0 signal as well.
 
 ------------------------------------------------------------------------
 
-### `process$interrupt()`
+### Method `interrupt()`
 
 Send an interrupt to the process. On Unix this is a `SIGINT` signal, and
 it is usually equivalent to pressing CTRL+C at the terminal prompt. On
@@ -544,7 +544,7 @@ events. By default they will quit.
 
 ------------------------------------------------------------------------
 
-### `process$get_pid()`
+### Method `get_pid()`
 
 Query the process id.
 
@@ -558,7 +558,7 @@ Integer scalar, the process id of the process.
 
 ------------------------------------------------------------------------
 
-### `process$is_alive()`
+### Method `is_alive()`
 
 Check if the process is alive.
 
@@ -572,7 +572,7 @@ Logical scalar.
 
 ------------------------------------------------------------------------
 
-### `process$wait()`
+### Method `wait()`
 
 Wait until the process finishes, or a timeout happens. Note that if the
 process never finishes, and the timeout is infinite (the default), then
@@ -599,7 +599,7 @@ It returns the process itself, invisibly.
 
 ------------------------------------------------------------------------
 
-### `process$get_exit_status()`
+### Method `get_exit_status()`
 
 `$get_exit_status` returns the exit code of the process if it has
 finished and `NULL` otherwise. On Unix, in some rare cases, the exit
@@ -617,7 +617,7 @@ function.
 
 ------------------------------------------------------------------------
 
-### `process$format()`
+### Method [`format()`](https://rdrr.io/r/base/format.html)
 
 `format(p)` or `p$format()` creates a string representation of the
 process, usually for printing.
@@ -628,7 +628,7 @@ process, usually for printing.
 
 ------------------------------------------------------------------------
 
-### `process$print()`
+### Method [`print()`](https://rdrr.io/r/base/print.html)
 
 `print(p)` or `p$print()` shows some information about the process on
 the screen, whether it is running and it's process id, etc.
@@ -639,7 +639,7 @@ the screen, whether it is running and it's process id, etc.
 
 ------------------------------------------------------------------------
 
-### `process$get_start_time()`
+### Method `get_start_time()`
 
 `$get_start_time()` returns the time when the process was started.
 
@@ -649,7 +649,7 @@ the screen, whether it is running and it's process id, etc.
 
 ------------------------------------------------------------------------
 
-### `process$get_end_time()`
+### Method `get_end_time()`
 
 `$get_end_time()` returns the time when the process finished, or `NULL`
 if it is still running. On Unix the timestamp is recorded when R first
@@ -664,7 +664,7 @@ used.
 
 ------------------------------------------------------------------------
 
-### `process$is_supervised()`
+### Method `is_supervised()`
 
 `$is_supervised()` returns whether the process is being tracked by
 supervisor process.
@@ -675,7 +675,7 @@ supervisor process.
 
 ------------------------------------------------------------------------
 
-### `process$supervise()`
+### Method `supervise()`
 
 `$supervise()` if passed `TRUE`, tells the supervisor to start tracking
 the process. If `FALSE`, tells the supervisor to stop tracking the
@@ -695,7 +695,7 @@ when the object is garbage collected.
 
 ------------------------------------------------------------------------
 
-### `process$read_output()`
+### Method `read_output()`
 
 `$read_output()` reads from the standard output connection of the
 process. If the standard output connection was not requested, then then
@@ -725,7 +725,7 @@ the *Polling* section for details). To read *all* output call
 
 ------------------------------------------------------------------------
 
-### `process$read_error()`
+### Method `read_error()`
 
 `$read_error()` is similar to `$read_output()`, but reads from the
 standard error stream. Returns a raw vector when `encoding = "binary"`
@@ -744,7 +744,7 @@ was used. The same polling requirement applies as for `$read_output()`
 
 ------------------------------------------------------------------------
 
-### `process$read_output_bytes()`
+### Method `read_output_bytes()`
 
 `$read_output_bytes()` reads from the standard output connection of the
 process and returns the result as a raw vector, preserving all bytes
@@ -764,7 +764,7 @@ only if `stdout="|"` was used.
 
 ------------------------------------------------------------------------
 
-### `process$read_error_bytes()`
+### Method `read_error_bytes()`
 
 `$read_error_bytes()` is similar to `$read_output_bytes()`, but reads
 from the standard error stream.
@@ -781,7 +781,7 @@ from the standard error stream.
 
 ------------------------------------------------------------------------
 
-### `process$read_output_lines()`
+### Method `read_output_lines()`
 
 `$read_output_lines()` reads lines from standard output connection of
 the process. If the standard output connection was not requested, then
@@ -808,7 +808,7 @@ very long.
 
 ------------------------------------------------------------------------
 
-### `process$read_error_lines()`
+### Method `read_error_lines()`
 
 `$read_error_lines()` is similar to `$read_output_lines`, but it reads
 from the standard error stream. The same polling requirement applies
@@ -826,7 +826,7 @@ from the standard error stream. The same polling requirement applies
 
 ------------------------------------------------------------------------
 
-### `process$is_incomplete_output()`
+### Method `is_incomplete_output()`
 
 `$is_incomplete_output()` return `FALSE` if the other end of the
 standard output connection was closed (most probably because the process
@@ -838,7 +838,7 @@ exited). It return `TRUE` otherwise.
 
 ------------------------------------------------------------------------
 
-### `process$is_incomplete_error()`
+### Method `is_incomplete_error()`
 
 `$is_incomplete_error()` return `FALSE` if the other end of the standard
 error connection was closed (most probably because the process exited).
@@ -850,7 +850,7 @@ It return `TRUE` otherwise.
 
 ------------------------------------------------------------------------
 
-### `process$has_input_connection()`
+### Method `has_input_connection()`
 
 `$has_input_connection()` return `TRUE` if there is a connection object
 for standard input; in other words, if `stdout="|"`. It returns `FALSE`
@@ -862,7 +862,7 @@ otherwise.
 
 ------------------------------------------------------------------------
 
-### `process$has_output_connection()`
+### Method `has_output_connection()`
 
 `$has_output_connection()` returns `TRUE` if there is a connection
 object for standard output; in other words, if `stdout="|"`. It returns
@@ -874,7 +874,7 @@ object for standard output; in other words, if `stdout="|"`. It returns
 
 ------------------------------------------------------------------------
 
-### `process$has_error_connection()`
+### Method `has_error_connection()`
 
 `$has_error_connection()` returns `TRUE` if there is a connection object
 for standard error; in other words, if `stderr="|"`. It returns `FALSE`
@@ -886,7 +886,7 @@ otherwise.
 
 ------------------------------------------------------------------------
 
-### `process$has_poll_connection()`
+### Method `has_poll_connection()`
 
 `$has_poll_connection()` return `TRUE` if there is a poll connection,
 `FALSE` otherwise.
@@ -897,7 +897,7 @@ otherwise.
 
 ------------------------------------------------------------------------
 
-### `process$get_input_connection()`
+### Method `get_input_connection()`
 
 `$get_input_connection()` returns a connection object, to the standard
 input stream of the process.
@@ -908,7 +908,7 @@ input stream of the process.
 
 ------------------------------------------------------------------------
 
-### `process$get_output_connection()`
+### Method `get_output_connection()`
 
 `$get_output_connection()` returns a connection object, to the standard
 output stream of the process.
@@ -919,7 +919,7 @@ output stream of the process.
 
 ------------------------------------------------------------------------
 
-### `process$get_error_connection()`
+### Method `get_error_connection()`
 
 `$get_error_conneciton()` returns a connection object, to the standard
 error stream of the process.
@@ -930,7 +930,7 @@ error stream of the process.
 
 ------------------------------------------------------------------------
 
-### `process$read_all_output()`
+### Method `read_all_output()`
 
 `$read_all_output()` waits for all standard output from the process. It
 does not return until the process has finished. Note that this process
@@ -946,7 +946,7 @@ used. Otherwise, it will throw an error.
 
 ------------------------------------------------------------------------
 
-### `process$read_all_error()`
+### Method `read_all_error()`
 
 `$read_all_error()` waits for all standard error from the process. It
 does not return until the process has finished. Note that this process
@@ -962,7 +962,7 @@ used. Otherwise, it will throw an error.
 
 ------------------------------------------------------------------------
 
-### `process$read_all_output_lines()`
+### Method `read_all_output_lines()`
 
 `$read_all_output_lines()` waits for all standard output lines from a
 process. It does not return until the process has finished. Note that
@@ -978,7 +978,7 @@ used. Otherwise, it will throw an error.
 
 ------------------------------------------------------------------------
 
-### `process$read_all_error_lines()`
+### Method `read_all_error_lines()`
 
 `$read_all_error_lines()` waits for all standard error lines from a
 process. It does not return until the process has finished. Note that
@@ -994,7 +994,7 @@ used. Otherwise, it will throw an error.
 
 ------------------------------------------------------------------------
 
-### `process$write_input()`
+### Method `write_input()`
 
 `$write_input()` writes the character vector (separated by `sep`) to the
 standard input of the process. It will be converted to the specified
@@ -1028,7 +1028,7 @@ Leftover text (as a raw vector), that was not written.
 
 ------------------------------------------------------------------------
 
-### `process$get_input_file()`
+### Method `get_input_file()`
 
 `$get_input_file()` if the `stdin` argument was a filename, this returns
 the absolute path to the file. If `stdin` was `"|"` or `NULL`, this
@@ -1040,7 +1040,7 @@ simply returns that value.
 
 ------------------------------------------------------------------------
 
-### `process$get_output_file()`
+### Method `get_output_file()`
 
 `$get_output_file()` if the `stdout` argument was a filename, this
 returns the absolute path to the file. If `stdout` was `"|"` or `NULL`,
@@ -1052,7 +1052,7 @@ this simply returns that value.
 
 ------------------------------------------------------------------------
 
-### `process$get_error_file()`
+### Method `get_error_file()`
 
 `$get_error_file()` if the `stderr` argument was a filename, this
 returns the absolute path to the file. If `stderr` was `"|"` or `NULL`,
@@ -1064,7 +1064,7 @@ this simply returns that value.
 
 ------------------------------------------------------------------------
 
-### `process$poll_io()`
+### Method `poll_io()`
 
 `$poll_io()` polls the process's connections for I/O. See more in the
 *Polling* section, and see also the
@@ -1083,7 +1083,7 @@ poll on multiple processes.
 
 ------------------------------------------------------------------------
 
-### `process$get_poll_connection()`
+### Method `get_poll_connection()`
 
 `$get_poll_connetion()` returns the poll connection, if the process has
 one.
@@ -1094,7 +1094,7 @@ one.
 
 ------------------------------------------------------------------------
 
-### `process$get_result()`
+### Method `get_result()`
 
 `$get_result()` returns the result of the post processesing function. It
 can only be called once the process has finished. If the process has no
@@ -1106,7 +1106,7 @@ post-processing function, then `NULL` is returned.
 
 ------------------------------------------------------------------------
 
-### `process$as_ps_handle()`
+### Method `as_ps_handle()`
 
 `$as_ps_handle()` returns a
 [ps::ps_handle](https://ps.r-lib.org/reference/ps_handle.html) object,
@@ -1118,7 +1118,7 @@ corresponding to the process.
 
 ------------------------------------------------------------------------
 
-### `process$get_name()`
+### Method `get_name()`
 
 Calls [`ps::ps_name()`](https://ps.r-lib.org/reference/ps_name.html) to
 get the process name.
@@ -1129,7 +1129,7 @@ get the process name.
 
 ------------------------------------------------------------------------
 
-### `process$get_exe()`
+### Method `get_exe()`
 
 Calls [`ps::ps_exe()`](https://ps.r-lib.org/reference/ps_exe.html) to
 get the path of the executable.
@@ -1140,7 +1140,7 @@ get the path of the executable.
 
 ------------------------------------------------------------------------
 
-### `process$get_cmdline()`
+### Method `get_cmdline()`
 
 Calls
 [`ps::ps_cmdline()`](https://ps.r-lib.org/reference/ps_cmdline.html) to
@@ -1152,7 +1152,7 @@ get the command line.
 
 ------------------------------------------------------------------------
 
-### `process$get_status()`
+### Method `get_status()`
 
 Calls [`ps::ps_status()`](https://ps.r-lib.org/reference/ps_status.html)
 to get the process status.
@@ -1163,7 +1163,7 @@ to get the process status.
 
 ------------------------------------------------------------------------
 
-### `process$get_username()`
+### Method `get_username()`
 
 calls
 [`ps::ps_username()`](https://ps.r-lib.org/reference/ps_username.html)
@@ -1175,7 +1175,7 @@ to get the username.
 
 ------------------------------------------------------------------------
 
-### `process$get_wd()`
+### Method `get_wd()`
 
 Calls [`ps::ps_cwd()`](https://ps.r-lib.org/reference/ps_cwd.html) to
 get the current working directory.
@@ -1186,7 +1186,7 @@ get the current working directory.
 
 ------------------------------------------------------------------------
 
-### `process$get_cpu_times()`
+### Method `get_cpu_times()`
 
 Calls
 [`ps::ps_cpu_times()`](https://ps.r-lib.org/reference/ps_cpu_times.html)
@@ -1198,7 +1198,7 @@ to get CPU usage data.
 
 ------------------------------------------------------------------------
 
-### `process$get_memory_info()`
+### Method `get_memory_info()`
 
 Calls
 [`ps::ps_memory_info()`](https://ps.r-lib.org/reference/ps_memory_info.html)
@@ -1210,7 +1210,7 @@ to get memory data.
 
 ------------------------------------------------------------------------
 
-### `process$suspend()`
+### Method `suspend()`
 
 Calls
 [`ps::ps_suspend()`](https://ps.r-lib.org/reference/ps_suspend.html) to
@@ -1222,7 +1222,7 @@ suspend the process.
 
 ------------------------------------------------------------------------
 
-### `process$resume()`
+### Method `resume()`
 
 Calls [`ps::ps_resume()`](https://ps.r-lib.org/reference/ps_resume.html)
 to resume a suspended process.
@@ -1233,7 +1233,7 @@ to resume a suspended process.
 
 ------------------------------------------------------------------------
 
-### `process$clone()`
+### Method `clone()`
 
 The objects of this class are cloneable with this method.
 
@@ -1254,7 +1254,7 @@ p <- process$new("sleep", "2")
 p$is_alive()
 #> [1] TRUE
 p
-#> PROCESS 'sleep', running, pid 7582.
+#> PROCESS 'sleep', running, pid 7043.
 p$kill()
 #> [1] TRUE
 p$is_alive()

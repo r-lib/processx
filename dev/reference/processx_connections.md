@@ -13,6 +13,8 @@ conn_file_name(con)
 
 conn_create_pipepair(encoding = "", nonblocking = c(TRUE, FALSE))
 
+conn_create_proc_pipepair(encoding = "")
+
 conn_read_chars(con, n = -1)
 
 # S3 method for class 'processx_connection'
@@ -107,10 +109,12 @@ is_valid_fd(fd)
 
 - filename:
 
-  File name. For `conn_create_pipe()` on Windows, a `\\?\pipe` prefix is
-  added to this, if it does not have such a prefix. For
-  `conn_create_pipe()` it can also be `NULL`, in which case a random
-  file name is used via
+  File name. For
+  [`conn_create_fifo()`](http://processx.r-lib.org/dev/reference/processx_fifos.md)
+  on Windows, a `\\?\pipe` prefix is added to this, if it does not have
+  such a prefix. For
+  [`conn_create_fifo()`](http://processx.r-lib.org/dev/reference/processx_fifos.md)
+  it can also be `NULL`, in which case a random file name is used via
   [`tempfile()`](https://rdrr.io/r/base/tempfile.html).
 
 - read:
@@ -143,6 +147,13 @@ where it returns the full name of the pipe.
 
 `conn_create_pipepair()` creates a pair of connected connections, the
 first one is writeable, the second one is readable.
+
+`conn_create_proc_pipepair()` creates a unidirectional pipe suitable for
+connecting two child processes: the first element is the write end (pass
+as `stdout` to the writing process) and the second is the read end (pass
+as `stdin` to the reading process). Unlike `conn_create_pipepair()`,
+both ends are synchronous (blocking), which is required for
+child-process stdin/stdout on Windows.
 
 `conn_read_chars()` reads UTF-8 characters from the connections. If the
 connection itself is not UTF-8 encoded, it re-encodes it.

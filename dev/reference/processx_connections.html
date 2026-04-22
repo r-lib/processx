@@ -56,6 +56,8 @@ compatible with R's built-in connection system.</p>
 <span></span>
 <span><span class="fu">conn_create_pipepair</span><span class="op">(</span>encoding <span class="op">=</span> <span class="st">""</span>, nonblocking <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
+<span><span class="fu">conn_create_proc_pipepair</span><span class="op">(</span>encoding <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu">conn_read_chars</span><span class="op">(</span><span class="va">con</span>, n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'processx_connection'</span></span>
@@ -153,9 +155,9 @@ characters or lines.</p></dd>
 
 
 <dt id="arg-filename">filename<a class="anchor" aria-label="anchor" href="#arg-filename"></a></dt>
-<dd><p>File name. For <code>conn_create_pipe()</code> on Windows, a
+<dd><p>File name. For <code><a href="processx_fifos.html">conn_create_fifo()</a></code> on Windows, a
 <code>\\?\pipe</code> prefix is added to this, if it does not have such a prefix.
-For <code>conn_create_pipe()</code> it can also be <code>NULL</code>, in which case a random
+For <code><a href="processx_fifos.html">conn_create_fifo()</a></code> it can also be <code>NULL</code>, in which case a random
 file name is used via <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile()</a></code>.</p></dd>
 
 
@@ -186,6 +188,12 @@ system it returns <code>NA_character()</code>. Except for named pipes on Windows
 where it returns the full name of the pipe.</p>
 <p><code>conn_create_pipepair()</code> creates a pair of connected connections, the
 first one is writeable, the second one is readable.</p>
+<p><code>conn_create_proc_pipepair()</code> creates a unidirectional pipe suitable for
+connecting two child processes: the first element is the write end (pass as
+<code>stdout</code> to the writing process) and the second is the read end (pass as
+<code>stdin</code> to the reading process). Unlike <code>conn_create_pipepair()</code>, both ends
+are synchronous (blocking), which is required for child-process stdin/stdout
+on Windows.</p>
 <p><code>conn_read_chars()</code> reads UTF-8 characters from the connections. If the
 connection itself is not UTF-8 encoded, it re-encodes it.</p>
 <p><code>conn_read_bytes()</code> reads raw bytes from the connection into a raw vector.

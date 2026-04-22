@@ -288,7 +288,7 @@ run("ls")
 #> [1] 0
 #> 
 #> $stdout
-#> [1] "base64_decode.html\ncurl_fds.html\ndefault_pty_options.html\nfigures\nindex.html\npoll.html\nprocess.html\nprocess_initialize.html\nprocessx-package.html\nprocessx_connections.html\nprocessx_fifos.html\nprocessx_sockets.html\n"
+#> [1] "base64_decode.html\ncurl_fds.html\ndefault_pty_options.html\nfigures\nindex.html\npipeline.html\npoll.html\nprocess.html\nprocess_initialize.html\nprocessx-package.html\nprocessx_connections.html\nprocessx_fifos.html\nprocessx_sockets.html\n"
 #> 
 #> $stderr
 #> [1] ""
@@ -298,7 +298,7 @@ run("ls")
 #> 
 system.time(run("sleep", "10", timeout = 1, error_on_status = FALSE))
 #>    user  system elapsed 
-#>   0.007   0.019   1.004 
+#>   0.003   0.012   1.004 
 system.time(
   run(
     "sh", c("-c", "for i in 1 2 3 4 5; do echo $i; sleep 1; done"),
@@ -306,7 +306,7 @@ system.time(
   )
 )
 #>    user  system elapsed 
-#>   0.005   0.009   2.003 
+#>   0.004   0.008   2.004 
 if (FALSE) {
 # This works on Windows systems, if the ping command is available
 run("ping", c("-n", "1", "127.0.0.1"))
