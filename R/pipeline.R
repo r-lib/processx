@@ -123,23 +123,36 @@ pipeline <- R6::R6Class(
 
       n <- length(cmds)
 
-      ## Create n-1 kernel pipes connecting consecutive processes
-      pipes <- if (n > 1L) {
-        lapply(seq_len(n - 1L), function(i) conn_create_proc_pipepair())
-      } else {
-        list()
-      }
+      ## Spawn all processes, creating one inter-process pipe per iteration
+      ## so that later children cannot inherit handles from pipes that do not
+      ## concern them.  On Windows, CreateProcess with bInheritHandles=TRUE
+      ## passes every inheritable handle to the child.  Creating each pipe
+      ## just before the two processes that need it are spawned — and closing
+      ## both ends in the parent immediately after — ensures no child ever
+      ## holds a stray write-end that would prevent EOF from propagating.
+      ## On Unix, O_CLOEXEC already prevents inheritance, but the same
+      ## iterative pattern keeps the logic consistent.
+      procs     <- vector("list", n)
+      prev_read <- NULL   ## read end of the previous inter-process pipe
 
-      ## Spawn all processes
-      procs <- vector("list", n)
       for (i in seq_len(n)) {
         cmd <- cmds[[i]]
-        proc_stdin  <- if (i == 1L) stdin         else pipes[[i - 1L]][[2L]]
-        proc_stdout <- if (i < n)   pipes[[i]][[1L]] else stdout
-        ## Disable poll_connection for intermediate processes: their stdout
-        ## is a connection (not "|"), so the default formula would create an
+
+        ## Create the pipe connecting process i's stdout to process i+1's
+        ## stdin, unless this is the last process.
+        if (i < n) {
+          next_pipe   <- conn_create_proc_pipepair()
+          proc_stdout <- next_pipe[[1L]]   ## write end → child's stdout
+        } else {
+          next_pipe   <- NULL
+          proc_stdout <- stdout
+        }
+
+        proc_stdin <- if (i == 1L) stdin else prev_read
+        ## Disable poll_connection for intermediate processes: their stdout is
+        ## a connection (not "|"), so the default formula would create an
         ## unnecessary extra pipe.
-        proc_poll   <- if (i < n)   FALSE          else NULL
+        proc_poll  <- if (i < n) FALSE else NULL
 
         procs[[i]] <- process$new(
           cmd[[1L]],
@@ -155,17 +168,13 @@ pipeline <- R6::R6Class(
           poll_connection  = proc_poll
         )
 
-        ## Close the parent's copy of each pipe end immediately after the
-        ## process that needed it has been spawned.  On Windows, every
-        ## inheritable handle is silently duplicated into each child created
-        ## with bInheritHandles = TRUE.  Keeping the write-end of an
-        ## inter-process pipe open in the parent while spawning the next child
-        ## would cause that child to inherit the write-end of its own stdin
-        ## pipe — so the write-end is never fully closed and stdin never
-        ## reaches EOF.  On Unix, O_CLOEXEC prevents inheritance anyway, but
-        ## closing early is still correct.
-        if (i < n)   close(pipes[[i]][[1L]])        ## write end → stdout of process i
-        if (i > 1L)  close(pipes[[i - 1L]][[2L]])   ## read end  → stdin  of process i
+        ## Close parent's copies immediately: the child now owns these
+        ## handles, and closing here prevents the next child from inheriting
+        ## the write-end of a pipe it should only read from.
+        if (!is.null(next_pipe)) close(next_pipe[[1L]])  ## write end → stdout of process i
+        if (!is.null(prev_read)) close(prev_read)         ## read end  → stdin  of process i
+
+        prev_read <- if (!is.null(next_pipe)) next_pipe[[2L]] else NULL
       }
 
       private$procs <- procs
