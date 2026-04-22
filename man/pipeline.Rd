@@ -42,6 +42,10 @@ if still running).
 \verb{$get_pids()} — integer vector of process IDs.
 
 \verb{$get_processes()} — list of \link{process} objects, one per command.
+
+\verb{$format()} — string representation of the pipeline.
+
+\verb{$print()} — print the pipeline to the screen.
 }
 
 \examples{
@@ -80,6 +84,8 @@ pl$get_exit_statuses()
 \item \href{#method-pipeline-get_exit_statuses}{\code{pipeline$get_exit_statuses()}}
 \item \href{#method-pipeline-get_pids}{\code{pipeline$get_pids()}}
 \item \href{#method-pipeline-get_processes}{\code{pipeline$get_processes()}}
+\item \href{#method-pipeline-format}{\code{pipeline$format()}}
+\item \href{#method-pipeline-print}{\code{pipeline$print()}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -371,5 +377,32 @@ Return the list of process objects.
 \if{html}{\out{<div class="r">}}\preformatted{pipeline$get_processes()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-pipeline-format"></a>}}
+\if{latex}{\out{\hypertarget{method-pipeline-format}{}}}
+\subsection{Method \code{format()}}{
+Format the pipeline as a string.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{pipeline$format()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-pipeline-print"></a>}}
+\if{latex}{\out{\hypertarget{method-pipeline-print}{}}}
+\subsection{Method \code{print()}}{
+Print the pipeline to the screen.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{pipeline$print(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Not used, for compatibility with the generic.}
+}
+\if{html}{\out{</div>}}
+}
 }
 }

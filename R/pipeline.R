@@ -36,6 +36,7 @@
 #' @param grace Grace period in seconds before sending SIGKILL (Unix) or
 #'   terminating forcefully (Windows). Currently not used.
 #' @param close_connections Whether to close connections after killing.
+#' @param ... Not used, for compatibility with the generic.
 #'
 #' @section Methods:
 #' `pipeline$new(cmds, stdin, stdout, stderr, env, encoding, wd,
@@ -69,6 +70,10 @@
 #' `$get_pids()` — integer vector of process IDs.
 #'
 #' `$get_processes()` — list of [process] objects, one per command.
+#'
+#' `$format()` — string representation of the pipeline.
+#'
+#' `$print()` — print the pipeline to the screen.
 #'
 #' @examples
 #' \dontrun{
@@ -271,7 +276,13 @@ pipeline <- R6::R6Class(
     #' @description Return the list of process objects.
     get_processes = function() {
       private$procs
-    }
+    },
+
+    #' @description Format the pipeline as a string.
+    format = function() pipeline_format(self, private),
+
+    #' @description Print the pipeline to the screen.
+    print = function(...) pipeline_print(self, private)
   ),
 
   private = list(
