@@ -1073,7 +1073,7 @@ int c_processx_kill(SEXP status, double grace, SEXP name) {
   if (wp != 0) { goto cleanup; }
 
   /* It is still running, send a SIGTERM if gracious */
-  double grace_ms = grace * 1000;
+  int grace_ms = (int)(grace * 1000);
 
 #define KILL_WITH(SIG) do {                                              \
   int ret = kill(-pid, SIG);                                             \
