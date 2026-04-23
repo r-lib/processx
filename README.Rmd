@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 [![R-CMD-check](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/r-lib/processx/actions/workflows/R-CMD-check.yaml)
 [![](https://www.r-pkg.org/badges/version/processx)](https://www.r-pkg.org/pkg/processx)
 [![CRAN RStudio mirror downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
-[![Codecov test coverage](https://codecov.io/gh/r-lib/processx/branch/main/graph/badge.svg)](https://app.codecov.io/gh/r-lib/processx?branch=main)
+[![Codecov test coverage](https://codecov.io/gh/r-lib/processx/graph/badge.svg)](https://app.codecov.io/gh/r-lib/processx)
 <!-- badges: end -->
 
 Tools to run system processes in the background,
@@ -81,6 +81,12 @@ Install the stable version from CRAN:
 
 ```{r eval = FALSE}
 install.packages("processx")
+```
+
+If you need the development version, install it from GitHub:
+
+```{r eval = FALSE}
+pak::pak("r-lib/processx")
 ```
 
 ## Usage
@@ -453,4 +459,4 @@ By contributing to this project, you agree to abide by its terms.
 
 ## License
 
-MIT © Mango Solutions, RStudio, Gábor Csárdi
+MIT © Ascent Digital Services, RStudio, Gábor Csárdi

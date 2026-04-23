@@ -1,6 +1,6 @@
 # MIT License
 
-Copyright (c) 2016-2019 Mango Solutions, RStudio, Gábor Csárdi
+Copyright (c) 2025 processx authors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

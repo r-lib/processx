@@ -1,6 +1,4 @@
-
 test_that("stdin", {
-
   skip_on_cran()
   skip_if_no_tool("cat")
 
@@ -22,7 +20,6 @@ test_that("stdin", {
 })
 
 test_that("stdin & stdout", {
-
   skip_on_cran()
   skip_if_no_tool("cat")
 
@@ -44,7 +41,6 @@ test_that("stdin & stdout", {
 })
 
 test_that("stdin buffer full", {
-
   skip_on_cran()
   skip_other_platforms("unix")
 
@@ -60,7 +56,6 @@ test_that("stdin buffer full", {
 })
 
 test_that("file as stdin", {
-
   skip_on_cran()
   skip_if_no_tool("cat")
 
@@ -79,7 +74,6 @@ test_that("file as stdin", {
 })
 
 test_that("large file as stdin", {
-
   skip_on_cran()
   skip_if_no_tool("cat")
 

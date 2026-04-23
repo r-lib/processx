@@ -1,4 +1,3 @@
-
 #' @useDynLib processx, .registration = TRUE, .fixes = "c_"
 NULL
 
@@ -53,15 +52,30 @@ dummy_r6 <- function() R6::R6Class
 #' can poll the output of several processes, and returns as soon as any
 #' of them has generated output (or exited).
 #'
-#' @section Cleaning up background processes:
-#' processx kills processes that are not referenced any more (if `cleanup`
-#' is set to `TRUE`), or the whole subprocess tree (if `cleanup_tree` is
-#' also set to `TRUE`).
+#' **Always call `$poll_io()` (or [poll()]) before reading from the
+#' stdout or stderr pipes.** The OS pipe buffer is finite (typically 64KB
+#' on Linux/macOS, ~76KB on Windows). If the child process fills the pipe
+#' buffer before the parent reads from it, the child blocks waiting for
+#' the buffer to drain, while the parent may be waiting for the child —
+#' resulting in a deadlock. Polling drains the buffer and prevents this.
+#' Even a zero-timeout poll (`$poll_io(0)`) is sufficient when you know
+#' output is available; use a positive timeout (or `-1` to wait
+#' indefinitely) when you need to wait for output to arrive.
 #'
-#' The cleanup happens when the references of the processes object are
-#' garbage collected. To clean up earlier, you can call the `kill()` or
-#' `kill_tree()` method of the process(es), from an `on.exit()` expression,
-#' or an error handler:
+#' Note also that `$read_output()` and `$read_error()` may return _less_
+#' data than requested: a single call is not guaranteed to return all
+#' buffered output. Call them in a loop (polling before each read) until
+#' `$is_incomplete_output()` / `$is_incomplete_error()` returns `FALSE`
+#' to collect everything. The `$read_all_output()` and
+#' `$read_all_error()` helpers already do this for you.
+#'
+#' @section Cleaning up background processes:
+#' processx provides several mechanisms to clean up background processes.
+#' See the [Process cleanup](https://processx.r-lib.org/dev/articles/cleanup.html)
+#' article for a full discussion. A brief summary:
+#'
+#' * **Explicit cleanup** (most reliable): call `$kill()` or `$kill_tree()`
+#'   from an `on.exit()` expression or error handler:
 #' ```r
 #' process_manager <- function() {
 #'   on.exit({
@@ -75,10 +89,37 @@ dummy_r6 <- function() R6::R6Class
 #' }
 #' process_manager()
 #' ```
+#'   If you interrupt `process_manager()` or an error happens then both
+#'   `p1` and `p2` are cleaned up immediately.
 #'
-#' If you interrupt `process_manager()` or an error happens then both `p1`
-#' and `p2` are cleaned up immediately. Their connections will also be
-#' closed. The same happens at a regular exit.
+#' * **Automatic GC cleanup** (`cleanup = TRUE`, the default): the process
+#'   is killed when the `process` R object is garbage collected. On Unix,
+#'   `kill(-pid, SIGKILL)` is used, which kills the child's whole process
+#'   group (since the child calls `setsid()` on startup). On Windows, the
+#'   child is added to a global Job Object with
+#'   `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`, so it is also killed if R exits
+#'   or crashes. GC timing is non-deterministic; prefer `on.exit()` when
+#'   determinism matters.
+#'
+#' * **Process tree cleanup** (`cleanup_tree = TRUE`): kills the process
+#'   and all its descendants, including orphaned ones. processx marks each
+#'   child with a unique environment variable (`PROCESSX_<id>=YES`) that is
+#'   inherited by all descendants; `$kill_tree()` uses the _ps_ package to
+#'   find and kill every process carrying that variable. On macOS, system
+#'   restrictions may prevent reading other processes' environment, so tree
+#'   cleanup may not work reliably.
+#'
+#' * **Linux parent-death signal** (`linux_pdeathsig`): on Linux, the
+#'   kernel can send a signal (e.g. `SIGTERM`) to the child when the parent
+#'   R process exits, including on crash. Pass `linux_pdeathsig = TRUE` for
+#'   `SIGTERM`, or an integer signal number. Ignored on non-Linux platforms.
+#'
+#' * **Supervisor** (`supervise = TRUE`): a separate native process that
+#'   polls every 200 ms and kills registered children if the parent R
+#'   process dies (including crashes). On Unix it sends SIGTERM then
+#'   (after 5 s) SIGKILL. On Windows it sends CTRL+C / WM_CLOSE then
+#'   hard-kills. Note: on Windows, antivirus software may block
+#'   `supervisor.exe`.
 #'
 #' @export
 #' @examplesIf identical(Sys.getenv("IN_PKGDOWN"), "true")
@@ -95,9 +136,7 @@ dummy_r6 <- function() R6::R6Class
 
 process <- R6::R6Class(
   "process",
-  cloneable = FALSE,
   public = list(
-
     #' @description
     #' Start a new process in the background, and then return immediately.
     #'
@@ -122,7 +161,10 @@ process <- R6::R6Class(
     #'     RGui on Windows, then an error is thrown.
     #' @param stdout  What to do with the standard output. Possible values:
     #'   * `NULL`: discard it;
-    #'   * A string, redirect it to this file.
+    #'   * A string starting with `">>"`, e.g. `">>output.txt"`: append it
+    #'     to this file. The file is created if it does not exist.
+    #'   * A string (not starting with `">>"`), redirect it to this file,
+    #'     truncating the file first.
     #'     Note that if you specify a relative path, it will be relative to
     #'     the current working directory, even if you specify another
     #'     directory in the `wd` argument. (See issue 324.)
@@ -132,7 +174,10 @@ process <- R6::R6Class(
     #'     RGui on Windows, then an error is thrown.
     #' @param stderr What to do with the standard error. Possible values:
     #'   * `NULL`: discard it.
-    #'   * A string, redirect it to this file.
+    #'   * A string starting with `">>"`, e.g. `">>error.txt"`: append it
+    #'     to this file. The file is created if it does not exist.
+    #'   * A string (not starting with `">>"`), redirect it to this file,
+    #'     truncating the file first.
     #'     Note that if you specify a relative path, it will be relative to
     #'     the current working directory, even if you specify another
     #'     directory in the `wd` argument. (See issue 324.)
@@ -202,36 +247,69 @@ process <- R6::R6Class(
     #' @param encoding The encoding to assume for `stdin`, `stdout` and
     #'   `stderr`. By default the encoding of the current locale is
     #'   used. Note that `processx` always reencodes the output of the
-    #'  `stdout` and `stderr` streams in UTF-8 currently.
+    #'   `stdout` and `stderr` streams in UTF-8 currently.
     #'   If you want to read them without any conversion, on all platforms,
-    #'   specify `"UTF-8"` as encoding.
+    #'   specify `"UTF-8"` as encoding. Use `"binary"` to disable text
+    #'   conversion entirely: `$read_output()` and `$read_error()` will
+    #'   return raw vectors instead of character strings, preserving all
+    #'   bytes including null bytes and non-UTF-8 byte sequences.
     #' @param post_process An optional function to run when the process has
     #'   finished. Currently it only runs if `$get_result()` is called.
     #'   It is only run once.
+    #' @param linux_pdeathsig On Linux, send this signal to the child process
+    #'   when the parent R process exits. `FALSE` (the default) disables this.
+    #'   `TRUE` sends `SIGTERM`. An integer signal number, e.g.
+    #'   `tools::SIGTERM` or `tools::SIGKILL`, sends that signal. Ignored on
+    #'   non-Linux platforms.
 
-    initialize = function(command = NULL, args = character(),
-      stdin = NULL, stdout = NULL, stderr = NULL, pty = FALSE,
-      pty_options = list(), connections = list(), poll_connection = NULL,
-      env = NULL, cleanup = TRUE, cleanup_tree = FALSE, wd = NULL,
-      echo_cmd = FALSE, supervise = FALSE, windows_verbatim_args = FALSE,
-      windows_hide_window = FALSE, windows_detached_process = !cleanup,
-      encoding = "",  post_process = NULL)
-
-      process_initialize(self, private, command, args, stdin,
-                         stdout, stderr, pty, pty_options, connections,
-                         poll_connection, env, cleanup, cleanup_tree, wd,
-                         echo_cmd, supervise, windows_verbatim_args,
-                         windows_hide_window, windows_detached_process,
-                         encoding, post_process),
-
-    #' @description
-    #' Cleanup method that is called when the `process` object is garbage
-    #' collected. If requested so in the process constructor, then it
-    #' eliminates all processes in the process's subprocess tree.
-
-    finalize = function() {
-      if (!is.null(private$tree_id) && private$cleanup_tree &&
-          ps::ps_is_supported()) self$kill_tree()
+    initialize = function(
+      command = NULL,
+      args = character(),
+      stdin = NULL,
+      stdout = NULL,
+      stderr = NULL,
+      pty = FALSE,
+      pty_options = list(),
+      connections = list(),
+      poll_connection = NULL,
+      env = NULL,
+      cleanup = TRUE,
+      cleanup_tree = FALSE,
+      wd = NULL,
+      echo_cmd = FALSE,
+      supervise = FALSE,
+      windows_verbatim_args = FALSE,
+      windows_hide_window = FALSE,
+      windows_detached_process = !cleanup,
+      encoding = "",
+      post_process = NULL,
+      linux_pdeathsig = FALSE
+    ) {
+      process_initialize(
+        self,
+        private,
+        command,
+        args,
+        stdin,
+        stdout,
+        stderr,
+        pty,
+        pty_options,
+        connections,
+        poll_connection,
+        env,
+        cleanup,
+        cleanup_tree,
+        wd,
+        echo_cmd,
+        supervise,
+        windows_verbatim_args,
+        windows_hide_window,
+        windows_detached_process,
+        encoding,
+        post_process,
+        linux_pdeathsig
+      )
     },
 
     #' @description
@@ -241,8 +319,9 @@ process <- R6::R6Class(
     #' was terminated, and `FALSE` if it was not (because it was
     #' already finished/dead when `processx` tried to terminate it).
 
-    kill = function(grace = 0.1, close_connections = TRUE)
-      process_kill(self, private, grace, close_connections),
+    kill = function(grace = 0.1, close_connections = TRUE) {
+      process_kill(self, private, grace, close_connections)
+    },
 
     #' @description
     #' Process tree cleanup. It terminates the process
@@ -257,8 +336,9 @@ process <- R6::R6Class(
     #' were killed, the names are the names of the processes (e.g. `"sleep"`,
     #' `"notepad.exe"`, `"Rterm.exe"`, etc.).
 
-    kill_tree = function(grace = 0.1, close_connections = TRUE)
-      process_kill_tree(self, private, grace, close_connections),
+    kill_tree = function(grace = 0.1, close_connections = TRUE) {
+      process_kill_tree(self, private, grace, close_connections)
+    },
 
     #' @description
     #' Send a signal to the process. On Windows only the
@@ -270,8 +350,7 @@ process <- R6::R6Class(
     #' @param signal An integer scalar, the id of the signal to send to
     #'   the process. See [tools::pskill()] for the list of signals.
 
-    signal = function(signal)
-      process_signal(self, private, signal),
+    signal = function(signal) process_signal(self, private, signal),
 
     #' @description
     #' Send an interrupt to the process. On Unix this is a
@@ -279,21 +358,18 @@ process <- R6::R6Class(
     #' the terminal prompt. On Windows, it is a CTRL+BREAK keypress.
     #' Applications may catch these events. By default they will quit.
 
-    interrupt = function()
-      process_interrupt(self, private),
+    interrupt = function() process_interrupt(self, private),
 
     #' @description
     #' Query the process id.
     #' @return Integer scalar, the process id of the process.
 
-    get_pid = function()
-      process_get_pid(self, private),
+    get_pid = function() process_get_pid(self, private),
 
     #' @description Check if the process is alive.
     #' @return Logical scalar.
 
-    is_alive = function()
-      process_is_alive(self, private),
+    is_alive = function() process_is_alive(self, private),
 
     #' @description
     #' Wait until the process finishes, or a timeout happens.
@@ -306,8 +382,7 @@ process <- R6::R6Class(
     #' through `parallel::mcparallel()`.
     #' @return It returns the process itself, invisibly.
 
-    wait = function(timeout = -1)
-      process_wait(self, private, timeout),
+    wait = function(timeout = -1) process_wait(self, private, timeout),
 
     #' @description
     #' `$get_exit_status` returns the exit code of the process if it has
@@ -318,36 +393,42 @@ process <- R6::R6Class(
     #' status of the process. One such package is parallel, if used with
     #' fork clusters, e.g. through the `parallel::mcparallel()` function.
 
-    get_exit_status = function()
-      process_get_exit_status(self, private),
+    get_exit_status = function() process_get_exit_status(self, private),
 
     #' @description
     #' `format(p)` or `p$format()` creates a string representation of the
     #' process, usually for printing.
 
-    format = function()
-      process_format(self, private),
+    format = function() process_format(self, private),
 
     #' @description
     #' `print(p)` or `p$print()` shows some information about the
     #' process on the screen, whether it is running and it's process id, etc.
 
-    print = function()
-      process_print(self, private),
+    print = function() process_print(self, private),
 
     #' @description
     #' `$get_start_time()` returns the time when the process was
     #' started.
 
-    get_start_time = function()
-      process_get_start_time(self, private),
+    get_start_time = function() process_get_start_time(self, private),
+
+    #' @description
+    #' `$get_end_time()` returns the time when the process finished,
+    #' or `NULL` if it is still running.
+    #' On Unix the timestamp is recorded when R first notices the exit
+    #' (via the `SIGCHLD` handler or a call to `$is_alive()`,
+    #' `$get_exit_status()`, or `$wait()`), so it may be slightly later
+    #' than the actual kernel exit time.
+    #' On Windows the exact kernel exit time is used.
+
+    get_end_time = function() process_get_end_time(self, private),
 
     #' @description
     #' `$is_supervised()` returns whether the process is being tracked by
     #' supervisor process.
 
-    is_supervised = function()
-      process_is_supervised(self, private),
+    is_supervised = function() process_is_supervised(self, private),
 
     #' @description
     #' `$supervise()` if passed `TRUE`, tells the supervisor to start
@@ -358,8 +439,7 @@ process <- R6::R6Class(
     #' @param status Whether to turn on of off the supervisor for this
     #'   process.
 
-    supervise = function(status)
-      process_supervise(self, private, status),
+    supervise = function(status) process_supervise(self, private, status),
 
     ## Output
 
@@ -368,17 +448,44 @@ process <- R6::R6Class(
     #' process. If the standard output connection was not requested, then
     #' then it returns an error. It uses a non-blocking text connection. This
     #' will work only if `stdout="|"` was used. Otherwise, it will throw an
-    #' error.
+    #' error. When the process was started with `encoding = "binary"`, returns
+    #' a raw vector instead of a character string.
+    #'
+    #' A single call may return less data than requested (or an empty string)
+    #' even when more output will eventually arrive: the OS pipe buffer is
+    #' finite, and `$read_output()` only returns what is already buffered.
+    #' Always call `$poll_io()` (or [poll()]) before reading to avoid
+    #' deadlocking when the child fills the pipe buffer (see the _Polling_
+    #' section for details). To read _all_ output call `$read_all_output()`.
 
-    read_output = function(n = -1)
-      process_read_output(self, private, n),
+    read_output = function(n = -1) process_read_output(self, private, n),
 
     #' @description
-    #' `$read_error()` is similar to `$read_output`, but it reads
+    #' `$read_error()` is similar to `$read_output()`, but reads from the
+    #' standard error stream. Returns a raw vector when
+    #' `encoding = "binary"` was used. The same polling requirement applies
+    #' as for `$read_output()` (see the _Polling_ section).
+
+    read_error = function(n = -1) process_read_error(self, private, n),
+
+    #' @description
+    #' `$read_output_bytes()` reads from the standard output connection of
+    #' the process and returns the result as a raw vector, preserving all
+    #' bytes including null bytes and other binary data. Switches the
+    #' underlying connection to raw mode; do not mix with `$read_output()`.
+    #' This will work only if `stdout="|"` was used.
+
+    read_output_bytes = function(n = -1) {
+      process_read_output_bytes(self, private, n)
+    },
+
+    #' @description
+    #' `$read_error_bytes()` is similar to `$read_output_bytes()`, but reads
     #' from the standard error stream.
 
-    read_error = function(n = -1)
-      process_read_error(self, private, n),
+    read_error_bytes = function(n = -1) {
+      process_read_error_bytes(self, private, n)
+    },
 
     #' @description
     #' `$read_output_lines()` reads lines from standard output connection
@@ -386,84 +493,102 @@ process <- R6::R6Class(
     #' then it returns an error. It uses a non-blocking text connection.
     #' This will work only if `stdout="|"` was used. Otherwise, it will
     #' throw an error.
+    #'
+    #' Because `$read_output_lines()` only returns complete lines already in
+    #' the buffer, it may return zero lines even when the process has produced
+    #' output — for example when a line is longer than the pipe buffer (~64KB
+    #' on Linux/macOS, ~76KB on Windows) or when the line is not yet
+    #' terminated. Always call `$poll_io()` before reading to avoid
+    #' deadlocking (see the _Polling_ section), and use `$read_output()`
+    #' when lines may be very long.
 
-    read_output_lines = function(n = -1)
-      process_read_output_lines(self, private, n),
+    read_output_lines = function(n = -1) {
+      process_read_output_lines(self, private, n)
+    },
 
     #' @description
     #' `$read_error_lines()` is similar to `$read_output_lines`, but
-    #' it reads from the standard error stream.
+    #' it reads from the standard error stream. The same polling requirement
+    #' applies (see the _Polling_ section).
 
-    read_error_lines = function(n = -1)
-      process_read_error_lines(self, private, n),
+    read_error_lines = function(n = -1) {
+      process_read_error_lines(self, private, n)
+    },
 
     #' @description
     #' `$is_incomplete_output()` return `FALSE` if the other end of
     #' the standard output connection was closed (most probably because the
     #' process exited). It return `TRUE` otherwise.
 
-    is_incomplete_output = function()
-      process_is_incompelete_output(self, private),
+    is_incomplete_output = function() {
+      process_is_incompelete_output(self, private)
+    },
 
     #' @description
     #' `$is_incomplete_error()` return `FALSE` if the other end of
     #' the standard error connection was closed (most probably because the
     #' process exited). It return `TRUE` otherwise.
 
-    is_incomplete_error = function()
-      process_is_incompelete_error(self, private),
+    is_incomplete_error = function() {
+      process_is_incompelete_error(self, private)
+    },
 
     #' @description
     #' `$has_input_connection()` return `TRUE` if there is a connection
     #' object for standard input; in other words, if `stdout="|"`. It returns
     #' `FALSE` otherwise.
 
-    has_input_connection = function()
-      process_has_input_connection(self, private),
+    has_input_connection = function() {
+      process_has_input_connection(self, private)
+    },
 
     #' @description
     #' `$has_output_connection()` returns `TRUE` if there is a connection
     #' object for standard output; in other words, if `stdout="|"`. It returns
     #' `FALSE` otherwise.
 
-    has_output_connection = function()
-      process_has_output_connection(self, private),
+    has_output_connection = function() {
+      process_has_output_connection(self, private)
+    },
 
     #' @description
     #' `$has_error_connection()` returns `TRUE` if there is a connection
     #' object for standard error; in other words, if `stderr="|"`. It returns
     #' `FALSE` otherwise.
 
-    has_error_connection = function()
-      process_has_error_connection(self, private),
+    has_error_connection = function() {
+      process_has_error_connection(self, private)
+    },
 
     #' @description
     #' `$has_poll_connection()` return `TRUE` if there is a poll connection,
     #' `FALSE` otherwise.
 
-    has_poll_connection = function()
-      process_has_poll_connection(self, private),
+    has_poll_connection = function() process_has_poll_connection(self, private),
 
     #' @description
     #' `$get_input_connection()` returns a connection object, to the
     #' standard input stream of the process.
 
-    get_input_connection =  function()
-      process_get_input_connection(self, private),
+    get_input_connection = function() {
+      process_get_input_connection(self, private)
+    },
 
     #' @description
     #' `$get_output_connection()` returns a connection object, to the
     #' standard output stream of the process.
 
-    get_output_connection = function()
-      process_get_output_connection(self, private),
+    get_output_connection = function() {
+      process_get_output_connection(self, private)
+    },
 
     #' @description
     #' `$get_error_conneciton()` returns a connection object, to the
     #' standard error stream of the process.
 
-    get_error_connection = function()
-      process_get_error_connection(self, private),
+    get_error_connection = function() {
+      process_get_error_connection(self, private)
+    },
 
     #' @description
     #' `$read_all_output()` waits for all standard output from the process.
@@ -473,8 +598,7 @@ process <- R6::R6Class(
     #' It returns a character scalar. This will return content only if
     #' `stdout="|"` was used. Otherwise, it will throw an error.
 
-    read_all_output = function()
-      process_read_all_output(self, private),
+    read_all_output = function() process_read_all_output(self, private),
 
     #' @description
     #' `$read_all_error()` waits for all standard error from the process.
@@ -484,8 +608,7 @@ process <- R6::R6Class(
     #' It returns a character scalar. This will return content only if
     #' `stderr="|"` was used. Otherwise, it will throw an error.
 
-    read_all_error = function()
-      process_read_all_error(self, private),
+    read_all_error = function() process_read_all_error(self, private),
 
     #' @description
     #' `$read_all_output_lines()` waits for all standard output lines
@@ -495,8 +618,9 @@ process <- R6::R6Class(
     #' It returns a character vector. This will return content only if
     #' `stdout="|"` was used. Otherwise, it will throw an error.
 
-    read_all_output_lines = function()
-      process_read_all_output_lines(self, private),
+    read_all_output_lines = function() {
+      process_read_all_output_lines(self, private)
+    },
 
     #' @description
     #' `$read_all_error_lines()` waits for all standard error lines from
@@ -506,8 +630,9 @@ process <- R6::R6Class(
     #' It returns a character vector. This will return content only if
     #' `stderr="|"` was used. Otherwise, it will throw an error.
 
-    read_all_error_lines = function()
-      process_read_all_error_lines(self, private),
+    read_all_error_lines = function() {
+      process_read_all_error_lines(self, private)
+    },
 
     #' @description
     #' `$write_input()` writes the character vector (separated by `sep`) to
@@ -526,148 +651,133 @@ process <- R6::R6Class(
     #'   character vector. It is ignored if `str` is a raw vector.
     #' @return Leftover text (as a raw vector), that was not written.
 
-    write_input = function(str, sep = "\n")
-      process_write_input(self, private, str, sep),
+    write_input = function(str, sep = "\n") {
+      process_write_input(self, private, str, sep)
+    },
 
     #' @description
     #' `$get_input_file()` if the `stdin` argument was a filename,
     #' this returns the absolute path to the file. If `stdin` was `"|"` or
     #' `NULL`, this simply returns that value.
 
-    get_input_file = function()
-      process_get_input_file(self, private),
+    get_input_file = function() process_get_input_file(self, private),
 
     #' @description
     #' `$get_output_file()` if the `stdout` argument was a filename,
     #' this returns the absolute path to the file. If `stdout` was `"|"` or
     #' `NULL`, this simply returns that value.
 
-    get_output_file = function()
-      process_get_output_file(self, private),
+    get_output_file = function() process_get_output_file(self, private),
 
     #' @description
     #' `$get_error_file()` if the `stderr` argument was a filename,
     #' this returns the absolute path to the file. If `stderr` was `"|"` or
     #' `NULL`, this simply returns that value.
 
-    get_error_file = function()
-      process_get_error_file(self, private),
+    get_error_file = function() process_get_error_file(self, private),
 
     #' @description
     #' `$poll_io()` polls the process's connections for I/O. See more in
     #' the _Polling_ section, and see also the [poll()] function
     #' to poll on multiple processes.
 
-    poll_io = function(timeout)
-      process_poll_io(self, private, timeout),
+    poll_io = function(timeout) process_poll_io(self, private, timeout),
 
     #' @description
     #' `$get_poll_connetion()` returns the poll connection, if the process has
     #' one.
 
-    get_poll_connection = function()
-      process_get_poll_connection(self, private),
+    get_poll_connection = function() process_get_poll_connection(self, private),
 
     #' @description
     #' `$get_result()` returns the result of the post processesing function.
     #' It can only be called once the process has finished. If the process has
     #' no post-processing function, then `NULL` is returned.
 
-    get_result = function()
-      process_get_result(self, private),
+    get_result = function() process_get_result(self, private),
 
     #' @description
     #' `$as_ps_handle()` returns a [ps::ps_handle] object, corresponding to
     #' the process.
 
-    as_ps_handle = function()
-      process_as_ps_handle(self, private),
+    as_ps_handle = function() process_as_ps_handle(self, private),
 
     #' @description
     #' Calls [ps::ps_name()] to get the process name.
 
-    get_name = function()
-      ps_method(ps::ps_name, self),
+    get_name = function() ps_method(ps::ps_name, self, private),
 
     #' @description
     #' Calls [ps::ps_exe()] to get the path of the executable.
 
-    get_exe = function()
-      ps_method(ps::ps_exe, self),
+    get_exe = function() ps_method(ps::ps_exe, self, private),
 
     #' @description
     #' Calls [ps::ps_cmdline()] to get the command line.
 
-    get_cmdline = function()
-      ps_method(ps::ps_cmdline, self),
+    get_cmdline = function() ps_method(ps::ps_cmdline, self, private),
 
     #' @description
     #' Calls [ps::ps_status()] to get the process status.
 
-    get_status = function()
-      ps_method(ps::ps_status, self),
+    get_status = function() ps_method(ps::ps_status, self, private),
 
     #' @description
     #' calls [ps::ps_username()] to get the username.
 
-    get_username = function()
-      ps_method(ps::ps_username, self),
+    get_username = function() ps_method(ps::ps_username, self, private),
 
     #' @description
     #' Calls [ps::ps_cwd()] to get the current working directory.
 
-    get_wd = function()
-      ps_method(ps::ps_cwd, self),
+    get_wd = function() ps_method(ps::ps_cwd, self, private),
 
     #' @description
     #' Calls [ps::ps_cpu_times()] to get CPU usage data.
 
-    get_cpu_times = function()
-      ps_method(ps::ps_cpu_times, self),
+    get_cpu_times = function() ps_method(ps::ps_cpu_times, self, private),
 
     #' @description
     #' Calls [ps::ps_memory_info()] to get memory data.
 
-    get_memory_info = function()
-      ps_method(ps::ps_memory_info, self),
+    get_memory_info = function() ps_method(ps::ps_memory_info, self, private),
 
     #' @description
     #' Calls [ps::ps_suspend()] to suspend the process.
 
-    suspend = function()
-      ps_method(ps::ps_suspend, self),
+    suspend = function() ps_method(ps::ps_suspend, self, private),
 
     #' @description
     #' Calls [ps::ps_resume()] to resume a suspended process.
 
-    resume = function()
-      ps_method(ps::ps_resume, self)
+    resume = function() ps_method(ps::ps_resume, self, private)
   ),
 
   private = list(
-
-    command = NULL,       # Save 'command' argument here
-    args = NULL,          # Save 'args' argument here
-    cleanup = NULL,       # cleanup argument
-    cleanup_tree = NULL,  # cleanup_tree argument
-    stdin = NULL,         # stdin argument or stream
-    stdout = NULL,        # stdout argument or stream
-    stderr = NULL,        # stderr argument or stream
-    pty = NULL,           # whether we should create a PTY
-    pty_options = NULL,   # various PTY options
-    pstdin = NULL,        # the original stdin argument
-    pstdout = NULL,       # the original stdout argument
-    pstderr = NULL,       # the original stderr argument
-    cleanfiles = NULL,    # which temp stdout/stderr file(s) to clean up
-    wd = NULL,            # working directory (or NULL for current)
-    starttime = NULL,     # timestamp of start
-    echo_cmd = NULL,      # whether to echo the command
+    command = NULL, # Save 'command' argument here
+    args = NULL, # Save 'args' argument here
+    cleanup = NULL, # cleanup argument
+    cleanup_tree = NULL, # cleanup_tree argument
+    stdin = NULL, # stdin argument or stream
+    stdout = NULL, # stdout argument or stream
+    stderr = NULL, # stderr argument or stream
+    pty = NULL, # whether we should create a PTY
+    pty_options = NULL, # various PTY options
+    pstdin = NULL, # the original stdin argument
+    pstdout = NULL, # the original stdout argument
+    pstderr = NULL, # the original stderr argument
+    cleanfiles = NULL, # which temp stdout/stderr file(s) to clean up
+    wd = NULL, # working directory (or NULL for current)
+    starttime = NULL, # timestamp of start (display; >= starttime_raw)
+    starttime_raw = NULL, # timestamp of start as reported by OS (for ps compat)
+    endtime = NULL, # timestamp of exit, or 0 if not yet exited
+    echo_cmd = NULL, # whether to echo the command
     windows_verbatim_args = NULL,
     windows_hide_window = NULL,
 
-    status = NULL,        # C file handle
+    status = NULL, # C file handle
 
-    supervised = FALSE,   # Whether process is tracked by supervisor
+    supervised = FALSE, # Whether process is tracked by supervisor
 
     stdin_pipe = NULL,
     stdout_pipe = NULL,
@@ -686,10 +796,18 @@ process <- R6::R6Class(
 
     tree_id = NULL,
 
-    get_short_name = function()
-      process_get_short_name(self, private),
-    close_connections = function()
-      process_close_connections(self, private)
+    finalize = function() {
+      if (
+        !is.null(private$tree_id) &&
+          private$cleanup_tree &&
+          ps::ps_is_supported()
+      ) {
+        self$kill_tree()
+      }
+    },
+
+    get_short_name = function() process_get_short_name(self, private),
+    close_connections = function() process_close_connections(self, private)
   )
 )
 
@@ -699,7 +817,8 @@ process <- R6::R6Class(
 process_wait <- function(self, private, timeout) {
   "!DEBUG process_wait `private$get_short_name()`"
   chain_clean_call(
-    c_processx_wait, private$status,
+    c_processx_wait,
+    private$status,
     as.integer(timeout),
     private$get_short_name()
   )
@@ -713,14 +832,21 @@ process_is_alive <- function(self, private) {
 
 process_get_exit_status <- function(self, private) {
   "!DEBUG process_get_exit_status `private$get_short_name()`"
-  chain_call(c_processx_get_exit_status, private$status,
-               private$get_short_name())
+  chain_call(
+    c_processx_get_exit_status,
+    private$status,
+    private$get_short_name()
+  )
 }
 
 process_signal <- function(self, private, signal) {
   "!DEBUG process_signal `private$get_short_name()` `signal`"
-  chain_call(c_processx_signal, private$status, as.integer(signal),
-               private$get_short_name())
+  chain_call(
+    c_processx_signal,
+    private$status,
+    as.integer(signal),
+    private$get_short_name()
+  )
 }
 
 process_interrupt <- function(self, private) {
@@ -730,16 +856,21 @@ process_interrupt <- function(self, private) {
     st <- run(get_tool("interrupt"), c(pid, "c"), error_on_status = FALSE)
     if (st$status == 0) TRUE else FALSE
   } else {
-    chain_call(c_processx_interrupt, private$status,
-                 private$get_short_name())
+    chain_call(c_processx_interrupt, private$status, private$get_short_name())
   }
 }
 
 process_kill <- function(self, private, grace, close_connections) {
   "!DEBUG process_kill '`private$get_short_name()`', pid `self$get_pid()`"
-  ret <- chain_call(c_processx_kill, private$status, as.numeric(grace),
-                      private$get_short_name())
-  if (close_connections) private$close_connections()
+  ret <- chain_call(
+    c_processx_kill,
+    private$status,
+    as.numeric(grace),
+    private$get_short_name()
+  )
+  if (close_connections) {
+    private$close_connections()
+  }
   ret
 }
 
@@ -747,16 +878,31 @@ process_kill_tree <- function(self, private, grace, close_connections) {
   "!DEBUG process_kill_tree '`private$get_short_name()`', pid `self$get_pid()`"
   if (!ps::ps_is_supported()) {
     throw(new_not_implemented_error(
-      "kill_tree is not supported on this platform"))
+      "kill_tree is not supported on this platform"
+    ))
   }
 
   ret <- get("ps_kill_tree", asNamespace("ps"))(private$tree_id)
-  if (close_connections) private$close_connections()
+  if (close_connections) {
+    private$close_connections()
+  }
   ret
 }
 
 process_get_start_time <- function(self, private) {
   format_unix_time(private$starttime)
+}
+
+process_get_end_time <- function(self, private) {
+  if (!is.null(private$endtime)) {
+    return(private$endtime)
+  }
+  et <- chain_call(c_processx__proc_end_time, private$status)
+  if (is.null(et)) {
+    return(NULL)
+  }
+  private$endtime <- format_unix_time(et)
+  private$endtime
 }
 
 process_get_pid <- function(self, private) {
@@ -771,7 +917,6 @@ process_supervise <- function(self, private, status) {
   if (status && !self$is_supervised()) {
     supervisor_watch_pid(self$get_pid())
     private$supervised <- TRUE
-
   } else if (!status && self$is_supervised()) {
     supervisor_unwatch_pid(self$get_pid())
     private$supervised <- FALSE
@@ -779,7 +924,9 @@ process_supervise <- function(self, private, status) {
 }
 
 process_get_result <- function(self, private) {
-  if (self$is_alive()) throw(new_error("Process is still alive"))
+  if (self$is_alive()) {
+    throw(new_error("Process is still alive"))
+  }
   if (!private$post_process_done && is.function(private$post_process)) {
     private$post_process_result <- private$post_process()
     private$post_process_done <- TRUE
@@ -788,11 +935,11 @@ process_get_result <- function(self, private) {
 }
 
 process_as_ps_handle <- function(self, private) {
-  ps::ps_handle(self$get_pid(), self$get_start_time())
+  ps::ps_handle(self$get_pid(), format_unix_time(private$starttime_raw))
 }
 
-ps_method <- function(fun, self) {
-  fun(ps::ps_handle(self$get_pid(), self$get_start_time()))
+ps_method <- function(fun, self, private) {
+  fun(ps::ps_handle(self$get_pid(), format_unix_time(private$starttime_raw)))
 }
 
 process_close_connections <- function(self, private) {

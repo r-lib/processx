@@ -57,7 +57,7 @@ void processx__stdio_noinherit(BYTE* buffer) {
  * does a perfect job.
  */
 
-SEXP processx_disable_inheritance() {
+SEXP processx_disable_inheritance(void) {
   HANDLE handle;
   STARTUPINFOW si;
 
@@ -103,6 +103,8 @@ SEXP processx_write(SEXP fd, SEXP data) {
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <string.h>
 
 #include <R_ext/Rdynload.h>
 #include <Rinternals.h>
@@ -147,9 +149,19 @@ SEXP processx_disable_inheritance(void) {
 SEXP processx_write(SEXP fd, SEXP data) {
   int cfd = INTEGER(fd)[0];
 
+  struct sigaction old_handler, new_handler;
+  memset(&new_handler, 0, sizeof(new_handler));
+  sigemptyset(&new_handler.sa_mask);
+  new_handler.sa_handler = SIG_IGN;
+  sigaction(SIGPIPE, &new_handler, &old_handler );
+
   ssize_t ret = write(cfd, RAW(data), LENGTH(data));
+  int err = errno;
+
+  sigaction(SIGPIPE, &old_handler, NULL );
+
   if (ret == -1) {
-    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+    if (err == EAGAIN || err == EWOULDBLOCK) {
       ret = 0;
     } else {
       R_THROW_SYSTEM_ERROR("Cannot write to fd");

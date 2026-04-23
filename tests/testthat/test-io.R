@@ -1,24 +1,28 @@
-
 test_that("Output and error are discarded by default", {
-
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   p <- process$new(px, c("outln", "foobar"))
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
-  expect_error(p$read_output_lines(n=1),  "not a pipe")
-  expect_error(p$read_all_output_lines(), "not a pipe")
-  expect_error(p$read_all_output(),       "not a pipe")
-  expect_error(p$read_error_lines(n=1),   "not a pipe")
-  expect_error(p$read_all_error_lines(),  "not a pipe")
-  expect_error(p$read_all_error(),        "not a pipe")
+  expect_snapshot(error = TRUE, {
+    p$read_output_lines(n = 1)
+    p$read_all_output_lines()
+    p$read_all_output()
+    p$read_error_lines(n = 1)
+    p$read_all_error_lines()
+    p$read_all_error()
+  })
 })
 
 test_that("We can get the output", {
-
   px <- get_tool("px")
 
-  p <- process$new(px, c("out", "foo\nbar\nfoobar\n"),
-                   stdout = "|", stderr = "|")
+  p <- process$new(
+    px,
+    c("out", "foo\nbar\nfoobar\n"),
+    stdout = "|",
+    stderr = "|"
+  )
   on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
 
   out <- p$read_all_output_lines()
@@ -26,7 +30,6 @@ test_that("We can get the output", {
 })
 
 test_that("We can get the error stream", {
-
   tmp <- tempfile(fileext = ".bat")
   on.exit(unlink(tmp), add = TRUE)
 
@@ -41,7 +44,6 @@ test_that("We can get the error stream", {
 })
 
 test_that("Output & error at the same time", {
-
   tmp <- tempfile(fileext = ".bat")
   on.exit(unlink(tmp), add = TRUE)
 
@@ -51,7 +53,8 @@ test_that("Output & error at the same time", {
     "echo wow",
     ">&2 echo world",
     "echo wooow",
-    sep = "\n", file = tmp
+    sep = "\n",
+    file = tmp
   )
   Sys.chmod(tmp, "700")
 
@@ -66,7 +69,6 @@ test_that("Output & error at the same time", {
 })
 
 test_that("Output and error to specific files", {
-
   tmp <- tempfile(fileext = ".bat")
   on.exit(unlink(tmp), add = TRUE)
 
@@ -76,7 +78,8 @@ test_that("Output and error to specific files", {
     "echo wow",
     ">&2 echo world",
     "echo wooow",
-    sep = "\n", file = tmp
+    sep = "\n",
+    file = tmp
   )
   Sys.chmod(tmp, "700")
 
@@ -95,8 +98,65 @@ test_that("Output and error to specific files", {
   expect_identical(readLines(tmperr), c("hello", "world"))
 })
 
-test_that("is_incomplete", {
+test_that("Output and error can be appended to files with >>", {
+  px <- get_tool("px")
+  tmpout <- tempfile()
+  tmperr <- tempfile()
+  on.exit(unlink(c(tmpout, tmperr)), add = TRUE)
 
+  ## Write initial content into the files
+  writeLines("existing-out", tmpout)
+  writeLines("existing-err", tmperr)
+
+  p <- process$new(
+    px,
+    c("outln", "appended-out", "errln", "appended-err"),
+    stdout = paste0(">>", tmpout),
+    stderr = paste0(">>", tmperr)
+  )
+  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+  p$wait()
+
+  expect_identical(readLines(tmpout), c("existing-out", "appended-out"))
+  expect_identical(readLines(tmperr), c("existing-err", "appended-err"))
+
+  ## Also verify that get_output_file / get_error_file return the plain path
+  ## (use normalizePath on both sides to handle platform symlinks like
+  ## /var -> /private/var on macOS)
+  expect_identical(
+    normalizePath(p$get_output_file()),
+    normalizePath(tmpout)
+  )
+  expect_identical(
+    normalizePath(p$get_error_file()),
+    normalizePath(tmperr)
+  )
+})
+
+test_that(">> creates the file if it does not exist", {
+  px <- get_tool("px")
+  tmpout <- tempfile()
+  tmperr <- tempfile()
+  on.exit(unlink(c(tmpout, tmperr)), add = TRUE)
+
+  ## Files must not exist before the process runs
+  expect_false(file.exists(tmpout))
+  expect_false(file.exists(tmperr))
+
+  p <- process$new(
+    px,
+    c("outln", "new-out", "errln", "new-err"),
+    stdout = paste0(">>", tmpout),
+    stderr = paste0(">>", tmperr)
+  )
+  on.exit(try_silently(p$kill(grace = 0)), add = TRUE)
+  p$wait()
+
+  expect_identical(readLines(tmpout), "new-out")
+  expect_identical(readLines(tmperr), "new-err")
+})
+
+test_that("is_incomplete", {
   px <- get_tool("px")
   p <- process$new(px, c("out", "foo\nbar\nfoobar\n"), stdout = "|")
   on.exit(p$kill(), add = TRUE)
@@ -111,7 +171,6 @@ test_that("is_incomplete", {
 })
 
 test_that("readChar on IO, unix", {
-
   ## Need to skip, because of the different EOL character
   skip_other_platforms("unix")
 
@@ -128,7 +187,6 @@ test_that("readChar on IO, unix", {
 })
 
 test_that("readChar on IO, windows", {
-
   ## Need to skip, because of the different EOL character
   skip_other_platforms("windows")
 
@@ -146,6 +204,7 @@ test_that("readChar on IO, windows", {
 })
 
 test_that("same pipe", {
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   cmd <- c("out", "o1", "err", "e1", "out", "o2", "err", "e2")
   p <- process$new(px, cmd, stdout = "|", stderr = "2>&1")
@@ -155,10 +214,11 @@ test_that("same pipe", {
 
   out <- p$read_all_output()
   expect_equal(out, "o1e1o2e2")
-  expect_error(p$read_all_error_lines(), "not a pipe")
+  expect_snapshot(error = TRUE, p$read_all_error_lines())
 })
 
 test_that("same file", {
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   cmd <- c("out", "o1", "err", "e1", "out", "o2", "errln", "e2")
   tmp <- tempfile()
@@ -169,17 +229,18 @@ test_that("same file", {
   expect_equal(p$get_exit_status(), 0L)
 
   expect_equal(readLines(tmp), "o1e1o2e2")
-  expect_error(p$read_all_output_lines(), "not a pipe")
-  expect_error(p$read_all_error_lines(), "not a pipe")
+  expect_snapshot(error = TRUE, p$read_all_output_lines())
+  expect_snapshot(error = TRUE, p$read_all_error_lines())
 })
 
 test_that("same NULL, for completeness", {
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   cmd <- c("out", "o1", "err", "e1", "out", "o2", "errln", "e2")
   p <- process$new(px, cmd, stdout = NULL, stderr = "2>&1")
   p$wait(2000)
   p$kill()
   expect_equal(p$get_exit_status(), 0L)
-  expect_error(p$read_all_output_lines(), "not a pipe")
-  expect_error(p$read_all_error_lines(), "not a pipe")
+  expect_snapshot(error = TRUE, p$read_all_output_lines())
+  expect_snapshot(error = TRUE, p$read_all_error_lines())
 })

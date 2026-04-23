@@ -120,9 +120,28 @@
 #' @param encoding The encoding to assume for `stdout` and
 #'   `stderr`. By default the encoding of the current locale is
 #'   used. Note that `processx` always reencodes the output of
-#'   both streams in UTF-8 currently.
+#'   both streams in UTF-8 currently. Use `"binary"` to collect
+#'   the raw bytes without any conversion: `stdout` and `stderr`
+#'   in the return value will be raw vectors instead of character
+#'   strings. Line callbacks are not supported in binary mode.
 #' @param cleanup_tree Whether to clean up the child process tree after
 #'   the process has finished.
+#' @param stdin What to do with the standard input. By default it is
+#'   ignored (`NULL`). It can be a file name, to redirect the contents of
+#'   a file to the standard input. When `pty = TRUE`, `stdin` can only be
+#'   `NULL` (no input) or a file path (whose contents are fed to the
+#'   process via the PTY).
+#' @param pty Whether to use a pseudo-terminal (PTY) for the process.
+#'   Supported on Unix and on Windows 10 version 1809 or later (via
+#'   ConPTY). When `TRUE`, stdout and stderr are merged into a single
+#'   stream (accessible via `$stdout` in the result), and `$stderr` is
+#'   always `NULL`. The process sees a real terminal, so programs that
+#'   disable colour or interactive features when not attached to a terminal
+#'   will behave as if they are. `stdout` and `stderr` must be left at
+#'   their defaults (`"|"`), and `stderr_to_stdout`, `stderr_callback`,
+#'   and `stderr_line_callback` must not be set.
+#' @param pty_options Options for the PTY, a named list. See
+#'   [default_pty_options()] for the available options and their defaults.
 #' @param ... Extra arguments are passed to `process$new()`, see
 #'   [process]. Note that you cannot pass `stout` or `stderr` here,
 #'   because they are used internally by `run()`. You can use the
@@ -155,41 +174,126 @@
 #'     error_on_status = FALSE)
 
 run <- function(
-  command = NULL, args = character(), error_on_status = TRUE, wd = NULL,
-  echo_cmd = FALSE, echo = FALSE, spinner = FALSE,
-  timeout = Inf, stdout = "|", stderr = "|",
-  stdout_line_callback = NULL, stdout_callback = NULL,
-  stderr_line_callback = NULL, stderr_callback = NULL,
-  stderr_to_stdout = FALSE, env = NULL,
-  windows_verbatim_args = FALSE, windows_hide_window = FALSE,
-  encoding = "", cleanup_tree = FALSE, ...) {
-
+  command = NULL,
+  args = character(),
+  error_on_status = TRUE,
+  wd = NULL,
+  echo_cmd = FALSE,
+  echo = FALSE,
+  spinner = FALSE,
+  timeout = Inf,
+  stdout = "|",
+  stderr = "|",
+  stdout_line_callback = NULL,
+  stdout_callback = NULL,
+  stderr_line_callback = NULL,
+  stderr_callback = NULL,
+  stderr_to_stdout = FALSE,
+  stdin = NULL,
+  env = NULL,
+  windows_verbatim_args = FALSE,
+  windows_hide_window = FALSE,
+  encoding = "",
+  cleanup_tree = FALSE,
+  pty = FALSE,
+  pty_options = list(),
+  ...
+) {
   assert_that(is_flag(error_on_status))
   assert_that(is_time_interval(timeout))
   assert_that(is_flag(spinner))
   assert_that(is_string_or_null(stdout))
   assert_that(is_string_or_null(stderr))
-  assert_that(is.null(stdout_line_callback) ||
-              is.function(stdout_line_callback))
-  assert_that(is.null(stderr_line_callback) ||
-              is.function(stderr_line_callback))
+  assert_that(
+    is.null(stdout_line_callback) ||
+      is.function(stdout_line_callback)
+  )
+  assert_that(
+    is.null(stderr_line_callback) ||
+      is.function(stderr_line_callback)
+  )
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
   assert_that(is.null(stderr_callback) || is.function(stderr_callback))
   assert_that(is_flag(cleanup_tree))
   assert_that(is_flag(stderr_to_stdout))
+  if (encoding == "binary") {
+    if (!is.null(stdout_line_callback)) {
+      throw(new_error(
+        "`stdout_line_callback` cannot be used with `encoding = \"binary\"`"
+      ))
+    }
+    if (!is.null(stderr_line_callback)) {
+      throw(new_error(
+        "`stderr_line_callback` cannot be used with `encoding = \"binary\"`"
+      ))
+    }
+  }
+  if (pty) {
+    if (!identical(stdout, "|")) {
+      throw(new_error(
+        "`stdout` must be `\"|\"` (the default) if `pty = TRUE`"
+      ))
+    }
+    if (!identical(stderr, "|")) {
+      throw(new_error(
+        "`stderr` must be `\"|\"` (the default) if `pty = TRUE`"
+      ))
+    }
+    if (stderr_to_stdout) {
+      throw(new_error(
+        "`stderr_to_stdout` must be `FALSE` if `pty = TRUE`"
+      ))
+    }
+    if (!is.null(stderr_callback)) {
+      throw(new_error(
+        "`stderr_callback` cannot be used with `pty = TRUE`"
+      ))
+    }
+    if (!is.null(stderr_line_callback)) {
+      throw(new_error(
+        "`stderr_line_callback` cannot be used with `pty = TRUE`"
+      ))
+    }
+    if (!is.null(stdin) && (!is_string(stdin) || stdin %in% c("|", ""))) {
+      throw(new_error(
+        "When `pty = TRUE`, `stdin` must be `NULL` or a file path"
+      ))
+    }
+  }
   ## The rest is checked by process$new()
   "!DEBUG run() Checked arguments"
 
-  if (!interactive()) spinner <- FALSE
+  if (!interactive()) {
+    spinner <- FALSE
+  }
 
   ## Run the process
-  if (stderr_to_stdout) stderr <- "2>&1"
+  if (stderr_to_stdout) {
+    stderr <- "2>&1"
+  }
+  ## For PTY, stdin must be NULL in process$new() (PTY handles I/O itself).
+  ## We read a file-based stdin now so we can write it via the PTY master.
+  if (pty && is.character(stdin)) {
+    stdin_bytes <- readBin(stdin, "raw", n = file.info(stdin)$size)
+  } else {
+    stdin_bytes <- NULL
+  }
   pr <- process$new(
-    command, args, echo_cmd = echo_cmd, wd = wd,
+    command,
+    args,
+    echo_cmd = echo_cmd,
+    wd = wd,
     windows_verbatim_args = windows_verbatim_args,
     windows_hide_window = windows_hide_window,
-    stdout = stdout, stderr = stderr, env = env, encoding = encoding,
-    cleanup_tree = cleanup_tree, ...
+    stdin = if (pty) NULL else stdin,
+    stdout = if (pty) NULL else stdout,
+    stderr = if (pty) NULL else stderr,
+    env = env,
+    encoding = encoding,
+    cleanup_tree = cleanup_tree,
+    pty = pty,
+    pty_options = pty_options,
+    ...
   )
   "#!DEBUG run() Started the process: `pr$get_pid()`"
 
@@ -204,47 +308,75 @@ run <- function(
   ## These are merged to user callbacks if there are any.
   if (echo) {
     stdout_callback <- echo_callback(stdout_callback, "stdout")
-    stderr_callback <- echo_callback(stderr_callback, "stderr")
+    if (!pty) stderr_callback <- echo_callback(stderr_callback, "stderr")
   }
 
   ## Make the process interruptible, and kill it on interrupt
   runcall <- sys.call()
   resenv <- new.env(parent = emptyenv())
-  has_stdout <- !is.null(stdout) && stdout == "|"
-  has_stderr <- !is.null(stderr) && stderr == "|"
+  has_stdout <- pty || (!is.null(stdout) && stdout == "|")
+  has_stderr <- !pty && (!is.null(stderr) && stderr == "|")
 
+  binary <- encoding == "binary"
   if (has_stdout) {
-    resenv$outbuf <- make_buffer()
+    resenv$outbuf <- if (binary) make_raw_buffer() else make_buffer()
     on.exit(resenv$outbuf$done(), add = TRUE)
   }
   if (has_stderr) {
-    resenv$errbuf <- make_buffer()
+    resenv$errbuf <- if (binary) make_raw_buffer() else make_buffer()
     on.exit(resenv$errbuf$done(), add = TRUE)
   }
 
   res <- tryCatch(
-    run_manage(pr, timeout, spinner, stdout, stderr,
-               stdout_line_callback, stdout_callback,
-               stderr_line_callback, stderr_callback, resenv),
+    run_manage(
+      pr,
+      timeout,
+      spinner,
+      stdout,
+      stderr,
+      stdout_line_callback,
+      stdout_callback,
+      stderr_line_callback,
+      stderr_callback,
+      resenv,
+      binary,
+      pty,
+      stdin_bytes
+    ),
     interrupt = function(e) {
       "!DEBUG run() process `pr$get_pid()` killed on interrupt"
       out <- if (has_stdout) {
-        resenv$outbuf$push(pr$read_output())
-        resenv$outbuf$push(pr$read_output())
+        if (binary) {
+          resenv$outbuf$push(pr$read_output_bytes())
+          resenv$outbuf$push(pr$read_output_bytes())
+        } else {
+          resenv$outbuf$push(pr$read_output())
+          resenv$outbuf$push(pr$read_output())
+        }
         resenv$outbuf$read()
       }
       err <- if (has_stderr) {
-        resenv$errbuf$push(pr$read_error())
-        resenv$errbuf$push(pr$read_error())
+        if (binary) {
+          resenv$errbuf$push(pr$read_error_bytes())
+          resenv$errbuf$push(pr$read_error_bytes())
+        } else {
+          resenv$errbuf$push(pr$read_error())
+          resenv$errbuf$push(pr$read_error())
+        }
         resenv$errbuf$read()
       }
       tryCatch(pr$kill(), error = function(e) NULL)
       signalCondition(new_process_interrupt_cond(
         list(
-          interrupt = TRUE, stderr = err, stdout = out,
-          command = command, args = args
+          interrupt = TRUE,
+          stderr = err,
+          stdout = out,
+          command = command,
+          args = args
         ),
-        runcall, echo = echo, stderr_to_stdout = stderr_to_stdout
+        runcall,
+        echo = echo,
+        stderr_to_stdout = stderr_to_stdout
       ))
       cat("\n")
       invokeRestart("abort")
@@ -253,9 +385,15 @@ run <- function(
 
   if (error_on_status && (is.na(res$status) || res$status != 0)) {
     "!DEBUG run() error on status `res$status` for process `pr$get_pid()`"
-    throw(new_process_error(res, call = sys.call(), echo = echo,
-                            stderr_to_stdout, res$status, command = command,
-                            args = args))
+    throw(new_process_error(
+      res,
+      call = sys.call(),
+      echo = echo,
+      stderr_to_stdout,
+      res$status,
+      command = command,
+      args = args
+    ))
   }
 
   res
@@ -265,70 +403,119 @@ echo_callback <- function(user_callback, type) {
   force(user_callback)
   force(type)
   function(x, ...) {
-    if (type == "stderr" && has_package("cli")) x <- cli::col_red(x)
+    if (type == "stderr" && has_package("cli")) {
+      x <- cli::col_red(x)
+    }
     cat(x, sep = "")
     if (!is.null(user_callback)) user_callback(x, ...)
   }
 }
 
-run_manage <- function(proc, timeout, spinner, stdout, stderr,
-                       stdout_line_callback, stdout_callback,
-                       stderr_line_callback, stderr_callback, resenv) {
-
+run_manage <- function(
+  proc,
+  timeout,
+  spinner,
+  stdout,
+  stderr,
+  stdout_line_callback,
+  stdout_callback,
+  stderr_line_callback,
+  stderr_callback,
+  resenv,
+  binary = FALSE,
+  pty = FALSE,
+  stdin_bytes = NULL
+) {
   timeout <- as.difftime(timeout, units = "secs")
   start_time <- proc$get_start_time()
 
-  has_stdout <- !is.null(stdout) && stdout == "|"
-  has_stderr <- !is.null(stderr) && stderr == "|"
+  has_stdout <- pty || (!is.null(stdout) && stdout == "|")
+  has_stderr <- !pty && (!is.null(stderr) && stderr == "|")
+
+  ## For PTY with file-based stdin, we feed bytes inside the poll loop
+  ## rather than up front. This prevents a deadlock where the child's
+  ## stdin buffer is full (so it blocks reading) AND the child's output
+  ## buffer is full (so it blocks writing): feeding stdin and draining
+  ## output must be interleaved.
+  ##
+  ## stdin_remaining: bytes left to write (NULL = nothing to write / done)
+  ## stdin_eof_sent:  TRUE once we have sent the double Ctrl+D EOF signal
+  stdin_remaining <- stdin_bytes
+  stdin_eof_sent  <- is.null(stdin_bytes)
 
   pushback_out <- ""
   pushback_err <- ""
 
   do_output <- function() {
-
     ok <- FALSE
     if (has_stdout) {
-      newout <- tryCatch({
-        ret <- proc$read_output(2000)
-        ok <- TRUE
-        ret
-      }, error = function(e) NULL)
+      newout <- tryCatch(
+        {
+          ret <- if (binary) proc$read_output_bytes(2000) else
+            proc$read_output(2000)
+          ok <- TRUE
+          ret
+        },
+        error = function(e) NULL
+      )
 
-      if (length(newout) && nzchar(newout)) {
-        if (!is.null(stdout_callback)) stdout_callback(newout, proc)
-        resenv$outbuf$push(newout)
-        if (!is.null(stdout_line_callback)) {
-          newout <- paste0(pushback_out, newout)
-          pushback_out <<- ""
-          lines <- strsplit(newout, "\r?\n")[[1]]
-          if (last_char(newout) != "\n") {
-            pushback_out <<- utils::tail(lines, 1)
-            lines <- utils::head(lines, -1)
+      if (binary) {
+        if (length(newout) > 0L) {
+          if (!is.null(stdout_callback)) stdout_callback(newout, proc)
+          resenv$outbuf$push(newout)
+        }
+      } else {
+        if (length(newout) && nzchar(newout)) {
+          if (!is.null(stdout_callback)) {
+            stdout_callback(newout, proc)
           }
-          lapply(lines, function(x) stdout_line_callback(x, proc))
+          resenv$outbuf$push(newout)
+          if (!is.null(stdout_line_callback)) {
+            newout <- paste0(pushback_out, newout)
+            pushback_out <<- ""
+            lines <- strsplit(newout, "\r?\n")[[1]]
+            if (last_char(newout) != "\n") {
+              pushback_out <<- utils::tail(lines, 1)
+              lines <- utils::head(lines, -1)
+            }
+            lapply(lines, function(x) stdout_line_callback(x, proc))
+          }
         }
       }
     }
 
     if (has_stderr) {
-      newerr <- tryCatch({
-        ret <- proc$read_error(2000)
-        ok <- TRUE
-        ret
-      }, error = function(e) NULL)
+      newerr <- tryCatch(
+        {
+          ret <- if (binary) proc$read_error_bytes(2000) else
+            proc$read_error(2000)
+          ok <- TRUE
+          ret
+        },
+        error = function(e) NULL
+      )
 
-      if (length(newerr) && nzchar(newerr)) {
-        resenv$errbuf$push(newerr)
-        if (!is.null(stderr_callback)) stderr_callback(newerr, proc)
-        if (!is.null(stderr_line_callback)) {
-          newerr <- paste0(pushback_err, newerr)
-          pushback_err <<- ""
-          lines <- strsplit(newerr, "\r?\n")[[1]]
-          if (last_char(newerr) != "\n") {
-            pushback_err <<- utils::tail(lines, 1)
-            lines <- utils::head(lines, -1)
+      if (binary) {
+        if (length(newerr) > 0L) {
+          if (!is.null(stderr_callback)) stderr_callback(newerr, proc)
+          resenv$errbuf$push(newerr)
+        }
+      } else {
+        if (length(newerr) && nzchar(newerr)) {
+          resenv$errbuf$push(newerr)
+          if (!is.null(stderr_callback)) {
+            stderr_callback(newerr, proc)
           }
-          lapply(lines, function(x) stderr_line_callback(x, proc))
+          if (!is.null(stderr_line_callback)) {
+            newerr <- paste0(pushback_err, newerr)
+            pushback_err <<- ""
+            lines <- strsplit(newerr, "\r?\n")[[1]]
+            if (last_char(newerr) != "\n") {
+              pushback_err <<- utils::tail(lines, 1)
+              lines <- utils::head(lines, -1)
+            }
+            lapply(lines, function(x) stderr_line_callback(x, proc))
+          }
         }
       }
     }
@@ -350,9 +537,14 @@ run_manage <- function(proc, timeout, spinner, stdout, stderr,
 
   while (proc$is_alive()) {
     ## Timeout? Maybe finished by now...
-    if (!is.null(timeout) && is.finite(timeout) &&
-        Sys.time() - start_time > timeout) {
-      if (proc$kill(close_connections = FALSE)) timeout_happened <- TRUE
+    if (
+      !is.null(timeout) &&
+        is.finite(timeout) &&
+        Sys.time() - start_time > timeout
+    ) {
+      if (proc$kill(close_connections = FALSE)) {
+        timeout_happened <- TRUE
+      }
       "!DEBUG Timeout killed run() process `proc$get_pid()`"
       break
     }
@@ -368,13 +560,55 @@ run_manage <- function(proc, timeout, spinner, stdout, stderr,
     } else {
       remains <- 200
     }
+    ## Feed PTY stdin a chunk at a time, interleaved with output draining
+    ## to prevent the write-write deadlock described above.
+    if (!stdin_eof_sent) {
+      if (length(stdin_remaining) > 0L) {
+        stdin_remaining <- proc$write_input(stdin_remaining)
+      }
+      if (length(stdin_remaining) == 0L) {
+        ## Signal EOF to the PTY.
+        ## Unix: two Ctrl+D (0x04) — first flushes the line buffer,
+        ##       second triggers unconditional EOF.
+        ## Windows ConPTY: Ctrl+Z (0x1A) — the Windows CRT treats this
+        ##       as EOF when reading from a console in text mode.
+        eof_bytes <- if (.Platform$OS.type == "windows") {
+          as.raw(0x1aL)
+        } else {
+          as.raw(c(0x04L, 0x04L))
+        }
+        proc$write_input(eof_bytes)
+        stdin_eof_sent <- TRUE
+      }
+    }
+
     "!DEBUG run is polling for `remains` ms, process `proc$get_pid()`"
     polled <- proc$poll_io(remains)
 
     ## If output/error, then collect it
-    if (any(polled == "ready")) do_output()
+    if (any(polled == "ready")) {
+      do_output()
+    }
 
     if (spinner) spin()
+  }
+
+  ## Windows PTY: after process exit the IOCP timeout is forced to 0 (because
+  ## poll_pipe is at EOF), so proc$poll_io(-1) returns immediately regardless
+  ## of the timeout.  conhost.exe processes the child's final writes
+  ## asynchronously; we must poll *only* the stdout connection (not the full
+  ## process) to give conhost time to flush.  Then call ClosePseudoConsole()
+  ## so conhost closes its write end of the pipe, causing EOF on our read end.
+  ## Skip this if we already killed the process (timeout / forced kill).
+  if (pty && .Platform$OS.type == "windows" && has_stdout && !timeout_happened) {
+    con <- proc$get_output_connection()
+    repeat {
+      p <- poll(list(con), 1000L)[[1]]
+      if (!identical(p, "ready")) break
+      do_output()
+    }
+    priv <- get_private(proc)
+    chain_call(c_processx_pty_close, priv$status, priv$get_short_name())
   }
 
   ## Needed to get the exit status
@@ -383,13 +617,17 @@ run_manage <- function(proc, timeout, spinner, stdout, stderr,
 
   ## We might still have output
   "!DEBUG run() reading leftover output / error, process `proc$get_pid()`"
-  while ((has_stdout && proc$is_incomplete_output()) ||
-         (proc$has_error_connection() && proc$is_incomplete_error())) {
+  while (
+    (has_stdout && proc$is_incomplete_output()) ||
+      (proc$has_error_connection() && proc$is_incomplete_error())
+  ) {
     proc$poll_io(-1)
     if (!do_output()) break
   }
 
-  if (spinner) cat("\r \r")
+  if (spinner) {
+    cat("\r \r")
+  }
 
   list(
     status = proc$get_exit_status(),
@@ -399,21 +637,51 @@ run_manage <- function(proc, timeout, spinner, stdout, stderr,
   )
 }
 
-new_process_error <- function(result, call, echo, stderr_to_stdout,
-                              status = NA_integer_, command, args) {
+new_process_error <- function(
+  result,
+  call,
+  echo,
+  stderr_to_stdout,
+  status = NA_integer_,
+  command,
+  args
+) {
   if (isTRUE(result$timeout)) {
-    new_process_timeout_error(result, call, echo, stderr_to_stdout, status,
-                              command, args)
+    new_process_timeout_error(
+      result,
+      call,
+      echo,
+      stderr_to_stdout,
+      status,
+      command,
+      args
+    )
   } else {
-    new_process_status_error(result, call, echo, stderr_to_stdout, status,
-                             command, args)
+    new_process_status_error(
+      result,
+      call,
+      echo,
+      stderr_to_stdout,
+      status,
+      command,
+      args
+    )
   }
 }
 
-new_process_status_error <- function(result, call, echo, stderr_to_stdout,
-                                     status = NA_integer_, command, args) {
+new_process_status_error <- function(
+  result,
+  call,
+  echo,
+  stderr_to_stdout,
+  status = NA_integer_,
+  command,
+  args
+) {
   err <- new_error(
-    "System command '", basename(command), "' failed",
+    "System command '",
+    basename(command),
+    "' failed",
     call. = call
   )
   err$stderr <- if (stderr_to_stdout) result$stdout else result$stderr
@@ -424,10 +692,17 @@ new_process_status_error <- function(result, call, echo, stderr_to_stdout,
   add_class(err, c("system_command_status_error", "system_command_error"))
 }
 
-new_process_interrupt_cond <- function(result, call, echo, stderr_to_stdout,
-                                      status = NA_integer_) {
+new_process_interrupt_cond <- function(
+  result,
+  call,
+  echo,
+  stderr_to_stdout,
+  status = NA_integer_
+) {
   cond <- new_cond(
-    "System command '", basename(result$command), "' interrupted",
+    "System command '",
+    basename(result$command),
+    "' interrupted",
     call. = call
   )
   cond$stderr <- if (stderr_to_stdout) result$stdout else result$stderr
@@ -438,10 +713,21 @@ new_process_interrupt_cond <- function(result, call, echo, stderr_to_stdout,
   add_class(cond, c("system_command_interrupt", "interrupt"))
 }
 
-new_process_timeout_error <- function(result, call, echo, stderr_to_stdout,
-                                      status = NA_integer_, command, args) {
+new_process_timeout_error <- function(
+  result,
+  call,
+  echo,
+  stderr_to_stdout,
+  status = NA_integer_,
+  command,
+  args
+) {
   err <- new_error(
-    "System command '", basename(command), "' timed out", call. = call)
+    "System command '",
+    basename(command),
+    "' timed out",
+    call. = call
+  )
   err$stderr <- if (stderr_to_stdout) result$stdout else result$stderr
   err$echo <- echo
   err$stderr_to_stdout <- stderr_to_stdout
@@ -452,8 +738,13 @@ new_process_timeout_error <- function(result, call, echo, stderr_to_stdout,
 
 #' @export
 
-format.system_command_error <- function(x, trace = TRUE, class = TRUE,
-                                        advice = !trace, ...) {
+format.system_command_error <- function(
+  x,
+  trace = TRUE,
+  class = TRUE,
+  advice = !trace,
+  ...
+) {
   class(x) <- setdiff(class(x), "system_command_error")
 
   lines <- NextMethod(
@@ -494,7 +785,9 @@ system_error_parts <- function(x) {
 }
 
 last_stderr_lines <- function(text, std, prefix = "") {
-  if (!nzchar(text)) return(paste0(std, ": <empty>"))
+  if (!nzchar(text)) {
+    return(paste0(std, ": <empty>"))
+  }
   lines <- strsplit(text, "\r?\n")[[1]]
 
   if (is_interactive() && length(lines) > 10) {

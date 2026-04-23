@@ -1,6 +1,4 @@
-
 test_that("full_path gives correct values", {
-
   skip_on_cran()
 
   if (is_windows()) {
@@ -20,12 +18,17 @@ test_that("full_path gives correct values", {
   expect_identical(full_path("a/../b/c"), file.path(getwd(), "b/c"))
   expect_identical(
     full_path(
-      "../../../../../../../../../../../../../../../../../../../../../../../a"),
-    file.path(drive, "a"))
+      "../../../../../../../../../../../../../../../../../../../../../../../a"
+    ),
+    file.path(drive, "a")
+  )
   expect_identical(full_path("/../.././a"), file.path(drive, "a"))
   expect_identical(full_path("/a/./b/../c"), file.path(drive, "a/c"))
 
-  expect_identical(full_path("~nonexistent_user"), file.path(getwd(), "~nonexistent_user"))
+  expect_identical(
+    full_path("~nonexistent_user"),
+    file.path(getwd(), "~nonexistent_user")
+  )
   expect_identical(
     full_path("~/a/../b"),
     # On Windows, path.expand() can return a path with backslashes
@@ -62,9 +65,11 @@ test_that("full_path gives correct values, windows", {
   # Can't go .. to remove the server name
   expect_identical(full_path("//a/b/../.."), "//a/")
   expect_identical(full_path("//a/../b"), "//a/b")
-  expect_error(full_path("//"))
-  expect_error(full_path("///"))
-  expect_error(full_path("///a"))
+  expect_snapshot(error = TRUE, {
+    full_path("//")
+    full_path("///")
+    full_path("///a")
+  })
 })
 
 test_that("full_path gives correct values, unix", {
@@ -89,7 +94,6 @@ test_that("do_echo_cmd", {
 })
 
 test_that("sh_quote_smart", {
-
   cases <- list(
     list(c("foo", "bar")),
     list(character()),
@@ -101,7 +105,27 @@ test_that("sh_quote_smart", {
     list(c("foo", "1 2"), c("foo", shQuote("1 2")))
   )
 
-  for (c in cases) expect_equal(sh_quote_smart(c[[1]]), c[[length(c)]])
+  for (c in cases) {
+    expect_equal(sh_quote_smart(c[[1]]), c[[length(c)]])
+  }
+})
+
+test_that("write_raw_stdout writes bytes without text translation", {
+  skip_on_cran()
+
+  # Include bytes that text mode would mangle: \n (0x0a), \r (0x0d),
+  # \r\n pairs, NUL (0x00), and high bytes (0x80, 0xff).
+  bytes <- as.raw(c(0x00, 0x01, 0x0a, 0x0d, 0x0d, 0x0a, 0x80, 0xff))
+
+  px <- get_tool("px")
+  tf <- tempfile()
+  on.exit(unlink(tf), add = TRUE)
+
+  p <- process$new(px, c("rawout", "00010a0d0d0a80ff"), stdout = tf)
+  p$wait()
+
+  result <- readBin(tf, "raw", n = file.size(tf))
+  expect_identical(result, bytes)
 })
 
 test_that("base64", {
@@ -114,7 +138,8 @@ test_that("base64", {
 
   for (i in 5:32) {
     mtcars2 <- unserialize(base64_decode(base64_encode(
-      serialize(mtcars[1:i, ], NULL))))
-    expect_identical(mtcars[1:i,], mtcars2)
+      serialize(mtcars[1:i, ], NULL)
+    )))
+    expect_identical(mtcars[1:i, ], mtcars2)
   }
 })

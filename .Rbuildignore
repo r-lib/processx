@@ -30,3 +30,8 @@
 ^src/.*[.]gcno$
 ^dev-lib$
 ^vignettes$
+^[\.]?air\.toml$
+^\.vscode$
+^[.]dev$
+^[.]covrignore$
+^docs$

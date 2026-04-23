@@ -1,10 +1,12 @@
-
 test_that("CRUD", {
   skip_on_cran()
+  skip_if_no_srcrefs()
 
   sock <- tempfile()
   on.exit(unlink(sock), add = TRUE)
-  if (is_windows()) sock <- basename(sock)
+  if (is_windows()) {
+    sock <- basename(sock)
+  }
 
   sock1 <- conn_create_unix_socket(sock)
   expect_equal(
@@ -32,7 +34,12 @@ test_that("CRUD", {
   conn_accept_unix_socket(sock1)
   expect_equal(conn_unix_socket_state(sock1), "connected_server")
 
-  expect_error(conn_accept_unix_socket(sock1), "Socket is not listening")
+  skip_if_no_srcrefs()
+  expect_snapshot(
+    error = TRUE,
+    conn_accept_unix_socket(sock1),
+    transform = transform_column_number
+  )
 
   pr <- poll(list(sock1, sock2), 1)
   expect_equal(pr, list("timeout", "timeout"))
@@ -64,7 +71,9 @@ test_that("client can read / write before accept", {
 
   sock <- tempfile()
   on.exit(unlink(sock), add = TRUE)
-  if (is_windows()) sock <- basename(sock)
+  if (is_windows()) {
+    sock <- basename(sock)
+  }
 
   sock1 <- conn_create_unix_socket(sock)
   sock2 <- conn_connect_unix_socket(sock)
@@ -85,7 +94,9 @@ test_that("poll returns connect", {
 
   sock <- tempfile()
   on.exit(unlink(sock), add = TRUE)
-  if (is_windows()) sock <- basename(sock)
+  if (is_windows()) {
+    sock <- basename(sock)
+  }
 
   sock1 <- conn_create_unix_socket(sock)
   sock2 <- conn_connect_unix_socket(sock)
@@ -101,7 +112,9 @@ test_that("poll returns connect even if pipes are connected", {
 
   sock <- tempfile()
   on.exit(unlink(sock), add = TRUE)
-  if (is_windows()) sock <- basename(sock)
+  if (is_windows()) {
+    sock <- basename(sock)
+  }
 
   sock1 <- conn_create_unix_socket(sock)
   sock2 <- conn_connect_unix_socket(sock)
@@ -117,7 +130,9 @@ test_that("reading unaccepted server socket is error", {
 
   sock <- tempfile()
   on.exit(unlink(sock), add = TRUE)
-  if (is_windows()) sock <- basename(sock)
+  if (is_windows()) {
+    sock <- basename(sock)
+  }
 
   sock1 <- conn_create_unix_socket(sock)
   sock2 <- conn_connect_unix_socket(sock)
@@ -126,7 +141,13 @@ test_that("reading unaccepted server socket is error", {
     list("connect")
   )
 
-  expect_error(conn_read_chars(sock1))
+  skip_if_no_srcrefs()
+  expect_snapshot(
+    error = TRUE,
+    conn_read_chars(sock1),
+    transform = transform_column_number,
+    variant = sysname()
+  )
 
   close(sock1)
   close(sock2)
@@ -138,7 +159,9 @@ test_that("writing unaccepted server socket is error", {
 
   sock <- tempfile()
   on.exit(unlink(sock), add = TRUE)
-  if (is_windows()) sock <- basename(sock)
+  if (is_windows()) {
+    sock <- basename(sock)
+  }
 
   sock1 <- conn_create_unix_socket(sock)
   sock2 <- conn_connect_unix_socket(sock)
@@ -146,8 +169,12 @@ test_that("writing unaccepted server socket is error", {
     poll(list(sock1), 3000),
     list("connect")
   )
-
-  expect_error(conn_write(sock1, "Hello\n"))
+  skip_if_no_srcrefs()
+  expect_snapshot(
+    error = TRUE,
+    conn_write(sock1, "Hello\n"),
+    transform = transform_column_number
+  )
 
   close(sock1)
   close(sock2)
@@ -159,7 +186,9 @@ test_that("here is no extra ready for poll(), without data", {
 
   sock <- tempfile()
   on.exit(unlink(sock), add = TRUE)
-  if (is_windows()) sock <- basename(sock)
+  if (is_windows()) {
+    sock <- basename(sock)
+  }
 
   sock1 <- conn_create_unix_socket(sock)
   sock2 <- conn_connect_unix_socket(sock)
@@ -180,10 +209,14 @@ test_that("here is no extra ready for poll(), without data", {
 
 test_that("closing the other end finishes `poll()`, on macOS", {
   skip_on_cran()
+  # seems fragile in covr
+  skip_on_covr()
 
   sock <- tempfile()
   on.exit(unlink(sock), add = TRUE)
-  if (is_windows()) sock <- basename(sock)
+  if (is_windows()) {
+    sock <- basename(sock)
+  }
 
   sock1 <- conn_create_unix_socket(sock)
 
@@ -222,18 +255,33 @@ test_that("closing the other end finishes `poll()`, on macOS", {
 
 test_that("errors", {
   skip_on_cran()
+  skip_if_no_srcrefs()
 
   if (!is_windows()) {
     sock <- file.path(tempdir(), strrep(basename(tempfile()), 1000))
-    expect_error(conn_create_unix_socket(sock))
-    expect_error(conn_create_unix_socket("/dev/null"))
-    expect_error(conn_connect_unix_socket("/dev/null"))
+    expect_snapshot(
+      error = TRUE,
+      {
+        conn_create_unix_socket(sock)
+        conn_create_unix_socket("/dev/null")
+        conn_connect_unix_socket("/dev/null")
+      },
+      transform = function(x) transform_column_number(transform_tempdir(x)),
+      variant = sysname()
+    )
   }
 
   ff <- conn_create_fifo()
-  expect_error(conn_accept_unix_socket(ff))
-
-  expect_error(conn_unix_socket_state(ff))
+  expect_snapshot(
+    error = TRUE,
+    conn_accept_unix_socket(ff),
+    transform = transform_column_number
+  )
+  expect_snapshot(
+    error = TRUE,
+    conn_unix_socket_state(ff),
+    transform = transform_column_number
+  )
 })
 
 test_that("unix-sockets.h", {

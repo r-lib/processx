@@ -11,7 +11,7 @@
 [![CRAN RStudio mirror
 downloads](https://cranlogs.r-pkg.org/badges/processx)](https://www.r-pkg.org/pkg/processx)
 [![Codecov test
-coverage](https://codecov.io/gh/r-lib/processx/branch/main/graph/badge.svg)](https://app.codecov.io/gh/r-lib/processx?branch=main)
+coverage](https://codecov.io/gh/r-lib/processx/graph/badge.svg)](https://app.codecov.io/gh/r-lib/processx)
 <!-- badges: end -->
 
 Tools to run system processes in the background, read their standard
@@ -75,6 +75,12 @@ Install the stable version from CRAN:
 install.packages("processx")
 ```
 
+If you need the development version, install it from GitHub:
+
+``` r
+pak::pak("r-lib/processx")
+```
+
 ## Usage
 
 ``` r
@@ -95,7 +101,7 @@ px <- paste0(
 px
 ```
 
-    #> [1] "/Users/gaborcsardi/Library/R/arm64/4.2/library/processx/bin/px"
+    #> [1] "/Users/gaborcsardi/Library/R/arm64/4.5/library/processx/bin/px"
 
 ### Running an external process
 
@@ -135,12 +141,14 @@ result <- run(px, "--help", echo = TRUE)
     #>   outln  <string>            -- print string to stdout, add newline
     #>   errln  <string>            -- print string to stderr, add newline
     #>   errflush                   -- flush stderr stream
-    #>   cat    <filename>          -- print file to stdout
+    #>   cat    <filename>          -- print file to stdout (use '<stdin>' for standard input)
     #>   return <exitcode>          -- return with exitcode
     #>   writefile <path> <string>  -- write to file
     #>   write <fd> <string>        -- write to file descriptor
     #>   echo <fd1> <fd2> <nbytes>  -- echo from fd to another fd
     #>   getenv <var>               -- environment variable to stdout
+    #>   rawout <hexstring>         -- write raw bytes (hex pairs) to stdout
+    #>   rawerr <hexstring>         -- write raw bytes (hex pairs) to stderr
 
 > Note: From version 3.0.1, processx does not let you specify a full
 > shell command line, as this involves starting a grandchild process
@@ -228,12 +236,11 @@ out1
 out2
 ```
 
-    #>  [1] "CODE_OF_CONDUCT.md" "DESCRIPTION"        "LICENSE"           
-    #>  [4] "LICENSE.md"         "Makefile"           "NAMESPACE"         
-    #>  [7] "NEWS.md"            "R"                  "README.Rmd"        
-    #> [10] "README.md"          "_pkgdown.yml"       "codecov.yml"       
-    #> [13] "inst"               "man"                "processx.Rproj"    
-    #> [16] "src"                "tests"
+    #>  [1] "_pkgdown.yml"   "codecov.yml"    "DESCRIPTION"    "inst"          
+    #>  [5] "LICENSE"        "LICENSE.md"     "Makefile"       "man"           
+    #>  [9] "NAMESPACE"      "NEWS.md"        "processx.Rproj" "R"             
+    #> [13] "README.md"      "README.Rmd"     "src"            "tests"         
+    #> [17] "vignettes"
 
 #### Spinner
 
@@ -544,14 +551,14 @@ p$is_alive()
 Sys.time()
 ```
 
-    #> [1] "2022-06-10 13:57:49 CEST"
+    #> [1] "2025-04-26 09:34:10 CEST"
 
 ``` r
 p$wait()
 Sys.time()
 ```
 
-    #> [1] "2022-06-10 13:57:51 CEST"
+    #> [1] "2025-04-26 09:34:12 CEST"
 
 It is safe to call `wait()` multiple times:
 
@@ -605,9 +612,10 @@ started running.
 p <- process$new("nonexistant-command-for-sure")
 ```
 
-    #> Error in c("process_initialize(self, private, command, args, stdin, stdout, ", : ! Native call to `processx_exec` failed
-    #> Caused by error in `chain_call(c_processx_exec, command, c(command, args), pty, pty_options, …` at initialize.R:138:3:
-    #> ! cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:613 (processx_exec)
+    #> Error in `process_initialize()`:
+    #> ! ! Native call to `processx_exec` failed
+    #> Caused by error in `chain_call(...)`:
+    #> ! cannot start processx process 'nonexistant-command-for-sure' (system error 2, No such file or directory) @unix/processx.c:651 (processx_exec)
 
 ``` r
 p2 <- process$new(px, c("sleep", "1", "command-does-not-exist"))
@@ -637,4 +645,4 @@ contributing to this project, you agree to abide by its terms.
 
 ## License
 
-MIT © Mango Solutions, RStudio, Gábor Csárdi
+MIT © Ascent Digital Services, RStudio, Gábor Csárdi

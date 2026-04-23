@@ -1,4 +1,3 @@
-
 test_that("setting stdout to a file", {
   stdout_to_file <- function(filename) {
     con <- processx::conn_create_file(filename, write = TRUE)
@@ -13,7 +12,8 @@ test_that("setting stdout to a file", {
   on.exit(unlink(tmp), add = TRUE)
   opt <- callr::r_process_options(
     func = stdout_to_file,
-    args = list(filename = tmp))
+    args = list(filename = tmp)
+  )
   on.exit(p$kill(), add = TRUE)
   p <- callr::r_process$new(opt)
 
@@ -40,7 +40,8 @@ test_that("setting stderr to a file", {
   on.exit(unlink(tmp), add = TRUE)
   opt <- callr::r_process_options(
     func = stderr_to_file,
-    args = list(filename = tmp))
+    args = list(filename = tmp)
+  )
   on.exit(p$kill(), add = TRUE)
   p <- callr::r_process$new(opt)
 
@@ -75,7 +76,8 @@ test_that("setting stdout multiple times", {
   on.exit(unlink(c(tmp1, tmp2)), add = TRUE)
   opt <- callr::r_process_options(
     func = stdout_to_file,
-    args = list(file1 = tmp1, file2 = tmp2))
+    args = list(file1 = tmp1, file2 = tmp2)
+  )
   on.exit(p$kill(), add = TRUE)
   p <- callr::r_process$new(opt)
 
@@ -143,7 +145,8 @@ test_that("set stdout and save the old fd", {
   on.exit(unlink(c(tmp1, tmp2)), add = TRUE)
   opt <- callr::r_process_options(
     func = stdout,
-    args  = list(file1 = tmp1, file2 = tmp2))
+    args = list(file1 = tmp1, file2 = tmp2)
+  )
   on.exit(p$kill(), add = TRUE)
   p <- callr::r_process$new(opt)
 
@@ -172,7 +175,8 @@ test_that("set stderr and save the old fd", {
   on.exit(unlink(c(tmp1, tmp2)), add = TRUE)
   opt <- callr::r_process_options(
     func = stderr,
-    args  = list(file1 = tmp1, file2 = tmp2))
+    args = list(file1 = tmp1, file2 = tmp2)
+  )
   on.exit(p$kill(), add = TRUE)
   p <- callr::r_process$new(opt)
 

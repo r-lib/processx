@@ -1,6 +1,4 @@
-
 test_that("writing to extra connection", {
-
   skip_on_cran()
 
   msg <- "foobar"
@@ -9,8 +7,12 @@ test_that("writing to extra connection", {
   pipe <- conn_create_pipepair(nonblocking = c(FALSE, FALSE))
 
   expect_silent(
-    p <- process$new(cmd[1], cmd[-1],
-      stdout = "|", stderr = "|", connections = list(pipe[[1]])
+    p <- process$new(
+      cmd[1],
+      cmd[-1],
+      stdout = "|",
+      stderr = "|",
+      connections = list(pipe[[1]])
     )
   )
   close(pipe[[1]])
@@ -24,16 +26,27 @@ test_that("writing to extra connection", {
 })
 
 test_that("reading from extra connection", {
-
   skip_on_cran()
 
   cmd <- c(
-    get_tool("px"), "sleep", "0.5", "write", "3", "foobar\r\n", "out", "ok")
+    get_tool("px"),
+    "sleep",
+    "0.5",
+    "write",
+    "3",
+    "foobar\r\n",
+    "out",
+    "ok"
+  )
 
   pipe <- conn_create_pipepair()
 
   expect_silent(
-    p <- process$new(cmd[1], cmd[-1], stdout = "|", stderr = "|",
+    p <- process$new(
+      cmd[1],
+      cmd[-1],
+      stdout = "|",
+      stderr = "|",
       connections = list(pipe[[2]])
     )
   )
@@ -53,7 +66,6 @@ test_that("reading from extra connection", {
 })
 
 test_that("reading and writing to extra connection", {
-
   skip_on_cran()
 
   msg <- "foobar\n"
@@ -63,7 +75,11 @@ test_that("reading and writing to extra connection", {
   pipe2 <- conn_create_pipepair()
 
   expect_silent(
-    p <- process$new(cmd[1], cmd[-1], stdout = "|", stderr = "|",
+    p <- process$new(
+      cmd[1],
+      cmd[-1],
+      stdout = "|",
+      stderr = "|",
       connections = list(pipe1[[1]], pipe2[[2]])
     )
   )

@@ -13,8 +13,8 @@
 
 // Functions ------------------------------------------------------------------
 
-int getppid();
-HANDLE open_stdin();
+int getppid(void);
+HANDLE open_stdin(void);
 HANDLE open_named_pipe(const char* pipe_name);
 void configure_input_handle(HANDLE h_input);
 char* get_line_nonblock(char* buf, int max_chars, HANDLE h_input);

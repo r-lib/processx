@@ -1,4 +1,3 @@
-
 test_that("many processes", {
   skip_on_cran()
 
@@ -7,9 +6,8 @@ test_that("many processes", {
   px <- get_tool("px")
   on.exit(try(lapply(pp, function(x) x$kill()), silent = TRUE), add = TRUE)
   pp <- lapply(1:num, function(i) {
-    cmd <- c("sleep", "1", "outln", paste("out", i),
-             "errln", paste("err", i))
-    process$new(px, cmd, stdout = "|",  stderr = "|")
+    cmd <- c("sleep", "1", "outln", paste("out", i), "errln", paste("err", i))
+    process$new(px, cmd, stdout = "|", stderr = "|")
   })
 
   ## poll them
@@ -24,7 +22,10 @@ test_that("many processes", {
         results[[i]][[2]] <<- c(results[[i]][[2]], pp[[i]]$read_error_lines())
       }
     })
-    inc <- sapply(pp, function(x) x$is_incomplete_output() || x$is_incomplete_error())
+    inc <- sapply(
+      pp,
+      function(x) x$is_incomplete_output() || x$is_incomplete_error()
+    )
     if (!any(inc)) break
   }
 

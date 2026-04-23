@@ -13,7 +13,7 @@
 #define MAX(a,b) ((a>b)?a:b)
 
 
-int getppid() {
+int getppid(void) {
     int pid = GetCurrentProcessId();
 
     HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -40,7 +40,7 @@ int getppid() {
 }
 
 
-HANDLE open_stdin() {
+HANDLE open_stdin(void) {
     HANDLE h_input = GetStdHandle(STD_INPUT_HANDLE);
 
     if (h_input == INVALID_HANDLE_VALUE) {

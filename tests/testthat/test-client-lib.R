@@ -1,4 +1,3 @@
-
 test_that("client lib is standalone", {
   lib <- load_client_lib(client)
   on.exit(try(lib$.finalize()), add = TRUE)
@@ -6,12 +5,20 @@ test_that("client lib is standalone", {
   objs <- ls(lib, all.names = TRUE)
   funs <- Filter(function(x) is.function(lib[[x]]), objs)
   funobjs <- mget(funs, lib)
-  for (f in funobjs) expect_identical(environmentName(topenv(f)), "base")
+  for (f in funobjs) {
+    expect_identical(environmentName(topenv(f)), "base")
+  }
 
+  skip_if_not_installed("codetools")
   expect_message(
-    mapply(codetools::checkUsage, funobjs, funs,
-           MoreArgs = list(report = message)),
-    NA)
+    mapply(
+      codetools::checkUsage,
+      funobjs,
+      funs,
+      MoreArgs = list(report = message)
+    ),
+    NA
+  )
 })
 
 test_that("base64", {
@@ -27,8 +34,9 @@ test_that("base64", {
 
   for (i in 5:32) {
     mtcars2 <- unserialize(lib$base64_decode(lib$base64_encode(
-      serialize(mtcars[1:i, ], NULL))))
-    expect_identical(mtcars[1:i,], mtcars2)
+      serialize(mtcars[1:i, ], NULL)
+    )))
+    expect_identical(mtcars[1:i, ], mtcars2)
   }
 })
 
@@ -68,7 +76,8 @@ test_that("processx_connection_set_stdout", {
   on.exit(unlink(tmp), add = TRUE)
   opt <- callr::r_process_options(
     func = stdout_to_file,
-    args = list(filename = tmp))
+    args = list(filename = tmp)
+  )
   on.exit(p$kill(), add = TRUE)
   p <- callr::r_process$new(opt)
 
@@ -94,7 +103,8 @@ test_that("processx_connection_set_stdout", {
   on.exit(unlink(tmp), add = TRUE)
   opt <- callr::r_process_options(
     func = stderr_to_file,
-    args = list(filename = tmp))
+    args = list(filename = tmp)
+  )
   on.exit(p$kill(), add = TRUE)
   p <- callr::r_process$new(opt)
 
@@ -126,7 +136,8 @@ test_that("setting stdout multiple times", {
   on.exit(unlink(c(tmp1, tmp2)), add = TRUE)
   opt <- callr::r_process_options(
     func = stdout_to_file,
-    args = list(file1 = tmp1, file2 = tmp2))
+    args = list(file1 = tmp1, file2 = tmp2)
+  )
   on.exit(p$kill(), add = TRUE)
   p <- callr::r_process$new(opt)
 

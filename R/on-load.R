@@ -1,4 +1,3 @@
-
 ## nocov start
 
 .onLoad <- function(libname, pkgname) {
@@ -6,15 +5,25 @@
   ## because in a Docker container (maybe elsewhere as well?) on
   ## Linux it can change (!).
   ## See https://github.com/r-lib/processx/issues/258
-  if (ps::ps_is_supported()) {
+  ## We don't do it on macOS, because it breaks codex
+  ## https://github.com/r-lib/processx/pull/401
+  if (is_linux() && ps::ps_is_supported()) {
     ps::ps_handle()
-    bt <- ps::ps_boot_time()
-    .Call(c_processx__set_boot_time, bt)
+    if (utils::packageVersion("ps") >= "1.9.2.9001") {
+      ## Pass NULL to enable CLOCK_REALTIME-CLOCK_MONOTONIC precise boot time,
+      ## which requires ps >= 1.9.2.9001 for compatible handle validation.
+      .Call(c_processx__set_boot_time, NULL)
+    } else {
+      bt <- ps::ps_boot_time()
+      .Call(c_processx__set_boot_time, bt)
+    }
   }
 
   supervisor_reset()
-  if (Sys.getenv("DEBUGME", "") != "" &&
-      requireNamespace("debugme", quietly = TRUE)) {
+  if (
+    Sys.getenv("DEBUGME", "") != "" &&
+      requireNamespace("debugme", quietly = TRUE)
+  ) {
     debugme::debugme()
   }
 

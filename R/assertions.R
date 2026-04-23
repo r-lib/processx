@@ -1,8 +1,7 @@
-
 is_string <- function(x) {
   is.character(x) &&
-  length(x) == 1 &&
-  !is.na(x)
+    length(x) == 1 &&
+    !is.na(x)
 }
 
 on_failure(is_string) <- function(call, env) {
@@ -19,8 +18,8 @@ on_failure(is_string_or_null) <- function(call, env) {
 
 is_flag <- function(x) {
   is.logical(x) &&
-  length(x) == 1 &&
-  !is.na(x)
+    length(x) == 1 &&
+    !is.na(x)
 }
 
 on_failure(is_flag) <- function(call, env) {
@@ -69,7 +68,9 @@ on_failure(is_time_interval) <- function(call, env) {
 }
 
 is_list_of_pollables <- function(x) {
-  if (!is.list(x)) return(FALSE)
+  if (!is.list(x)) {
+    return(FALSE)
+  }
   proc <- vapply(x, inherits, FUN.VALUE = logical(1), "process")
   conn <- vapply(x, is_connection, logical(1))
   curl <- vapply(x, inherits, FUN.VALUE = logical(1), "processx_curl_fds")
@@ -113,8 +114,12 @@ on_failure(is_connection_list) <- function(call, env) {
 }
 
 is_env_vector <- function(x) {
-  if (is_named_character(x)) return(TRUE)
-  if (!is.character(x) || anyNA(x)) return(FALSE)
+  if (is_named_character(x)) {
+    return(TRUE)
+  }
+  if (!is.character(x) || anyNA(x)) {
+    return(FALSE)
+  }
   if (is.null(names(x))) {
     all(x == "current")
   } else {
@@ -126,6 +131,19 @@ on_failure(is_env_vector) <- function(call, env) {
   paste0(
     "all elements, except \"current\" must be named in ",
     deparse(call$x)
+  )
+}
+
+is_pdeathsig <- function(x) {
+  isFALSE(x) ||
+    isTRUE(x) ||
+    (is.numeric(x) && length(x) == 1 && !is.na(x) && round(x) == x && x > 0)
+}
+
+on_failure(is_pdeathsig) <- function(call, env) {
+  paste0(
+    deparse(call$x),
+    " must be FALSE, TRUE, or a positive integer signal number"
   )
 }
 

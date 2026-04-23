@@ -72,6 +72,7 @@ typedef struct processx_connection_s {
 
   char *encoding;
   void *iconv_ctx;
+  int raw_mode;			/* If 1, skip UTF-8 conversion; data stays in buffer */
 
   processx_i_connection_t handle;
 
@@ -158,6 +159,10 @@ SEXP processx_connection_socket_state(SEXP con);
 /* Read characters in a given encoding from the connection. */
 SEXP processx_connection_read_chars(SEXP con, SEXP nchars);
 
+/* Read raw bytes from the connection into a raw vector. Switches the
+   connection to raw_mode, bypassing UTF-8 conversion. */
+SEXP processx_connection_read_bytes(SEXP con, SEXP nbytes);
+
 /* Read lines of characters from the connection. */
 SEXP processx_connection_read_lines(SEXP con, SEXP nlines);
 
@@ -179,6 +184,7 @@ SEXP processx_connection_poll(SEXP pollables, SEXP timeout);
 
 /* Functions for connection inheritance */
 SEXP processx_connection_create_pipepair(SEXP encoding, SEXP nonblocking);
+SEXP processx_connection_create_proc_pipepair(SEXP encoding);
 
 SEXP processx_connection_set_stdout(SEXP con, SEXP drop);
 
@@ -260,7 +266,7 @@ typedef unsigned long DWORD;
 /* Threading in Windows */
 
 #ifdef _WIN32
-int processx__start_thread();
+int processx__start_thread(void);
 extern HANDLE processx__iocp_thread;
 extern HANDLE processx__thread_start;
 extern HANDLE processx__thread_done;
@@ -291,7 +297,7 @@ BOOL processx__thread_getstatus_select(LPDWORD lpNumberOfBytes,
 				       PULONG_PTR lpCompletionKey,
 				       LPOVERLAPPED *lpOverlapped,
 				       DWORD dwMilliseconds);
-DWORD processx__thread_get_last_error();
+DWORD processx__thread_get_last_error(void);
 
 #endif
 

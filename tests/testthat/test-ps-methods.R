@@ -1,4 +1,3 @@
-
 test_that("ps methods", {
   skip_if_no_ps()
 
@@ -21,13 +20,17 @@ test_that("ps methods", {
 
   p$suspend()
   deadline <- Sys.time() + 3
-  while (p$get_status() != "stopped" && Sys.time() < deadline) Sys.sleep(0.05)
+  while (p$get_status() != "stopped" && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
   expect_true(Sys.time() < deadline)
   expect_equal(p$get_status(), "stopped")
 
   p$resume()
   deadline <- Sys.time() + 3
-  while (p$get_status() == "stopped" && Sys.time() < deadline) Sys.sleep(0.05)
+  while (p$get_status() == "stopped" && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
   expect_true(Sys.time() < deadline)
   expect_true(p$get_status() != "stopped")
 })

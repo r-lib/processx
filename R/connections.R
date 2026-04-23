@@ -1,4 +1,3 @@
-
 #' Processx connections
 #'
 #' These functions are currently experimental and will change
@@ -22,7 +21,8 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
   assert_that(
     is_integerish_scalar(fd),
     is_string(encoding),
-    is_flag(close))
+    is_flag(close)
+  )
   fd <- as.integer(fd)
   chain_call(c_processx_connection_create_fd, fd, encoding, close)
 }
@@ -92,11 +92,23 @@ conn_create_fd <- function(fd, encoding = "", close = TRUE) {
 #' @rdname processx_fifos
 #' @export
 
-conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
-                             encoding = "", nonblocking = TRUE) {
-  if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
-  if (is.null(read)) read <- !write
-  if (is.null(write)) write <- !read
+conn_create_fifo <- function(
+  filename = NULL,
+  read = NULL,
+  write = NULL,
+  encoding = "",
+  nonblocking = TRUE
+) {
+  if (is.null(read) && is.null(write)) {
+    read <- TRUE
+    write <- FALSE
+  }
+  if (is.null(read)) {
+    read <- !write
+  }
+  if (is.null(write)) {
+    write <- !read
+  }
 
   if (read && write) {
     throw(new_error("Bi-directional FIFOs are not supported currently"))
@@ -107,7 +119,7 @@ conn_create_fifo <- function(filename = NULL, read = NULL, write = NULL,
     is_flag(read),
     is_flag(write),
     read || write,
-    ! (read && write),
+    !(read && write),
     is_string(encoding),
     is_flag(nonblocking)
   )
@@ -178,11 +190,23 @@ make_pipe_file_name <- function(filename) {
 #'
 #' close(reader)
 
-conn_connect_fifo <- function(filename, read = NULL, write = NULL,
-                              encoding = "", nonblocking = TRUE) {
-  if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
-  if (is.null(read)) read <- !write
-  if (is.null(write)) write <- !read
+conn_connect_fifo <- function(
+  filename,
+  read = NULL,
+  write = NULL,
+  encoding = "",
+  nonblocking = TRUE
+) {
+  if (is.null(read) && is.null(write)) {
+    read <- TRUE
+    write <- FALSE
+  }
+  if (is.null(read)) {
+    read <- !write
+  }
+  if (is.null(write)) {
+    write <- !read
+  }
 
   if (read && write) {
     throw(new_error("Bi-directional FIFOs are not supported currently"))
@@ -193,7 +217,7 @@ conn_connect_fifo <- function(filename, read = NULL, write = NULL,
     is_flag(read),
     is_flag(write),
     read || write,
-    ! (read && write),
+    !(read && write),
     is_string(encoding),
     is_flag(nonblocking)
   )
@@ -240,13 +264,30 @@ conn_file_name <- function(con) {
 #' @rdname processx_connections
 #' @export
 
-conn_create_pipepair <- function(encoding = "",
-                                 nonblocking = c(TRUE, FALSE)) {
+conn_create_pipepair <- function(encoding = "", nonblocking = c(TRUE, FALSE)) {
   assert_that(
     is_string(encoding),
-    is.logical(nonblocking), length(nonblocking) == 2,
-    !any(is.na(nonblocking)))
+    is.logical(nonblocking),
+    length(nonblocking) == 2,
+    !any(is.na(nonblocking))
+  )
   chain_call(c_processx_connection_create_pipepair, encoding, nonblocking)
+}
+
+#' @details
+#' `conn_create_proc_pipepair()` creates a unidirectional pipe suitable for
+#' connecting two child processes: the first element is the write end (pass as
+#' `stdout` to the writing process) and the second is the read end (pass as
+#' `stdin` to the reading process). Unlike `conn_create_pipepair()`, both ends
+#' are synchronous (blocking), which is required for child-process stdin/stdout
+#' on Windows.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_create_proc_pipepair <- function(encoding = "") {
+  assert_that(is_string(encoding))
+  chain_call(c_processx_connection_create_proc_pipepair, encoding)
 }
 
 #' @details
@@ -260,8 +301,7 @@ conn_create_pipepair <- function(encoding = "",
 #' @rdname processx_connections
 #' @export
 
-conn_read_chars <- function(con, n = -1)
-  UseMethod("conn_read_chars", con)
+conn_read_chars <- function(con, n = -1) UseMethod("conn_read_chars", con)
 
 #' @rdname processx_connections
 #' @export
@@ -279,13 +319,40 @@ processx_conn_read_chars <- function(con, n = -1) {
 }
 
 #' @details
+#' `conn_read_bytes()` reads raw bytes from the connection into a raw vector.
+#' Unlike `conn_read_chars()`, it bypasses UTF-8 conversion, so null bytes
+#' and arbitrary binary data are preserved exactly. Calling this function
+#' switches the connection permanently to raw mode; after that,
+#' `conn_read_chars()` and `conn_read_lines()` must not be used on the
+#' same connection.
+#'
+#' @rdname processx_connections
+#' @export
+
+conn_read_bytes <- function(con, n = -1) UseMethod("conn_read_bytes", con)
+
+#' @rdname processx_connections
+#' @export
+
+conn_read_bytes.processx_connection <- function(con, n = -1) {
+  processx_conn_read_bytes(con, n)
+}
+
+#' @rdname processx_connections
+#' @export
+
+processx_conn_read_bytes <- function(con, n = -1) {
+  assert_that(is_connection(con), is_integerish_scalar(n))
+  chain_call(c_processx_connection_read_bytes, con, n)
+}
+
+#' @details
 #' `conn_read_lines()` reads lines from a connection.
 #'
 #' @rdname processx_connections
 #' @export
 
-conn_read_lines <- function(con, n = -1)
-  UseMethod("conn_read_lines", con)
+conn_read_lines <- function(con, n = -1) UseMethod("conn_read_lines", con)
 
 #' @rdname processx_connections
 #' @export
@@ -309,8 +376,7 @@ processx_conn_read_lines <- function(con, n = -1) {
 #' @rdname processx_connections
 #' @export
 
-conn_is_incomplete <- function(con)
-  UseMethod("conn_is_incomplete", con)
+conn_is_incomplete <- function(con) UseMethod("conn_is_incomplete", con)
 
 #' @rdname processx_connections
 #' @export
@@ -324,7 +390,7 @@ conn_is_incomplete.processx_connection <- function(con) {
 
 processx_conn_is_incomplete <- function(con) {
   assert_that(is_connection(con))
-  ! chain_call(c_processx_connection_is_eof, con)
+  !chain_call(c_processx_connection_is_eof, con)
 }
 
 #' @details
@@ -340,14 +406,19 @@ processx_conn_is_incomplete <- function(con) {
 #' @rdname processx_connections
 #' @export
 
-conn_write <- function(con, str, sep = "\n", encoding = "")
+conn_write <- function(con, str, sep = "\n", encoding = "") {
   UseMethod("conn_write", con)
+}
 
 #' @rdname processx_connections
 #' @export
 
-conn_write.processx_connection <- function(con, str, sep = "\n",
-                                           encoding = "") {
+conn_write.processx_connection <- function(
+  con,
+  str,
+  sep = "\n",
+  encoding = ""
+) {
   processx_conn_write(con, str, sep, encoding)
 }
 
@@ -357,9 +428,10 @@ conn_write.processx_connection <- function(con, str, sep = "\n",
 processx_conn_write <- function(con, str, sep = "\n", encoding = "") {
   assert_that(
     is_connection(con),
-    (is.character(str) && all(! is.na(str))) || is.raw(str),
+    (is.character(str) && all(!is.na(str))) || is.raw(str),
     is_string(sep),
-    is_string(encoding))
+    is_string(encoding)
+  )
 
   if (is.character(str)) {
     pstr <- paste(str, collapse = sep)
@@ -371,9 +443,9 @@ processx_conn_write <- function(con, str, sep = "\n", encoding = "") {
 #' @details
 #' `conn_create_file()` creates a connection to a file.
 #'
-#' @param filename File name. For `conn_create_pipe()` on Windows, a
+#' @param filename File name. For `conn_create_fifo()` on Windows, a
 #' `\\?\pipe` prefix is added to this, if it does not have such a prefix.
-#' For `conn_create_pipe()` it can also be `NULL`, in which case a random
+#' For `conn_create_fifo()` it can also be `NULL`, in which case a random
 #' file name is used via `tempfile()`.
 #' @param read Whether the connection is readable.
 #' @param write Whethe the connection is writeable.
@@ -382,15 +454,23 @@ processx_conn_write <- function(con, str, sep = "\n", encoding = "") {
 #' @export
 
 conn_create_file <- function(filename, read = NULL, write = NULL) {
-  if (is.null(read) && is.null(write)) { read <- TRUE; write <- FALSE }
-  if (is.null(read)) read <- !write
-  if (is.null(write)) write <- !read
+  if (is.null(read) && is.null(write)) {
+    read <- TRUE
+    write <- FALSE
+  }
+  if (is.null(read)) {
+    read <- !write
+  }
+  if (is.null(write)) {
+    write <- !read
+  }
 
   assert_that(
     is_string(filename),
     is_flag(read),
     is_flag(write),
-    read || write)
+    read || write
+  )
 
   chain_call(c_processx_connection_create_file, filename, read, write)
 }
@@ -408,7 +488,8 @@ conn_create_file <- function(filename, read = NULL, write = NULL) {
 conn_set_stdout <- function(con, drop = TRUE) {
   assert_that(
     is_connection(con),
-    is_flag(drop))
+    is_flag(drop)
+  )
 
   flush(stdout())
   invisible(chain_call(c_processx_connection_set_stdout, con, drop))
@@ -424,7 +505,8 @@ conn_set_stdout <- function(con, drop = TRUE) {
 conn_set_stderr <- function(con, drop = TRUE) {
   assert_that(
     is_connection(con),
-    is_flag(drop))
+    is_flag(drop)
+  )
 
   flush(stderr())
   invisible(chain_call(c_processx_connection_set_stderr, con, drop))
@@ -542,7 +624,6 @@ is_valid_fd <- function(fd) {
 #' @export
 
 conn_create_unix_socket <- function(filename = NULL, encoding = "") {
-
   assert_that(
     is_string_or_null(filename),
     is_string(encoding)
@@ -561,7 +642,6 @@ conn_create_unix_socket <- function(filename = NULL, encoding = "") {
 #' @export
 
 conn_connect_unix_socket <- function(filename, encoding = "") {
-
   assert_that(
     is_string_or_null(filename),
     is_string(encoding)

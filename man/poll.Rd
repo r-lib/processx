@@ -47,7 +47,7 @@ connection was.
 }
 
 \examples{
-\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 # Different commands to run for windows and unix
 cmd1 <- switch(
   .Platform$OS.type,

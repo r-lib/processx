@@ -1,6 +1,4 @@
-
 test_that("process is cleaned up", {
-
   px <- get_tool("px")
   p <- process$new(px, c("sleep", "1"), cleanup = TRUE)
   pid <- p$get_pid()
@@ -12,7 +10,6 @@ test_that("process is cleaned up", {
 })
 
 test_that("process can stay alive", {
-
   px <- get_tool("px")
 
   on.exit(tools::pskill(pid, 9), add = TRUE)
