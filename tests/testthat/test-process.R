@@ -93,8 +93,6 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   # Needs POSIX signal handling
   skip_on_os("windows")
 
-  n_children <- length(ps::ps_children())
-
   # Enabled case
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
 
@@ -107,30 +105,15 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   }
 
   p <- callr::r_session$new()
-  h <- ps::ps_handle(p$get_pid())
   p$run(fn, list(file = out))
 
   p_temp_dir <- readLines(out)
   expect_true(dir.exists(p_temp_dir))
 
-  # The cleanup process has been launched
-  expect_length(ps::ps_children(), n_children + 1)
-
   p$signal(ps::signals()$SIGTERM)
   p$wait()
 
-  # We're no longer waiting for the cleanup process to finish so poll
-  # until finished
   poll_until(function() !dir.exists(p_temp_dir))
-  expect_length(ps::ps_children(), n_children)
-
-  # The cleanup process is terminated on quit
-  p <- callr::r_session$new()
-  h <- ps::ps_handle(p$get_pid())
-
-  expect_length(ps::ps_children(), n_children + 1)
-  p$run(function() quit("no"))
-  expect_length(ps::ps_children(), n_children)
 
   # Disabled case
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = NA_character_))
@@ -202,9 +185,6 @@ test_that("can kill process tree with SIGTERM", {
 
   ps <- ps::ps_find_tree(id)
 
-  # Kill all ps-marked subprocesses, including the cleanup
-  # processes. These ignore SIGTERM but should exit quickly when their
-  # parent process is terminated.
   for (p in ps) {
     tools::pskill(ps::ps_pid(p))
   }
@@ -212,40 +192,11 @@ test_that("can kill process tree with SIGTERM", {
     !any(sapply(ps, function(p) ps::ps_is_running(p)))
   })
 
+  # rm -rf runs in a forked child; poll until it finishes
+  poll_until(function() !any(dir.exists(temp_dirs)))
   expect_false(any(dir.exists(temp_dirs)))
 })
 
-test_that("can exit or sigkill parent of cleanup process", {
-  # https://github.com/r-lib/callr/pull/250
-  skip_if_not_installed("callr", "3.7.3.9001")
-
-  # Needs POSIX signal handling
-  skip_on_os("windows")
-
-  withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
-
-  p <- callr::r_session$new()
-  p_handle <- ps::ps_handle(p$get_pid())
-
-  ps <- ps::ps_children(p_handle)
-  expect_length(ps, 1)
-  cleanup_p <- ps[[1]]
-
-  # Normal exit: The cleanup process gets an EOF on its stdin and exits
-  p$close()
-  poll_until(function() !ps::ps_is_running(cleanup_p))
-
-  p <- callr::r_session$new()
-  p_handle <- ps::ps_handle(p$get_pid())
-
-  ps <- ps::ps_children(p_handle)
-  expect_length(ps, 1)
-  cleanup_p <- ps[[1]]
-
-  # SIGKILL: Also gets an EOF
-  tools::pskill(p$get_pid(), tools::SIGKILL)
-  poll_until(function() !ps::ps_is_running(cleanup_p))
-})
 
 test_that("linux_pdeathsig kills child when parent exits", {
   skip_if(!is_linux())
