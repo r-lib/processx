@@ -34,7 +34,9 @@ supervisor_kill <- function() {
 # This takes an object s, because a new `supervisor_info` object could have been
 # created.
 supervisor_kill2 <- function(s = supervisor_info) {
-  if (is.null(s$pid)) return()
+  if (is.null(s$pid)) {
+    return()
+  }
 
   if (!is.null(s$stdin) && is_pipe_open(s$stdin)) {
     write_lines_named_pipe(s$stdin, "kill")
@@ -117,7 +119,9 @@ supervisor_start <- function() {
   while (cur_time < end_time) {
     p$poll_io(round(as.numeric(end_time - cur_time, units = "secs") * 1000))
 
-    if (!p$is_alive()) break
+    if (!p$is_alive()) {
+      break
+    }
 
     if (any(p$read_output_lines() == "Ready")) {
       ready <- TRUE
@@ -127,12 +131,15 @@ supervisor_start <- function() {
     cur_time <- Sys.time()
   }
 
-  if (p$is_alive()) close(p$get_output_connection())
+  if (p$is_alive()) {
+    close(p$get_output_connection())
+  }
 
   # Two ways of reaching this: if process has died, or if it hasn't emitted
   # "Ready" after 5 seconds.
-  if (!ready)
+  if (!ready) {
     throw(new_error("processx supervisor was not ready after 5 seconds."))
+  }
 
   supervisor_info$pid <- p$get_pid()
 }
@@ -142,7 +149,9 @@ supervisor_start <- function() {
 # normal way, and when loaded with devtools::load_all().
 supervisor_path <- function() {
   supervisor_name <- "supervisor"
-  if (is_windows()) supervisor_name <- paste0(supervisor_name, ".exe")
+  if (is_windows()) {
+    supervisor_name <- paste0(supervisor_name, ".exe")
+  }
 
   # Detect if package was loaded via devtools::load_all()
   dev_meta <- parent.env(environment())$.__DEVTOOLS__

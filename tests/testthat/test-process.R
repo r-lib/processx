@@ -14,10 +14,12 @@ test_that("get_exit_status", {
 })
 
 test_that("non existing process", {
+  skip_if_no_srcrefs()
+  withr::local_options(width = 400)
   expect_snapshot(
     error = TRUE,
     process$new(tempfile()),
-    transform = transform_tempdir,
+    transform = function(x) transform_line_number(transform_tempdir(x)),
     variant = sysname()
   )
   ## This closes connections in finalizers
@@ -72,11 +74,12 @@ test_that("working directory", {
 })
 
 test_that("working directory does not exist", {
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   expect_snapshot(
     error = TRUE,
     process$new(px, wd = tempfile()),
-    transform = transform_px,
+    transform = function(x) transform_line_number(transform_px(x)),
     variant = sysname()
   )
   ## This closes connections in finalizers
@@ -90,13 +93,11 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   # Needs POSIX signal handling
   skip_on_os("windows")
 
-  n_children <- length(ps::ps_children())
-
   # Enabled case
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
 
   out <- tempfile()
-  defer(unlink(out, TRUE, TRUE))
+  withr::defer(unlink(out, TRUE, TRUE))
 
   fn <- function(file) {
     file.create(tempfile())
@@ -104,30 +105,15 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   }
 
   p <- callr::r_session$new()
-  h <- ps::ps_handle(p$get_pid())
   p$run(fn, list(file = out))
 
   p_temp_dir <- readLines(out)
   expect_true(dir.exists(p_temp_dir))
 
-  # The cleanup process has been launched
-  expect_length(ps::ps_children(), n_children + 1)
-
   p$signal(ps::signals()$SIGTERM)
   p$wait()
 
-  # We're no longer waiting for the cleanup process to finish so poll
-  # until finished
-  poll_until(function() !dir.exists(p_temp_dir))
-  expect_length(ps::ps_children(), n_children)
-
-  # The cleanup process is terminated on quit
-  p <- callr::r_session$new()
-  h <- ps::ps_handle(p$get_pid())
-
-  expect_length(ps::ps_children(), n_children + 1)
-  p$run(function() quit("no"))
-  expect_length(ps::ps_children(), n_children)
+  retry_until(function() !dir.exists(p_temp_dir))
 
   # Disabled case
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = NA_character_))
@@ -155,10 +141,16 @@ test_that("can kill process tree with SIGTERM", {
   # Needs POSIX signal handling
   skip_on_os("windows")
 
+  # fork() in signal handler can deadlock under ASAN; shutdown is too slow
+  # for the poll timeout under UBSAN and valgrind
+  skip_if(is_asan())
+  skip_if(is_ubsan())
+  skip_if(is_valgrind())
+
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
 
   out <- tempfile()
-  defer(unlink(out, TRUE, TRUE))
+  withr::defer(unlink(out, TRUE, TRUE))
   file.create(out)
 
   fn <- function(recurse, local, file) {
@@ -192,56 +184,160 @@ test_that("can kill process tree with SIGTERM", {
 
   temp_dirs <- NULL
 
-  poll_until(function() {
+  retry_until(function() {
     temp_dirs <<- readLines(out)
     length(temp_dirs) == N
   })
 
   ps <- ps::ps_find_tree(id)
 
-  # Kill all ps-marked subprocesses, including the cleanup
-  # processes. These ignore SIGTERM but should exit quickly when their
-  # parent process is terminated.
   for (p in ps) {
     tools::pskill(ps::ps_pid(p))
   }
-  poll_until(function() {
+  retry_until(function() {
     !any(sapply(ps, function(p) ps::ps_is_running(p)))
   })
 
+  # rm -rf runs in a forked child; poll until it finishes
+  retry_until(function() !any(dir.exists(temp_dirs)))
   expect_false(any(dir.exists(temp_dirs)))
 })
 
-test_that("can exit or sigkill parent of cleanup process", {
-  # https://github.com/r-lib/callr/pull/250
-  skip_if_not_installed("callr", "3.7.3.9001")
 
-  # Needs POSIX signal handling
-  skip_on_os("windows")
+test_that("linux_pdeathsig kills child when parent exits", {
+  skip_if(!is_linux())
+  skip_if(is_valgrind())
+  skip_if(is_asan())
+  skip_if(is_ubsan())
+  skip_on_cran()
 
-  withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
+  px <- get_tool("px")
+  pidfile <- tempfile()
+  on.exit(unlink(pidfile), add = TRUE)
 
-  p <- callr::r_session$new()
-  p_handle <- ps::ps_handle(p$get_pid())
+  # Start a long-lived parent that spawns a grandchild with linux_pdeathsig
+  # and writes its PID to a file, then sleeps. We SIGKILL the parent
+  # explicitly — instantaneous, no sanitizer cleanup delay — so PDEATHSIG
+  # fires at a known time regardless of ASAN/valgrind overhead.
+  bg <- callr::r_bg(
+    function(px, pidfile) {
+      p <- processx::process$new(
+        px,
+        c("sleep", "100"),
+        cleanup = FALSE,
+        linux_pdeathsig = TRUE
+      )
+      writeLines(as.character(p$get_pid()), pidfile)
+      Sys.sleep(600)
+    },
+    args = list(px = px, pidfile = pidfile)
+  )
+  on.exit(bg$kill(), add = TRUE)
 
-  ps <- ps::ps_children(p_handle)
-  expect_length(ps, 1)
-  cleanup_p <- ps[[1]]
+  deadline <- get_deadline(secs = 5)
+  while (!file.exists(pidfile) && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
+  skip_if(!file.exists(pidfile), "grandchild did not start in time")
+  grandchild_pid <- as.integer(readLines(pidfile))
+  on.exit(tools::pskill(grandchild_pid, tools::SIGKILL), add = TRUE)
 
-  # Normal exit: The cleanup process gets an EOF on its stdin and exits
-  p$close()
-  poll_until(function() !ps::ps_is_running(cleanup_p))
+  bg$kill()
+  bg$wait()
 
-  p <- callr::r_session$new()
-  p_handle <- ps::ps_handle(p$get_pid())
+  deadline <- get_deadline(secs = 3)
+  while (process__exists(grandchild_pid) && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
+  expect_false(process__exists(grandchild_pid))
+})
 
-  ps <- ps::ps_children(p_handle)
-  expect_length(ps, 1)
-  cleanup_p <- ps[[1]]
+test_that("without linux_pdeathsig child survives parent exit", {
+  skip_if(!is_linux())
+  skip_if(is_valgrind())
+  skip_if(is_asan())
+  skip_if(is_ubsan())
+  skip_on_cran()
 
-  # SIGKILL: Also gets an EOF
-  tools::pskill(p$get_pid(), tools::SIGKILL)
-  poll_until(function() !ps::ps_is_running(cleanup_p))
+  px <- get_tool("px")
+  pidfile <- tempfile()
+  on.exit(unlink(pidfile), add = TRUE)
+
+  bg <- callr::r_bg(
+    function(px, pidfile) {
+      p <- processx::process$new(
+        px,
+        c("sleep", "100"),
+        cleanup = FALSE,
+        linux_pdeathsig = FALSE
+      )
+      writeLines(as.character(p$get_pid()), pidfile)
+      Sys.sleep(600)
+    },
+    args = list(px = px, pidfile = pidfile)
+  )
+  on.exit(bg$kill(), add = TRUE)
+
+  deadline <- get_deadline(secs = 5)
+  while (!file.exists(pidfile) && Sys.time() < deadline) {
+    Sys.sleep(0.05)
+  }
+  skip_if(!file.exists(pidfile), "grandchild did not start in time")
+  grandchild_pid <- as.integer(readLines(pidfile))
+  on.exit(tools::pskill(grandchild_pid, tools::SIGKILL), add = TRUE)
+
+  bg$kill()
+  bg$wait()
+
+  Sys.sleep(0.2)
+  expect_true(process__exists(grandchild_pid))
+})
+
+test_that("linux_pdeathsig input validation", {
+  px <- get_tool("px")
+
+  # Valid: FALSE (default)
+  p <- process$new(px, c("return", "0"), linux_pdeathsig = FALSE)
+  p$wait()
+
+  # Valid signal numbers are accepted on all platforms; non-Linux just warns
+  if (is_linux()) {
+    p <- process$new(px, c("return", "0"), linux_pdeathsig = TRUE)
+    p$wait()
+    p <- process$new(px, c("return", "0"), linux_pdeathsig = tools::SIGTERM)
+    p$wait()
+  } else {
+    expect_warning(
+      process$new(px, c("return", "0"), linux_pdeathsig = TRUE)$wait(),
+      "ignored on non-Linux"
+    )
+  }
+
+  # Invalid: string, negative, zero
+  expect_error(process$new(px, c("return", "0"), linux_pdeathsig = "foo"))
+  expect_error(process$new(px, c("return", "0"), linux_pdeathsig = -1))
+  expect_error(process$new(px, c("return", "0"), linux_pdeathsig = 0))
+})
+
+test_that("get_end_time", {
+  px <- get_tool("px")
+
+  p <- process$new(px, c("sleep", "1"))
+  on.exit(p$kill(), add = TRUE)
+
+  before <- Sys.time()
+  expect_null(p$get_end_time())
+
+  p$wait()
+  after <- Sys.time()
+
+  et <- p$get_end_time()
+  expect_s3_class(et, "POSIXct")
+  expect_gte(as.double(et), as.double(before))
+  expect_gte(as.double(et), as.double(p$get_start_time()))
+
+  # cached: second call returns the same value
+  expect_equal(p$get_end_time(), et)
 })
 
 test_that("can kill process with grace", {
@@ -271,7 +367,7 @@ test_that("can kill process with grace", {
   p$run(fn, list(file = out))
   dir <- get_temp_dir()
   p$kill(grace = 0.1)
-  poll_until(function() !dir.exists(dir))
+  retry_until(function() !dir.exists(dir))
 
   # When `grace` is 0, the tempdir isn't cleaned up
   p <- callr::r_session$new()

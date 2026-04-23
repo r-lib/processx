@@ -11,8 +11,25 @@ skip_extra_tests <- function() {
 }
 
 skip_if_no_ps <- function() {
-  if (!requireNamespace("ps", quietly = TRUE)) skip("ps package needed")
+  if (!requireNamespace("ps", quietly = TRUE)) {
+    skip("ps package needed")
+  }
   if (!ps::ps_is_supported()) skip("ps does not support this platform")
+}
+
+skip_if_not_installed <- function(...) {
+  if (Sys.getenv("_R_CHECK_FORCE_SUGGESTS_") == "false") {
+    testthat::skip_if_not_installed(...)
+  }
+}
+
+skip_if_no_srcrefs <- function() {
+  if (
+    !asNamespace("pkgload")$is_dev_package("processx") &&
+      Sys.getenv("R_KEEP_PKG_SOURCE") != "yes"
+  ) {
+    testthat::skip("no srcrefs")
+  }
 }
 
 try_silently <- function(expr) {
@@ -116,7 +133,9 @@ run_script <- function(expr, ..., quoted = NULL, encoding = "") {
   se <- paste0(sf, "err")
   on.exit(unlink(c(dir), recursive = TRUE), add = TRUE)
 
-  if (is.null(quoted)) quoted <- substitute(expr)
+  if (is.null(quoted)) {
+    quoted <- substitute(expr)
+  }
   writeLines(deparse(quoted), con = sf)
 
   writeLines(
@@ -180,13 +199,42 @@ transform_px <- function(x) {
   sub("'.*/px([.]exe)?'", "'<path>/px'", x)
 }
 
+transform_column_number <- function(x) {
+  sub("([.]R:[0-9]+:)[0-9]+", "\\1<col>", x)
+}
+
+transform_line_number <- function(x) {
+  sub("([.]R:[0-9]+:)[0-9]+", ".R:<line>:<col>", x)
+}
+
 sysname <- function() {
   Sys.info()[["sysname"]]
 }
 
+is_asan <- function() {
+  .Call(c_is_asan_)
+}
+
+is_ubsan <- function() {
+  .Call(c_is_ubsan_)
+}
+
+is_valgrind <- function() {
+  .Call(c_is_valgrind_)
+}
+
+is_san <- function() {
+  is_asan() || is_ubsan()
+}
+
+get_deadline <- function(secs = 1, asan_secs = secs * 100) {
+  dl <- if (is_san()) asan_secs else secs
+  Sys.time() + as.difftime(dl, units = "secs")
+}
+
 err$register_testthat_print()
 
-poll_until <- function(fn, interrupt = 0.2, timeout = 5) {
+retry_until <- function(fn, interrupt = 0.2, timeout = 5) {
   time <- Sys.time()
   timeout <- time + timeout
 

@@ -1,7 +1,12 @@
 test_that("can start 100 processes quickly", {
   skip_on_cran()
   px <- get_tool("px")
-  expect_error(for (i in 1:100) run(px), NA)
+  expect_error(
+    for (i in 1:100) {
+      run(px)
+    },
+    NA
+  )
   gc()
 })
 

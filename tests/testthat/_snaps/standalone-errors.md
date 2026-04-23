@@ -3,24 +3,24 @@
     Code
       f()
     Condition
-      Error:
-      ! my message
+      Error in `f()`:
+      ! ! my message
     Code
       g()
     Condition
-      Error:
-      ! my message
+      Error in `g()`:
+      ! ! my message
 
 # can pass frame as error call in `throw()`
 
     Code
       f()
     Condition
-      Error:
-      ! my message
+      Error in `f()`:
+      ! ! my message
     Code
       g()
     Condition
-      Error:
-      ! my message
+      Error in `g()`:
+      ! ! my message
 

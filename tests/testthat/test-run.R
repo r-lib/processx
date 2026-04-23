@@ -75,11 +75,12 @@ test_that("working directory", {
 })
 
 test_that("working directory does not exist", {
+  skip_if_no_srcrefs()
   px <- get_tool("px")
   expect_snapshot(
     error = TRUE,
     run(px, wd = tempfile()),
-    transform = transform_px,
+    transform = function(x) transform_line_number(transform_px(x)),
     variant = sysname()
   )
   gc()
@@ -173,4 +174,166 @@ test_that("redirect stout", {
   expect_null(res$stderr)
   expect_equal(readLines(tmp1), "boo")
   expect_equal(readLines(tmp2), "bah")
+})
+
+test_that("binary=TRUE captures stdout as raw vector", {
+  skip_on_cran()
+
+  # Include null byte, high bytes, \r\n — bytes text mode would mangle
+  hex <- "00010a0d0d0a80ff"
+  expected <- as.raw(c(0x00, 0x01, 0x0a, 0x0d, 0x0d, 0x0a, 0x80, 0xff))
+
+  px <- get_tool("px")
+  res <- run(px, c("rawout", hex), encoding = "binary")
+
+  expect_identical(res$stdout, expected)
+  expect_identical(res$stderr, raw(0))
+})
+
+test_that("binary=TRUE captures stderr as raw vector", {
+  skip_on_cran()
+
+  hex <- "00010a0d0d0a80ff"
+  expected <- as.raw(c(0x00, 0x01, 0x0a, 0x0d, 0x0d, 0x0a, 0x80, 0xff))
+
+  px <- get_tool("px")
+  res <- run(
+    px,
+    c("rawerr", hex),
+    encoding = "binary",
+    error_on_status = FALSE
+  )
+
+  expect_identical(res$stdout, raw(0))
+  expect_identical(res$stderr, expected)
+})
+
+test_that("binary=TRUE with stdout_callback receives raw chunks", {
+  skip_on_cran()
+
+  hex <- "00010a80ff"
+  expected <- as.raw(c(0x00, 0x01, 0x0a, 0x80, 0xff))
+
+  px <- get_tool("px")
+  chunks <- list()
+  res <- run(
+    px,
+    c("rawout", hex),
+    encoding = "binary",
+    stdout_callback = function(x, ...) chunks[[length(chunks) + 1]] <<- x
+  )
+
+  combined <- do.call(c, chunks)
+  expect_identical(combined, expected)
+  expect_identical(res$stdout, expected)
+})
+
+test_that("binary=TRUE errors with line callbacks", {
+  skip_if_no_srcrefs()
+  px <- get_tool("px")
+  expect_snapshot(
+    error = TRUE,
+    run(
+      px,
+      "out",
+      encoding = "binary",
+      stdout_line_callback = function(x, ...) x
+    )
+  )
+  expect_snapshot(
+    error = TRUE,
+    run(
+      px,
+      "out",
+      encoding = "binary",
+      stderr_line_callback = function(x, ...) x
+    )
+  )
+})
+
+test_that("pty=TRUE collects merged output in stdout", {
+  skip_other_platforms("unix")
+  skip_on_os("solaris")
+  skip_on_cran()
+
+  res <- run("echo", c("hello", "pty"), pty = TRUE)
+  expect_match(res$stdout, "hello pty")
+  expect_null(res$stderr)
+})
+
+test_that("pty=TRUE collects merged output in stdout (windows)", {
+  skip_other_platforms("windows")
+  skip_on_cran()
+
+  px <- get_tool("px")
+  res <- run(px, c("outln", "hello pty"), pty = TRUE)
+  expect_match(res$stdout, "hello pty")
+  expect_null(res$stderr)
+})
+
+test_that("pty=TRUE works with stdout_callback", {
+  skip_other_platforms("unix")
+  skip_on_os("solaris")
+  skip_on_cran()
+
+  chunks <- character()
+  res <- run(
+    "echo",
+    "hello",
+    pty = TRUE,
+    stdout_callback = function(x, ...) chunks <<- c(chunks, x)
+  )
+  expect_match(paste(chunks, collapse = ""), "hello")
+  expect_null(res$stderr)
+})
+
+test_that("pty=TRUE works with stdout_callback (windows)", {
+  skip_other_platforms("windows")
+  skip_on_cran()
+
+  px <- get_tool("px")
+  chunks <- character()
+  res <- run(
+    px,
+    c("outln", "hello"),
+    pty = TRUE,
+    stdout_callback = function(x, ...) chunks <<- c(chunks, x)
+  )
+  expect_match(paste(chunks, collapse = ""), "hello")
+  expect_null(res$stderr)
+})
+
+test_that("pty=TRUE errors on incompatible arguments", {
+  skip_if_no_srcrefs()
+  skip_on_cran()
+  expect_snapshot(error = TRUE, run("echo", pty = TRUE, stdout = NULL))
+  expect_snapshot(error = TRUE, run("echo", pty = TRUE, stderr = NULL))
+  expect_snapshot(
+    error = TRUE,
+    run("echo", pty = TRUE, stderr_to_stdout = TRUE)
+  )
+  expect_snapshot(
+    error = TRUE,
+    run("echo", pty = TRUE, stderr_callback = function(x, ...) x)
+  )
+  expect_snapshot(
+    error = TRUE,
+    run("echo", pty = TRUE, stderr_line_callback = function(x, ...) x)
+  )
+  expect_snapshot(error = TRUE, run("echo", pty = TRUE, stdin = "|"))
+})
+
+test_that("pty=TRUE with file stdin feeds content to the process", {
+  skip_other_platforms("unix")
+  skip_on_os("solaris")
+  skip_on_cran()
+
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+  writeLines(c("hello", "world"), tmp)
+
+  res <- run("cat", pty = TRUE, stdin = tmp)
+  expect_match(res$stdout, "hello")
+  expect_match(res$stdout, "world")
+  expect_null(res$stderr)
 })

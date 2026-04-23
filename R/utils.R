@@ -58,13 +58,15 @@ full_path <- function(path) {
       path <- substring(path, pos[3])
 
       # Must have a name, like "//server"
-      if (drive == "//")
+      if (drive == "//") {
         throw(new_error("Server name not found in network path."))
+      }
     } else {
       drive <- substring(getwd(), 1, 2)
 
-      if (substr(path, 1, 1) != "/")
+      if (substr(path, 1, 1) != "/") {
         path <- substring(file.path(getwd(), path), 3)
+      }
     }
   } else {
     if (substr(path, 1, 1) != "/") path <- file.path(getwd(), path)
@@ -90,9 +92,13 @@ full_path <- function(path) {
   }
 
   new_path <- paste(parts, collapse = "/")
-  if (new_path == "") new_path <- "/"
+  if (new_path == "") {
+    new_path <- "/"
+  }
 
-  if (is_windows()) new_path <- paste0(drive, new_path)
+  if (is_windows()) {
+    new_path <- paste0(drive, new_path)
+  }
 
   new_path
 }
@@ -113,17 +119,25 @@ do_echo_cmd <- function(command, args) {
 }
 
 sh_quote_smart <- function(x) {
-  if (!length(x)) return(x)
+  if (!length(x)) {
+    return(x)
+  }
   ifelse(grepl("^[-a-zA-Z0-9/_\\.]*$", x), x, shQuote(x))
 }
 
 strrep <- function(x, times) {
   x <- as.character(x)
-  if (length(x) == 0L) return(x)
+  if (length(x) == 0L) {
+    return(x)
+  }
   r <- .mapply(
     function(x, times) {
-      if (is.na(x) || is.na(times)) return(NA_character_)
-      if (times <= 0L) return("")
+      if (is.na(x) || is.na(times)) {
+        return(NA_character_)
+      }
+      if (times <= 0L) {
+        return("")
+      }
       paste0(replicate(times, x), collapse = "")
     },
     list(x = x, times = times),
@@ -160,7 +174,9 @@ str_wrap_words <- function(words, width, indent = 0, exdent = 2) {
     }
   }
 
-  if (!first_word) out <- c(out, current_line)
+  if (!first_word) {
+    out <- c(out, current_line)
+  }
 
   out
 }
@@ -175,11 +191,15 @@ get_private <- function(x) {
 }
 
 get_tool <- function(prog) {
-  if (os_type() == "windows") prog <- paste0(prog, ".exe")
+  if (os_type() == "windows") {
+    prog <- paste0(prog, ".exe")
+  }
   exe <- system.file(package = "processx", "bin", .Platform$r_arch, prog)
   if (exe == "") {
-    pkgpath <- system.file(package = "processx")
-    if (basename(pkgpath) == "inst") pkgpath <- dirname(pkgpath)
+    pkgpath <- find.package("processx")
+    if (basename(pkgpath) == "inst") {
+      pkgpath <- dirname(pkgpath)
+    }
     exe <- file.path(pkgpath, "src", "tools", prog)
     if (!file.exists(exe)) return("")
   }
@@ -212,6 +232,10 @@ disable_crash_dialog <- function() {
 
 has_package <- function(pkg) {
   requireNamespace(pkg, quietly = TRUE)
+}
+
+write_raw_stdout <- function(x) {
+  chain_call(c_processx_write_raw_stdout, x)
 }
 
 tty_echo_off <- function() {
@@ -257,6 +281,35 @@ is_interactive <- function() {
   }
 }
 
+make_raw_buffer <- function() {
+  chunks <- list()
+  total <- 0L
+  list(
+    push = function(raw_bytes) {
+      n <- length(raw_bytes)
+      if (n > 0L) {
+        chunks[[length(chunks) + 1L]] <<- raw_bytes
+        total <<- total + n
+      }
+    },
+    read = function() {
+      if (total == 0L) return(raw(0L))
+      result <- raw(total)
+      pos <- 1L
+      for (chunk in chunks) {
+        n <- length(chunk)
+        result[pos:(pos + n - 1L)] <- chunk
+        pos <- pos + n
+      }
+      result
+    },
+    done = function() {
+      chunks <<- list()
+      total <<- 0L
+    }
+  )
+}
+
 make_buffer <- function() {
   con <- file(open = "w+b")
   size <- 0L
@@ -275,13 +328,18 @@ make_buffer <- function() {
 }
 
 update_vector <- function(x, y = NULL) {
-  if (length(y) == 0L) return(x)
+  if (length(y) == 0L) {
+    return(x)
+  }
   c(x[!(names(x) %in% names(y))], y)
 }
 
 process_env <- function(env) {
+  if (is.null(names(env))) names(env) <- rep("", length(env))
   current <- env == "current" & names(env) == ""
-  if (any(current)) env <- update_vector(Sys.getenv(), env[!current])
+  if (any(current)) {
+    env <- update_vector(Sys.getenv(), env[!current])
+  }
   enc2path(paste(names(env), sep = "=", env))
 }
 

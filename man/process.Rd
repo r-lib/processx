@@ -42,18 +42,34 @@ in either of them, or they are closed (e.g. because the process exits)
 In addition to polling a single process, the \code{\link[=poll]{poll()}} function
 can poll the output of several processes, and returns as soon as any
 of them has generated output (or exited).
+
+\strong{Always call \verb{$poll_io()} (or \code{\link[=poll]{poll()}}) before reading from the
+stdout or stderr pipes.} The OS pipe buffer is finite (typically 64KB
+on Linux/macOS, ~76KB on Windows). If the child process fills the pipe
+buffer before the parent reads from it, the child blocks waiting for
+the buffer to drain, while the parent may be waiting for the child —
+resulting in a deadlock. Polling drains the buffer and prevents this.
+Even a zero-timeout poll (\verb{$poll_io(0)}) is sufficient when you know
+output is available; use a positive timeout (or \code{-1} to wait
+indefinitely) when you need to wait for output to arrive.
+
+Note also that \verb{$read_output()} and \verb{$read_error()} may return \emph{less}
+data than requested: a single call is not guaranteed to return all
+buffered output. Call them in a loop (polling before each read) until
+\verb{$is_incomplete_output()} / \verb{$is_incomplete_error()} returns \code{FALSE}
+to collect everything. The \verb{$read_all_output()} and
+\verb{$read_all_error()} helpers already do this for you.
 }
 
 \section{Cleaning up background processes}{
 
-processx kills processes that are not referenced any more (if \code{cleanup}
-is set to \code{TRUE}), or the whole subprocess tree (if \code{cleanup_tree} is
-also set to \code{TRUE}).
-
-The cleanup happens when the references of the processes object are
-garbage collected. To clean up earlier, you can call the \code{kill()} or
-\code{kill_tree()} method of the process(es), from an \code{on.exit()} expression,
-or an error handler:
+processx provides several mechanisms to clean up background processes.
+See the \href{https://processx.r-lib.org/dev/articles/cleanup.html}{Process cleanup}
+article for a full discussion. A brief summary:
+\itemize{
+\item \strong{Explicit cleanup} (most reliable): call \verb{$kill()} or \verb{$kill_tree()}
+from an \code{on.exit()} expression or error handler:
+}
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{process_manager <- function() \{
   on.exit(\{
@@ -68,13 +84,39 @@ or an error handler:
 process_manager()
 }\if{html}{\out{</div>}}
 
-If you interrupt \code{process_manager()} or an error happens then both \code{p1}
-and \code{p2} are cleaned up immediately. Their connections will also be
-closed. The same happens at a regular exit.
+If you interrupt \code{process_manager()} or an error happens then both
+\code{p1} and \code{p2} are cleaned up immediately.
+\itemize{
+\item \strong{Automatic GC cleanup} (\code{cleanup = TRUE}, the default): the process
+is killed when the \code{process} R object is garbage collected. On Unix,
+\code{kill(-pid, SIGKILL)} is used, which kills the child's whole process
+group (since the child calls \code{setsid()} on startup). On Windows, the
+child is added to a global Job Object with
+\code{JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE}, so it is also killed if R exits
+or crashes. GC timing is non-deterministic; prefer \code{on.exit()} when
+determinism matters.
+\item \strong{Process tree cleanup} (\code{cleanup_tree = TRUE}): kills the process
+and all its descendants, including orphaned ones. processx marks each
+child with a unique environment variable (\verb{PROCESSX_<id>=YES}) that is
+inherited by all descendants; \verb{$kill_tree()} uses the \emph{ps} package to
+find and kill every process carrying that variable. On macOS, system
+restrictions may prevent reading other processes' environment, so tree
+cleanup may not work reliably.
+\item \strong{Linux parent-death signal} (\code{linux_pdeathsig}): on Linux, the
+kernel can send a signal (e.g. \code{SIGTERM}) to the child when the parent
+R process exits, including on crash. Pass \code{linux_pdeathsig = TRUE} for
+\code{SIGTERM}, or an integer signal number. Ignored on non-Linux platforms.
+\item \strong{Supervisor} (\code{supervise = TRUE}): a separate native process that
+polls every 200 ms and kills registered children if the parent R
+process dies (including crashes). On Unix it sends SIGTERM then
+(after 5 s) SIGKILL. On Windows it sends CTRL+C / WM_CLOSE then
+hard-kills. Note: on Windows, antivirus software may block
+\code{supervisor.exe}.
+}
 }
 
 \examples{
-\dontshow{if (identical(Sys.getenv("IN_PKGDOWN"), "true")) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (identical(Sys.getenv("IN_PKGDOWN"), "true")) withAutoprint(\{ # examplesIf}
 p <- process$new("sleep", "2")
 p$is_alive()
 p
@@ -102,10 +144,13 @@ p$is_alive()
 \item \href{#method-process-format}{\code{process$format()}}
 \item \href{#method-process-print}{\code{process$print()}}
 \item \href{#method-process-get_start_time}{\code{process$get_start_time()}}
+\item \href{#method-process-get_end_time}{\code{process$get_end_time()}}
 \item \href{#method-process-is_supervised}{\code{process$is_supervised()}}
 \item \href{#method-process-supervise}{\code{process$supervise()}}
 \item \href{#method-process-read_output}{\code{process$read_output()}}
 \item \href{#method-process-read_error}{\code{process$read_error()}}
+\item \href{#method-process-read_output_bytes}{\code{process$read_output_bytes()}}
+\item \href{#method-process-read_error_bytes}{\code{process$read_error_bytes()}}
 \item \href{#method-process-read_output_lines}{\code{process$read_output_lines()}}
 \item \href{#method-process-read_error_lines}{\code{process$read_error_lines()}}
 \item \href{#method-process-is_incomplete_output}{\code{process$is_incomplete_output()}}
@@ -169,7 +214,8 @@ Start a new process in the background, and then return immediately.
   windows_hide_window = FALSE,
   windows_detached_process = !cleanup,
   encoding = "",
-  post_process = NULL
+  post_process = NULL,
+  linux_pdeathsig = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -202,7 +248,10 @@ RGui on Windows, then an error is thrown.
 \item{\code{stdout}}{What to do with the standard output. Possible values:
 \itemize{
 \item \code{NULL}: discard it;
-\item A string, redirect it to this file.
+\item A string starting with \code{">>"}, e.g. \code{">>output.txt"}: append it
+to this file. The file is created if it does not exist.
+\item A string (not starting with \code{">>"}), redirect it to this file,
+truncating the file first.
 Note that if you specify a relative path, it will be relative to
 the current working directory, even if you specify another
 directory in the \code{wd} argument. (See issue 324.)
@@ -215,7 +264,10 @@ RGui on Windows, then an error is thrown.
 \item{\code{stderr}}{What to do with the standard error. Possible values:
 \itemize{
 \item \code{NULL}: discard it.
-\item A string, redirect it to this file.
+\item A string starting with \code{">>"}, e.g. \code{">>error.txt"}: append it
+to this file. The file is created if it does not exist.
+\item A string (not starting with \code{">>"}), redirect it to this file,
+truncating the file first.
 Note that if you specify a relative path, it will be relative to
 the current working directory, even if you specify another
 directory in the \code{wd} argument. (See issue 324.)
@@ -307,11 +359,20 @@ parent had one.}
 used. Note that \code{processx} always reencodes the output of the
 \code{stdout} and \code{stderr} streams in UTF-8 currently.
 If you want to read them without any conversion, on all platforms,
-specify \code{"UTF-8"} as encoding.}
+specify \code{"UTF-8"} as encoding. Use \code{"binary"} to disable text
+conversion entirely: \verb{$read_output()} and \verb{$read_error()} will
+return raw vectors instead of character strings, preserving all
+bytes including null bytes and non-UTF-8 byte sequences.}
 
 \item{\code{post_process}}{An optional function to run when the process has
 finished. Currently it only runs if \verb{$get_result()} is called.
 It is only run once.}
+
+\item{\code{linux_pdeathsig}}{On Linux, send this signal to the child process
+when the parent R process exits. \code{FALSE} (the default) disables this.
+\code{TRUE} sends \code{SIGTERM}. An integer signal number, e.g.
+\code{tools::SIGTERM} or \code{tools::SIGKILL}, sends that signal. Ignored on
+non-Linux platforms.}
 }
 \if{html}{\out{</div>}}
 }
@@ -515,6 +576,22 @@ started.
 
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-process-get_end_time"></a>}}
+\if{latex}{\out{\hypertarget{method-process-get_end_time}{}}}
+\subsection{Method \code{get_end_time()}}{
+\verb{$get_end_time()} returns the time when the process finished,
+or \code{NULL} if it is still running.
+On Unix the timestamp is recorded when R first notices the exit
+(via the \code{SIGCHLD} handler or a call to \verb{$is_alive()},
+\verb{$get_exit_status()}, or \verb{$wait()}), so it may be slightly later
+than the actual kernel exit time.
+On Windows the exact kernel exit time is used.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$get_end_time()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-process-is_supervised"></a>}}
 \if{latex}{\out{\hypertarget{method-process-is_supervised}{}}}
 \subsection{Method \code{is_supervised()}}{
@@ -555,7 +632,15 @@ process.}
 process. If the standard output connection was not requested, then
 then it returns an error. It uses a non-blocking text connection. This
 will work only if \code{stdout="|"} was used. Otherwise, it will throw an
-error.
+error. When the process was started with \code{encoding = "binary"}, returns
+a raw vector instead of a character string.
+
+A single call may return less data than requested (or an empty string)
+even when more output will eventually arrive: the OS pipe buffer is
+finite, and \verb{$read_output()} only returns what is already buffered.
+Always call \verb{$poll_io()} (or \code{\link[=poll]{poll()}}) before reading to avoid
+deadlocking when the child fills the pipe buffer (see the \emph{Polling}
+section for details). To read \emph{all} output call \verb{$read_all_output()}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{process$read_output(n = -1)}\if{html}{\out{</div>}}
 }
@@ -572,10 +657,51 @@ error.
 \if{html}{\out{<a id="method-process-read_error"></a>}}
 \if{latex}{\out{\hypertarget{method-process-read_error}{}}}
 \subsection{Method \code{read_error()}}{
-\verb{$read_error()} is similar to \verb{$read_output}, but it reads
-from the standard error stream.
+\verb{$read_error()} is similar to \verb{$read_output()}, but reads from the
+standard error stream. Returns a raw vector when
+\code{encoding = "binary"} was used. The same polling requirement applies
+as for \verb{$read_output()} (see the \emph{Polling} section).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{process$read_error(n = -1)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{Number of characters or lines to read.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-process-read_output_bytes"></a>}}
+\if{latex}{\out{\hypertarget{method-process-read_output_bytes}{}}}
+\subsection{Method \code{read_output_bytes()}}{
+\verb{$read_output_bytes()} reads from the standard output connection of
+the process and returns the result as a raw vector, preserving all
+bytes including null bytes and other binary data. Switches the
+underlying connection to raw mode; do not mix with \verb{$read_output()}.
+This will work only if \code{stdout="|"} was used.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$read_output_bytes(n = -1)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{Number of characters or lines to read.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-process-read_error_bytes"></a>}}
+\if{latex}{\out{\hypertarget{method-process-read_error_bytes}{}}}
+\subsection{Method \code{read_error_bytes()}}{
+\verb{$read_error_bytes()} is similar to \verb{$read_output_bytes()}, but reads
+from the standard error stream.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{process$read_error_bytes(n = -1)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -595,6 +721,14 @@ of the process. If the standard output connection was not requested,
 then it returns an error. It uses a non-blocking text connection.
 This will work only if \code{stdout="|"} was used. Otherwise, it will
 throw an error.
+
+Because \verb{$read_output_lines()} only returns complete lines already in
+the buffer, it may return zero lines even when the process has produced
+output — for example when a line is longer than the pipe buffer (~64KB
+on Linux/macOS, ~76KB on Windows) or when the line is not yet
+terminated. Always call \verb{$poll_io()} before reading to avoid
+deadlocking (see the \emph{Polling} section), and use \verb{$read_output()}
+when lines may be very long.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{process$read_output_lines(n = -1)}\if{html}{\out{</div>}}
 }
@@ -612,7 +746,8 @@ throw an error.
 \if{latex}{\out{\hypertarget{method-process-read_error_lines}{}}}
 \subsection{Method \code{read_error_lines()}}{
 \verb{$read_error_lines()} is similar to \verb{$read_output_lines}, but
-it reads from the standard error stream.
+it reads from the standard error stream. The same polling requirement
+applies (see the \emph{Polling} section).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{process$read_error_lines(n = -1)}\if{html}{\out{</div>}}
 }

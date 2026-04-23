@@ -3,19 +3,19 @@
     Code
       process$new(tempfile())
     Condition
-      Error:
-      ! Native call to `processx_exec` failed
-      Caused by error:
-      ! Command '<tempdir>/<tempfile>' not found @win/processx.c:982 (processx_exec)
+      Error in `process_initialize()`:
+      ! ! Native call to `processx_exec` failed
+      Caused by error in `chain_call(...)` at initialize.R:<line>:<col>:
+      ! Command '<tempdir>/<tempfile>' not found @win/processx.c:1059 (processx_exec)
 
 # working directory does not exist
 
     Code
       process$new(px, wd = tempfile())
     Condition
-      Error:
-      ! Native call to `processx_exec` failed
-      Caused by error:
+      Error in `process_initialize()`:
+      ! ! Native call to `processx_exec` failed
+      Caused by error in `chain_call(...)` at initialize.R:<line>:<col>:
       ! create process '<path>/px' (system error 267, The directory name is invalid.
-      ) @win/processx.c:1040 (processx_exec)
+      ) @win/processx.c:1370 (processx_exec)
 

@@ -68,7 +68,9 @@ test_that("curl fds before others", {
   repeat {
     state <- curl::multi_run(timeout = 1 / 10000, pool = pool, poll = TRUE)
     fds <- curl::multi_fdset(pool = pool)
-    if (length(fds$reads) > 0) break
+    if (length(fds$reads) > 0) {
+      break
+    }
     if (Sys.time() >= timeout) break
   }
 
@@ -91,14 +93,16 @@ test_that("process fd before curl fd", {
   skip_on_cran()
 
   pool <- curl::new_pool()
-  url <- httpbin$url("/delay/1")
+  url <- httpbin$url("/delay/10")
   curl::multi_add(pool = pool, curl::new_handle(url = url, http_version = 2))
 
   timeout <- Sys.time() + 5
   repeat {
     state <- curl::multi_run(timeout = 1 / 10000, pool = pool, poll = TRUE)
     fds <- curl::multi_fdset(pool = pool)
-    if (length(fds$reads) > 0) break
+    if (length(fds$reads) > 0 && length(fds$writes) == 0) {
+      break
+    }
     if (Sys.time() >= timeout) break
   }
 
