@@ -63,7 +63,7 @@ process_initialize <- function(
     is.null(env) || is_env_vector(env),
     is_flag(cleanup),
     is_flag(cleanup_tree),
-    is_numeric_scalar(cleanup_grace),
+    is_nonneg_numeric_scalar(cleanup_grace),
     is_string_or_null(wd),
     is_flag(echo_cmd),
     is_flag(windows_verbatim_args),

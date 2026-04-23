@@ -217,7 +217,7 @@ run <- function(
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
   assert_that(is.null(stderr_callback) || is.function(stderr_callback))
   assert_that(is_flag(cleanup_tree))
-  assert_that(is_numeric_scalar(cleanup_grace))
+  assert_that(is_nonneg_numeric_scalar(cleanup_grace))
   assert_that(is_flag(stderr_to_stdout))
   if (encoding == "binary") {
     if (!is.null(stdout_line_callback)) {
