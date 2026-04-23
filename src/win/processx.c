@@ -922,7 +922,7 @@ void processx__finalizer(SEXP status) {
   processx__handle_destroy(handle);
 }
 
-SEXP processx__make_handle(SEXP private, int cleanup) {
+SEXP processx__make_handle(SEXP private, int cleanup, double cleanup_grace) {
   processx_handle_t * handle;
   SEXP result;
 
@@ -933,6 +933,7 @@ SEXP processx__make_handle(SEXP private, int cleanup) {
   result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
   R_RegisterCFinalizerEx(result, processx__finalizer, 1);
   handle->cleanup = cleanup;
+  handle->cleanup_grace = cleanup_grace;
 
   UNPROTECT(1);
   return result;
@@ -951,8 +952,8 @@ void processx__handle_destroy(processx_handle_t *handle) {
 SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 		               SEXP connections, SEXP env, SEXP windows_verbatim_args,
                    SEXP windows_hide, SEXP windows_detached_process,
-                   SEXP private, SEXP cleanup, SEXP wd, SEXP encoding,
-                   SEXP tree_id, SEXP linux_pdeathsig) {
+                   SEXP private, SEXP cleanup, SEXP cleanup_grace, SEXP wd,
+                   SEXP encoding, SEXP tree_id, SEXP linux_pdeathsig) {
 
   const char *ccommand = CHAR(STRING_ELT(command, 0));
   const char *cencoding = CHAR(STRING_ELT(encoding, 0));
@@ -971,6 +972,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
 
   processx_handle_t *handle;
   int ccleanup = INTEGER(cleanup)[0];
+  double ccleanup_grace = REAL(cleanup_grace)[0];
   SEXP result;
   DWORD dwerr;
 
@@ -1038,7 +1040,7 @@ SEXP processx_exec(SEXP command, SEXP args, SEXP pty, SEXP pty_options,
     }
   }
 
-  result = PROTECT(processx__make_handle(private, ccleanup));
+  result = PROTECT(processx__make_handle(private, ccleanup, ccleanup_grace));
   handle = R_ExternalPtrAddr(result);
 
   application_path = processx__search_path(application, cwd, path);

@@ -26,6 +26,7 @@ run(
   windows_hide_window = FALSE,
   encoding = "",
   cleanup_tree = FALSE,
+  cleanup_grace = 0.1,
   pty = FALSE,
   pty_options = list(),
   ...
@@ -139,6 +140,8 @@ strings. Line callbacks are not supported in binary mode.}
 
 \item{cleanup_tree}{Whether to clean up the child process tree after
 the process has finished.}
+
+\item{cleanup_grace}{Passed to \code{kill()} or \code{kill_tree()} on cleanup.}
 
 \item{pty}{Whether to use a pseudo-terminal (PTY) for the process.
 Supported on Unix and on Windows 10 version 1809 or later (via

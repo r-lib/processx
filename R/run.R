@@ -126,6 +126,7 @@
 #'   strings. Line callbacks are not supported in binary mode.
 #' @param cleanup_tree Whether to clean up the child process tree after
 #'   the process has finished.
+#' @param cleanup_grace Passed to `kill()` or `kill_tree()` on cleanup.
 #' @param stdin What to do with the standard input. By default it is
 #'   ignored (`NULL`). It can be a file name, to redirect the contents of
 #'   a file to the standard input. When `pty = TRUE`, `stdin` can only be
@@ -195,6 +196,7 @@ run <- function(
   windows_hide_window = FALSE,
   encoding = "",
   cleanup_tree = FALSE,
+  cleanup_grace = 0.1,
   pty = FALSE,
   pty_options = list(),
   ...
@@ -215,6 +217,7 @@ run <- function(
   assert_that(is.null(stdout_callback) || is.function(stdout_callback))
   assert_that(is.null(stderr_callback) || is.function(stderr_callback))
   assert_that(is_flag(cleanup_tree))
+  assert_that(is_nonneg_numeric_scalar(cleanup_grace))
   assert_that(is_flag(stderr_to_stdout))
   if (encoding == "binary") {
     if (!is.null(stdout_line_callback)) {
@@ -299,9 +302,9 @@ run <- function(
 
   ## We make sure that the process is eliminated
   if (cleanup_tree) {
-    on.exit(pr$kill_tree(), add = TRUE)
+    defer(pr$kill_tree(grace = cleanup_grace))
   } else {
-    on.exit(pr$kill(), add = TRUE)
+    defer(pr$kill(grace = cleanup_grace))
   }
 
   ## If echo, then we need to create our own callbacks.
@@ -365,7 +368,7 @@ run <- function(
         }
         resenv$errbuf$read()
       }
-      tryCatch(pr$kill(), error = function(e) NULL)
+      tryCatch(pr$kill(grace = cleanup_grace), error = function(e) NULL)
       signalCondition(new_process_interrupt_cond(
         list(
           interrupt = TRUE,

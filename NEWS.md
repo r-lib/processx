@@ -1,5 +1,15 @@
 # processx (development version)
 
+* The `grace` argument of the `kill()` method is now active on Unix
+  platforms. processx first tries to kill with `SIGTERM` with a
+  timeout of `grace` seconds. After the timeout, `SIGKILL` is sent as
+  before.
+
+* New `cleanup_grace` argument to `process$new()` and `run()`. When the
+  process is cleaned up (on GC or on exit), processx first tries
+  `SIGTERM` with a timeout of `cleanup_grace` seconds before falling
+  back to `SIGKILL`. On Unix only.
+
 # processx 3.9.0
 
 * New experimental `pipeline` R6 class for running two or more processes

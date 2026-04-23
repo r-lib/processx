@@ -97,7 +97,7 @@ SEXP is_valgrind_(void)
 
 static const R_CallMethodDef callMethods[]  = {
   CLEANCALL_METHOD_RECORD,
-  { "processx_exec",               (DL_FUNC) &processx_exec,              15 },
+  { "processx_exec",               (DL_FUNC) &processx_exec,              16 },
   { "processx_wait",               (DL_FUNC) &processx_wait,               3 },
   { "processx_is_alive",           (DL_FUNC) &processx_is_alive,           2 },
   { "processx_pty_close",          (DL_FUNC) &processx_pty_close,          2 },

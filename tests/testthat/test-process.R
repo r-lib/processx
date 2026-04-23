@@ -339,3 +339,105 @@ test_that("get_end_time", {
   # cached: second call returns the same value
   expect_equal(p$get_end_time(), et)
 })
+
+test_that("can kill process with grace", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_on_os("windows")
+  skip_if_not_installed("callr", "3.7.3.9001")
+
+  withr::local_envvar("PROCESSX_R_SIGTERM_CLEANUP" = "true")
+
+  # Write subprocess `tempdir()` to this file
+  out <- tempfile()
+  defer(rimraf(out))
+
+  fn <- function(file) {
+    file.create(tempfile())
+    cat(paste0(tempdir(), "\n"), file = file)
+  }
+  get_temp_dir <- function(frame = parent.frame()) {
+    dir <- readLines(out)
+    expect_length(dir, 1)
+    defer(rimraf(dir), frame = frame)
+    dir
+  }
+
+  # Check that SIGTERM was called on subprocess by examining side
+  # effect of tempdir cleanup
+  p <- callr::r_session$new()
+  p$run(fn, list(file = out))
+  dir <- get_temp_dir()
+  p$kill(grace = 0.1)
+  retry_until(function() !dir.exists(dir))
+
+  # When `grace` is 0, the tempdir isn't cleaned up
+  p <- callr::r_session$new()
+  p$run(fn, list(file = out))
+  dir <- get_temp_dir()
+  p$kill(grace = 0)
+  expect_true(dir.exists(dir))
+})
+
+test_that("can use custom `cleanup_signal`", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_if_not_installed("callr", "3.7.4")
+
+  withr::local_envvar("PROCESSX_R_SIGTERM_CLEANUP" = "true")
+
+  # Should become the default in callr
+  opts <- callr::r_process_options(
+    extra = list(
+      cleanup_grace = 0.1
+    )
+  )
+  p <- callr::r_session$new(opts)
+
+  out <- tempfile()
+  defer(rimraf(out))
+
+  fn <- function(file) {
+    file.create(tempfile())
+    writeLines(tempdir(), file)
+  }
+  p$run(fn, list(file = out))
+
+  dir <- readLines(out)
+  defer(rimraf(dir))
+
+  # Needs POSIX signals
+  skip_on_os("windows")
+
+  # GC `p` to trigger finalizer; R doesn't guarantee finalizers run on a
+  # single gc(), so we retry until the side-effect is observed
+  rm(p)
+  retry_until(function() {
+    gc()
+    !dir.exists(dir)
+  })
+})
+
+test_that("process survives SIGTERM when ignored", {
+  skip_on_os("windows")
+  px <- get_tool("px")
+  p <- process$new(px, c("sigterm", "ignore", "outln", "ready", "sleep", "10"),
+                   stdout = "|")
+  defer(p$kill())
+  p$poll_io(1000)
+  expect_equal(p$read_output_lines(), "ready")
+  tools::pskill(p$get_pid(), tools::SIGTERM)
+  tools::pskill(p$get_pid(), tools::SIGTERM)
+  expect_true(p$is_alive())
+})
+
+test_that("can kill with SIGTERM when ignored", {
+  skip_on_os("windows")
+  px <- get_tool("px")
+  p <- process$new(px, c("sigterm", "ignore", "outln", "ready", "sleep", "10"),
+                   stdout = "|")
+  defer(p$kill())
+  p$poll_io(1000)
+  p$read_output_lines()
+  p$signal(tools::SIGTERM)
+  Sys.sleep(0.05)
+  expect_true(p$is_alive())
+})

@@ -13,6 +13,7 @@ typedef struct processx_handle_s {
   HANDLE waitObject;
   processx_connection_t *pipes[3];
   int cleanup;
+  double cleanup_grace;
   double create_time;
   double end_time;          /* 0.0 until the process exits */
   void *ptycon;           /* ConPTY handle (HPCON), NULL if not using PTY */

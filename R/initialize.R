@@ -36,6 +36,7 @@ process_initialize <- function(
   env,
   cleanup,
   cleanup_tree,
+  cleanup_grace,
   wd,
   echo_cmd,
   supervise,
@@ -62,6 +63,7 @@ process_initialize <- function(
     is.null(env) || is_env_vector(env),
     is_flag(cleanup),
     is_flag(cleanup_tree),
+    is_nonneg_numeric_scalar(cleanup_grace),
     is_string_or_null(wd),
     is_flag(echo_cmd),
     is_flag(windows_verbatim_args),
@@ -119,6 +121,7 @@ process_initialize <- function(
   private$args <- args
   private$cleanup <- cleanup
   private$cleanup_tree <- cleanup_tree
+  private$cleanup_grace <- cleanup_grace
   private$wd <- wd
   private$pstdin <- stdin
   private$pstdout <- stdout
@@ -190,6 +193,7 @@ process_initialize <- function(
     windows_detached_process,
     private,
     cleanup,
+    cleanup_grace,
     wd,
     encoding,
     paste0("PROCESSX_", private$tree_id, "=YES"),
