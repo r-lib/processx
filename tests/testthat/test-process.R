@@ -379,7 +379,7 @@ test_that("can kill process with grace", {
 
 test_that("can use custom `cleanup_signal`", {
   # https://github.com/r-lib/callr/pull/250
-  skip_if_not_installed("callr", "3.7.3.9001")
+  skip_if_not_installed("callr", "3.7.4")
 
   withr::local_envvar("PROCESSX_R_SIGTERM_CLEANUP" = "true")
 
