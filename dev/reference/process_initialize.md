@@ -20,6 +20,7 @@ process_initialize(
   env,
   cleanup,
   cleanup_tree,
+  cleanup_grace,
   wd,
   echo_cmd,
   supervise,

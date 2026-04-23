@@ -222,6 +222,7 @@ hard-kills. Note: on Windows, antivirus software may block
 <span>  env <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cleanup <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  cleanup_tree <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  cleanup_grace <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  wd <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  echo_cmd <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  supervise <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -358,6 +359,13 @@ object is garbage collected.</p></dd>
 <dt><code>cleanup_tree</code></dt>
 <dd><p>Whether to kill the process and its child
 process tree when the <code>process</code> object is garbage collected.</p></dd>
+
+
+<dt><code>cleanup_grace</code></dt>
+<dd><p>Grace period between <code>SIGTERM</code> and <code>SIGKILL</code>.
+Only has an effect on Unix platforms. Set to 0 to terminate abruptly
+with <code>SIGKILL</code> only. Currently defaults to 0 until we implement
+a better approach on session quit.</p></dd>
 
 
 <dt><code>wd</code></dt>
@@ -1137,7 +1145,7 @@ the process.</p><div class="section">
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="va">p</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> PROCESS 'sleep', running, pid 7064.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> PROCESS 'sleep', running, pid 6901.</span>
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">kill</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></span></span>

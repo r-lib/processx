@@ -39,7 +39,9 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="processx-development-version">processx (development version)<a class="anchor" aria-label="anchor" href="#processx-development-version"></a></h2>
-</div>
+<ul><li><p>The <code>grace</code> argument of the <code>kill()</code> method is now active on Unix platforms. processx first tries to kill with <code>SIGTERM</code> with a timeout of <code>grace</code> seconds. After the timeout, <code>SIGKILL</code> is sent as before.</p></li>
+<li><p>New <code>cleanup_grace</code> argument to <code>process$new()</code> and <code><a href="../reference/run.html">run()</a></code>. When the process is cleaned up (on GC or on exit), processx first tries <code>SIGTERM</code> with a timeout of <code>cleanup_grace</code> seconds before falling back to <code>SIGKILL</code>. On Unix only.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="3.9.0" id="processx-390">processx 3.9.0<a class="anchor" aria-label="anchor" href="#processx-390"></a></h2><p class="text-muted">CRAN release: 2026-04-22</p>
 <ul><li><p>New experimental <code>pipeline</code> R6 class for running two or more processes connected by kernel-level pipes, like a Unix shell pipeline (<code>cmd1 | cmd2 | cmd3</code>). Data flows directly between child processes without passing through R. Works on Unix and Windows (<a href="https://github.com/r-lib/processx/issues/280" class="external-link">#280</a>).</p></li>

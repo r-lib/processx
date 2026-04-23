@@ -242,6 +242,7 @@ Start a new process in the background, and then return immediately.
       env = NULL,
       cleanup = TRUE,
       cleanup_tree = FALSE,
+      cleanup_grace = 0,
       wd = NULL,
       echo_cmd = FALSE,
       supervise = FALSE,
@@ -391,6 +392,13 @@ Start a new process in the background, and then return immediately.
 
   Whether to kill the process and its child process tree when the
   `process` object is garbage collected.
+
+- `cleanup_grace`:
+
+  Grace period between `SIGTERM` and `SIGKILL`. Only has an effect on
+  Unix platforms. Set to 0 to terminate abruptly with `SIGKILL` only.
+  Currently defaults to 0 until we implement a better approach on
+  session quit.
 
 - `wd`:
 
@@ -1254,7 +1262,7 @@ p <- process$new("sleep", "2")
 p$is_alive()
 #> [1] TRUE
 p
-#> PROCESS 'sleep', running, pid 7064.
+#> PROCESS 'sleep', running, pid 6901.
 p$kill()
 #> [1] TRUE
 p$is_alive()
