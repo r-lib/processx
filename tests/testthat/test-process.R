@@ -113,7 +113,7 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   p$signal(ps::signals()$SIGTERM)
   p$wait()
 
-  poll_until(function() !dir.exists(p_temp_dir))
+  retry_until(function() !dir.exists(p_temp_dir))
 
   # Disabled case
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = NA_character_))
@@ -184,7 +184,7 @@ test_that("can kill process tree with SIGTERM", {
 
   temp_dirs <- NULL
 
-  poll_until(function() {
+  retry_until(function() {
     temp_dirs <<- readLines(out)
     length(temp_dirs) == N
   })
@@ -194,12 +194,12 @@ test_that("can kill process tree with SIGTERM", {
   for (p in ps) {
     tools::pskill(ps::ps_pid(p))
   }
-  poll_until(function() {
+  retry_until(function() {
     !any(sapply(ps, function(p) ps::ps_is_running(p)))
   })
 
   # rm -rf runs in a forked child; poll until it finishes
-  poll_until(function() !any(dir.exists(temp_dirs)))
+  retry_until(function() !any(dir.exists(temp_dirs)))
   expect_false(any(dir.exists(temp_dirs)))
 })
 

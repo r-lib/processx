@@ -234,7 +234,7 @@ get_deadline <- function(secs = 1, asan_secs = secs * 100) {
 
 err$register_testthat_print()
 
-poll_until <- function(fn, interrupt = 0.2, timeout = 5) {
+retry_until <- function(fn, interrupt = 0.2, timeout = 5) {
   time <- Sys.time()
   timeout <- time + timeout
 
