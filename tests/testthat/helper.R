@@ -250,7 +250,3 @@ retry_until <- function(fn, interrupt = 0.2, timeout = 5) {
   stop("timeout")
 }
 
-load_sigtermignore <- function() {
-  lib <- asNamespace("processx")$get_test_lib("sigtermignore")
-  dyn.load(lib)
-}

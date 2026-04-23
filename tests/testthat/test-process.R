@@ -416,26 +416,27 @@ test_that("can use custom `cleanup_signal`", {
   })
 })
 
-test_that("can load sigtermignore", {
+test_that("process survives SIGTERM when ignored", {
   skip_on_os("windows")
-  p <- callr::r_session$new()
+  px <- get_tool("px")
+  p <- process$new(px, c("sigterm", "ignore", "outln", "ready", "sleep", "10"),
+                   stdout = "|")
   defer(p$kill())
-
-  p$run(load_sigtermignore)
-
+  p$poll_io(1000)
+  expect_equal(p$read_output_lines(), "ready")
   tools::pskill(p$get_pid(), tools::SIGTERM)
   tools::pskill(p$get_pid(), tools::SIGTERM)
-
   expect_true(p$is_alive())
 })
 
 test_that("can kill with SIGTERM when ignored", {
   skip_on_os("windows")
-  p <- callr::r_session$new()
+  px <- get_tool("px")
+  p <- process$new(px, c("sigterm", "ignore", "outln", "ready", "sleep", "10"),
+                   stdout = "|")
   defer(p$kill())
-
-  p$run(load_sigtermignore)
-
+  p$poll_io(1000)
+  p$read_output_lines()
   p$signal(tools::SIGTERM)
   Sys.sleep(0.05)
   expect_true(p$is_alive())

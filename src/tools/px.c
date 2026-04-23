@@ -50,6 +50,10 @@ void usage(void) {
 	  "write raw bytes (hex pairs) to stdout\n");
   fprintf(stderr, "  rawerr <hexstring>         -- "
 	  "write raw bytes (hex pairs) to stderr\n");
+  fprintf(stderr, "  sigterm ignore             -- "
+	  "ignore SIGTERM\n");
+  fprintf(stderr, "  sigterm sleep <seconds>    -- "
+	  "sleep a number of seconds on SIGTERM, then quit\n");
 }
 
 void cat2(int f, const char *s) {
@@ -111,6 +115,35 @@ int echo_from_fd(int fd1, int fd2, int nbytes) {
   fflush(stderr);
   return 0;
 }
+
+#ifdef WIN32
+void sigterm_ignore(void) { }
+void sigterm_sleep(double fnum) { }
+#else
+#include <signal.h>
+
+double sig_sleep_secs;
+
+void sigterm_ignore(void) {
+  signal(SIGTERM, SIG_IGN);
+}
+
+void sig_handler_sleep(int sig, siginfo_t *info, void *ucontext) {
+  double fnum = sig_sleep_secs;
+  int num = (int) fnum;
+  sleep(num);
+  fnum = fnum - num;
+  if (fnum > 0) usleep((useconds_t)(fnum * 1000.0 * 1000.0));
+}
+
+void sigterm_sleep(double fnum) {
+  sig_sleep_secs = fnum;
+  struct sigaction sig = {{ 0 }};
+  sig.sa_flags = SA_SIGINFO;
+  sig.sa_sigaction = &sig_handler_sleep;
+  sigaction(SIGTERM, &sig, NULL);
+}
+#endif
 
 int main(int argc, const char **argv) {
 
@@ -256,6 +289,27 @@ int main(int argc, const char **argv) {
         if (write(2, &b, 1) != 1) {
           return 15;
         }
+      }
+
+    } else if (!strcmp("sigterm", cmd)) {
+      idx++;
+      if (!strcmp("ignore", argv[idx])) {
+        sigterm_ignore();
+      } else if (!strcmp("sleep", argv[idx])) {
+        if (idx + 1 >= argc) {
+          fprintf(stderr, "Missing argument for 'sigterm sleep'\n");
+          return 17;
+        }
+        idx++;
+        ret = sscanf(argv[idx], "%lf", &fnum);
+        if (ret != 1) {
+          fprintf(stderr, "Invalid seconds for px sigterm sleep: '%s'\n", argv[idx]);
+          return 18;
+        }
+        sigterm_sleep(fnum);
+      } else {
+        fprintf(stderr, "Invalid 'sigterm' subcommand\n");
+        return 19;
       }
 
     } else {

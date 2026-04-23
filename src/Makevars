@@ -8,7 +8,7 @@ OBJECTS = init.o poll.o errors.o processx-connection.o   \
 
 all: tools/px tools/sock supervisor/supervisor client$(SHLIB_EXT) $(SHLIB) strip
 
-strip: $(SHLIB) tools/px tools/sock supervisor/supervisor client$(SHLIB_EXT) sigtermignore$(SHLIB_EXT)
+strip: $(SHLIB) tools/px tools/sock supervisor/supervisor client$(SHLIB_EXT)
 	@if which strip >/dev/null && which uname >/dev/null && test "`uname`" = "Linux" && test "$$_R_SHLIB_STRIP_" = "true" && test -n "$$R_STRIP_SHARED_LIB"; then \
 		echo stripping $(SHLIB) tools/px tools/sock supervisor/supervisor client$(SHLIB_EXT); \
 		echo $$R_STRIP_SHARED_LIB $(SHLIB) tools/px tools/sock supervisor/supervisor client$(SHLIB_EXT); \
@@ -36,9 +36,6 @@ client$(SHLIB_EXT): $(CLIENT_OBJECTS)
 	    echo Removing libR.so dependency from client.so; \
 	    patchelf --remove-needed libR.so client$(SHLIB_EXT); \
 	fi
-
-sigtermignore$(SHLIB_EXT): test/sigtermignore.o
-	$(SHLIB_LINK) -o sigtermignore$(SHLIB_EXT) test/sigtermignore.o
 
 clean:
 	rm -rf $(SHLIB) $(OBJECTS) $(CLIENT_OBJECTS)		\
