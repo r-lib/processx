@@ -97,7 +97,7 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
 
   out <- tempfile()
-  defer(unlink(out, TRUE, TRUE))
+  withr::defer(unlink(out, TRUE, TRUE))
 
   fn <- function(file) {
     file.create(tempfile())
@@ -150,7 +150,7 @@ test_that("can kill process tree with SIGTERM", {
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
 
   out <- tempfile()
-  defer(unlink(out, TRUE, TRUE))
+  withr::defer(unlink(out, TRUE, TRUE))
   file.create(out)
 
   fn <- function(recurse, local, file) {
