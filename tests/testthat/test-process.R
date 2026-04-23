@@ -141,6 +141,12 @@ test_that("can kill process tree with SIGTERM", {
   # Needs POSIX signal handling
   skip_on_os("windows")
 
+  # fork() in signal handler can deadlock under ASAN; shutdown is too slow
+  # for the poll timeout under UBSAN and valgrind
+  skip_if(is_asan())
+  skip_if(is_ubsan())
+  skip_if(is_valgrind())
+
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
 
   out <- tempfile()
