@@ -342,6 +342,7 @@ test_that("get_end_time", {
 
 test_that("can kill process with grace", {
   # https://github.com/r-lib/callr/pull/250
+  skip_on_os("windows")
   skip_if_not_installed("callr", "3.7.3.9001")
 
   withr::local_envvar("PROCESSX_R_SIGTERM_CLEANUP" = "true")
@@ -416,6 +417,7 @@ test_that("can use custom `cleanup_signal`", {
 })
 
 test_that("can load sigtermignore", {
+  skip_on_os("windows")
   p <- callr::r_session$new()
   defer(p$kill())
 
@@ -428,6 +430,7 @@ test_that("can load sigtermignore", {
 })
 
 test_that("can kill with SIGTERM when ignored", {
+  skip_on_os("windows")
   p <- callr::r_session$new()
   defer(p$kill())
 
