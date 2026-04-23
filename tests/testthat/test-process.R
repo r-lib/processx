@@ -403,16 +403,16 @@ test_that("can use custom `cleanup_signal`", {
   dir <- readLines(out)
   defer(rimraf(dir))
 
-  # GC `p` to trigger finalizer
-  rm(p)
-  gc()
-
   # Needs POSIX signals
   skip_on_os("windows")
 
-  # As usual we verify the delivery of SIGTERM by checking that the
-  # callr cleanup handler kicked in and deleted the tempdir
-  expect_false(dir.exists(dir))
+  # GC `p` to trigger finalizer; R doesn't guarantee finalizers run on a
+  # single gc(), so we retry until the side-effect is observed
+  rm(p)
+  retry_until(function() {
+    gc()
+    !dir.exists(dir)
+  })
 })
 
 test_that("can load sigtermignore", {
