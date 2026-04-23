@@ -255,12 +255,13 @@ SEXP processx_base64_decode(SEXP array);
 #include <limits.h>
 
 static char tmpdir_buf[PATH_MAX];
-static char *rm_argv[] = { "/bin/rm", "-rf", tmpdir_buf, NULL };
+static char rm_path_buf[PATH_MAX];
+static char *rm_argv[] = { rm_path_buf, "-rf", tmpdir_buf, NULL };
 
 static void term_handler(int n) {
   pid_t pid = fork();
   if (pid == 0) {
-    execv("/bin/rm", rm_argv);
+    execv(rm_path_buf, rm_argv);
     _exit(127);
   }
   // Continue signal
@@ -277,8 +278,11 @@ void install_term_handler(void) {
     return;
   }
 
-  // Capture the path now so the signal handler needs no getenv()
+  // Capture paths now so the signal handler needs no getenv()
   snprintf(tmpdir_buf, sizeof(tmpdir_buf), "%s", tmpdir);
+  const char *rm_path = getenv("PROCESSX_RM_PATH");
+  snprintf(rm_path_buf, sizeof(rm_path_buf), "%s",
+           (rm_path && rm_path[0]) ? rm_path : "/bin/rm");
 
   struct sigaction sig = {{ 0 }};
   sig.sa_handler = term_handler;

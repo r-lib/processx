@@ -19,6 +19,11 @@
     }
   }
 
+  rm_path <- Sys.which("rm")
+  if (nzchar(rm_path)) {
+    Sys.setenv(PROCESSX_RM_PATH = rm_path)
+  }
+
   supervisor_reset()
   if (
     Sys.getenv("DEBUGME", "") != "" &&
