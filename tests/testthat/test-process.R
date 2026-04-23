@@ -97,6 +97,7 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
 
   out <- tempfile()
+  withr::defer(unlink(out, TRUE, TRUE))
 
   fn <- function(file) {
     file.create(tempfile())
@@ -111,7 +112,8 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
 
   p$signal(ps::signals()$SIGTERM)
   p$wait()
-  expect_false(dir.exists(p_temp_dir))
+
+  retry_until(function() !dir.exists(p_temp_dir))
 
   # Disabled case
   withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = NA_character_))
@@ -131,6 +133,76 @@ test_that("R process is installed with a SIGTERM cleanup handler", {
   # Was not cleaned up
   expect_true(dir.exists(p_temp_dir))
 })
+
+test_that("can kill process tree with SIGTERM", {
+  # https://github.com/r-lib/callr/pull/250
+  skip_if_not_installed("callr", "3.7.3.9001")
+
+  # Needs POSIX signal handling
+  skip_on_os("windows")
+
+  # fork() in signal handler can deadlock under ASAN; shutdown is too slow
+  # for the poll timeout under UBSAN and valgrind
+  skip_if(is_asan())
+  skip_if(is_ubsan())
+  skip_if(is_valgrind())
+
+  withr::local_envvar(c(PROCESSX_R_SIGTERM_CLEANUP = "true"))
+
+  out <- tempfile()
+  withr::defer(unlink(out, TRUE, TRUE))
+  file.create(out)
+
+  fn <- function(recurse, local, file) {
+    p <- NULL
+
+    if (recurse) {
+      p <- callr::r_session$new()
+      p$call(
+        sys.function(),
+        list(recurse - 1, local = FALSE, file = file)
+      )
+    }
+
+    if (!local) {
+      file.create(tempfile())
+      cat(paste0(tempdir(), "\n"), file = file, append = TRUE)
+
+      # Sleeping prevents the process to receive an EOF in
+      # `R_ReadConsole()` (which causes it to quit normally)
+      Sys.sleep(60)
+    }
+
+    p
+  }
+
+  N <- 5
+  p <- fn(N, local = TRUE, file = out)
+
+  pid <- p$get_pid()
+  id <- p$.__enclos_env__$private$tree_id
+
+  temp_dirs <- NULL
+
+  retry_until(function() {
+    temp_dirs <<- readLines(out)
+    length(temp_dirs) == N
+  })
+
+  ps <- ps::ps_find_tree(id)
+
+  for (p in ps) {
+    tools::pskill(ps::ps_pid(p))
+  }
+  retry_until(function() {
+    !any(sapply(ps, function(p) ps::ps_is_running(p)))
+  })
+
+  # rm -rf runs in a forked child; poll until it finishes
+  retry_until(function() !any(dir.exists(temp_dirs)))
+  expect_false(any(dir.exists(temp_dirs)))
+})
+
 
 test_that("linux_pdeathsig kills child when parent exits", {
   skip_if(!is_linux())

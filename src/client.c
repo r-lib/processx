@@ -251,19 +251,34 @@ SEXP processx_base64_decode(SEXP array);
 
 #include <string.h>
 #include <signal.h>
+#include <unistd.h>
+#include <limits.h>
 
-void term_handler(int n) {
-  // Need the cast and the +1 to ignore compiler warning about unused
-  // return value.
-  (void) (system("rm -rf \"$R_SESSION_TMPDIR\"") + 1);
+static char tmpdir_buf[PATH_MAX];
+static char *rm_argv[] = { "/bin/rm", "-rf", tmpdir_buf, NULL };
+
+static void term_handler(int n) {
+  pid_t pid = fork();
+  if (pid == 0) {
+    execv("/bin/rm", rm_argv);
+    _exit(127);
+  }
   // Continue signal
   raise(SIGTERM);
 }
 
 void install_term_handler(void) {
-  if (! getenv("PROCESSX_R_SIGTERM_CLEANUP")) {
+  if (!getenv("PROCESSX_R_SIGTERM_CLEANUP")) {
     return;
   }
+
+  const char *tmpdir = getenv("R_SESSION_TMPDIR");
+  if (!tmpdir) {
+    return;
+  }
+
+  // Capture the path now so the signal handler needs no getenv()
+  snprintf(tmpdir_buf, sizeof(tmpdir_buf), "%s", tmpdir);
 
   struct sigaction sig = {{ 0 }};
   sig.sa_handler = term_handler;

@@ -351,3 +351,4 @@ ends_with <- function(x, post) {
   l <- nchar(post)
   substr(x, nchar(x) - l + 1, nchar(x)) == post
 }
+
