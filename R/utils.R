@@ -373,7 +373,6 @@ get_test_lib <- function(lib) {
   system.file(
     package = "processx",
     path,
-    "test",
     paste0(lib, .Platform$dynlib.ext)
   )
 }
