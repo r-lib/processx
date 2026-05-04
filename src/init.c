@@ -45,7 +45,9 @@ SEXP is_asan_()
 {
 #if defined(__has_feature)
 #if __has_feature(address_sanitizer) // for clang
+#if !defined(__SANITIZE_ADDRESS__)
 #define __SANITIZE_ADDRESS__         // GCC already sets this
+#endif
 #endif
 #endif
 
