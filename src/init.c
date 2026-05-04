@@ -43,13 +43,14 @@ SEXP gcov_flush(void) {
 
 SEXP is_asan_()
 {
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer) // for clang
-#define __SANITIZE_ADDRESS__         // GCC already sets this
-#endif
+
+#ifndef __has_feature
+  #define __has_feature(x) 0
 #endif
 
-#ifdef __SANITIZE_ADDRESS__
+#if defined(__SANITIZE_ADDRESS__)
+  return Rf_ScalarLogical(1);
+#elif __has_feature(address_sanitizer) // for clang
   return Rf_ScalarLogical(1);
 #else
   return Rf_ScalarLogical(0);
