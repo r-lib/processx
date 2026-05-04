@@ -29,6 +29,7 @@ starting the process. This runs when the enclosing function exits,
 whether normally, on error, or on interrupt:
 
 ``` r
+
 process_manager <- function() {
   on.exit({
     try(p1$kill(), silent = TRUE)
@@ -144,6 +145,7 @@ On Linux, you can ask the kernel to automatically send a signal to the
 child process when the parent R process dies — including if R crashes:
 
 ``` r
+
 p <- process$new("sleep", "100", linux_pdeathsig = TRUE)
 ```
 
@@ -188,6 +190,7 @@ has died (for any reason, including a crash), the supervisor kills all
 registered children.
 
 ``` r
+
 p <- process$new("sleep", "100", supervise = TRUE)
 ```
 
@@ -224,13 +227,13 @@ background process and the Windows Defender risk.
 
 ## Summary
 
-| Mechanism                                                                       | Platform              | Triggered by          | Scope                                  | Handles R crash?                                    |
-|---------------------------------------------------------------------------------|-----------------------|-----------------------|----------------------------------------|-----------------------------------------------------|
-| [`on.exit()`](https://rdrr.io/r/base/on.exit.html) + `$kill()` / `$kill_tree()` | all                   | explicit              | process group (Unix) or tree           | no                                                  |
-| `cleanup = TRUE` (default)                                                      | all                   | GC / R exit           | process group (Unix); job object (Win) | Win: yes; Unix: no                                  |
-| `cleanup_tree = TRUE`                                                           | Windows, Linux, macOS | GC                    | full descendant tree via env-var¹      | no                                                  |
-| `linux_pdeathsig`                                                               | Linux only            | parent death (kernel) | direct child only                      | yes                                                 |
-| `supervise = TRUE`                                                              | all                   | parent death          | registered PIDs                        | yes (unless antivirus blocks supervisor.exe on Win) |
+| Mechanism | Platform | Triggered by | Scope | Handles R crash? |
+|----|----|----|----|----|
+| [`on.exit()`](https://rdrr.io/r/base/on.exit.html) + `$kill()` / `$kill_tree()` | all | explicit | process group (Unix) or tree | no |
+| `cleanup = TRUE` (default) | all | GC / R exit | process group (Unix); job object (Win) | Win: yes; Unix: no |
+| `cleanup_tree = TRUE` | Windows, Linux, macOS | GC | full descendant tree via env-var¹ | no |
+| `linux_pdeathsig` | Linux only | parent death (kernel) | direct child only | yes |
+| `supervise = TRUE` | all | parent death | registered PIDs | yes (unless antivirus blocks supervisor.exe on Win) |
 
 ¹ On macOS, system restrictions may prevent reading other processes’
 environment variables, so tree cleanup may not work reliably there.

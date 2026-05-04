@@ -60,18 +60,21 @@ facilities, with a timeout.
 Install the stable version from CRAN:
 
 ``` r
+
 install.packages("processx")
 ```
 
 If you need the development version, install it from GitHub:
 
 ``` r
+
 pak::pak("r-lib/processx")
 ```
 
 ## Usage
 
 ``` r
+
 library(processx)
 ```
 
@@ -82,6 +85,7 @@ library(processx)
 > specified timings.
 
 ``` r
+
 px <- paste0(
   system.file(package = "processx", "bin", "px"),
   system.file(package = "processx", "bin", .Platform$r_arch, "px.exe")
@@ -102,6 +106,7 @@ arguments, as they are passed directly to the operating system, without
 an intermediate shell.
 
 ``` r
+
 run("echo", "Hello R!")
 ```
 
@@ -122,6 +127,7 @@ run("echo", "Hello R!")
 Short summary of the `px` binary we are using extensively below:
 
 ``` r
+
 result <- run(px, "--help", echo = TRUE)
 ```
 
@@ -159,6 +165,7 @@ throws an error if the process exits with a non-zero status code. To
 avoid this, specify `error_on_status = FALSE`:
 
 ``` r
+
 run(px, c("out", "oh no!", "return", "2"), error_on_status = FALSE)
 ```
 
@@ -183,6 +190,7 @@ argument. Note that the order of `stdout` and `stderr` lines may be
 incorrect, because they are coming from two different connections.
 
 ``` r
+
 result <- run(px,
   c("outln", "out", "errln", "err", "outln", "out again"),
   echo = TRUE)
@@ -201,6 +209,7 @@ The standard output and error are still included in the result of the
 [`run()`](http://processx.r-lib.org/dev/reference/run.md) call:
 
 ``` r
+
 result
 ```
 
@@ -227,11 +236,13 @@ you can capture the output with
 [`sink()`](https://rdrr.io/r/base/sink.html), etc.:
 
 ``` r
+
 out1 <- capture.output(r1 <- system("ls"))
 out2 <- capture.output(r2 <- run("ls", echo = TRUE))
 ```
 
 ``` r
+
 out1
 ```
 
@@ -240,6 +251,7 @@ out1
 ```
 
 ``` r
+
 out2
 ```
 
@@ -283,6 +295,7 @@ you want. For example you can kill it in response to an error or some
 text on the standard output:
 
 ``` r
+
 cb <- function(line, proc) {
   cat("Got:", line, "\n")
   if (line == "done") proc$kill()
@@ -303,6 +316,7 @@ result <- run(px,
 ```
 
 ``` r
+
 result
 ```
 
@@ -342,6 +356,7 @@ To start a new background process, create a new instance of the
 `process` class.
 
 ``` r
+
 p <- process$new("sleep", "20")
 ```
 
@@ -350,6 +365,7 @@ p <- process$new("sleep", "20")
 A process can be killed via the `kill()` method.
 
 ``` r
+
 p$is_alive()
 ```
 
@@ -358,6 +374,7 @@ p$is_alive()
 ```
 
 ``` r
+
 p$kill()
 ```
 
@@ -366,6 +383,7 @@ p$kill()
 ```
 
 ``` r
+
 p$is_alive()
 ```
 
@@ -378,6 +396,7 @@ corresponding `process` object goes out of scope, as soon as the object
 is garbage collected by R:
 
 ``` r
+
 p <- process$new("sleep", "20")
 rm(p)
 invisible(gc())
@@ -412,6 +431,7 @@ If you don’t need the standard output or error any more, you can also
 close it, like this:
 
 ``` r
+
 close(p$get_output_connection())
 close(p$get_error_connection())
 ```
@@ -422,6 +442,7 @@ there is no text to read from them. If you want to make sure that there
 is data available to read, you need to poll, see below.
 
 ``` r
+
 p <- process$new(px,
   c("sleep", "1", "outln", "foo", "errln", "bar", "outln", "foobar"),
   stdout = "|", stderr = "|")
@@ -433,6 +454,7 @@ p$read_output_lines()
 ```
 
 ``` r
+
 p$read_error_lines()
 ```
 
@@ -470,6 +492,7 @@ happen:
 For example the following code waits about a second for output.
 
 ``` r
+
 p <- process$new(px, c("sleep", "1", "outln", "kuku"), stdout = "|")
 
 ## No output yet
@@ -481,6 +504,7 @@ p$read_output_lines()
 ```
 
 ``` r
+
 ## Wait at most 5 sec
 p$poll_io(5000)
 ```
@@ -491,6 +515,7 @@ p$poll_io(5000)
 ```
 
 ``` r
+
 ## There is output now
 p$read_output_lines()
 ```
@@ -510,6 +535,7 @@ data on standard output or error, or a timeout expires. Here is an
 example:
 
 ``` r
+
 p1 <- process$new(px, c("sleep", "1", "outln", "output"), stdout = "|")
 p2 <- process$new(px, c("sleep", "2", "errln", "error"), stderr = "|")
 
@@ -528,6 +554,7 @@ poll(list(p1 = p1, p2 = p2), 100)
 ```
 
 ``` r
+
 ## But now we surely have something
 poll(list(p1 = p1, p2 = p2), 1000)
 ```
@@ -543,6 +570,7 @@ poll(list(p1 = p1, p2 = p2), 1000)
 ```
 
 ``` r
+
 p1$read_output_lines()
 ```
 
@@ -551,6 +579,7 @@ p1$read_output_lines()
 ```
 
 ``` r
+
 ## Done with p1
 close(p1$get_output_connection())
 ```
@@ -560,6 +589,7 @@ close(p1$get_output_connection())
 ```
 
 ``` r
+
 ## The second process should have data on stderr soonish
 poll(list(p1 = p1, p2 = p2), 5000)
 ```
@@ -575,6 +605,7 @@ poll(list(p1 = p1, p2 = p2), 5000)
 ```
 
 ``` r
+
 p2$read_error_lines()
 ```
 
@@ -590,6 +621,7 @@ specified timeout expires).. E.g. in the following code `wait()` needs
 to wait about 2 seconds for the `sleep` `px` command to finish.
 
 ``` r
+
 p <- process$new(px, c("sleep", "2"))
 p$is_alive()
 ```
@@ -599,6 +631,7 @@ p$is_alive()
 ```
 
 ``` r
+
 Sys.time()
 ```
 
@@ -607,6 +640,7 @@ Sys.time()
 ```
 
 ``` r
+
 p$wait()
 Sys.time()
 ```
@@ -618,6 +652,7 @@ Sys.time()
 It is safe to call `wait()` multiple times:
 
 ``` r
+
 p$wait() # already finished!
 ```
 
@@ -628,6 +663,7 @@ After a process has finished, its exit status can be queried via the
 method returns `NULL`.
 
 ``` r
+
 p <- process$new(px, c("sleep", "2"))
 p$get_exit_status()
 ```
@@ -637,6 +673,7 @@ p$get_exit_status()
 ```
 
 ``` r
+
 p$wait()
 p$get_exit_status()
 ```
@@ -668,6 +705,7 @@ not deal with errors that happen after the program has successfully
 started running.
 
 ``` r
+
 p <- process$new("nonexistant-command-for-sure")
 ```
 
@@ -679,6 +717,7 @@ p <- process$new("nonexistant-command-for-sure")
 ```
 
 ``` r
+
 p2 <- process$new(px, c("sleep", "1", "command-does-not-exist"))
 p2$wait()
 p2$get_exit_status()
