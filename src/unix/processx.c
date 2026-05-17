@@ -964,11 +964,12 @@ SEXP processx_get_exit_status(SEXP status, SEXP name) {
  * the SIGCHLD handler.
  */
 
-SEXP processx_signal(SEXP status, SEXP signal, SEXP name) {
+SEXP processx_signal(SEXP status, SEXP signal, SEXP name, SEXP group) {
   processx_handle_t *handle = R_ExternalPtrAddr(status);
   const char *cname = isNull(name) ? "???" : CHAR(STRING_ELT(name, 0));
   pid_t pid;
   int wstat, wp, ret, result;
+  int cgroup = LOGICAL(group)[0];
 
   processx__block_sigchld();
 
@@ -983,13 +984,17 @@ SEXP processx_signal(SEXP status, SEXP signal, SEXP name) {
     goto cleanup;
   }
 
-  /* Otherwise try to send signal */
+  /* Otherwise try to send signal. The child is started in its own
+     process group (via setsid()), so its pgid equals its pid; negating
+     the pid sends the signal to the whole group. ESRCH/EPERM mean the
+     original target is gone (the PID/PGID may have been reused, possibly
+     by a process we may not signal). */
   pid = handle->pid;
-  ret = kill(pid, INTEGER(signal)[0]);
+  ret = kill(cgroup ? -pid : pid, INTEGER(signal)[0]);
 
   if (ret == 0) {
     result = 1;
-  } else if (ret == -1 && errno == ESRCH) {
+  } else if (ret == -1 && (errno == ESRCH || errno == EPERM)) {
     result = 0;
   } else {
     processx__unblock_sigchld();
@@ -1018,8 +1023,8 @@ SEXP processx_signal(SEXP status, SEXP signal, SEXP name) {
   return ScalarLogical(result);
 }
 
-SEXP processx_interrupt(SEXP status, SEXP name) {
-  return processx_signal(status, ScalarInteger(2), name);
+SEXP processx_interrupt(SEXP status, SEXP name, SEXP group) {
+  return processx_signal(status, ScalarInteger(2), name, group);
 }
 
 /* This is a special case of `processx_signal`, and we implement it almost
