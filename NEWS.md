@@ -1,5 +1,11 @@
 # processx (development version)
 
+* The `$signal()` and `$interrupt()` methods now send the signal to the
+  child's whole process group by default on Unix. This matches the
+  behavior of `$kill()`. A new `group` argument (default `TRUE`) can be
+  set to `FALSE` to send the signal to the child process only. The
+  argument is ignored on Windows.
+
 * The `grace` argument of the `kill()` method is now active on Unix
   platforms. processx first tries to kill with `SIGTERM` with a
   timeout of `grace` seconds. After the timeout, `SIGKILL` is sent as

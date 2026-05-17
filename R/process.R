@@ -355,16 +355,28 @@ process <- R6::R6Class(
     #' and the 0 signal as well.
     #' @param signal An integer scalar, the id of the signal to send to
     #'   the process. See [tools::pskill()] for the list of signals.
+    #' @param group Whether to send the signal to the whole process group of
+    #'   the child. The child is started in its own process group (via
+    #'   `setsid()` on Unix), so by default the signal is delivered to the
+    #'   child and any descendants that have not started a new group of
+    #'   their own. Set to `FALSE` to send the signal to the child process
+    #'   only. Ignored on Windows.
 
-    signal = function(signal) process_signal(self, private, signal),
+    signal = function(signal, group = TRUE) {
+      process_signal(self, private, signal, group)
+    },
 
     #' @description
     #' Send an interrupt to the process. On Unix this is a
     #' `SIGINT` signal, and it is usually equivalent to pressing CTRL+C at
     #' the terminal prompt. On Windows, it is a CTRL+BREAK keypress.
     #' Applications may catch these events. By default they will quit.
+    #' @param group Whether to send the interrupt to the whole process group
+    #'   of the child. See `$signal()` for details. Ignored on Windows,
+    #'   where the CTRL+BREAK event is always delivered to all processes
+    #'   attached to the child's console.
 
-    interrupt = function() process_interrupt(self, private),
+    interrupt = function(group = TRUE) process_interrupt(self, private, group),
 
     #' @description
     #' Query the process id.
@@ -846,24 +858,30 @@ process_get_exit_status <- function(self, private) {
   )
 }
 
-process_signal <- function(self, private, signal) {
+process_signal <- function(self, private, signal, group) {
   "!DEBUG process_signal `private$get_short_name()` `signal`"
   chain_call(
     c_processx_signal,
     private$status,
     as.integer(signal),
-    private$get_short_name()
+    private$get_short_name(),
+    as.logical(group)
   )
 }
 
-process_interrupt <- function(self, private) {
+process_interrupt <- function(self, private, group) {
   "!DEBUG process_interrupt `private$get_short_name()`"
   if (os_type() == "windows") {
     pid <- as.character(self$get_pid())
     st <- run(get_tool("interrupt"), c(pid, "c"), error_on_status = FALSE)
     if (st$status == 0) TRUE else FALSE
   } else {
-    chain_call(c_processx_interrupt, private$status, private$get_short_name())
+    chain_call(
+      c_processx_interrupt,
+      private$status,
+      private$get_short_name(),
+      as.logical(group)
+    )
   }
 }
 

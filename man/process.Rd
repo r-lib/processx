@@ -431,7 +431,7 @@ otherwise. On Unix all signals are supported that the OS supports,
 and the 0 signal as well.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{process$signal(signal)}
+    \preformatted{process$signal(signal, group = TRUE)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
@@ -439,6 +439,12 @@ and the 0 signal as well.
     \describe{
       \item{\code{signal}}{An integer scalar, the id of the signal to send to
 the process. See \code{\link[tools:pskill]{tools::pskill()}} for the list of signals.}
+      \item{\code{group}}{Whether to send the signal to the whole process group of
+the child. The child is started in its own process group (via
+\code{setsid()} on Unix), so by default the signal is delivered to the
+child and any descendants that have not started a new group of
+their own. Set to \code{FALSE} to send the signal to the child process
+only. Ignored on Windows.}
     }
     \if{html}{\out{</div>}}
   }
@@ -454,7 +460,17 @@ the terminal prompt. On Windows, it is a CTRL+BREAK keypress.
 Applications may catch these events. By default they will quit.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{process$interrupt()}
+    \preformatted{process$interrupt(group = TRUE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{group}}{Whether to send the interrupt to the whole process group
+of the child. See \verb{$signal()} for details. Ignored on Windows,
+where the CTRL+BREAK event is always delivered to all processes
+attached to the child's console.}
+    }
     \if{html}{\out{</div>}}
   }
 }
