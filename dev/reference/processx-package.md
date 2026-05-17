@@ -25,6 +25,9 @@ Useful links:
 
 Authors:
 
+- Gábor Csárdi <csardi.gabor@gmail.com>
+  ([ORCID](https://orcid.org/0000-0001-7098-9676)) \[copyright holder\]
+
 - Winston Chang
 
 Other contributors:

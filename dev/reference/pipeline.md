@@ -53,7 +53,7 @@ one per command.
 
 ### Public methods
 
-- [`pipeline$new()`](#method-pipeline-new)
+- [`pipeline$new()`](#method-pipeline-initialize)
 
 - [`pipeline$read_output()`](#method-pipeline-read_output)
 
@@ -97,7 +97,7 @@ one per command.
 
 ------------------------------------------------------------------------
 
-### Method `new()`
+### `pipeline$new()`
 
 Create a new pipeline.
 
@@ -166,7 +166,7 @@ Create a new pipeline.
 
 ------------------------------------------------------------------------
 
-### Method `read_output()`
+### `pipeline$read_output()`
 
 Read output of the last process.
 
@@ -182,7 +182,7 @@ Read output of the last process.
 
 ------------------------------------------------------------------------
 
-### Method `read_output_lines()`
+### `pipeline$read_output_lines()`
 
 Read output lines of the last process.
 
@@ -198,7 +198,7 @@ Read output lines of the last process.
 
 ------------------------------------------------------------------------
 
-### Method `read_all_output()`
+### `pipeline$read_all_output()`
 
 Read all output of the last process.
 
@@ -208,7 +208,7 @@ Read all output of the last process.
 
 ------------------------------------------------------------------------
 
-### Method `read_all_output_lines()`
+### `pipeline$read_all_output_lines()`
 
 Read all output lines of the last process.
 
@@ -218,7 +218,7 @@ Read all output lines of the last process.
 
 ------------------------------------------------------------------------
 
-### Method `poll_io()`
+### `pipeline$poll_io()`
 
 Poll the connections of the last process for I/O.
 
@@ -234,7 +234,7 @@ Poll the connections of the last process for I/O.
 
 ------------------------------------------------------------------------
 
-### Method `read_error()`
+### `pipeline$read_error()`
 
 Read stderr of the last process.
 
@@ -250,7 +250,7 @@ Read stderr of the last process.
 
 ------------------------------------------------------------------------
 
-### Method `read_error_lines()`
+### `pipeline$read_error_lines()`
 
 Read stderr lines of the last process.
 
@@ -266,7 +266,7 @@ Read stderr lines of the last process.
 
 ------------------------------------------------------------------------
 
-### Method `read_all_error()`
+### `pipeline$read_all_error()`
 
 Read all stderr of the last process.
 
@@ -276,7 +276,7 @@ Read all stderr of the last process.
 
 ------------------------------------------------------------------------
 
-### Method `read_all_error_lines()`
+### `pipeline$read_all_error_lines()`
 
 Read all stderr lines of the last process.
 
@@ -286,7 +286,7 @@ Read all stderr lines of the last process.
 
 ------------------------------------------------------------------------
 
-### Method `write_input()`
+### `pipeline$write_input()`
 
 Write to the first process stdin.
 
@@ -306,7 +306,7 @@ Write to the first process stdin.
 
 ------------------------------------------------------------------------
 
-### Method `close_input()`
+### `pipeline$close_input()`
 
 Close the first process stdin (signals EOF to the process).
 
@@ -316,7 +316,7 @@ Close the first process stdin (signals EOF to the process).
 
 ------------------------------------------------------------------------
 
-### Method `wait()`
+### `pipeline$wait()`
 
 Wait for all processes to finish.
 
@@ -332,7 +332,7 @@ Wait for all processes to finish.
 
 ------------------------------------------------------------------------
 
-### Method `kill()`
+### `pipeline$kill()`
 
 Kill all processes.
 
@@ -353,7 +353,7 @@ Kill all processes.
 
 ------------------------------------------------------------------------
 
-### Method `kill_tree()`
+### `pipeline$kill_tree()`
 
 Kill all process trees.
 
@@ -374,7 +374,7 @@ Kill all process trees.
 
 ------------------------------------------------------------------------
 
-### Method `is_alive()`
+### `pipeline$is_alive()`
 
 Check if any process is still alive.
 
@@ -384,7 +384,7 @@ Check if any process is still alive.
 
 ------------------------------------------------------------------------
 
-### Method `get_exit_statuses()`
+### `pipeline$get_exit_statuses()`
 
 Return exit codes for all processes.
 
@@ -394,7 +394,7 @@ Return exit codes for all processes.
 
 ------------------------------------------------------------------------
 
-### Method `get_pids()`
+### `pipeline$get_pids()`
 
 Return PIDs for all processes.
 
@@ -404,7 +404,7 @@ Return PIDs for all processes.
 
 ------------------------------------------------------------------------
 
-### Method `get_processes()`
+### `pipeline$get_processes()`
 
 Return the list of process objects.
 
@@ -414,7 +414,7 @@ Return the list of process objects.
 
 ------------------------------------------------------------------------
 
-### Method [`format()`](https://rdrr.io/r/base/format.html)
+### `pipeline$format()`
 
 Format the pipeline as a string.
 
@@ -424,7 +424,7 @@ Format the pipeline as a string.
 
 ------------------------------------------------------------------------
 
-### Method [`print()`](https://rdrr.io/r/base/print.html)
+### `pipeline$print()`
 
 Print the pipeline to the screen.
 
