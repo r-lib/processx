@@ -527,7 +527,7 @@ supported that the OS supports, and the 0 signal as well.
 
 #### Usage
 
-    process$signal(signal)
+    process$signal(signal, group = TRUE)
 
 #### Arguments
 
@@ -536,6 +536,15 @@ supported that the OS supports, and the 0 signal as well.
   An integer scalar, the id of the signal to send to the process. See
   [`tools::pskill()`](https://rdrr.io/r/tools/pskill.html) for the list
   of signals.
+
+- `group`:
+
+  Whether to send the signal to the whole process group of the child.
+  The child is started in its own process group (via `setsid()` on
+  Unix), so by default the signal is delivered to the child and any
+  descendants that have not started a new group of their own. Set to
+  `FALSE` to send the signal to the child process only. Ignored on
+  Windows.
 
 ------------------------------------------------------------------------
 
@@ -548,7 +557,16 @@ events. By default they will quit.
 
 #### Usage
 
-    process$interrupt()
+    process$interrupt(group = TRUE)
+
+#### Arguments
+
+- `group`:
+
+  Whether to send the interrupt to the whole process group of the child.
+  See `$signal()` for details. Ignored on Windows, where the CTRL+BREAK
+  event is always delivered to all processes attached to the child's
+  console.
 
 ------------------------------------------------------------------------
 
@@ -1262,7 +1280,7 @@ p <- process$new("sleep", "2")
 p$is_alive()
 #> [1] TRUE
 p
-#> PROCESS 'sleep', running, pid 7017.
+#> PROCESS 'sleep', running, pid 7018.
 p$kill()
 #> [1] TRUE
 p$is_alive()

@@ -39,7 +39,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="processx-development-version">processx (development version)<a class="anchor" aria-label="anchor" href="#processx-development-version"></a></h2>
-<ul><li><p>The <code>grace</code> argument of the <code>kill()</code> method is now active on Unix platforms. processx first tries to kill with <code>SIGTERM</code> with a timeout of <code>grace</code> seconds. After the timeout, <code>SIGKILL</code> is sent as before.</p></li>
+<ul><li><p>The <code>$signal()</code> and <code>$interrupt()</code> methods now send the signal to the child’s whole process group by default on Unix. This matches the behavior of <code>$kill()</code>. A new <code>group</code> argument (default <code>TRUE</code>) can be set to <code>FALSE</code> to send the signal to the child process only. The argument is ignored on Windows.</p></li>
+<li><p>The <code>grace</code> argument of the <code>kill()</code> method is now active on Unix platforms. processx first tries to kill with <code>SIGTERM</code> with a timeout of <code>grace</code> seconds. After the timeout, <code>SIGKILL</code> is sent as before.</p></li>
 <li><p>New <code>cleanup_grace</code> argument to <code>process$new()</code> and <code><a href="../reference/run.html">run()</a></code>. When the process is cleaned up (on GC or on exit), processx first tries <code>SIGTERM</code> with a timeout of <code>cleanup_grace</code> seconds before falling back to <code>SIGKILL</code>. On Unix only.</p></li>
 </ul></div>
     <div class="section level2">

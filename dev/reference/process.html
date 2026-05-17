@@ -476,12 +476,20 @@ signal returns <code>TRUE</code> if the process is alive, and <code>FALSE</code>
 otherwise. On Unix all signals are supported that the OS supports,
 and the 0 signal as well.</p><div class="section">
 <h4 id="usage-3">Usage<a class="anchor" aria-label="anchor" href="#usage-3"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">signal</span><span class="op">(</span><span class="va">signal</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">signal</span><span class="op">(</span><span class="va">signal</span>, group <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
 <h4 id="arguments-3">Arguments<a class="anchor" aria-label="anchor" href="#arguments-3"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>signal</code></dt>
 <dd><p>An integer scalar, the id of the signal to send to
 the process. See <code><a href="https://rdrr.io/r/tools/pskill.html" class="external-link">tools::pskill()</a></code> for the list of signals.</p></dd>
+
+      <dt><code>group</code></dt>
+<dd><p>Whether to send the signal to the whole process group of
+the child. The child is started in its own process group (via
+<code>setsid()</code> on Unix), so by default the signal is delivered to the
+child and any descendants that have not started a new group of
+their own. Set to <code>FALSE</code> to send the signal to the child process
+only. Ignored on Windows.</p></dd>
 
 
 </dl><p></p></div>
@@ -496,7 +504,17 @@ the process. See <code><a href="https://rdrr.io/r/tools/pskill.html" class="exte
 the terminal prompt. On Windows, it is a CTRL+BREAK keypress.
 Applications may catch these events. By default they will quit.</p><div class="section">
 <h4 id="usage-4">Usage<a class="anchor" aria-label="anchor" href="#usage-4"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">interrupt</span><span class="op">(</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">interrupt</span><span class="op">(</span>group <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div><p></p><div class="section">
+<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>group</code></dt>
+<dd><p>Whether to send the interrupt to the whole process group
+of the child. See <code>$signal()</code> for details. Ignored on Windows,
+where the CTRL+BREAK event is always delivered to all processes
+attached to the child's console.</p></dd>
+
+
+</dl><p></p></div>
 </div>
 
 </div>
@@ -538,7 +556,7 @@ through <code><a href="https://rdrr.io/r/parallel/mcparallel.html" class="extern
 <h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">wait</span><span class="op">(</span>timeout <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-4">Arguments<a class="anchor" aria-label="anchor" href="#arguments-4"></a></h4>
+<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>timeout</code></dt>
 <dd><p>Timeout in milliseconds, for the wait or the I/O
 polling.</p></dd>
@@ -632,7 +650,7 @@ will still be killed when the object is garbage collected.</p><div class="sectio
 <h4 id="usage-14">Usage<a class="anchor" aria-label="anchor" href="#usage-14"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">supervise</span><span class="op">(</span><span class="va">status</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
+<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>status</code></dt>
 <dd><p>Whether to turn on of off the supervisor for this
 process.</p></dd>
@@ -660,7 +678,7 @@ section for details). To read <em>all</em> output call <code>$read_all_output()<
 <h4 id="usage-15">Usage<a class="anchor" aria-label="anchor" href="#usage-15"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_output</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
+<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>n</code></dt>
 <dd><p>Number of characters or lines to read.</p></dd>
 
@@ -679,7 +697,7 @@ as for <code>$read_output()</code> (see the <em>Polling</em> section).</p><div c
 <h4 id="usage-16">Usage<a class="anchor" aria-label="anchor" href="#usage-16"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_error</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
+<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>n</code></dt>
 <dd><p>Number of characters or lines to read.</p></dd>
 
@@ -699,7 +717,7 @@ This will work only if <code>stdout="|"</code> was used.</p><div class="section"
 <h4 id="usage-17">Usage<a class="anchor" aria-label="anchor" href="#usage-17"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_output_bytes</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
+<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>n</code></dt>
 <dd><p>Number of characters or lines to read.</p></dd>
 
@@ -716,7 +734,7 @@ from the standard error stream.</p><div class="section">
 <h4 id="usage-18">Usage<a class="anchor" aria-label="anchor" href="#usage-18"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_error_bytes</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
+<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>n</code></dt>
 <dd><p>Number of characters or lines to read.</p></dd>
 
@@ -743,7 +761,7 @@ when lines may be very long.</p><div class="section">
 <h4 id="usage-19">Usage<a class="anchor" aria-label="anchor" href="#usage-19"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_output_lines</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
+<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>n</code></dt>
 <dd><p>Number of characters or lines to read.</p></dd>
 
@@ -761,7 +779,7 @@ applies (see the <em>Polling</em> section).</p><div class="section">
 <h4 id="usage-20">Usage<a class="anchor" aria-label="anchor" href="#usage-20"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">read_error_lines</span><span class="op">(</span>n <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
+<h4 id="arguments-12">Arguments<a class="anchor" aria-label="anchor" href="#arguments-12"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>n</code></dt>
 <dd><p>Number of characters or lines to read.</p></dd>
 
@@ -935,7 +953,7 @@ and then the return value will be <code>raw(0)</code> (invisibly).</p><div class
 <h4 id="usage-34">Usage<a class="anchor" aria-label="anchor" href="#usage-34"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">write_input</span><span class="op">(</span><span class="va">str</span>, sep <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-12">Arguments<a class="anchor" aria-label="anchor" href="#arguments-12"></a></h4>
+<h4 id="arguments-13">Arguments<a class="anchor" aria-label="anchor" href="#arguments-13"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>str</code></dt>
 <dd><p>Character or raw vector to write to the standard input
 of the process. If a character vector with a marked encoding,
@@ -995,7 +1013,7 @@ to poll on multiple processes.</p><div class="section">
 <h4 id="usage-38">Usage<a class="anchor" aria-label="anchor" href="#usage-38"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">poll_io</span><span class="op">(</span><span class="va">timeout</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-13">Arguments<a class="anchor" aria-label="anchor" href="#arguments-13"></a></h4>
+<h4 id="arguments-14">Arguments<a class="anchor" aria-label="anchor" href="#arguments-14"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>timeout</code></dt>
 <dd><p>Timeout in milliseconds, for the wait or the I/O
 polling.</p></dd>
@@ -1133,7 +1151,7 @@ the process.</p><div class="section">
 <h4 id="usage-52">Usage<a class="anchor" aria-label="anchor" href="#usage-52"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">process</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-14">Arguments<a class="anchor" aria-label="anchor" href="#arguments-14"></a></h4>
+<h4 id="arguments-15">Arguments<a class="anchor" aria-label="anchor" href="#arguments-15"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 
@@ -1152,7 +1170,7 @@ the process.</p><div class="section">
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="va">p</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> PROCESS 'sleep', running, pid 7017.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> PROCESS 'sleep', running, pid 7018.</span>
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">kill</span><span class="op">(</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] TRUE</span>
 <span class="r-in"><span><span class="va">p</span><span class="op">$</span><span class="fu">is_alive</span><span class="op">(</span><span class="op">)</span></span></span>
