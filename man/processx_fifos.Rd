@@ -25,7 +25,7 @@ conn_connect_fifo(
 \item{filename}{File name of the FIFO. On Windows it the name of the
 pipe within the \verb{\\\\?\\pipe\\} namespace, either the full name, or the
 part after that prefix. If \code{NULL}, then a random name
-is used, on Unix in the R temporary directory: \code{\link[base:tempfile]{base::tempdir()}}.}
+is used, on Unix in the R temporary directory: \code{\link[base:tempdir]{base::tempdir()}}.}
 
 \item{read}{If \code{TRUE} then connect to the read end of the FIFO.
 Exactly one of \code{read} and \code{write} must be set to \code{TRUE}.}

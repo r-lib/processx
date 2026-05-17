@@ -69,37 +69,38 @@ pl$get_exit_statuses()
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-pipeline-new}{\code{pipeline$new()}}
-\item \href{#method-pipeline-read_output}{\code{pipeline$read_output()}}
-\item \href{#method-pipeline-read_output_lines}{\code{pipeline$read_output_lines()}}
-\item \href{#method-pipeline-read_all_output}{\code{pipeline$read_all_output()}}
-\item \href{#method-pipeline-read_all_output_lines}{\code{pipeline$read_all_output_lines()}}
-\item \href{#method-pipeline-poll_io}{\code{pipeline$poll_io()}}
-\item \href{#method-pipeline-read_error}{\code{pipeline$read_error()}}
-\item \href{#method-pipeline-read_error_lines}{\code{pipeline$read_error_lines()}}
-\item \href{#method-pipeline-read_all_error}{\code{pipeline$read_all_error()}}
-\item \href{#method-pipeline-read_all_error_lines}{\code{pipeline$read_all_error_lines()}}
-\item \href{#method-pipeline-write_input}{\code{pipeline$write_input()}}
-\item \href{#method-pipeline-close_input}{\code{pipeline$close_input()}}
-\item \href{#method-pipeline-wait}{\code{pipeline$wait()}}
-\item \href{#method-pipeline-kill}{\code{pipeline$kill()}}
-\item \href{#method-pipeline-kill_tree}{\code{pipeline$kill_tree()}}
-\item \href{#method-pipeline-is_alive}{\code{pipeline$is_alive()}}
-\item \href{#method-pipeline-get_exit_statuses}{\code{pipeline$get_exit_statuses()}}
-\item \href{#method-pipeline-get_pids}{\code{pipeline$get_pids()}}
-\item \href{#method-pipeline-get_processes}{\code{pipeline$get_processes()}}
-\item \href{#method-pipeline-format}{\code{pipeline$format()}}
-\item \href{#method-pipeline-print}{\code{pipeline$print()}}
-}
+  \itemize{
+    \item \href{#method-pipeline-initialize}{\code{pipeline$new()}}
+    \item \href{#method-pipeline-read_output}{\code{pipeline$read_output()}}
+    \item \href{#method-pipeline-read_output_lines}{\code{pipeline$read_output_lines()}}
+    \item \href{#method-pipeline-read_all_output}{\code{pipeline$read_all_output()}}
+    \item \href{#method-pipeline-read_all_output_lines}{\code{pipeline$read_all_output_lines()}}
+    \item \href{#method-pipeline-poll_io}{\code{pipeline$poll_io()}}
+    \item \href{#method-pipeline-read_error}{\code{pipeline$read_error()}}
+    \item \href{#method-pipeline-read_error_lines}{\code{pipeline$read_error_lines()}}
+    \item \href{#method-pipeline-read_all_error}{\code{pipeline$read_all_error()}}
+    \item \href{#method-pipeline-read_all_error_lines}{\code{pipeline$read_all_error_lines()}}
+    \item \href{#method-pipeline-write_input}{\code{pipeline$write_input()}}
+    \item \href{#method-pipeline-close_input}{\code{pipeline$close_input()}}
+    \item \href{#method-pipeline-wait}{\code{pipeline$wait()}}
+    \item \href{#method-pipeline-kill}{\code{pipeline$kill()}}
+    \item \href{#method-pipeline-kill_tree}{\code{pipeline$kill_tree()}}
+    \item \href{#method-pipeline-is_alive}{\code{pipeline$is_alive()}}
+    \item \href{#method-pipeline-get_exit_statuses}{\code{pipeline$get_exit_statuses()}}
+    \item \href{#method-pipeline-get_pids}{\code{pipeline$get_pids()}}
+    \item \href{#method-pipeline-get_processes}{\code{pipeline$get_processes()}}
+    \item \href{#method-pipeline-format}{\code{pipeline$format()}}
+    \item \href{#method-pipeline-print}{\code{pipeline$print()}}
+  }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-pipeline-new"></a>}}
-\if{latex}{\out{\hypertarget{method-pipeline-new}{}}}
-\subsection{Method \code{new()}}{
-Create a new pipeline.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$new(
+\if{html}{\out{<a id="method-pipeline-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-pipeline-initialize}{}}}
+\subsection{\code{pipeline$new()}}{
+  Create a new pipeline.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$new(
   cmds,
   stdin = NULL,
   stdout = "|",
@@ -109,322 +110,352 @@ Create a new pipeline.
   wd = NULL,
   cleanup = TRUE,
   cleanup_tree = FALSE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{cmds}}{A non-empty list of character vectors. Each vector is one
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{cmds}}{A non-empty list of character vectors. Each vector is one
 command: the first element is the executable and the rest are its
 arguments. Example: \code{list(c("sort"), c("uniq", "-c"))}.}
-
-\item{\code{stdin}}{Standard input for the \emph{first} process. \code{NULL} to discard,
+      \item{\code{stdin}}{Standard input for the \emph{first} process. \code{NULL} to discard,
 \code{"|"} so the parent R process can write to it via \verb{$write_input()}, or
 a file path.}
-
-\item{\code{stdout}}{Standard output of the \emph{last} process. \code{"|"} (the default)
+      \item{\code{stdout}}{Standard output of the \emph{last} process. \code{"|"} (the default)
 so the parent R process can read from it, \code{NULL} to discard, or a file
 path.}
-
-\item{\code{stderr}}{Standard error for \emph{all} processes. \code{NULL} (the default) to
+      \item{\code{stderr}}{Standard error for \emph{all} processes. \code{NULL} (the default) to
 discard, \code{"|"} to create a separate readable pipe per process, \code{"2>&1"}
 to merge into stdout, or a file path. When \code{"|"}, use
 \verb{$read_error()} to read from the last process; use \verb{$get_processes()}
 to access individual process objects for other processes.}
-
-\item{\code{env}}{Environment variables for all processes, or \code{NULL} to inherit
+      \item{\code{env}}{Environment variables for all processes, or \code{NULL} to inherit
 the parent environment.}
-
-\item{\code{encoding}}{Assumed encoding for stdin/stdout/stderr streams.}
-
-\item{\code{wd}}{Working directory for all processes, or \code{NULL} for the current
+      \item{\code{encoding}}{Assumed encoding for stdin/stdout/stderr streams.}
+      \item{\code{wd}}{Working directory for all processes, or \code{NULL} for the current
 directory.}
-
-\item{\code{cleanup}}{Whether to kill the processes on garbage collection.}
-
-\item{\code{cleanup_tree}}{Whether to kill the full process trees on garbage
+      \item{\code{cleanup}}{Whether to kill the processes on garbage collection.}
+      \item{\code{cleanup_tree}}{Whether to kill the full process trees on garbage
 collection.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-read_output"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-read_output}{}}}
-\subsection{Method \code{read_output()}}{
-Read output of the last process.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$read_output(n = -1)}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$read_output()}}{
+  Read output of the last process.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$read_output(n = -1)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{n}}{Number of characters or lines to read. -1 means all available.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{n}}{Number of characters or lines to read. -1 means all available.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-read_output_lines"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-read_output_lines}{}}}
-\subsection{Method \code{read_output_lines()}}{
-Read output lines of the last process.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$read_output_lines(n = -1)}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$read_output_lines()}}{
+  Read output lines of the last process.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$read_output_lines(n = -1)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{n}}{Number of characters or lines to read. -1 means all available.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{n}}{Number of characters or lines to read. -1 means all available.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-read_all_output"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-read_all_output}{}}}
-\subsection{Method \code{read_all_output()}}{
-Read all output of the last process.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$read_all_output()}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$read_all_output()}}{
+  Read all output of the last process.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$read_all_output()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-read_all_output_lines"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-read_all_output_lines}{}}}
-\subsection{Method \code{read_all_output_lines()}}{
-Read all output lines of the last process.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$read_all_output_lines()}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$read_all_output_lines()}}{
+  Read all output lines of the last process.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$read_all_output_lines()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-poll_io"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-poll_io}{}}}
-\subsection{Method \code{poll_io()}}{
-Poll the connections of the last process for I/O.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$poll_io(timeout)}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$poll_io()}}{
+  Poll the connections of the last process for I/O.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$poll_io(timeout)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{timeout}}{Timeout in milliseconds. -1 means no timeout.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{timeout}}{Timeout in milliseconds. -1 means no timeout.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-read_error"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-read_error}{}}}
-\subsection{Method \code{read_error()}}{
-Read stderr of the last process.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$read_error(n = -1)}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$read_error()}}{
+  Read stderr of the last process.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$read_error(n = -1)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{n}}{Number of characters or lines to read. -1 means all available.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{n}}{Number of characters or lines to read. -1 means all available.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-read_error_lines"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-read_error_lines}{}}}
-\subsection{Method \code{read_error_lines()}}{
-Read stderr lines of the last process.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$read_error_lines(n = -1)}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$read_error_lines()}}{
+  Read stderr lines of the last process.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$read_error_lines(n = -1)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{n}}{Number of characters or lines to read. -1 means all available.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{n}}{Number of characters or lines to read. -1 means all available.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-read_all_error"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-read_all_error}{}}}
-\subsection{Method \code{read_all_error()}}{
-Read all stderr of the last process.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$read_all_error()}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$read_all_error()}}{
+  Read all stderr of the last process.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$read_all_error()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-read_all_error_lines"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-read_all_error_lines}{}}}
-\subsection{Method \code{read_all_error_lines()}}{
-Read all stderr lines of the last process.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$read_all_error_lines()}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$read_all_error_lines()}}{
+  Read all stderr lines of the last process.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$read_all_error_lines()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-write_input"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-write_input}{}}}
-\subsection{Method \code{write_input()}}{
-Write to the first process stdin.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$write_input(str, sep = "\\n")}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$write_input()}}{
+  Write to the first process stdin.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$write_input(str, sep = "\\n")}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{str}}{String to write to the process stdin.}
+      \item{\code{sep}}{Separator to add after \code{str}.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{str}}{String to write to the process stdin.}
-
-\item{\code{sep}}{Separator to add after \code{str}.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-close_input"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-close_input}{}}}
-\subsection{Method \code{close_input()}}{
-Close the first process stdin (signals EOF to the process).
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$close_input()}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$close_input()}}{
+  Close the first process stdin (signals EOF to the process).
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$close_input()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-wait"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-wait}{}}}
-\subsection{Method \code{wait()}}{
-Wait for all processes to finish.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$wait(timeout = -1)}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$wait()}}{
+  Wait for all processes to finish.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$wait(timeout = -1)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{timeout}}{Timeout in milliseconds. -1 means no timeout.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{timeout}}{Timeout in milliseconds. -1 means no timeout.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-kill"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-kill}{}}}
-\subsection{Method \code{kill()}}{
-Kill all processes.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$kill(grace = 0.1, close_connections = TRUE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{grace}}{Grace period in seconds before sending SIGKILL (Unix) or
+\subsection{\code{pipeline$kill()}}{
+  Kill all processes.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$kill(grace = 0.1, close_connections = TRUE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{grace}}{Grace period in seconds before sending SIGKILL (Unix) or
 terminating forcefully (Windows). Currently not used.}
+      \item{\code{close_connections}}{Whether to close connections after killing.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
 
-\item{\code{close_connections}}{Whether to close connections after killing.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-kill_tree"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-kill_tree}{}}}
-\subsection{Method \code{kill_tree()}}{
-Kill all process trees.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$kill_tree(grace = 0.1, close_connections = TRUE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{grace}}{Grace period in seconds before sending SIGKILL (Unix) or
+\subsection{\code{pipeline$kill_tree()}}{
+  Kill all process trees.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$kill_tree(grace = 0.1, close_connections = TRUE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{grace}}{Grace period in seconds before sending SIGKILL (Unix) or
 terminating forcefully (Windows). Currently not used.}
+      \item{\code{close_connections}}{Whether to close connections after killing.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
 
-\item{\code{close_connections}}{Whether to close connections after killing.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-is_alive"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-is_alive}{}}}
-\subsection{Method \code{is_alive()}}{
-Check if any process is still alive.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$is_alive()}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$is_alive()}}{
+  Check if any process is still alive.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$is_alive()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-get_exit_statuses"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-get_exit_statuses}{}}}
-\subsection{Method \code{get_exit_statuses()}}{
-Return exit codes for all processes.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$get_exit_statuses()}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$get_exit_statuses()}}{
+  Return exit codes for all processes.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$get_exit_statuses()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-get_pids"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-get_pids}{}}}
-\subsection{Method \code{get_pids()}}{
-Return PIDs for all processes.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$get_pids()}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$get_pids()}}{
+  Return PIDs for all processes.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$get_pids()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-get_processes"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-get_processes}{}}}
-\subsection{Method \code{get_processes()}}{
-Return the list of process objects.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$get_processes()}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$get_processes()}}{
+  Return the list of process objects.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$get_processes()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-format"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-format}{}}}
-\subsection{Method \code{format()}}{
-Format the pipeline as a string.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$format()}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$format()}}{
+  Format the pipeline as a string.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$format()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-pipeline-print"></a>}}
 \if{latex}{\out{\hypertarget{method-pipeline-print}{}}}
-\subsection{Method \code{print()}}{
-Print the pipeline to the screen.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{pipeline$print(...)}\if{html}{\out{</div>}}
+\subsection{\code{pipeline$print()}}{
+  Print the pipeline to the screen.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{pipeline$print(...)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{...}}{Not used, for compatibility with the generic.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{...}}{Not used, for compatibility with the generic.}
-}
-\if{html}{\out{</div>}}
-}
-}
 }
