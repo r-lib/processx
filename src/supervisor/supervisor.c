@@ -119,16 +119,14 @@ bool pid_is_running(pid_t pid) {
     }
 
     DWORD exit_code;
-    if (!GetExitCodeProcess(h_process, &exit_code)) {
+    BOOL ok = GetExitCodeProcess(h_process, &exit_code);
+    CloseHandle(h_process);
+    if (!ok) {
         printf("Unable to check if process %d is running.\n", (int)pid);
         return false;
     }
 
-    if (exit_code == STILL_ACTIVE) {
-        return true;
-    } else {
-        return false;
-    }
+    return exit_code == STILL_ACTIVE;
 
     #else
     int res = kill(pid, 0);

@@ -30,6 +30,7 @@ int getppid(void) {
     // Walk the snapshot of processes to find the parent.
     do {
         if (pe.th32ProcessID == pid) {
+            CloseHandle(hProcessSnap);
             return pe.th32ParentProcessID;
         }
     } while(Process32Next(hProcessSnap, &pe));
