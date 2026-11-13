@@ -538,3 +538,16 @@
    fun:bcEval
    fun:bcEval
 }
+{
+   Suppression 30 in malloc in processx
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:tsearch
+   fun:__add_to_environ
+   fun:setenv
+   fun:Putenv
+   ...
+   fun:Rf_initialize_R
+   fun:main
+}
