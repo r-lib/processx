@@ -795,7 +795,6 @@ process <- R6::R6Class(
     windows_hide_window = NULL,
 
     status = NULL, # C file handle
-    pid = NULL, # pid for cleanup
 
     supervised = FALSE, # Whether process is tracked by supervisor
 

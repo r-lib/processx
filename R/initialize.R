@@ -212,9 +212,6 @@ process_initialize <- function(
   }
   private$starttime <- max(private$starttime_raw, before_start)
 
-  # Needed for cleaning up
-  private$pid <- self$get_pid()
-
   ## Need to close this, otherwise the child's end of the pipe
   ## will not be closed when the child exits, and then we cannot
   ## poll it.

@@ -407,9 +407,13 @@ void processx__finalizer(SEXP status) {
   if (!handle)
     return;
 
-  SEXP call = PROTECT(finalizer_call(handle->r6_private));
-  SEXP err = r_safe_eval(call, R_BaseEnv, NULL);
-  UNPROTECT(1);
+  /* Only call into R if there is something to clean up */
+  SEXP err = NULL;
+  if (handle->cleanup) {
+    SEXP call = PROTECT(finalizer_call(handle->r6_private));
+    err = r_safe_eval(call, R_BaseEnv, NULL);
+    UNPROTECT(1);
+  }
 
   /* Remove node from session finalizer list */
   SEXP node = handle->finalizer_node;
@@ -486,6 +490,7 @@ static SEXP processx__make_handle(SEXP private, int cleanup) {
 
   handle->waitpipe[0] = handle->waitpipe[1] = -1;
   handle->r6_private = private;
+  handle->cleanup = cleanup;
 
   result = PROTECT(R_MakeExternalPtr(handle, private, R_NilValue));
   processx__register_finalizer(result, handle);
