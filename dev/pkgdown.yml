@@ -1,10 +1,10 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   articles/cleanup: cleanup.html
   internals: internals.html
-last_built: 2026-05-17T19:34Z
+last_built: 2026-11-13T09:09Z
 urls:
   reference: http://processx.r-lib.org/reference
   article: http://processx.r-lib.org/articles

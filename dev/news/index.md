@@ -2,6 +2,10 @@
 
 ## processx (development version)
 
+- The supervisor process no longer leaks a process handle every time it
+  checks whether a process is still running on Windows
+  ([\#421](https://github.com/r-lib/processx/issues/421)).
+
 - The `$signal()` and `$interrupt()` methods now send the signal to the
   child’s whole process group by default on Unix. This matches the
   behavior of `$kill()`. A new `group` argument (default `TRUE`) can be
