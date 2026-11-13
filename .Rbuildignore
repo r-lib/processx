@@ -35,5 +35,6 @@
 ^[\.]?air\.toml$
 ^\.vscode$
 ^[.]dev$
+^[.]cache$
 ^[.]covrignore$
 ^docs$

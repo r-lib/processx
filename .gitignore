@@ -25,3 +25,4 @@
 /.dev
 /vignettes/**/*.html
 /docs
+/.cache
