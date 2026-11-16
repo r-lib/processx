@@ -1,4 +1,4 @@
-name: R-CMD-check
+name: R-CMD-check.yaml
 
 on:
   push:
@@ -28,7 +28,7 @@ jobs:
           - {os: ubuntu-latest,  r: 'oldrel-4'}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/setup-rig@v1
         with:
