@@ -38,3 +38,8 @@
 ^[.]cache$
 ^[.]covrignore$
 ^docs$
+^rproj\.toml$
+^rproj\.lock$
+^\.rvenv$
+^\.rvenvlib$
+^\.Renviron$

@@ -34,7 +34,8 @@ jobs:
         with:
           rig-version: nightly
           r-version: ${{ matrix.config.r }}
-      - run: rig pkg install --no-install-self --dev . rcmdcheck
+      - run: rig proj lock --upgrade
+      - run: rig proj sync --no-install-self --group check
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
