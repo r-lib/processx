@@ -19,13 +19,13 @@ jobs:
           - {os: windows-latest, r: 'devel'   }
           - {os: windows-latest, r: 'next'    }
           - {os: windows-latest, r: 'release' }
-          - {os: windows-latest, r: 'oldrel-4'}
+          - {os: windows-latest, r: 'oldrel/4'}
           - {os: ubuntu-latest,  r: 'devel'   }
           - {os: ubuntu-latest,  r: 'release' }
-          - {os: ubuntu-latest,  r: 'oldrel-1'}
-          - {os: ubuntu-latest,  r: 'oldrel-2'}
-          - {os: ubuntu-latest,  r: 'oldrel-3'}
-          - {os: ubuntu-latest,  r: 'oldrel-4'}
+          - {os: ubuntu-latest,  r: 'oldrel/1'}
+          - {os: ubuntu-latest,  r: 'oldrel/2'}
+          - {os: ubuntu-latest,  r: 'oldrel/3'}
+          - {os: ubuntu-latest,  r: 'oldrel/4'}
 
     steps:
       - uses: actions/checkout@v5
