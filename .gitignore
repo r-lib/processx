@@ -26,3 +26,13 @@
 /vignettes/**/*.html
 /docs
 /.cache
+
+# rig rvenv start
+# Everything in .rvenv is machine-specific output of `rig proj sync`; it can
+# be deleted and rebuilt at any time. The committed rvenv shim package lives
+# in .rvenvlib instead.
+/rproj.lock
+/.rvenv/
+/.rvenvlib
+/.Renviron
+# rig rvenv end

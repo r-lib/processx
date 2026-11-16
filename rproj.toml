@@ -1,0 +1,114 @@
+[project]
+name = "processx"
+version = "3.9.0.9000"
+type = "package"
+title = "Execute and Control System Processes"
+description = '''
+Tools to run system processes in the background.  It can
+check if a background process is running; wait on a background process
+to finish; get the exit status of finished processes; kill background
+processes. It can read the standard output and error of the processes,
+using non-blocking connections. 'processx' can poll a process for
+standard output or error, with a timeout. It can also poll several
+processes at once.'''
+license = "MIT + file LICENSE"
+
+[[project.authors]]
+given = "Gábor"
+family = "Csárdi"
+email = "csardi.gabor@gmail.com"
+roles = [
+    "aut",
+    "cre",
+    "cph",
+]
+orcid = "0000-0001-7098-9676"
+
+[[project.authors]]
+given = "Winston"
+family = "Chang"
+roles = ["aut"]
+
+[[project.authors]]
+given = "Posit Software, PBC"
+roles = [
+    "cph",
+    "fnd",
+]
+ror = "03wc8by49"
+
+[[project.authors]]
+given = "Ascent Digital Services"
+roles = [
+    "cph",
+    "fnd",
+]
+
+[project.urls]
+bugreports = "https://github.com/r-lib/processx/issues"
+homepage = "https://processx.r-lib.org"
+source = "https://github.com/r-lib/processx"
+
+[dependencies]
+R = ">= 3.4.0"
+R6 = "*"
+ps = ">= 1.9.3"
+utils = "*"
+
+[dependency-groups.dev]
+callr = ">= 3.7.3"
+cli = ">= 3.3.0"
+codetools = "*"
+covr = "*"
+curl = "*"
+debugme = "*"
+parallel = "*"
+pkgload = "*"
+rlang = ">= 1.0.2"
+testthat = ">= 3.0.0"
+webfakes = "*"
+withr = "*"
+
+[dependency-groups.website]
+pkgdown = "*"
+tidytemplate = { git = "https://github.com/tidyverse/tidytemplate.git", ref = "tidyverse/tidytemplate" }
+
+[dependency-groups.check]
+rcmdcheck = "*"
+
+[dependency-groups.coverage]
+uncovr = { git = "https://github.com/gaborcsardi/uncovr.git", ref = "gaborcsardi/uncovr" }
+
+[config.roxygen2]
+version = "8.0.0"
+
+[config.testthat]
+edition = 3
+
+[config.usethis]
+last-upkeep = "2025-04-25"
+
+[description]
+Encoding = "UTF-8"
+Roxygen = "list(markdown = TRUE)"
+
+[tool.rig]
+description-field-order = [
+    "Package",
+    "Title",
+    "Version",
+    "Authors@R",
+    "Description",
+    "License",
+    "URL",
+    "BugReports",
+    "Depends",
+    "Imports",
+    "Suggests",
+    "Config/Needs/website",
+    "Config/testthat/edition",
+    "Config/usethis/last-upkeep",
+    "Encoding",
+    "Roxygen",
+    "Config/roxygen2/version",
+]
