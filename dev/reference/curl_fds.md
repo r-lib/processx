@@ -13,7 +13,7 @@ curl_fds(fds)
 - fds:
 
   A list of file descriptors, as returned by
-  [`curl::multi_fdset()`](https://jeroen.r-universe.dev/curl/reference/multi.html).
+  [`curl::multi_fdset()`](https://rdrr.io/pkg/curl/man/multi.html).
 
 ## Value
 
