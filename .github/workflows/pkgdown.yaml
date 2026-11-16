@@ -28,6 +28,8 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v2
 
       - uses: r-lib/setup-rig@v1
+        with:
+          rig-version: nightly
       - run: rig pkg install --no-install-self --dev . pkgdown tidyverse/tidytemplate
 
       - name: Build site
