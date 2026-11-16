@@ -1,4 +1,4 @@
-name: R-CMD-check
+name: R-CMD-check.yaml
 
 on:
   push:
@@ -19,16 +19,16 @@ jobs:
           - {os: windows-latest, r: 'devel'   }
           - {os: windows-latest, r: 'next'    }
           - {os: windows-latest, r: 'release' }
-          - {os: windows-latest, r: 'oldrel/4'}
+          - {os: windows-latest, r: 'oldrel-4'}
           - {os: ubuntu-latest,  r: 'devel'   }
           - {os: ubuntu-latest,  r: 'release' }
-          - {os: ubuntu-latest,  r: 'oldrel/1'}
-          - {os: ubuntu-latest,  r: 'oldrel/2'}
-          - {os: ubuntu-latest,  r: 'oldrel/3'}
-          - {os: ubuntu-latest,  r: 'oldrel/4'}
+          - {os: ubuntu-latest,  r: 'oldrel-1'}
+          - {os: ubuntu-latest,  r: 'oldrel-2'}
+          - {os: ubuntu-latest,  r: 'oldrel-3'}
+          - {os: ubuntu-latest,  r: 'oldrel-4'}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/setup-rig@v1
         with:
