@@ -30,7 +30,6 @@ jobs:
       - uses: r-lib/setup-rig@v1
         with:
           rig-version: nightly
-      - run: rig proj lock --upgrade
       - run: rig proj sync --no-install-self --group website
 
       - name: Build site
