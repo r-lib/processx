@@ -11,31 +11,31 @@ test_that("curl fds", {
   url2 <- httpbin$url("/delay/1")
   curl::multi_add(
     pool = pool,
-    curl::new_handle(url = url1, http_version = 2),
+    curl::new_handle(url = url1),
     done = done,
     fail = fail
   )
   curl::multi_add(
     pool = pool,
-    curl::new_handle(url = url1, http_version = 2),
+    curl::new_handle(url = url1),
     done = done,
     fail = fail
   )
   curl::multi_add(
     pool = pool,
-    curl::new_handle(url = url2, http_version = 2),
+    curl::new_handle(url = url2),
     done = done,
     fail = fail
   )
   curl::multi_add(
     pool = pool,
-    curl::new_handle(url = url1, http_version = 2),
+    curl::new_handle(url = url1),
     done = done,
     fail = fail
   )
   curl::multi_add(
     pool = pool,
-    curl::new_handle(url = url1, http_version = 2),
+    curl::new_handle(url = url1),
     done = done,
     fail = fail
   )
@@ -62,7 +62,7 @@ test_that("curl fds before others", {
 
   pool <- curl::new_pool()
   url <- httpbin$url("/delay/1")
-  curl::multi_add(pool = pool, curl::new_handle(url = url, http_version = 2))
+  curl::multi_add(pool = pool, curl::new_handle(url = url))
 
   timeout <- Sys.time() + 5
   repeat {
@@ -94,13 +94,29 @@ test_that("process fd before curl fd", {
 
   pool <- curl::new_pool()
   url <- httpbin$url("/delay/10")
-  curl::multi_add(pool = pool, curl::new_handle(url = url, http_version = 2))
+  # The /delay endpoint sends the response headers right away, and then
+  # it waits before sending the body. We need to wait until curl has
+  # read the headers, otherwise they might arrive during the poll()
+  # below and the curl fd would have an event.
+  got_headers <- FALSE
+  handle <- curl::new_handle(url = url)
+  curl::handle_setopt(
+    handle,
+    verbose = TRUE,
+    debugfunction = function(type, data) {
+      # type 1 is an incoming header line, an empty line ends the headers
+      if (type == 1 && identical(data, as.raw(c(0x0d, 0x0a)))) {
+        got_headers <<- TRUE
+      }
+    }
+  )
+  curl::multi_add(pool = pool, handle)
 
   timeout <- Sys.time() + 5
   repeat {
     state <- curl::multi_run(timeout = 1 / 10000, pool = pool, poll = TRUE)
     fds <- curl::multi_fdset(pool = pool)
-    if (length(fds$reads) > 0 && length(fds$writes) == 0) {
+    if (got_headers && length(fds$reads) > 0 && length(fds$writes) == 0) {
       break
     }
     if (Sys.time() >= timeout) break
