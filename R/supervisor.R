@@ -42,14 +42,18 @@ supervisor_kill2 <- function(s = supervisor_info) {
     write_lines_named_pipe(s$stdin, "kill")
   }
 
+  supervisor_close_pipes(s)
+
+  s$pid <- NULL
+}
+
+supervisor_close_pipes <- function(s = supervisor_info) {
   if (!is.null(s$stdin) && is_pipe_open(s$stdin)) {
     close_named_pipe(s$stdin)
   }
   if (!is.null(s$stdout) && is_pipe_open(s$stdout)) {
     close_named_pipe(s$stdout)
   }
-
-  s$pid <- NULL
 }
 
 
@@ -57,6 +61,9 @@ supervisor_reset <- function() {
   if (supervisor_running()) {
     supervisor_kill()
   }
+  # The pipes might be open even if the supervisor is not running, e.g.
+  # if it failed to start.
+  supervisor_close_pipes()
 
   supervisor_info$pid <- NULL
   supervisor_info$stdin <- NULL
@@ -138,6 +145,7 @@ supervisor_start <- function() {
   # Two ways of reaching this: if process has died, or if it hasn't emitted
   # "Ready" after 5 seconds.
   if (!ready) {
+    supervisor_close_pipes()
     throw(new_error("processx supervisor was not ready after 5 seconds."))
   }
 
