@@ -165,22 +165,23 @@ test_that("starts_with", {
 })
 
 test_that("is_interactive", {
-  withr::local_options(rlib_interactive = TRUE)
-  expect_true(is_interactive())
-
-  withr::local_options(rlib_interactive = FALSE)
-  expect_false(is_interactive())
-
-  withr::local_options(rlib_interactive = NULL, knitr.in.progress = TRUE)
-  expect_false(is_interactive())
-
+  # Only set these options while calling is_interactive(). Setting
+  # `knitr.in.progress` while testthat runs its own code can make other
+  # packages load knitr, which fails with a cyclic namespace error.
+  with_opts <- function(...) {
+    withr::with_options(list(...), is_interactive())
+  }
   withr::local_options(
+    rlib_interactive = NULL,
     knitr.in.progress = NULL,
-    rstudio.notebook.executing = TRUE
+    rstudio.notebook.executing = NULL
   )
-  expect_false(is_interactive())
 
-  withr::local_options(rstudio.notebook.executing = NULL)
+  expect_true(with_opts(rlib_interactive = TRUE))
+  expect_false(with_opts(rlib_interactive = FALSE))
+  expect_false(with_opts(knitr.in.progress = TRUE))
+  expect_false(with_opts(rstudio.notebook.executing = TRUE))
+
   withr::local_envvar(TESTTHAT = "true")
   expect_false(is_interactive())
 

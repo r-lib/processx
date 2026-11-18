@@ -107,7 +107,8 @@ test_that("conn_create_fd()", {
   con <- conn_create_fd(fd, close = FALSE)
   on.exit(close(con), add = TRUE)
   expect_true(is_connection(con))
-  expect_equal(conn_get_fileno(con), fd)
+  # On Windows conn_get_fileno() creates a new CRT fd for the HANDLE
+  if (!is_windows()) expect_equal(conn_get_fileno(con), fd)
   expect_snapshot(error = TRUE, {
     conn_create_fd("foo")
     conn_create_fd(0L, encoding = 1)
@@ -122,8 +123,12 @@ test_that("conn_read_bytes()", {
 
   con <- conn_create_file(tmp)
   on.exit(close(con), add = TRUE)
-  expect_equal(conn_read_bytes(con, 3), charToRaw("foo"))
-  expect_equal(processx_conn_read_bytes(con), charToRaw("bar"))
+  # Reading a file connection is asynchronous on Windows, so the first
+  # read may return nothing
+  if (!is_windows()) {
+    expect_equal(conn_read_bytes(con, 3), charToRaw("foo"))
+    expect_equal(processx_conn_read_bytes(con), charToRaw("bar"))
+  }
   expect_snapshot(error = TRUE, {
     processx_conn_read_bytes("foo")
     processx_conn_read_bytes(con, "x")
@@ -131,6 +136,9 @@ test_that("conn_read_bytes()", {
 })
 
 test_that("conn_create_file() read/write defaults", {
+  # Reading a file connection is asynchronous on Windows, so the first
+  # read may return nothing
+  skip_on_os("windows")
   tmp <- tempfile()
   on.exit(unlink(tmp), add = TRUE)
 
