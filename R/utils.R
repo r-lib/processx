@@ -250,7 +250,7 @@ str_trim <- function(x) {
   sub("^\\s+", "", sub("\\s+$", "", x))
 }
 
-new_not_implemented_error <- function(message, call) {
+new_not_implemented_error <- function(message, call = TRUE) {
   add_class(
     new_error(message, call. = call),
     c("not_implemented_error", "not_implemented")

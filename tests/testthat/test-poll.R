@@ -118,3 +118,11 @@ test_that("multiple polls", {
 
   expect_identical(out, c("foo", "bar"))
 })
+
+test_that("polling an empty list", {
+  expect_equal(poll(list(), 0), structure(list(), names = NULL))
+  expect_equal(
+    poll(structure(list(), names = character()), 0),
+    structure(list(), names = character())
+  )
+})

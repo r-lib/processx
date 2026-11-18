@@ -1,1 +1,3 @@
 R/client-lib.R
+R/aaa-import-standalone-rstudio-detect.R
+R/standalone-errors.R

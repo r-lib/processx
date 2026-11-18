@@ -95,3 +95,60 @@ test_that("reading and writing to extra connection", {
   close(pipe1[[2]])
   close(pipe2[[1]])
 })
+
+test_that("conn_create_fd()", {
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+  writeLines("foo", tmp)
+  fcon <- conn_create_file(tmp)
+  on.exit(close(fcon), add = TRUE)
+  fd <- conn_get_fileno(fcon)
+
+  con <- conn_create_fd(fd, close = FALSE)
+  on.exit(close(con), add = TRUE)
+  expect_true(is_connection(con))
+  expect_equal(conn_get_fileno(con), fd)
+  expect_snapshot(error = TRUE, {
+    conn_create_fd("foo")
+    conn_create_fd(0L, encoding = 1)
+    conn_create_fd(0L, close = NA)
+  })
+})
+
+test_that("conn_read_bytes()", {
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+  writeBin(charToRaw("foobar"), tmp)
+
+  con <- conn_create_file(tmp)
+  on.exit(close(con), add = TRUE)
+  expect_equal(conn_read_bytes(con, 3), charToRaw("foo"))
+  expect_equal(processx_conn_read_bytes(con), charToRaw("bar"))
+  expect_snapshot(error = TRUE, {
+    processx_conn_read_bytes("foo")
+    processx_conn_read_bytes(con, "x")
+  })
+})
+
+test_that("conn_create_file() read/write defaults", {
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+
+  con <- conn_create_file(tmp, write = TRUE)
+  conn_write(con, "foo")
+  close(con)
+
+  con2 <- conn_create_file(tmp, read = TRUE)
+  on.exit(close(con2), add = TRUE)
+  expect_equal(conn_read_chars(con2), "foo")
+})
+
+test_that("conn_disable_inheritance()", {
+  expect_silent(conn_disable_inheritance())
+})
+
+test_that("is_valid_fd()", {
+  expect_true(is_valid_fd(0L))
+  expect_false(is_valid_fd(9999L))
+  expect_snapshot(error = TRUE, is_valid_fd("foo"))
+})

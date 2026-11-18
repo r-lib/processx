@@ -244,3 +244,62 @@ test_that("same NULL, for completeness", {
   expect_snapshot(error = TRUE, p$read_all_output_lines())
   expect_snapshot(error = TRUE, p$read_all_error_lines())
 })
+
+test_that("errors if no stdin pipe or no poll connection", {
+  px <- get_tool("px")
+  p <- process$new(px, c("return", "0"), poll_connection = FALSE)
+  on.exit(p$kill(), add = TRUE)
+  expect_snapshot(error = TRUE, {
+    p$get_input_connection()
+    p$get_poll_connection()
+  })
+  p$wait()
+})
+
+test_that("read_output() and read_error() with binary encoding", {
+  px <- get_tool("px")
+  p <- process$new(
+    px,
+    c("out", "foo", "err", "bar"),
+    stdout = "|",
+    stderr = "|",
+    encoding = "binary"
+  )
+  on.exit(p$kill(), add = TRUE)
+  p$wait()
+
+  out <- raw()
+  while (p$is_incomplete_output()) {
+    p$poll_io(1000)
+    out <- c(out, p$read_output())
+  }
+  err <- raw()
+  while (p$is_incomplete_error()) {
+    p$poll_io(1000)
+    err <- c(err, p$read_error())
+  }
+  expect_equal(out, charToRaw("foo"))
+  expect_equal(err, charToRaw("bar"))
+})
+
+test_that("read_all_error() waits for output", {
+  px <- get_tool("px")
+  p <- process$new(
+    px,
+    c("sleep", "0.2", "errln", "foo"),
+    stderr = "|"
+  )
+  on.exit(p$kill(), add = TRUE)
+  expect_equal(str_trim(p$read_all_error()), "foo")
+})
+
+test_that("get_input_file()", {
+  px <- get_tool("px")
+  tmp <- tempfile()
+  on.exit(unlink(tmp), add = TRUE)
+  writeLines("foo", tmp)
+  p <- process$new(px, c("cat", "<stdin>"), stdin = tmp, stdout = "|")
+  on.exit(p$kill(), add = TRUE)
+  expect_equal(normalizePath(p$get_input_file()), normalizePath(tmp))
+  expect_equal(p$read_all_output_lines(), "foo")
+})

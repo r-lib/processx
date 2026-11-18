@@ -258,3 +258,117 @@ test_that("px pipeline stdout to file", {
   expect_equal(readLines(tmp), c("hello", "world"))
   expect_equal(pl$get_exit_statuses(), list(0L, 0L))
 })
+
+last_proc <- function(pl) {
+  procs <- pl$get_processes()
+  procs[[length(procs)]]
+}
+
+test_that("pipeline input validation", {
+  expect_snapshot(error = TRUE, {
+    pipeline$new(list())
+    pipeline$new("ls")
+    pipeline$new(list("ls", character()))
+    pipeline$new(list("ls", 1))
+  })
+})
+
+test_that("px pipeline read_output(), read_output_lines(), poll_io()", {
+  skip_on_cran()
+  px <- get_tool("px")
+
+  pl <- pipeline$new(
+    list(c(px, "outln", "foo"), c(px, "cat", "<stdin>")),
+    stdout = "|"
+  )
+  on.exit(pl$kill(), add = TRUE)
+
+  expect_equal(pl$poll_io(5000)[["output"]], "ready")
+  out <- pl$read_output_lines()
+  while (last_proc(pl)$is_incomplete_output()) {
+    pl$poll_io(5000)
+    out <- c(out, pl$read_output_lines())
+  }
+  expect_equal(out, "foo")
+  pl$wait()
+
+  pl2 <- pipeline$new(
+    list(c(px, "outln", "bar"), c(px, "cat", "<stdin>")),
+    stdout = "|"
+  )
+  on.exit(pl2$kill(), add = TRUE)
+  out <- ""
+  while (last_proc(pl2)$is_incomplete_output()) {
+    pl2$poll_io(5000)
+    out <- paste0(out, pl2$read_output())
+  }
+  expect_equal(trimws(out), "bar")
+  pl2$wait()
+})
+
+test_that("px pipeline stderr of the last process", {
+  skip_on_cran()
+  px <- get_tool("px")
+
+  pl <- pipeline$new(
+    list(c(px, "outln", "foo"), c(px, "errln", "oops", "cat", "<stdin>")),
+    stdout = "|",
+    stderr = "|"
+  )
+  on.exit(pl$kill(), add = TRUE)
+  expect_equal(pl$read_all_error_lines(), "oops")
+  pl$wait()
+
+  pl2 <- pipeline$new(
+    list(c(px, "outln", "foo"), c(px, "errln", "oops2", "cat", "<stdin>")),
+    stdout = "|",
+    stderr = "|"
+  )
+  on.exit(pl2$kill(), add = TRUE)
+  expect_equal(trimws(pl2$read_all_error()), "oops2")
+  pl2$wait()
+
+  pl3 <- pipeline$new(
+    list(c(px, "outln", "foo"), c(px, "errln", "oops3", "cat", "<stdin>")),
+    stdout = "|",
+    stderr = "|"
+  )
+  on.exit(pl3$kill(), add = TRUE)
+  err <- character()
+  while (last_proc(pl3)$is_incomplete_error()) {
+    pl3$poll_io(5000)
+    err <- c(err, pl3$read_error_lines())
+  }
+  expect_equal(err, "oops3")
+  pl3$wait()
+
+  pl4 <- pipeline$new(
+    list(c(px, "outln", "foo"), c(px, "errln", "oops4", "cat", "<stdin>")),
+    stdout = "|",
+    stderr = "|"
+  )
+  on.exit(pl4$kill(), add = TRUE)
+  err <- ""
+  while (last_proc(pl4)$is_incomplete_error()) {
+    pl4$poll_io(5000)
+    err <- paste0(err, pl4$read_error())
+  }
+  expect_equal(trimws(err), "oops4")
+  pl4$wait()
+})
+
+test_that("px pipeline kill_tree()", {
+  skip_on_cran()
+  skip_if_no_ps()
+  px <- get_tool("px")
+
+  pl <- pipeline$new(
+    list(c(px, "sleep", "5"), c(px, "cat", "<stdin>")),
+    stdout = "|"
+  )
+  on.exit(pl$kill(), add = TRUE)
+  expect_true(pl$is_alive())
+  expect_identical(pl$kill_tree(), pl)
+  pl$wait(5000)
+  expect_false(pl$is_alive())
+})

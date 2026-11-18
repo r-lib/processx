@@ -143,3 +143,64 @@ test_that("base64", {
     expect_identical(mtcars[1:i, ], mtcars2)
   }
 })
+
+test_that("vcapply", {
+  expect_equal(vcapply(1:3, as.character), c("1", "2", "3"))
+  expect_equal(vcapply(character(), identity, USE.NAMES = FALSE), character())
+})
+
+test_that("strrep", {
+  expect_equal(strrep(character(), 3), character())
+  expect_equal(strrep("ab", 3), "ababab")
+  expect_equal(strrep(c("a", "b"), c(1, 2)), c("a", "bb"))
+  expect_equal(strrep(c("a", NA), 2), c("aa", NA))
+  expect_equal(strrep("a", NA), NA_character_)
+  expect_equal(strrep("a", 0), "")
+})
+
+test_that("starts_with", {
+  expect_true(starts_with("foobar", "foo"))
+  expect_false(starts_with("foobar", "bar"))
+  expect_equal(starts_with(c("foo", "bar"), "fo"), c(TRUE, FALSE))
+})
+
+test_that("is_interactive", {
+  withr::local_options(rlib_interactive = TRUE)
+  expect_true(is_interactive())
+
+  withr::local_options(rlib_interactive = FALSE)
+  expect_false(is_interactive())
+
+  withr::local_options(rlib_interactive = NULL, knitr.in.progress = TRUE)
+  expect_false(is_interactive())
+
+  withr::local_options(
+    knitr.in.progress = NULL,
+    rstudio.notebook.executing = TRUE
+  )
+  expect_false(is_interactive())
+
+  withr::local_options(rstudio.notebook.executing = NULL)
+  withr::local_envvar(TESTTHAT = "true")
+  expect_false(is_interactive())
+
+  withr::local_envvar(TESTTHAT = NA)
+  expect_equal(is_interactive(), interactive())
+})
+
+test_that("tty_echo_off(), tty_echo_on()", {
+  skip_on_os("windows")
+  skip_on_cran()
+  if (isatty(stdout())) skip("stdout is a terminal")
+  expect_error(tty_echo_off(), "Cannot turn terminal echo off")
+  expect_error(tty_echo_on(), "Cannot turn terminal echo on")
+})
+
+test_that("disable_crash_dialog() in a subprocess", {
+  skip_on_cran()
+  res <- callr::r(function() {
+    asNamespace("processx")$disable_crash_dialog()
+    TRUE
+  })
+  expect_true(res)
+})

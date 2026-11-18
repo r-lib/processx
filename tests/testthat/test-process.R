@@ -441,3 +441,42 @@ test_that("can kill with SIGTERM when ignored", {
   Sys.sleep(0.05)
   expect_true(p$is_alive())
 })
+
+test_that("cleanup_tree = TRUE overrides cleanup = FALSE", {
+  px <- get_tool("px")
+  expect_snapshot({
+    p <- process$new(px, c("return", "0"), cleanup = FALSE, cleanup_tree = TRUE)
+  })
+  p$wait()
+})
+
+test_that("echo_cmd", {
+  px <- get_tool("px")
+  out <- capture.output(
+    p <- process$new(px, c("return", "0"), echo_cmd = TRUE)
+  )
+  p$wait()
+  expect_match(out, "return 0", fixed = TRUE, all = FALSE)
+})
+
+test_that("linux_pdeathsig with a signal number", {
+  px <- get_tool("px")
+  if (is_linux()) {
+    p <- process$new(px, c("return", "0"), linux_pdeathsig = 9)
+    p$wait()
+    expect_equal(p$get_exit_status(), 0L)
+  } else {
+    expect_warning(
+      process$new(px, c("return", "0"), linux_pdeathsig = 9)$wait(),
+      "ignored on non-Linux"
+    )
+  }
+})
+
+test_that("kill_tree() errors if ps does not support the platform", {
+  px <- get_tool("px")
+  p <- process$new(px, c("sleep", "5"))
+  on.exit(p$kill(), add = TRUE)
+  local_mocked_bindings(ps_is_supported = function() FALSE, .package = "ps")
+  expect_snapshot(error = TRUE, p$kill_tree())
+})

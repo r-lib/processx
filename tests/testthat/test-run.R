@@ -337,3 +337,65 @@ test_that("pty=TRUE with file stdin feeds content to the process", {
   expect_match(res$stdout, "world")
   expect_null(res$stderr)
 })
+
+test_that("condition on interrupt, binary", {
+  skip_if_no_ps()
+  skip_on_cran()
+  if (is_windows() && Sys.getenv("_R_CHECK_PACKAGE_NAME_", "") != "") {
+    skip("Fails in Windows R CMD check")
+  }
+
+  px <- get_tool("px")
+  cnd <- tryCatch(
+    interrupt_me(
+      run(
+        px,
+        c("outln", "out", "errln", "oops", "errflush", "sleep", 3),
+        encoding = "binary"
+      ),
+      0.5
+    ),
+    error = function(c) c,
+    interrupt = function(c) c
+  )
+
+  expect_s3_class(cnd, "system_command_interrupt")
+  expect_equal(str_trim(rawToChar(cnd$stderr)), "oops")
+})
+
+test_that("cleanup_tree = TRUE", {
+  px <- get_tool("px")
+  res <- run(px, c("outln", "foo"), cleanup_tree = TRUE)
+  expect_equal(str_trim(res$stdout), "foo")
+})
+
+test_that("stdout_line_callback with incomplete last line", {
+  px <- get_tool("px")
+  lines <- character()
+  res <- run(
+    px,
+    c("out", "foo\nbar", "sleep", "0.2", "outln", "baz"),
+    stdout_line_callback = function(x, proc) lines <<- c(lines, x)
+  )
+  expect_equal(lines, c("foo", "barbaz"))
+})
+
+test_that("print.system_command_error", {
+  px <- get_tool("px")
+  err <- tryCatch(
+    run(px, c("errln", "oops", "return", "2")),
+    error = function(e) e
+  )
+  expect_s3_class(err, "system_command_error")
+  out <- capture.output(print(err))
+  expect_match(out, "Exit status: 2", fixed = TRUE, all = FALSE)
+  expect_match(out, "oops", fixed = TRUE, all = FALSE)
+
+  err2 <- tryCatch(
+    capture.output(run(px, c("errln", "oops", "return", "2"), echo = TRUE)),
+    error = function(e) e
+  )
+  expect_s3_class(err2, "system_command_error")
+  out2 <- capture.output(print(err2))
+  expect_match(out2, "stdout & stderr: <printed>", fixed = TRUE, all = FALSE)
+})

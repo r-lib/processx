@@ -139,3 +139,14 @@ test_that("read_output_lines() fails for pty", {
   }
   expect_equal(p$read_output(), "foobar\r\n")
 })
+
+test_that("pty = TRUE argument errors", {
+  skip_on_os("windows")
+  px <- get_tool("px")
+  expect_snapshot(error = TRUE, {
+    process$new(px, c("return", "0"), pty = TRUE, stdin = "|")
+    process$new(px, c("return", "0"), pty = TRUE, stdout = "|")
+    process$new(px, c("return", "0"), pty = TRUE, stderr = "|")
+    process$new(px, c("return", "0"), pty = TRUE, pty_options = list(echo = NULL))
+  })
+})

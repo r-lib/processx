@@ -26,13 +26,17 @@
 /vignettes/**/*.html
 /docs
 /.cache
+# do not commit rig's activation files
+/.Renviron
+/.rvenvlib
 
 # rig rvenv start
+# rig: commit rproj.lock: no (R package)
 # Everything in .rvenv is machine-specific output of `rig proj sync`; it can
-# be deleted and rebuilt at any time. The committed rvenv shim package lives
-# in .rvenvlib instead.
-/rproj.lock
+# be deleted and rebuilt at any time.
 /.rvenv/
-/.rvenvlib
-/.Renviron
+# Project environment variables that must not be committed, e.g. secrets.
+/.Renviron.rig
+# Not committed for this R package, run `rig proj sync` after cloning.
+/rproj.lock
 # rig rvenv end

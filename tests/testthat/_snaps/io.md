@@ -71,3 +71,16 @@
       Error in `process_get_error_connection()`:
       ! ! stderr is not a pipe.
 
+# errors if no stdin pipe or no poll connection
+
+    Code
+      p$get_input_connection()
+    Condition
+      Error in `process_get_input_connection()`:
+      ! ! stdin is not a pipe.
+    Code
+      p$get_poll_connection()
+    Condition
+      Error in `process_get_poll_connection()`:
+      ! ! No poll connection
+
