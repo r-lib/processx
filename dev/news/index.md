@@ -2,6 +2,10 @@
 
 ## processx (development version)
 
+- `$kill_tree()` now throws the intended “not supported on this
+  platform” error on platforms that the ps package does not support,
+  instead of an internal error about a missing argument.
+
 - The supervisor process no longer leaks a process handle every time it
   checks whether a process is still running on Windows
   ([\#421](https://github.com/r-lib/processx/issues/421)).
