@@ -1,5 +1,39 @@
 ## This package
 
+processx runs and controls system processes from R. It is a low-level
+package that many other r-lib packages (callr, pak, etc.) build on.
+
+Main user-facing API:
+
+- `run()` (`R/run.R`): run a command, wait for it, and collect its
+  output. Supports timeouts, callbacks, spinners, and errors on non-zero
+  exit status.
+- `process` (`R/process.R`, `R/initialize.R`, `R/process-helpers.R`): an R6
+  class for background processes. Start, kill (including the whole process
+  tree), wait, get the exit status, read and write stdin/stdout/stderr
+  through non-blocking connections, use a pseudo-terminal (`pty = TRUE`),
+  and get a `ps::ps_handle()`.
+- `poll()` (`R/poll.R`): poll processes and connections (including curl
+  handles via `curl_fds()`) with a timeout.
+- `conn_*()` functions (`R/connections.R`): processx connections for pipes,
+  files, FIFOs, Unix sockets, and file descriptors.
+- `pipeline()` (`R/pipeline.R`), supervisor (`R/supervisor.R`), and named
+  pipes (`R/named_pipe.R`).
+
+Most of the work happens in C:
+
+- `src/unix/` and `src/win/`: platform specific process creation, I/O,
+  SIGCHLD handling (Unix), and ConPTY / overlapped I/O (Windows).
+- `src/processx-connection.c`, `src/poll.c`: the connection and polling
+  layer, shared between platforms.
+- `src/client.c`: a small separate shared library (`R/client-lib.R`) that
+  child R processes can load, e.g. by callr, to set up their standard
+  streams.
+- `src/supervisor/`: a standalone supervisor program that kills child
+  processes if R exits.
+- `src/tools/`: helper programs used in the tests (`px`, `sock`,
+  `interrupt`).
+
 <!-- Insert package-specific content here. use_tidy_agents() will preserve this section when updating the rest of the file. -->
 
 ## Package development
