@@ -452,6 +452,9 @@ test_that("cleanup_tree = TRUE overrides cleanup = FALSE", {
 
 test_that("echo_cmd", {
   px <- get_tool("px")
+  # long paths on CI would wrap the output otherwise
+  old <- options(width = 10000)
+  on.exit(options(old), add = TRUE)
   out <- capture.output(
     p <- process$new(px, c("return", "0"), echo_cmd = TRUE)
   )

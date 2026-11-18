@@ -219,8 +219,42 @@ is_ubsan <- function() {
   .Call(c_is_ubsan_)
 }
 
+# Under valgrind, /proc/<pid>/maps lists files like
+# ".../valgrind/vgpreload_memcheck-amd64-linux.so".
+#
+# testthat runs the tests in parallel worker processes. Valgrind only
+# runs the main R process (no --trace-children), so the workers are not
+# under valgrind themselves, but they still need to skip the tests that are
+# too slow or flaky under valgrind. So we check the current process and its
+# parent processes as well.
 is_valgrind <- function() {
-  .Call(c_is_valgrind_)
+  if (!is_linux()) {
+    return(FALSE)
+  }
+  pid <- Sys.getpid()
+  for (i in 1:20) {
+    maps <- tryCatch(
+      readLines(sprintf("/proc/%d/maps", pid), warn = FALSE),
+      error = function(e) character()
+    )
+    if (any(grepl("/valgrind/", maps, fixed = TRUE))) {
+      return(TRUE)
+    }
+    stat <- tryCatch(
+      readLines(sprintf("/proc/%d/stat", pid), warn = FALSE),
+      error = function(e) character()
+    )
+    if (length(stat) == 0) {
+      return(FALSE)
+    }
+    # the command name may contain spaces, so parse after the last ')'
+    fields <- strsplit(sub("^.*\\)\\s*", "", stat[1]), " ")[[1]]
+    pid <- as.integer(fields[2])
+    if (is.na(pid) || pid <= 1) {
+      return(FALSE)
+    }
+  }
+  FALSE
 }
 
 is_san <- function() {
