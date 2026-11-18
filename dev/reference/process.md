@@ -472,13 +472,17 @@ except if they have created a new process group (on Unix), or job object
 
 #### Usage
 
-    process$kill(grace = 0.1, close_connections = TRUE)
+    process$kill(grace = 0, close_connections = TRUE)
 
 #### Arguments
 
 - `grace`:
 
-  Currently not used.
+  Grace period in seconds. For `$kill()` on Unix, if it is positive,
+  processx first sends `SIGTERM`, and sends `SIGKILL` if the process is
+  still alive after `grace` seconds. If it is zero (the default),
+  processx sends `SIGKILL` right away. Ignored on Windows and by
+  `$kill_tree()`.
 
 - `close_connections`:
 
@@ -502,13 +506,17 @@ processes (e.g. `"sleep"`, `"notepad.exe"`, `"Rterm.exe"`, etc.).
 
 #### Usage
 
-    process$kill_tree(grace = 0.1, close_connections = TRUE)
+    process$kill_tree(grace = 0, close_connections = TRUE)
 
 #### Arguments
 
 - `grace`:
 
-  Currently not used.
+  Grace period in seconds. For `$kill()` on Unix, if it is positive,
+  processx first sends `SIGTERM`, and sends `SIGKILL` if the process is
+  still alive after `grace` seconds. If it is zero (the default),
+  processx sends `SIGKILL` right away. Ignored on Windows and by
+  `$kill_tree()`.
 
 - `close_connections`:
 
@@ -1280,7 +1288,7 @@ p <- process$new("sleep", "2")
 p$is_alive()
 #> [1] TRUE
 p
-#> PROCESS 'sleep', running, pid 4434.
+#> PROCESS 'sleep', running, pid 4379.
 p$kill()
 #> [1] TRUE
 p$is_alive()

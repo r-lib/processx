@@ -29,9 +29,9 @@ meaningful when `stdin = "|"`).
 
 `$wait(timeout = -1)` — wait for all processes to finish.
 
-`$kill(grace = 0.1, close_connections = TRUE)` — kill all processes.
+`$kill(grace = 0, close_connections = TRUE)` — kill all processes.
 
-`$kill_tree(grace = 0.1, close_connections = TRUE)` — kill all process
+`$kill_tree(grace = 0, close_connections = TRUE)` — kill all process
 trees.
 
 `$is_alive()` — returns `TRUE` if any process is still running.
@@ -338,14 +338,16 @@ Kill all processes.
 
 #### Usage
 
-    pipeline$kill(grace = 0.1, close_connections = TRUE)
+    pipeline$kill(grace = 0, close_connections = TRUE)
 
 #### Arguments
 
 - `grace`:
 
-  Grace period in seconds before sending SIGKILL (Unix) or terminating
-  forcefully (Windows). Currently not used.
+  Grace period in seconds, passed to the `$kill()` method of each
+  process. See
+  [process](http://processx.r-lib.org/dev/reference/process.md) for
+  details.
 
 - `close_connections`:
 
@@ -359,14 +361,16 @@ Kill all process trees.
 
 #### Usage
 
-    pipeline$kill_tree(grace = 0.1, close_connections = TRUE)
+    pipeline$kill_tree(grace = 0, close_connections = TRUE)
 
 #### Arguments
 
 - `grace`:
 
-  Grace period in seconds before sending SIGKILL (Unix) or terminating
-  forcefully (Windows). Currently not used.
+  Grace period in seconds, passed to the `$kill()` method of each
+  process. See
+  [process](http://processx.r-lib.org/dev/reference/process.md) for
+  details.
 
 - `close_connections`:
 
