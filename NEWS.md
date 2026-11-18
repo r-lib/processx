@@ -14,9 +14,10 @@
   argument is ignored on Windows.
 
 * The `grace` argument of the `kill()` method is now active on Unix
-  platforms. processx first tries to kill with `SIGTERM` with a
-  timeout of `grace` seconds. After the timeout, `SIGKILL` is sent as
-  before.
+  platforms. If `grace` is positive, processx first tries to kill with
+  `SIGTERM` with a timeout of `grace` seconds. After the timeout,
+  `SIGKILL` is sent as before. The default of `grace` is now `0`, so
+  by default `kill()` still sends `SIGKILL` right away.
 
 * New `cleanup_grace` argument to `process$new()` and `run()`. When the
   process is cleaned up (on GC or on exit), processx first tries

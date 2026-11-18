@@ -35,8 +35,8 @@
 #' @param str String to write to the process stdin.
 #' @param sep Separator to add after `str`.
 #' @param timeout Timeout in milliseconds. -1 means no timeout.
-#' @param grace Grace period in seconds before sending SIGKILL (Unix) or
-#'   terminating forcefully (Windows). Currently not used.
+#' @param grace Grace period in seconds, passed to the `$kill()` method of
+#'   each process. See [process] for details.
 #' @param close_connections Whether to close connections after killing.
 #' @param ... Not used, for compatibility with the generic.
 #'
@@ -61,9 +61,9 @@
 #'
 #' `$wait(timeout = -1)` — wait for all processes to finish.
 #'
-#' `$kill(grace = 0.1, close_connections = TRUE)` — kill all processes.
+#' `$kill(grace = 0, close_connections = TRUE)` — kill all processes.
 #'
-#' `$kill_tree(grace = 0.1, close_connections = TRUE)` — kill all
+#' `$kill_tree(grace = 0, close_connections = TRUE)` — kill all
 #' process trees.
 #'
 #' `$is_alive()` — returns `TRUE` if any process is still running.
@@ -265,13 +265,13 @@ pipeline <- R6::R6Class(
     },
 
     #' @description Kill all processes.
-    kill = function(grace = 0.1, close_connections = TRUE) {
+    kill = function(grace = 0, close_connections = TRUE) {
       for (p in private$procs) p$kill(grace, close_connections)
       invisible(self)
     },
 
     #' @description Kill all process trees.
-    kill_tree = function(grace = 0.1, close_connections = TRUE) {
+    kill_tree = function(grace = 0, close_connections = TRUE) {
       for (p in private$procs) p$kill_tree(grace, close_connections)
       invisible(self)
     },

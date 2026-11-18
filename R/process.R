@@ -14,7 +14,11 @@ dummy_r6 <- function() R6::R6Class
 #' streams. The process id is then used to manage the process.
 #'
 #' @param n Number of characters or lines to read.
-#' @param grace Currently not used.
+#' @param grace Grace period in seconds. For `$kill()` on Unix, if it is
+#'   positive, processx first sends `SIGTERM`, and sends `SIGKILL` if the
+#'   process is still alive after `grace` seconds. If it is zero (the
+#'   default), processx sends `SIGKILL` right away. Ignored on Windows and
+#'   by `$kill_tree()`.
 #' @param close_connections Whether to close standard input, standard
 #'   output, standard error connections and the poll connection, after
 #'   killing the process.
@@ -325,7 +329,7 @@ process <- R6::R6Class(
     #' was terminated, and `FALSE` if it was not (because it was
     #' already finished/dead when `processx` tried to terminate it).
 
-    kill = function(grace = 0.1, close_connections = TRUE) {
+    kill = function(grace = 0, close_connections = TRUE) {
       process_kill(self, private, grace, close_connections)
     },
 
@@ -342,7 +346,7 @@ process <- R6::R6Class(
     #' were killed, the names are the names of the processes (e.g. `"sleep"`,
     #' `"notepad.exe"`, `"Rterm.exe"`, etc.).
 
-    kill_tree = function(grace = 0.1, close_connections = TRUE) {
+    kill_tree = function(grace = 0, close_connections = TRUE) {
       process_kill_tree(self, private, grace, close_connections)
     },
 

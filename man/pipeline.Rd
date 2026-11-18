@@ -33,9 +33,9 @@ last process (only meaningful when \code{stderr = "|"}).
 
 \verb{$wait(timeout = -1)} — wait for all processes to finish.
 
-\verb{$kill(grace = 0.1, close_connections = TRUE)} — kill all processes.
+\verb{$kill(grace = 0, close_connections = TRUE)} — kill all processes.
 
-\verb{$kill_tree(grace = 0.1, close_connections = TRUE)} — kill all
+\verb{$kill_tree(grace = 0, close_connections = TRUE)} — kill all
 process trees.
 
 \verb{$is_alive()} — returns \code{TRUE} if any process is still running.
@@ -344,14 +344,14 @@ collection.}
   Kill all processes.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{pipeline$kill(grace = 0.1, close_connections = TRUE)}
+    \preformatted{pipeline$kill(grace = 0, close_connections = TRUE)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{grace}}{Grace period in seconds before sending SIGKILL (Unix) or
-terminating forcefully (Windows). Currently not used.}
+      \item{\code{grace}}{Grace period in seconds, passed to the \verb{$kill()} method of
+each process. See \link{process} for details.}
       \item{\code{close_connections}}{Whether to close connections after killing.}
     }
     \if{html}{\out{</div>}}
@@ -365,14 +365,14 @@ terminating forcefully (Windows). Currently not used.}
   Kill all process trees.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{pipeline$kill_tree(grace = 0.1, close_connections = TRUE)}
+    \preformatted{pipeline$kill_tree(grace = 0, close_connections = TRUE)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{grace}}{Grace period in seconds before sending SIGKILL (Unix) or
-terminating forcefully (Windows). Currently not used.}
+      \item{\code{grace}}{Grace period in seconds, passed to the \verb{$kill()} method of
+each process. See \link{process} for details.}
       \item{\code{close_connections}}{Whether to close connections after killing.}
     }
     \if{html}{\out{</div>}}

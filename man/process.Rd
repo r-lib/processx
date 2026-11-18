@@ -372,13 +372,17 @@ was terminated, and \code{FALSE} if it was not (because it was
 already finished/dead when \code{processx} tried to terminate it).
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{process$kill(grace = 0.1, close_connections = TRUE)}
+    \preformatted{process$kill(grace = 0, close_connections = TRUE)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{grace}}{Currently not used.}
+      \item{\code{grace}}{Grace period in seconds. For \verb{$kill()} on Unix, if it is
+positive, processx first sends \code{SIGTERM}, and sends \code{SIGKILL} if the
+process is still alive after \code{grace} seconds. If it is zero (the
+default), processx sends \code{SIGKILL} right away. Ignored on Windows and
+by \verb{$kill_tree()}.}
       \item{\code{close_connections}}{Whether to close standard input, standard
 output, standard error connections and the poll connection, after
 killing the process.}
@@ -404,13 +408,17 @@ were killed, the names are the names of the processes (e.g. \code{"sleep"},
 \code{"notepad.exe"}, \code{"Rterm.exe"}, etc.).
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{process$kill_tree(grace = 0.1, close_connections = TRUE)}
+    \preformatted{process$kill_tree(grace = 0, close_connections = TRUE)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{grace}}{Currently not used.}
+      \item{\code{grace}}{Grace period in seconds. For \verb{$kill()} on Unix, if it is
+positive, processx first sends \code{SIGTERM}, and sends \code{SIGKILL} if the
+process is still alive after \code{grace} seconds. If it is zero (the
+default), processx sends \code{SIGKILL} right away. Ignored on Windows and
+by \verb{$kill_tree()}.}
       \item{\code{close_connections}}{Whether to close standard input, standard
 output, standard error connections and the poll connection, after
 killing the process.}
