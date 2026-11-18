@@ -36,6 +36,8 @@ jobs:
       image: ${{ matrix.config.container }}
     env:
       NOT_CRAN: true
+      # Run tests in the main R process, so valgrind and the sanitizers
+      TESTTHAT_PARALLEL: false
 
     steps:
       - uses: r-hub/actions/checkout@main
