@@ -43,3 +43,5 @@
 ^\.rvenv$
 ^\.rvenvlib$
 ^\.Renviron$
+^AGENTS\.md$
+^\.claude$
