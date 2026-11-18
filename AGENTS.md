@@ -6,29 +6,32 @@
 
 ### Key commands
 
-(All these functions have been optimized for agentic use, so they can be called directly without other arguments.)
+(Run these commands exactly as written below.)
 
 ```R
 # Executing code
-devtools::load_all()
+uncovr::reload() # build (debug) and load the package, including C code
 code
 
-# Tests
-devtools::test() # all tests
-devtools::test(filter = "^{name}") # tests for files starting with {name}
-devtools::test_active_file("R/{name}.R") # tests for R/{name}.R
-devtools::test_active_file("R/{name}.R", desc = 'blah') # single test with exact description "blah" (no regexp)
+# Tests (these also show test coverage)
+uncovr::test() # all tests
+uncovr::test(filter = "^{name}") # tests for files starting with {name}
+uncovr::test_active("R/{name}.R") # tests and coverage for R/{name}.R
+uncovr::retest() # re-run test files that had failures in the last run
 
 # Test coverage
-devtools::test_coverage() # all files
-devtools::test_coverage_active_file("R/{name}.R") # coverage for R/{name}.R from tests in tests/testthat/test-{name}.R
+uncovr::test(report = TRUE) # HTML coverage report
+uncovr::last() # coverage results of the last run
 
 # Documentation
-devtools::document() # redocument package
+uncovr::document() # redocument package
 pkgdown::check_pkgdown() # check website
 
 # Run complete R CMD check
-devtools::check()
+withr::with_envvar(
+  c("NOT_CRAN" = "true", DISPLAY = ""),
+  rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"))
+)
 ```
 
 ### Running R
