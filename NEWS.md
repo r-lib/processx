@@ -1,4 +1,4 @@
-# processx (development version)
+# processx 3.10.0
 
 * `$kill_tree()` now throws the intended "not supported on this
   platform" error on platforms that the ps package does not support,
