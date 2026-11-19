@@ -1,7 +1,7 @@
 Config/rig/note: This file was created by rig, do not edit it manually
 Package: processx
 Title: Execute and Control System Processes
-Version: 3.10.0
+Version: 3.10.0.9000
 Authors@R: c(
     person("Gábor", "Csárdi", email = "csardi.gabor@gmail.com",
            role = c("aut", "cre", "cph"),
